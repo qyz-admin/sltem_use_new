@@ -448,7 +448,7 @@ class SltemMonitoring(Settings):
                 Time_day.append(str(int(datetime.datetime.now().year) - 1) + '-' + str(i) + (
                     datetime.datetime.now().strftime('-%d')))
         # Time_day = ['2021-02-24', '2020-12-19', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2021-01-24']
-        # 对时间数组进行排序
+        # 对时间数组进行排序  list.sort(cmp=None, key=None, reverse=False)；reverse -- 排序规则，reverse = True 降序， reverse = False 升序（默认）
         Time_day.sort()
         print(Time_day[11])
         print(Time_day[10])
