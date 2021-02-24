@@ -13,7 +13,7 @@ match = {'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\日本�
          'sltg': r'D:\Users\Administrator\Desktop\需要用到的文件\泰国签收表',
          'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\港台签收表',
          'slxmt': r'D:\Users\Administrator\Desktop\需要用到的文件\新马签收表'}
-'''    msyql 语法:show processlist;
+'''    msyql 语法:      show processlist;
 备注：  港台 需整理的表：香港立邦>(明细再copy一份保存) ； 台湾龟山改派>(copy保存为xlsx格式);
 说明：  日本 需整理的表：1、吉客印神龙直发签收表=密码：‘JKTSL’>(明细再copy保存；改派明细不需要);2、直发签收表>(明细再copy保存；3、状态更新需要copy保存);
 '''

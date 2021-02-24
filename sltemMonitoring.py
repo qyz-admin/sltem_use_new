@@ -447,9 +447,11 @@ class SltemMonitoring(Settings):
                 print('xxxx时间配置出错失败00：' + str(i) + '月份', str(Exception) + str(e))
                 Time_day.append(str(int(datetime.datetime.now().year) - 1) + '-' + str(i) + (
                     datetime.datetime.now().strftime('-%d')))
-        # Time_day = ['2021-01-19', '2020-12-19', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-19']
-        print(Time_day[0])
+        # Time_day = ['2021-02-24', '2020-12-19', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2021-01-24']
+        # 对时间数组进行排序
+        Time_day.sort()
         print(Time_day[11])
+        print(Time_day[10])
         listT = []                              # 查询sql 存放池
         show_name = []                          # 打印进度需要
         # 月签收率（天）---查询
@@ -1957,11 +1959,11 @@ class SltemMonitoring(Settings):
         app.quit()
         print('输出(监控)文件成功…………')
         file_Path.append(filePath)
-        self.e.send('{} {}监控表.xlsx'.format(today, team), file_Path,
-                    emailAdd[team])
-        if team =='泰国':
-            self.e.send('{} {}监控表.xlsx'.format(today, team), file_Path,
-                        emailAdd2[team])
+        # self.e.send('{} {}监控表.xlsx'.format(today, team), file_Path,
+        #             emailAdd[team])
+        # if team =='泰国':
+        #     self.e.send('{} {}监控表.xlsx'.format(today, team), file_Path,
+        #                 emailAdd2[team])
         print('处理耗时：', datetime.datetime.now() - start)
 
     # 获取签收表内容
@@ -1980,7 +1982,7 @@ class SltemMonitoring(Settings):
                  '泰国': 'sltg'}
         start = datetime.datetime.now()
         # startday = datetime.datetime.now().strftime('%Y.%m.%d')
-        path = r'D:\Users\Administrator\Desktop\查询\订单数据'
+        path = r'F:\\查询\\订单数据'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -2071,26 +2073,23 @@ if __name__ == '__main__':
     #     m.costWaybill(team)
     # print('导入耗时：', datetime.datetime.now() - start)
 
-    # team = '日本'
-    # m.costWaybill(team)
 
     # 测试监控运行
-    # for team in ['泰国']:
+    # for team in ['日本', '香港', '台湾']:
     for team in ['日本', '香港', '台湾', '新加坡', '马来西亚', '泰国']:
         m.order_Monitoring(team)    # 各月缓存
         print('缓存耗时：', datetime.datetime.now() - start)
         m.data_Monitoring(team)     # 两月数据
         print('获取耗时：', datetime.datetime.now() - start)
+
         # m.costWaybill(team)       # 成本缓存 与 成本两月数据
         # print('成本耗时：', datetime.datetime.now() - start)
+
         m.sl_Monitoring(team)       # 输出数据
         print('处理耗时：', datetime.datetime.now() - start)
 
     # 获取签收表内容
-    # startday = '2021.01.13'
-    # # for team in ['日本', '泰国', '新马', '新加坡', '马来西亚', '港台', '香港', '台湾']:
+    # startday = '2021.01.24'
+    # for team in ['日本', '香港', '台湾']:
     #     m.readForm(team, startday)
-
-    # for team in ['日本', '泰国', '新加坡', '马来西亚', '香港', '台湾']:
-    #     m.data_Monitoring(team)
-    print('处理耗时：', datetime.datetime.now() - start)
+    # print('处理耗时：', datetime.datetime.now() - start)
