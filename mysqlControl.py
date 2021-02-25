@@ -495,7 +495,9 @@ class MysqlControl(Settings):
         print('----已写入excel')
         filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
-        if team == 'slgat':                         # 文件太大无法发送的
+
+        # 文件太大无法发送的
+        if team == 'slgat':
             print('---' + match[team] + ' 不发送邮件')
         else:
             self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
@@ -504,7 +506,7 @@ class MysqlControl(Settings):
             self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
                         emailAdd2[team])
 
-        # 导入签收率表中（不包含全部的订单状态）
+        # 导入签收率表中和输出物流时效（不包含全部的订单状态）
         print('正在打印' + match[team] + ' 物流时效…………')
         if team == 'slgat0':
             print('---' + match[team] + ' 不打印文件')
