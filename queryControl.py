@@ -1020,14 +1020,6 @@ if __name__ == '__main__':
     # m.tgOrderQuan('sltg')
     # m.xiugaiyangshi()
 
-    # tem = '泰国'
-    # team = 'sltg'
-    # m.OrderQuan(team, tem)
-
-    # team = 'slxmt'
-    # for tem in ['新加坡', '马来西亚']:
-    #     m.OrderQuan(team, tem)
-
     # team = 'slgat'
     # for tem in ['台湾', '香港']:
     #     m.OrderQuan(team, tem)
@@ -1045,9 +1037,6 @@ if __name__ == '__main__':
     tem = '日本'
     team = 'slrb_zqsb_rb'
     m.sl_tem_cost(team, tem)
-
-    # for tem in ['香港', '台湾']:
-    #     m.sl_tem_cost('slgat_zqsb', tem)
 
     # for tem in ['新加坡', '马来西亚']:
     #     m.sl_tem_cost('slxmt_zqsb', tem)

@@ -1360,31 +1360,27 @@ if __name__ == '__main__':
     m = MysqlControl()
     start = datetime.datetime.now()
 
-    # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:                             # 无运单号查询200
-    #     m.noWaybillNumber(team)
-    #
-    # match = {'SG': '新加坡',
-    #          'MY': '马来西亚',
-    #          'JP': '日本',
-    #          'HK': '香港',
-    #          'TW': '台湾',
-    #          'TH': '泰国'}
-    # # match = {'TH': '泰国'}
-    # for team in match.keys():                                                   # 产品花费表200
-    #     m.orderCost(team)
-    #
-    # sm = SltemMonitoring()
-    # for team in ['新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:         # 成本查询
-    #     sm.costWaybill(team)
-    #
-    # # （泰国）全部订单表200
-    # m.tgOrderQuan('sltg')
+    for team in ['sltg', 'slgat', 'slrb', 'slxmt']:                             # 无运单号查询200
+        m.noWaybillNumber(team)
 
-    team = 'slgat'
-    m.data_wl(team)
-    m.data_wlT(team)
+    match = {'SG': '新加坡',
+             'MY': '马来西亚',
+             'JP': '日本',
+             'HK': '香港',
+             'TW': '台湾',
+             'TH': '泰国'}
+    # match = {'TH': '泰国'}
+    for team in match.keys():                                                   # 产品花费表200
+        m.orderCost(team)
 
-    team = 'slrb'
-    m.data_wl(team)
-    m.data_wlT(team)
+    sm = SltemMonitoring()
+    for team in ['新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:         # 成本查询
+        sm.costWaybill(team)
+
+    # （泰国）全部订单表200
+    m.tgOrderQuan('sltg')
+
+    # team = 'slgat'
+    # m.data_wl(team)
+    # m.data_wlT(team)
 
