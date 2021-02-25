@@ -43,6 +43,63 @@ class SltemMonitoring(Settings):
                                                                                     self.mysql2['port'],
                                                                                     self.mysql2['datebase']))
 
+    def check_time(self, team):
+        match = {'新加坡': 'slxmt',
+                  '马来西亚': 'slxmt',
+                  '日本': 'slrb',
+                  '香港': 'slgat',
+                  '台湾': 'slgat',
+                  '泰国': 'sltg'}
+        Time_day = []
+        for i in range(1, datetime.datetime.now().month + 1):  # 获取当年当前的月份时间
+            try:
+                daytime = (datetime.datetime.now().replace(month=i)).strftime('%Y-%m') + (
+                    (datetime.datetime.now()).strftime('-%d'))
+                Time_day.append(daytime)
+            except Exception as e:
+                print('xxxx时间配置出错,已手动调整：' + str(i) + '月份', str(Exception) + str(e))
+                Time_day.append(
+                    str(int(datetime.datetime.now().year)) + '-' + str(i) + (datetime.datetime.now().strftime('-%d')))
+        for i in range(datetime.datetime.now().month + 1, 13):  # 获取往年当前的月份时间
+            try:
+                daytime = str(int(datetime.datetime.now().year) -1) + (datetime.datetime.now().replace(month=i)).strftime('-%m') + (
+                    (datetime.datetime.now()).strftime('-%d'))
+                Time_day.append(daytime)
+            except Exception as e:
+                print('xxxx时间配置出错失败00：' + str(i) + '月份', str(Exception) + str(e))
+                Time_day.append(str(int(datetime.datetime.now().year) - 1) + '-' + str(i) + (
+                    datetime.datetime.now().strftime('-%d')))
+        # 对时间数组进行排序  list.sort(cmp=None, key=None, reverse=False)；reverse -- 排序规则，reverse = True 降序， reverse = False 升序（默认）
+        Time_day.sort()
+        print('正在获取本次同期比较需要的---具体时间......')
+        print(Time_day[11])
+        print(Time_day[10])
+
+        # 获取监控表是否有同期上传时间的数据
+        rq_day = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+        print('正在检查监控表是否有需要的---具体日期......')
+        sql = '''SELECT distinct qsb.`记录时间` FROM qsb_{0} qsb WHERE qsb.`记录时间`>='{1}';'''.format(match[team], rq_day)
+        rq = pd.read_sql_query(sql=sql, con=self.engine1)
+        df = rq['记录时间'].values              # datafram转为数组
+        info = ''
+        for r in df:
+            if Time_day[10] == r:
+                print(r)
+                info = '---已确认，可以进行同期数据对比'
+            else:
+                info = '---已确认，需要手动上传需要时间的数据'
+
+        if info == '---已确认，可以进行同期数据对比':
+            print('完成时间确认+++')
+            self.order_Monitoring(team)  # 各月缓存
+            print('缓存耗时：', datetime.datetime.now() - start)
+            self.data_Monitoring(team)  # 两月数据
+            print('获取耗时：', datetime.datetime.now() - start)
+            self.sl_Monitoring(team)  # 输出数据
+            print('处理耗时：', datetime.datetime.now() - start)
+        else:
+            print(info)
+
     def order_Monitoring(self, team):        # 获取各团队各月的签收表数据 和 成本数据内容
         match = {'新加坡': 'slxmt',
                   '马来西亚': 'slxmt',
@@ -2052,44 +2109,41 @@ if __name__ == '__main__':
               'slyn': '越南',
               'slrb': '日本'}
     # messagebox.showinfo("提示！！！", "当前查询已完成--->>> 请前往（ 输出文件 ）查看")
-
     #  订单花费明细查询
     match9 = {'slgat_zqsb': '港台',
               'sltg_zqsb': '泰国',
               'slxmt_zqsb': '新马',
               'slrb_zqsb_rb': '日本'}
-    # tem = '泰国'
-    # team = 'sltg_zqsb'
-    # m.sl_tem_cost(team, tem)
     # tem = '日本'
     # team = 'slrb_zqsb_rb'
     # m.sl_tem_cost(team, tem)
-    # for tem in ['香港', '台湾']:
-    #     m.sl_tem_cost('slgat_zqsb', tem)
 
     # # 成本查询
     # for team in ['新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:
     # # for team in ['日本']:
     #     m.costWaybill(team)
-    # print('导入耗时：', datetime.datetime.now() - start)
 
 
-    # 测试监控运行
-    # for team in ['日本', '香港', '台湾']:
-    for team in ['日本', '香港', '台湾', '新加坡', '马来西亚', '泰国']:
-        m.order_Monitoring(team)    # 各月缓存
-        print('缓存耗时：', datetime.datetime.now() - start)
-        m.data_Monitoring(team)     # 两月数据
-        print('获取耗时：', datetime.datetime.now() - start)
+    # # 测试监控运行（三）
+    # # for team in ['日本', '香港', '台湾']:
+    # for team in ['日本', '香港', '台湾', '新加坡', '马来西亚', '泰国']:
+    #     m.order_Monitoring(team)    # 各月缓存
+    #     print('缓存耗时：', datetime.datetime.now() - start)
+    #     m.data_Monitoring(team)     # 两月数据
+    #     print('获取耗时：', datetime.datetime.now() - start)
+    #
+    #     # m.costWaybill(team)       # 成本缓存 与 成本两月数据
+    #     # print('成本耗时：', datetime.datetime.now() - start)
+    #
+    #     m.sl_Monitoring(team)       # 输出数据
+    #     print('处理耗时：', datetime.datetime.now() - start)
 
-        # m.costWaybill(team)       # 成本缓存 与 成本两月数据
-        # print('成本耗时：', datetime.datetime.now() - start)
-
-        m.sl_Monitoring(team)       # 输出数据
-        print('处理耗时：', datetime.datetime.now() - start)
-
-    # 获取签收表内容
+    # 获取签收表内容（二）
     # startday = '2021.01.24'
     # for team in ['日本', '香港', '台湾']:
     #     m.readForm(team, startday)
     # print('处理耗时：', datetime.datetime.now() - start)
+
+    # 获取监控表以上传的时间---监控运行（一）
+    for team in ['日本', '香港', '台湾', '新加坡', '马来西亚', '泰国']:
+        m.check_time(team)

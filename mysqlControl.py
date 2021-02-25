@@ -495,7 +495,7 @@ class MysqlControl(Settings):
         print('----已写入excel')
         filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
-        if team == 'slgat' or team == 'slrb0':      # 文件太大无法发送的
+        if team == 'slgat':                         # 文件太大无法发送的
             print('---' + match[team] + ' 不发送邮件')
         else:
             self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
@@ -1360,27 +1360,31 @@ if __name__ == '__main__':
     m = MysqlControl()
     start = datetime.datetime.now()
 
-    for team in ['sltg', 'slgat', 'slrb', 'slxmt']:                             # 无运单号查询200
-        m.noWaybillNumber(team)
+    # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:                             # 无运单号查询200
+    #     m.noWaybillNumber(team)
+    #
+    # match = {'SG': '新加坡',
+    #          'MY': '马来西亚',
+    #          'JP': '日本',
+    #          'HK': '香港',
+    #          'TW': '台湾',
+    #          'TH': '泰国'}
+    # # match = {'TH': '泰国'}
+    # for team in match.keys():                                                   # 产品花费表200
+    #     m.orderCost(team)
+    #
+    # sm = SltemMonitoring()
+    # for team in ['新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:         # 成本查询
+    #     sm.costWaybill(team)
+    #
+    # # （泰国）全部订单表200
+    # m.tgOrderQuan('sltg')
 
-    match = {'SG': '新加坡',
-             'MY': '马来西亚',
-             'JP': '日本',
-             'HK': '香港',
-             'TW': '台湾',
-             'TH': '泰国'}
-    # match = {'TH': '泰国'}
-    for team in match.keys():                                                   # 产品花费表200
-        m.orderCost(team)
+    team = 'slgat'
+    m.data_wl(team)
+    m.data_wlT(team)
 
-    sm = SltemMonitoring()
-    for team in ['新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:         # 成本查询
-        sm.costWaybill(team)
-
-    # （泰国）全部订单表200
-    m.tgOrderQuan('sltg')
-
-    # team = 'slgat'
-    # m.data_wl(team)
-    # m.data_wlT(team)
+    team = 'slrb'
+    m.data_wl(team)
+    m.data_wlT(team)
 
