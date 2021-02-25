@@ -303,7 +303,7 @@ class MysqlControl(Settings):
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat0':
             yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
             mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
             begin = datetime.date(yy, mm, 1)
@@ -316,7 +316,7 @@ class MysqlControl(Settings):
         else:
             begin = datetime.date(2020, 12, 1)
             print(begin)
-            end = datetime.date(2021, 2, 24)
+            end = datetime.date(2021, 2, 26)
             print(end)
         for i in range((end - begin).days):     # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -399,14 +399,14 @@ class MysqlControl(Settings):
                     'slyn': '越南',
                     'slrb': 'sunyaru@giikin.com'}
         emailAdd2 = {'sltg': 'zhangjing@giikin.com'}
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat0':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
             print(month_begin)
         else:
-            month_last = '2021-01-01'
-            month_yesterday = '2021-02-24'
+            month_last = '2020-12-01'
+            month_yesterday = '2021-02-26'
             month_begin = '2020-11-01'
         if team == 'slgat':                                                 # 港台查询函数导出
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
@@ -484,7 +484,7 @@ class MysqlControl(Settings):
         print('正在写入---' + match[team] + ' ---临时缓存…………')
 
         # 备用临时缓存表
-        if team == 'slgat0':
+        if team == 'sl':
             df.to_sql('d1', con=self.engine1, index=False, if_exists='replace')
         else:
             df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace')
@@ -495,9 +495,8 @@ class MysqlControl(Settings):
         print('----已写入excel')
         filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
-
         # 文件太大无法发送的
-        if team == 'slgat':
+        if team == 'slgat0':
             print('---' + match[team] + ' 不发送邮件')
         else:
             self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
@@ -508,7 +507,7 @@ class MysqlControl(Settings):
 
         # 导入签收率表中和输出物流时效（不包含全部的订单状态）
         print('正在打印' + match[team] + ' 物流时效…………')
-        if team == 'slgat0':
+        if team == 'slgat':
             print('---' + match[team] + ' 不打印文件')
         else:
             self.data_wl(team)
