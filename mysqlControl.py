@@ -482,7 +482,9 @@ class MysqlControl(Settings):
         print('正在获取---' + match[team] + ' ---全部导出数据内容…………')
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入---' + match[team] + ' ---临时缓存…………')
-        if team == 'slgat0':                        # 备用临时缓存表
+
+        # 备用临时缓存表
+        if team == 'slgat0':
             df.to_sql('d1', con=self.engine1, index=False, if_exists='replace')
         else:
             df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace')
@@ -501,6 +503,7 @@ class MysqlControl(Settings):
         if team == 'sltg':                          # 补充发送一份
             self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
                         emailAdd2[team])
+
         # 导入签收率表中（不包含全部的订单状态）
         print('正在打印' + match[team] + ' 物流时效…………')
         if team == 'slgat0' or team == 'slrb0':
