@@ -303,7 +303,7 @@ class MysqlControl(Settings):
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat0':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat':
             yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
             mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
             begin = datetime.date(yy, mm, 1)
