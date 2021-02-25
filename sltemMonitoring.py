@@ -87,7 +87,7 @@ class SltemMonitoring(Settings):
                 print(r)
                 info = '---已确认，可以进行同期数据对比'
             else:
-                info = '---已确认，需要手动上传需要时间的数据'
+                info = '---需要手动上传需要时间的数据'
 
         if info == '---已确认，可以进行同期数据对比':
             print('完成时间确认+++')
@@ -1978,6 +1978,7 @@ class SltemMonitoring(Settings):
         # sheet_name = ['签率(天)_', '签率(月)_', '签率(旬)_', '签率(总)_', '物流(天)_', '物流(月)_', '成本(天)_', '成本(月)_', '成本(总)_', '时效(天)_', '时效(旬)_', '时效(总)_']  # 生成的工作表的表名
         sheet_name = ['签率(天)_', '签率(月)_', '签率(旬)_', '签率(总)_', '物流(天)_', '物流(月)_', '时效(天)_', '时效(旬)_', '时效(总)_']  # 生成的工作表的表名
         file_Path = []                                # 发送邮箱文件使用
+        filePath = ''
         if team == '日本':
             filePath = 'F:\\查询\\日本监控\\{} {}监控表.xlsx'.format(today, team)
         elif team == '泰国':
@@ -2016,11 +2017,11 @@ class SltemMonitoring(Settings):
         app.quit()
         print('输出(监控)文件成功…………')
         file_Path.append(filePath)
-        # self.e.send('{} {}监控表.xlsx'.format(today, team), file_Path,
-        #             emailAdd[team])
-        # if team =='泰国':
-        #     self.e.send('{} {}监控表.xlsx'.format(today, team), file_Path,
-        #                 emailAdd2[team])
+        self.e.send('{} {}监控表.xlsx'.format(today, team), file_Path,
+                    emailAdd[team])
+        if team =='泰国':
+            self.e.send('{} {}监控表.xlsx'.format(today, team), file_Path,
+                        emailAdd2[team])
         print('处理耗时：', datetime.datetime.now() - start)
 
     # 获取签收表内容
