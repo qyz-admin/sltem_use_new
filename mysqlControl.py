@@ -506,7 +506,7 @@ class MysqlControl(Settings):
 
         # 导入签收率表中（不包含全部的订单状态）
         print('正在打印' + match[team] + ' 物流时效…………')
-        if team == 'slgat0' or team == 'slrb0':
+        if team == 'slgat0':
             print('---' + match[team] + ' 不打印文件')
         else:
             self.data_wl(team)
