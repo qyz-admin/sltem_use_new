@@ -98,6 +98,7 @@ class SltemMonitoring(Settings):
             print('获取耗时：', datetime.datetime.now() - start)
             self.sl_Monitoring(team)  # 输出数据
             print('处理耗时：', datetime.datetime.now() - start)
+            print(team + '团队运行结束')
         else:
             print(info)
 
