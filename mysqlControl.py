@@ -445,7 +445,7 @@ class MysqlControl(Settings):
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
         elif team == 'sltg':
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-                            IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', '', 出货时间) 出货时间,
+                            IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', null, 出货时间) 出货时间,
                             IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
                             IF(上线时间='1990-01-01 00:00:00' or 上线时间='1899-12-30 00:00:00' or 上线时间='0000-00-00 00:00:00', '', 上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
                             IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
@@ -463,7 +463,7 @@ class MysqlControl(Settings):
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
         else:
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-                        IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', '', 出货时间) 出货时间,
+                        IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', null, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
                         IF(上线时间='1990-01-01 00:00:00' or 上线时间='1899-12-30 00:00:00' or 上线时间='0000-00-00 00:00:00', '', 上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
                         IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
@@ -496,7 +496,7 @@ class MysqlControl(Settings):
         filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
-        if team == 'slgat0':
+        if team == 'slgat':
             print('---' + match[team] + ' 不发送邮件')
         else:
             self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
@@ -507,7 +507,7 @@ class MysqlControl(Settings):
 
         # 导入签收率表中和输出物流时效（不包含全部的订单状态）
         print('正在打印' + match[team] + ' 物流时效…………')
-        if team == 'slgat':
+        if team == 'slgat0':
             print('---' + match[team] + ' 不打印文件')
         else:
             self.data_wl(team)
@@ -533,8 +533,8 @@ class MysqlControl(Settings):
                     '日本': 'sunyaru@giikin.com'}
         emailAdd2 = {'泰国': 'zhangjing@giikin.com'}
         month_last = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
-        filePath = []
         for tem in match[team]:
+            filePath = []
             listT = []                                              # 查询sql的结果 存放池
             print('正在获取---' + tem + '---物流时效…………')
             sql = '''SELECT 年月,币种,物流方式,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
@@ -805,8 +805,8 @@ class MysqlControl(Settings):
                 month_last = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
             else:
                 pass
-            filePath = []
             for tem in match[team]:
+                filePath = []
                 listT = []                                              # 查询sql的结果 存放池
                 print('正在获取---' + tem + '---物流分旬时效…………')
                 sql = '''SELECT 年月,币种,物流方式,旬,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
@@ -1361,27 +1361,27 @@ if __name__ == '__main__':
     m = MysqlControl()
     start = datetime.datetime.now()
 
-    for team in ['sltg', 'slgat', 'slrb', 'slxmt']:                             # 无运单号查询200
-        m.noWaybillNumber(team)
+    # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:                             # 无运单号查询200
+    #     m.noWaybillNumber(team)
+    #
+    # match = {'SG': '新加坡',
+    #          'MY': '马来西亚',
+    #          'JP': '日本',
+    #          'HK': '香港',
+    #          'TW': '台湾',
+    #          'TH': '泰国'}
+    # # match = {'TH': '泰国'}
+    # for team in match.keys():                                                   # 产品花费表200
+    #     m.orderCost(team)
+    #
+    # sm = SltemMonitoring()
+    # for team in ['新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:         # 成本查询
+    #     sm.costWaybill(team)
+    #
+    # # （泰国）全部订单表200
+    # m.tgOrderQuan('sltg')
 
-    match = {'SG': '新加坡',
-             'MY': '马来西亚',
-             'JP': '日本',
-             'HK': '香港',
-             'TW': '台湾',
-             'TH': '泰国'}
-    # match = {'TH': '泰国'}
-    for team in match.keys():                                                   # 产品花费表200
-        m.orderCost(team)
-
-    sm = SltemMonitoring()
-    for team in ['新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:         # 成本查询
-        sm.costWaybill(team)
-
-    # （泰国）全部订单表200
-    m.tgOrderQuan('sltg')
-
-    # team = 'slgat'
-    # m.data_wl(team)
-    # m.data_wlT(team)
+    team = 'slgat'
+    m.data_wl(team)
+    m.data_wlT(team)
 

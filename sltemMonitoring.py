@@ -91,7 +91,7 @@ class SltemMonitoring(Settings):
                 info = '---需要手动上传需要时间的数据'
 
         if info == '---已确认，可以进行同期数据对比':
-            print('完成时间确认+++')
+            print('++++++完成时间确认++++++')
             self.order_Monitoring(team)  # 各月缓存
             print('缓存耗时：', datetime.datetime.now() - start)
             self.data_Monitoring(team)  # 两月数据
@@ -2133,10 +2133,8 @@ if __name__ == '__main__':
     #     print('缓存耗时：', datetime.datetime.now() - start)
     #     m.data_Monitoring(team)     # 两月数据
     #     print('获取耗时：', datetime.datetime.now() - start)
-    #
     #     # m.costWaybill(team)       # 成本缓存 与 成本两月数据
     #     # print('成本耗时：', datetime.datetime.now() - start)
-    #
     #     m.sl_Monitoring(team)       # 输出数据
     #     print('处理耗时：', datetime.datetime.now() - start)
 
@@ -2147,6 +2145,6 @@ if __name__ == '__main__':
     # print('处理耗时：', datetime.datetime.now() - start)
 
     # 获取监控表以上传的时间---监控运行（一）
-    # for team in ['日本', '香港', '台湾', '新加坡', '马来西亚', '泰国']:
-    for team in ['日本']:
+    for team in ['香港', '台湾', '新加坡', '马来西亚', '泰国']:
+    # for team in ['日本']:
         m.check_time(team)
