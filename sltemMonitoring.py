@@ -2120,15 +2120,6 @@ if __name__ == '__main__':
               'slyn': '越南',
               'slrb': '日本'}
     # messagebox.showinfo("提示！！！", "当前查询已完成--->>> 请前往（ 输出文件 ）查看")
-    #  订单花费明细查询
-    match9 = {'slgat_zqsb': '港台',
-              'sltg_zqsb': '泰国',
-              'slxmt_zqsb': '新马',
-              'slrb_zqsb_rb': '日本'}
-    # tem = '日本'
-    # team = 'slrb_zqsb_rb'
-    # m.sl_tem_cost(team, tem)
-
     # # 成本查询
     # for team in ['新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:
     # # for team in ['日本']:

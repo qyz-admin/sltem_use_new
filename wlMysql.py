@@ -46,600 +46,8 @@ class WlMysql(Settings):
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
         except Exception as e:
             print('插入失败：', str(Exception) + str(e))
-    # 1-12月查询函数（公用）
-    def creatMyOrderT(self, team):
-        match = {'slgat': '"神龙家族-港澳台"',
-                 'sltg': '"神龙家族-泰国"',
-                 'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚"',
-                 'slzb': '"神龙家族-直播团队"',
-                 'slyn': '"神龙家族-越南"',
-                 'slrb': '"神龙家族-日本团队"'}
-        yesterday = (datetime.datetime.now().replace(month=10, day=31)).strftime('%Y-%m-%d')
-        print(yesterday)
-        last_month = (datetime.datetime.now().replace(month=9, day=1)).strftime('%Y-%m-%d')
-        print(last_month)
-        sql = '''SELECT a.id, 
-                        a.month 年月, 
-                        a.month_mid 旬, 
-                        a.rq 日期, 
-                        dim_area.name 团队, 
-                        a.region_code 区域,
-                        dim_currency_lang.pname 币种,
-                        a.beform 订单来源, 
-                        a.order_number 订单编号, 
-                        a.ship_phone 电话号码, 
-                        UPPER(a.waybill_number) 运单编号,
-                        a.order_status 系统订单状态id, 
-                        a.logistics_status 系统物流状态id, 
-                        IF(a.second=0,'直发','改派') 是否改派, 
-                        dim_trans_way.all_name 物流方式,
-                        dim_trans_way.simple_name 物流名称,
-                        dim_trans_way.remark 运输方式,
-                        a.logistics_type 货物类型,
-                        IF(a.low_price=0,'否','是') 是否低价, 
-                        a.product_id 产品id, 
-                        gk_product.name 产品名称, 
-                        dim_cate.ppname 父级分类,
-                        dim_cate.pname 二级分类,
-                        dim_cate.name 三级分类,
-                        dim_payment.pay_name 付款方式, 
-                        a.amount 价格, 
-                        a.addtime 下单时间, 
-                        a.verity_time 审核时间, 
-                        a.delivery_time 仓储扫描时间, 
-                        a.finish_status 完结状态, 
-                        a.endtime 完结状态时间, 
-                        a.salesRMB 价格RMB, 
-                        intervals.intervals 价格区间,
-                        a.purchase 成本价, 
-                        a.logistics_cost 物流花费, 
-                        a.package_cost 打包花费, 
-                        a.other_fee 其它花费, 
-                        a.weight 包裹重量,
-                        a.volume 包裹体积,
-                        a.ship_zip 邮编,
-                        a.turn_purchase_time 添加物流单号时间,
-                        a.del_reason 订单删除原因
-                FROM 
-                    gk_order a left join dim_area ON dim_area.id = a.area_id 
-                left join dim_payment on dim_payment.id = a.payment_id
-                left join gk_product on gk_product.id = a.product_id 
-                left join dim_trans_way on dim_trans_way.id = a.logistics_id
-                left join dim_cate on dim_cate.id = gk_product.third_cate_id 
-                left join intervals on intervals.id = a.intervals
-                left join dim_currency_lang on dim_currency_lang.id = a.currency_lang_id
-                WHERE a.rq >= '{}' AND a.rq <= '{}' AND dim_area.name IN ({});'''.format(last_month, yesterday, match[team])
-        print('正在获取' + yesterday[5:7] + '月份订单…………')
-        df = pd.read_sql_query(sql=sql, con=self.engine2)
-        print('----已获取 '+ yesterday[5:7] + ' 月份订单…………')
-        sql = 'SELECT * FROM dim_order_status;'
-        df1 = pd.read_sql_query(sql=sql, con=self.engine1)
-        print('----已获取订单状态')
-        print('正在合并订单状态…………')
-        df = pd.merge(left=df, right=df1, left_on='系统订单状态id', right_on='id', how='left')
-        print('----已合并订单状态')
-        sql = 'SELECT * FROM dim_logistics_status;'
-        df1 = pd.read_sql_query(sql=sql, con=self.engine1)
-        print('----已获取物流状态')
-        print('正在合并物流状态…………')
-        df = pd.merge(left=df, right=df1, left_on='系统物流状态id', right_on='id', how='left')
-        df = df.drop(labels=['id', 'id_y', '系统订单状态id', '系统物流状态id'], axis=1)
-        df.rename(columns={'id_x': 'id', 'name_x': '系统订单状态', 'name_y': '系统物流状态'}, inplace=True)
-        print('----已获取 '+ yesterday[5:7] + ' 月订单与物流状态')
-        # self.reSetEngine()
-        print('正在写入数据库…………')
-        # 这一句会报错,需要修改my.ini文件中的[mysqld]段中的"max_allowed_packet = 1024M"
-        df.to_sql(team + '_order_list', con=self.engine1, index=False, if_exists='replace')
-        return '写入完成'
-    # 1-12月查询函数（公用导出）
-    def connectOrderT(self, team):
-            match = {'slgat': '港台',
-                     'sltg': '泰国',
-                     'slxmt': '新马',
-                     'slzb': '直播团队',
-                     'slyn': '越南',
-                     'slrb': '日本'}
-            emailAdd = {'slgat': 'giikinliujun@163.com',
-                        'sltg': '1845389861@qq.com',
-                        'slxmt': 'zhangjing@giikin.com',
-                        'slzb': '直播团队',
-                        'slyn': '越南',
-                        'slrb': 'sunyaru@giikin.com'}
-            yesterday = (datetime.datetime.now().replace(month=10, day=31)).strftime('%Y-%m-%d')
-            print(yesterday)
-            last_month = (datetime.datetime.now().replace(month=9, day=1)).strftime('%Y-%m-%d')
-            print(last_month)
-            if team == 'slgat':                                                           # 港台查询1-12月函数导出
-                sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-                                IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
-                                IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
-                                IF(上线时间='1990-01-01 00:00:00' or 上线时间='1899-12-30 00:00:00' or 上线时间='0000-00-00 00:00:00', '', 上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
-                                IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                                IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
-                                是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
-                                二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
-                                包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-                                b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间
-                        FROM {0}_order_list a  
-                        LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} GROUP BY 运单编号) ORDER BY id) b
-                            ON a.`运单编号` = b.`运单编号`
-                        LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
-                        LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
-                        WHERE a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                            AND a.`日期` >= '{1}' AND a.`日期` <= '{2}'
-                        ORDER BY a.`下单时间`;'''.format(team, last_month, yesterday)
-            elif team == 'slxmt':                                                         # 新马物流1-12月查询函数导出
-                sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-                                IF(ISNULL(b.出货时间) or b.出货时间='0000-00-00 00:00:00' or b.状态时间='1990-01-01 00:00:00', g.出货时间, b.出货时间) 出货时间, IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
-                                IF(b.状态时间='1990-01-01 00:00:00' or b.状态时间='1899-12-30 00:00:00' or b.状态时间='0000-00-00 00:00:00', '', b.状态时间) 状态时间, 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态, IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                                IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
-                                是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
-                                二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间, 
-                                包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-                                b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间
-                        FROM {0}_order_list a  
-                        LEFT JOIN (SELECT * FROM {0} WHERE id IN  (SELECT MAX(id) FROM {0} GROUP BY 运单编号) ORDER BY id) b 
-                            ON a.`运单编号` = b.`运单编号`
-                        LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态 
-                        LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
-                        LEFT JOIN (SELECT * FROM {0}wl WHERE id IN (SELECT MAX(id) FROM {0}wl GROUP BY 运单编号) ORDER BY id) g ON a.运单编号 = g.运单编号
-                        WHERE a.系统订单状态 IN ('已审核', '待发货', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)', '待发货转审核') 
-                            AND a.`日期` >= '{1}' AND a.`日期` <= '{2}'
-                        ORDER BY a.`下单时间`;'''.format(team, last_month, yesterday)
-            elif team == 'sltg':                                                          # 泰国查询函数导出（添加了成本）
-                sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-                                IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', '', 出货时间) 出货时间,
-                                IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
-                                IF(上线时间='1990-01-01 00:00:00' or 上线时间='1899-12-30 00:00:00' or 上线时间='0000-00-00 00:00:00', '', 上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
-                                IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                                IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
-                                是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
-                                二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
-                                包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-                                b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间
-                        FROM {0}_order_list a  
-                        LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} GROUP BY 运单编号) ORDER BY id) b
-                            ON a.`运单编号` = b.`运单编号`
-                        LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
-                        LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
-                        WHERE a.系统订单状态 IN ('已审核', '待发货', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)', '待发货转审核')
-                            AND a.`日期` >= '{1}' AND a.`日期` <= '{2}'
-                        ORDER BY a.`下单时间`;'''.format(team, last_month, yesterday)
-            else:
-                sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-                                IF(出货时间='1990-01-01 00:00:00', '', 出货时间) 出货时间, IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
-                                IF(状态时间='1990-01-01 00:00:00', '', 状态时间) 状态时间,IF(上线时间='1990-01-01 00:00:00', '', 上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态, IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                                IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
-                                是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
-                                二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
-                                包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-                                b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间
-                        FROM {0}_order_list a  
-                        LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} GROUP BY 运单编号) ORDER BY id) b
-                            ON a.`运单编号` = b.`运单编号`
-                        LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
-                        LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
-                        WHERE a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                            AND a.`日期` >= '{1}' AND a.`日期` <= '{2}'
-                        ORDER BY a.`下单时间`;'''.format(team, last_month, yesterday)
-            print('正在获取导出数据内容…………')
-            # df = pd.read_sql_query(sql=sql, con=self.engine1)
-            # print('正在写入临时签收率表…………')
-            # df.to_sql('sl_tem', con=self.engine1, index=False, if_exists='replace')    # 写入临时签收率表
-            # today = (datetime.datetime.now().replace(month=6, day=30)).strftime('%Y-%m-%d')
-            # print('正在写入excel…………')
-            # df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team]),
-            #             sheet_name=match[team], index=False)
-            # print('----已写入excel')
-            # filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
-            # print('输出文件成功…………')
-            # self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
-            #             emailAdd[team])
-            # 导入签收率表中（此部分是全部订单状态的订单）
-            if team == 'slgat':                                                           # 港台查询1-12月导入签收率表中
-                sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-                                IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
-                                IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
-                                IF(上线时间='1990-01-01 00:00:00' or 上线时间='1899-12-30 00:00:00' or 上线时间='0000-00-00 00:00:00', '', 上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
-                                IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                                IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
-                                是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
-                                二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
-                                包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-                                b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间, a.订单删除原因
-                        FROM {0}_order_list a  
-                        LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} GROUP BY 运单编号) ORDER BY id) b
-                            ON a.`运单编号` = b.`运单编号`
-                        LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
-                        LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
-                            AND a.`日期` >= '{1}' AND a.`日期` <= '{2}'
-                        ORDER BY a.`下单时间`;'''.format(team, last_month, yesterday)
-            elif team == 'slxmt':                                                         # 新马物流1-12月导入签收率表中
-                sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-                                IF(ISNULL(b.出货时间) or b.出货时间='0000-00-00 00:00:00' or b.状态时间='1990-01-01 00:00:00', g.出货时间, b.出货时间) 出货时间, IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
-                                IF(b.状态时间='1990-01-01 00:00:00' or b.状态时间='1899-12-30 00:00:00' or b.状态时间='0000-00-00 00:00:00', '', b.状态时间) 状态时间, 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态, IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                                IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
-                                是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
-                                二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
-                                包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-                                b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间, a.订单删除原因
-                        FROM {0}_order_list a  
-                        LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} GROUP BY 运单编号) ORDER BY id) b
-                            ON a.`运单编号` = b.`运单编号`
-                        LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
-                        LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
-                        LEFT JOIN (SELECT * FROM {0}wl WHERE id IN (SELECT MAX(id) FROM {0}wl GROUP BY 运单编号) ORDER BY id) g ON a.运单编号 = g.运单编号
-                            AND a.`日期` >= '{1}' AND a.`日期` <= '{2}'
-                        ORDER BY a.`下单时间`;'''.format(team, last_month, yesterday)
-            else:
-                sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-                                IF(出货时间='1990-01-01 00:00:00', '', 出货时间) 出货时间, IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
-                                IF(状态时间='1990-01-01 00:00:00', '', 状态时间) 状态时间,IF(上线时间='1990-01-01 00:00:00', '', 上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态, IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                                IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
-                                是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
-                                二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
-                                包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-                                b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间, a.订单删除原因
-                        FROM {0}_order_list a  
-                        LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} GROUP BY 运单编号) ORDER BY id) b
-                            ON a.`运单编号` = b.`运单编号`
-                        LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
-                        LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
-                            AND a.`日期` >= '{1}' AND a.`日期` <= '{2}'
-                        ORDER BY a.`下单时间`;'''.format(team, last_month, yesterday)
-            df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_sql('d1', con=self.engine1, index=False, if_exists='replace')
-            print('正在写入' + match[team] + ' 全部签收表中…………')
-            if team == 'slrb':
-                sql = 'REPLACE INTO {}_zqsb_rb SELECT *, NOW() 更新时间 FROM d1;'.format(team)
-            else:
-                sql = 'REPLACE INTO {}_zqsb SELECT *, NOW() 更新时间 FROM d1;'.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
-            print('----已写入' + match[team] + '全部签收表中')
-    # 团队品类签收率查询
-    def OrderQuan(self, team, tem):
-        match1 = {'slgat': '港台',
-                 'sltg': '泰国',
-                 'slxmt': '新马',
-                 'slzb': '直播团队',
-                 'slyn': '越南',
-                 'slrb': '日本'}
-        match = {'slgat': '"神龙家族-港澳台"',
-                 'sltg': '"神龙家族-泰国"',
-                 'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚"',
-                 'slzb': '"神龙家族-直播团队"',
-                 'slyn': '"神龙家族-越南"',
-                 'slrb': '"神龙家族-日本团队"'}
-        emailAdd = {'slgat': 'giikinliujun@163.com',
-                    'sltg': '1845389861@qq.com',
-                    'slxmt': 'zhangjing@giikin.com',
-                    'slzb': '直播团队',
-                    'slyn': '越南',
-                    'slrb': 'sunyaru@giikin.com'}
-        # yesterday = (datetime.datetime.now()).strftime('%Y-%m-%d') + ' 23:59:59'
-        yesterday = (datetime.datetime.now().replace(month=11, day=6)).strftime('%Y-%m')
-        print(yesterday)
-        # last_month = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
-        last_month = (datetime.datetime.now().replace(month=11, day=1)).strftime('%Y-%m')
-        print(last_month)
-        listT = []                                          # 查询sql的结果 存放池
-        if team == 'sltg' or team == 'slrb':
-            sql = '''SELECT IFNULL(ql.币种,'合计') 币种,IFNULL(ql.年月,'合计') 年月,IFNULL(ql.是否改派,'合计') 是否改派,IFNULL(ql.父级分类,'合计') 父级分类,IFNULL(ql.产品名称,'合计') 产品名称,IFNULL(ql.物流方式,'合计') 物流方式,IFNULL(ql.旬,'合计') 旬,签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成,全部,
-        ql.签收 / ql.已完成 AS 完成签收, ql.签收 / ql.全部 AS 总计签收, ql.已完成 / ql.全部 AS 完成占比 ,ql.已发货 / ql.已完成 AS '已完成/已发货' , ql.已退货 / ql.全部 AS 退货率,'' 已发货占比,'' 已完成占比,'' 全部占比 FROM
-(SELECT qq.币种,qq.年月,qq.是否改派,qq.父级分类,qq.产品名称,qq.物流方式, qq.旬,sum(签收) 签收,sum(拒收) 拒收,sum(在途) 在途,sum(未发货) 未发货,sum(未上线) 未上线,sum(已退货) 已退货,sum(理赔) 理赔,sum(自发头程丢件) 自发头程丢件,sum(已发货) 已发货,sum(已完成) 已完成,sum(全部) 全部 FROM
-(SELECT q.币种,q.年月,q.是否改派,q.父级分类,q.产品名称,q.物流方式, q.旬,已签收 签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成 FROM
-(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已签收 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('已签收')
-GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) q
-LEFT JOIN
-(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 拒收 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('拒收') 
-GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) j
-ON q.`币种` = j.`币种` AND q.`年月` = j.`年月` AND q.`产品名称` = j.`产品名称` AND q.`物流方式` = j.`物流方式` AND q.`旬` = j.`旬` AND q.`父级分类` = j.`父级分类` AND q.`是否改派` = j.`是否改派`
-LEFT JOIN
-(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 在途 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('在途') 
-GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) zz
-ON  q.`币种` = zz.`币种` AND q.`年月` = zz.`年月`AND q.`产品名称` = zz.`产品名称`AND q.`物流方式` = zz.`物流方式`AND q.`旬` = zz.`旬` AND q.`父级分类` = zz.`父级分类` AND q.`是否改派` = zz.`是否改派`
-LEFT JOIN
-(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未发货 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('未发货') 
-GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) wf
-ON  wf.`币种` = q.`币种` AND wf.`年月` = q.`年月`AND wf.`产品名称` = q.`产品名称`AND wf.`物流方式` = q.`物流方式`AND wf.`旬` = q.`旬` AND q.`父级分类` = wf.`父级分类` AND q.`是否改派` = wf.`是否改派`
-LEFT JOIN
-(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未上线 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('未上线')
-GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) ws
-ON  ws.`币种` = q.`币种` AND ws.`年月` = q.`年月`AND ws.`产品名称` = q.`产品名称`AND ws.`物流方式` = q.`物流方式`AND ws.`旬` = q.`旬`AND q.`父级分类` = ws.`父级分类` AND q.`是否改派` = ws.`是否改派`
-LEFT JOIN
-(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已退货 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('已退货') 
-GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) th
-ON  q.`币种` = th.`币种` AND q.`年月` = th.`年月`AND q.`产品名称` = th.`产品名称`AND q.`物流方式` = th.`物流方式`AND q.`旬` = th.`旬`AND q.`父级分类` = th.`父级分类`AND q.`是否改派` = th.`是否改派`
-LEFT JOIN
-(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 理赔 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('理赔') 
-GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) lp
-ON  lp.`币种` = q.`币种` AND lp.`年月` = q.`年月`AND lp.`产品名称` = q.`产品名称`AND lp.`物流方式` = q.`物流方式`AND lp.`旬` = q.`旬`AND q.`父级分类` = lp.`父级分类`AND q.`是否改派` = lp.`是否改派`
-LEFT JOIN
-(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 自发头程丢件 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('自发头程丢件') 
-GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) zf
-ON  zf.`币种` = q.`币种` AND zf.`年月` = q.`年月`AND zf.`产品名称` = q.`产品名称`AND zf.`物流方式` = q.`物流方式`AND zf.`旬` = q.`旬`AND q.`父级分类` = zf.`父级分类`AND q.`是否改派` = zf.`是否改派`
-LEFT JOIN
-(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已发货 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线') 
-GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) fh
-ON  fh.`币种` = q.`币种` AND fh.`年月` = q.`年月`AND fh.`产品名称` = q.`产品名称`AND fh.`物流方式` = q.`物流方式`AND fh.`旬` = q.`旬`AND q.`父级分类` = fh.`父级分类`AND q.`是否改派` = fh.`是否改派`
-LEFT JOIN
-(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已完成 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货') 
-GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) wc
-ON  wc.`币种` = q.`币种` AND wc.`年月` = q.`年月`AND wc.`产品名称` = q.`产品名称`AND wc.`物流方式` = q.`物流方式`AND wc.`旬` = q.`旬`AND q.`父级分类` = wc.`父级分类`AND q.`是否改派` = wc.`是否改派`
-ORDER BY 币种,年月) qq
-LEFT JOIN
-(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 全部 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线','未发货')
-GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) qb
-ON  qb.`币种` = qq.`币种` AND qb.`年月` = qq.`年月`AND qb.`产品名称` = qq.`产品名称`AND qb.`物流方式` = qq.`物流方式`AND qb.`旬` = qq.`旬`AND qq.`父级分类` = qb.`父级分类`AND qq.`是否改派` = qb.`是否改派`
-GROUP BY 年月,是否改派,父级分类,产品名称,物流方式,旬
-with rollup) ql
-where ql.`年月`>= '{1}' AND ql.`年月` <= '{2}';'''.format(team, last_month, yesterday)
-            sql2 = '''SELECT IFNULL(ql.币种,'合计') 币种,IFNULL(ql.年月,'合计') 年月,IFNULL(ql.父级分类,'合计') 父级分类,IFNULL(ql.产品名称,'合计') 产品名称,IFNULL(ql.物流方式,'合计') 物流方式,IFNULL(ql.旬,'合计') 旬,签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成,全部,ql.签收 / ql.已完成 AS 完成签收, ql.签收 / ql.全部 AS 总计签收, ql.已完成 / ql.全部 AS 完成占比 ,ql.已发货 / ql.已完成 AS '已完成/已发货' , ql.已退货 / ql.全部 AS 退货率,'' 已发货占比,'' 已完成占比,'' 全部占比 FROM
-(SELECT qq.币种,qq.年月,qq.父级分类,qq.产品名称,qq.物流方式, qq.旬,sum(签收) 签收,sum(拒收) 拒收,sum(在途) 在途,sum(未发货) 未发货,sum(未上线) 未上线,sum(已退货) 已退货,sum(理赔) 理赔,sum(自发头程丢件) 自发头程丢件,sum(已发货) 已发货,sum(已完成) 已完成,sum(全部) 全部 FROM
-(SELECT q.币种,q.年月,q.父级分类,q.产品名称,q.物流方式, q.旬,已签收 签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成 FROM
-(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已签收 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('已签收')
-GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) q
-LEFT JOIN
-(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 拒收 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('拒收') 
-GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) j
-ON q.`币种` = j.`币种` AND q.`年月` = j.`年月` AND q.`产品名称` = j.`产品名称` AND q.`物流方式` = j.`物流方式` AND q.`旬` = j.`旬` AND q.`父级分类` = j.`父级分类` 
-LEFT JOIN
-(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 在途 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('在途') 
-GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) zz
-ON  q.`币种` = zz.`币种` AND q.`年月` = zz.`年月`AND q.`产品名称` = zz.`产品名称`AND q.`物流方式` = zz.`物流方式`AND q.`旬` = zz.`旬` AND q.`父级分类` = zz.`父级分类` 
-LEFT JOIN
-(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未发货 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('未发货') 
-GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) wf
-ON  wf.`币种` = q.`币种` AND wf.`年月` = q.`年月`AND wf.`产品名称` = q.`产品名称`AND wf.`物流方式` = q.`物流方式`AND wf.`旬` = q.`旬` AND q.`父级分类` = wf.`父级分类`
-LEFT JOIN
-(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未上线 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('未上线')
-GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) ws
-ON  ws.`币种` = q.`币种` AND ws.`年月` = q.`年月`AND ws.`产品名称` = q.`产品名称`AND ws.`物流方式` = q.`物流方式`AND ws.`旬` = q.`旬`AND q.`父级分类` = ws.`父级分类` 
-LEFT JOIN
-(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已退货 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('已退货') 
-GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) th
-ON  q.`币种` = th.`币种` AND q.`年月` = th.`年月`AND q.`产品名称` = th.`产品名称`AND q.`物流方式` = th.`物流方式`AND q.`旬` = th.`旬`AND q.`父级分类` = th.`父级分类`
-LEFT JOIN
-(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 理赔 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('理赔') 
-GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) lp
-ON  lp.`币种` = q.`币种` AND lp.`年月` = q.`年月`AND lp.`产品名称` = q.`产品名称`AND lp.`物流方式` = q.`物流方式`AND lp.`旬` = q.`旬`AND q.`父级分类` = lp.`父级分类`
-LEFT JOIN
-(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 自发头程丢件 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('自发头程丢件') 
-GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) zf
-ON  zf.`币种` = q.`币种` AND zf.`年月` = q.`年月`AND zf.`产品名称` = q.`产品名称`AND zf.`物流方式` = q.`物流方式`AND zf.`旬` = q.`旬`AND q.`父级分类` = zf.`父级分类`
-LEFT JOIN
-(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已发货 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线') 
-GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) fh
-ON  fh.`币种` = q.`币种` AND fh.`年月` = q.`年月`AND fh.`产品名称` = q.`产品名称`AND fh.`物流方式` = q.`物流方式`AND fh.`旬` = q.`旬`AND q.`父级分类` = fh.`父级分类`
-LEFT JOIN
-(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已完成 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货') 
-GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) wc
-ON  wc.`币种` = q.`币种` AND wc.`年月` = q.`年月`AND wc.`产品名称` = q.`产品名称`AND wc.`物流方式` = q.`物流方式`AND wc.`旬` = q.`旬`AND q.`父级分类` = wc.`父级分类`
-ORDER BY 币种,年月) qq
-LEFT JOIN
-(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 全部 FROM {0}_zqsb 				
-WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线','未发货')
-GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-ORDER BY 币种,年月) qb
-ON  qb.`币种` = qq.`币种` AND qb.`年月` = qq.`年月`AND qb.`产品名称` = qq.`产品名称`AND qb.`物流方式` = qq.`物流方式`AND qb.`旬` = qq.`旬`AND qq.`父级分类` = qb.`父级分类`
-GROUP BY 年月,父级分类,产品名称,物流方式,旬
-with rollup) ql
-where ql.`年月`>= '{1}' AND ql.`年月` <= '{2}';'''.format(team, last_month, yesterday)
-        else:
-            sql = '''SELECT IFNULL(ql.币种,'合计') 币种,IFNULL(ql.年月,'合计') 年月,IFNULL(ql.是否改派,'合计') 是否改派,IFNULL(ql.父级分类,'合计') 父级分类,IFNULL(ql.产品名称,'合计') 产品名称,IFNULL(ql.物流方式,'合计') 物流方式,IFNULL(ql.旬,'合计') 旬,签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成,全部,ql.签收 / ql.已完成 AS 完成签收, ql.签收 / ql.全部 AS 总计签收, ql.已完成 / ql.全部 AS 完成占比 ,ql.已发货 / ql.已完成 AS '已完成/已发货' , ql.已退货 / ql.全部 AS 退货率,'' 已发货占比,'' 已完成占比,'' 全部占比 FROM
-                (SELECT qq.币种,qq.年月,qq.是否改派,qq.父级分类,qq.产品名称,qq.物流方式, qq.旬,sum(签收) 签收,sum(拒收) 拒收,sum(在途) 在途,sum(未发货) 未发货,sum(未上线) 未上线,sum(已退货) 已退货,sum(理赔) 理赔,sum(自发头程丢件) 自发头程丢件,sum(已发货) 已发货,sum(已完成) 已完成,sum(全部) 全部 FROM
-                (SELECT q.币种,q.年月,q.是否改派,q.父级分类,q.产品名称,q.物流方式, q.旬,已签收 签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成 FROM
-                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已签收 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('已签收') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) q
-                LEFT JOIN
-                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 拒收 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('拒收')  AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) j
-                ON q.`币种` = j.`币种` AND q.`年月` = j.`年月` AND q.`产品名称` = j.`产品名称` AND q.`物流方式` = j.`物流方式` AND q.`旬` = j.`旬` AND q.`父级分类` = j.`父级分类` AND q.`是否改派` = j.`是否改派`
-                LEFT JOIN
-                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 在途 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('在途') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) zz
-                ON  q.`币种` = zz.`币种` AND q.`年月` = zz.`年月`AND q.`产品名称` = zz.`产品名称`AND q.`物流方式` = zz.`物流方式`AND q.`旬` = zz.`旬` AND q.`父级分类` = zz.`父级分类` AND q.`是否改派` = zz.`是否改派`
-                LEFT JOIN
-                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未发货 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('未发货') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) wf
-                ON  wf.`币种` = q.`币种` AND wf.`年月` = q.`年月`AND wf.`产品名称` = q.`产品名称`AND wf.`物流方式` = q.`物流方式`AND wf.`旬` = q.`旬` AND q.`父级分类` = wf.`父级分类` AND q.`是否改派` = wf.`是否改派`
-                LEFT JOIN
-                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未上线 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('未上线')AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) ws
-                ON  ws.`币种` = q.`币种` AND ws.`年月` = q.`年月`AND ws.`产品名称` = q.`产品名称`AND ws.`物流方式` = q.`物流方式`AND ws.`旬` = q.`旬`AND q.`父级分类` = ws.`父级分类` AND q.`是否改派` = ws.`是否改派`
-                LEFT JOIN
-                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已退货 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('已退货') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) th
-                ON  q.`币种` = th.`币种` AND q.`年月` = th.`年月`AND q.`产品名称` = th.`产品名称`AND q.`物流方式` = th.`物流方式`AND q.`旬` = th.`旬`AND q.`父级分类` = th.`父级分类`AND q.`是否改派` = th.`是否改派`
-                LEFT JOIN
-                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 理赔 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('理赔') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) lp
-                ON  lp.`币种` = q.`币种` AND lp.`年月` = q.`年月`AND lp.`产品名称` = q.`产品名称`AND lp.`物流方式` = q.`物流方式`AND lp.`旬` = q.`旬`AND q.`父级分类` = lp.`父级分类`AND q.`是否改派` = lp.`是否改派`
-                LEFT JOIN
-                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 自发头程丢件 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('自发头程丢件') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) zf
-                ON  zf.`币种` = q.`币种` AND zf.`年月` = q.`年月`AND zf.`产品名称` = q.`产品名称`AND zf.`物流方式` = q.`物流方式`AND zf.`旬` = q.`旬`AND q.`父级分类` = zf.`父级分类`AND q.`是否改派` = zf.`是否改派`
-                LEFT JOIN
-                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已发货 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) fh
-                ON  fh.`币种` = q.`币种` AND fh.`年月` = q.`年月`AND fh.`产品名称` = q.`产品名称`AND fh.`物流方式` = q.`物流方式`AND fh.`旬` = q.`旬`AND q.`父级分类` = fh.`父级分类`AND q.`是否改派` = fh.`是否改派`
-                LEFT JOIN
-                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已完成 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) wc
-                ON  wc.`币种` = q.`币种` AND wc.`年月` = q.`年月`AND wc.`产品名称` = q.`产品名称`AND wc.`物流方式` = q.`物流方式`AND wc.`旬` = q.`旬`AND q.`父级分类` = wc.`父级分类`AND q.`是否改派` = wc.`是否改派`
-                ORDER BY 币种,年月) qq
-                LEFT JOIN
-                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 全部 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线','未发货') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) qb
-                ON  qb.`币种` = qq.`币种` AND qb.`年月` = qq.`年月`AND qb.`产品名称` = qq.`产品名称`AND qb.`物流方式` = qq.`物流方式`AND qb.`旬` = qq.`旬`AND qq.`父级分类` = qb.`父级分类`AND qq.`是否改派` = qb.`是否改派`
-                GROUP BY 年月,是否改派,父级分类,产品名称,物流方式,旬
-                with rollup) ql;'''.format(team, tem)
-            sql2 = '''SELECT IFNULL(ql.币种,'合计') 币种,IFNULL(ql.年月,'合计') 年月,IFNULL(ql.父级分类,'合计') 父级分类,IFNULL(ql.产品名称,'合计') 产品名称,IFNULL(ql.物流方式,'合计') 物流方式,IFNULL(ql.旬,'合计') 旬,签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成,全部,ql.签收 / ql.已完成 AS 完成签收, ql.签收 / ql.全部 AS 总计签收, ql.已完成 / ql.全部 AS 完成占比 ,ql.已发货 / ql.已完成 AS '已完成/已发货' , ql.已退货 / ql.全部 AS 退货率,'' 已发货占比,'' 已完成占比,'' 全部占比 FROM
-                (SELECT qq.币种,qq.年月,qq.父级分类,qq.产品名称,qq.物流方式, qq.旬,sum(签收) 签收,sum(拒收) 拒收,sum(在途) 在途,sum(未发货) 未发货,sum(未上线) 未上线,sum(已退货) 已退货,sum(理赔) 理赔,sum(自发头程丢件) 自发头程丢件,sum(已发货) 已发货,sum(已完成) 已完成,sum(全部) 全部 FROM
-                (SELECT q.币种,q.年月,q.父级分类,q.产品名称,q.物流方式, q.旬,已签收 签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成 FROM
-                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已签收 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('已签收') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) q
-                LEFT JOIN
-                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 拒收 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('拒收') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) j
-                ON q.`币种` = j.`币种` AND q.`年月` = j.`年月` AND q.`产品名称` = j.`产品名称` AND q.`物流方式` = j.`物流方式` AND q.`旬` = j.`旬` AND q.`父级分类` = j.`父级分类` 
-                LEFT JOIN
-                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 在途 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('在途') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) zz
-                ON  q.`币种` = zz.`币种` AND q.`年月` = zz.`年月`AND q.`产品名称` = zz.`产品名称`AND q.`物流方式` = zz.`物流方式`AND q.`旬` = zz.`旬` AND q.`父级分类` = zz.`父级分类` 
-                LEFT JOIN
-                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未发货 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('未发货') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) wf
-                ON  wf.`币种` = q.`币种` AND wf.`年月` = q.`年月`AND wf.`产品名称` = q.`产品名称`AND wf.`物流方式` = q.`物流方式`AND wf.`旬` = q.`旬` AND q.`父级分类` = wf.`父级分类`
-                LEFT JOIN
-                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未上线 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('未上线')AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) ws
-                ON  ws.`币种` = q.`币种` AND ws.`年月` = q.`年月`AND ws.`产品名称` = q.`产品名称`AND ws.`物流方式` = q.`物流方式`AND ws.`旬` = q.`旬`AND q.`父级分类` = ws.`父级分类` 
-                LEFT JOIN
-                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已退货 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('已退货') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) th
-                ON  q.`币种` = th.`币种` AND q.`年月` = th.`年月`AND q.`产品名称` = th.`产品名称`AND q.`物流方式` = th.`物流方式`AND q.`旬` = th.`旬`AND q.`父级分类` = th.`父级分类`
-                LEFT JOIN
-                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 理赔 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('理赔') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) lp
-                ON  lp.`币种` = q.`币种` AND lp.`年月` = q.`年月`AND lp.`产品名称` = q.`产品名称`AND lp.`物流方式` = q.`物流方式`AND lp.`旬` = q.`旬`AND q.`父级分类` = lp.`父级分类`
-                LEFT JOIN
-                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 自发头程丢件 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('自发头程丢件') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) zf
-                ON  zf.`币种` = q.`币种` AND zf.`年月` = q.`年月`AND zf.`产品名称` = q.`产品名称`AND zf.`物流方式` = q.`物流方式`AND zf.`旬` = q.`旬`AND q.`父级分类` = zf.`父级分类`
-                LEFT JOIN
-                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已发货 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) fh
-                ON  fh.`币种` = q.`币种` AND fh.`年月` = q.`年月`AND fh.`产品名称` = q.`产品名称`AND fh.`物流方式` = q.`物流方式`AND fh.`旬` = q.`旬`AND q.`父级分类` = fh.`父级分类`
-                LEFT JOIN
-                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已完成 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) wc
-                ON  wc.`币种` = q.`币种` AND wc.`年月` = q.`年月`AND wc.`产品名称` = q.`产品名称`AND wc.`物流方式` = q.`物流方式`AND wc.`旬` = q.`旬`AND q.`父级分类` = wc.`父级分类`
-                ORDER BY 币种,年月) qq
-                LEFT JOIN
-                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 全部 FROM {0}_zqsb 				
-                WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线','未发货') AND {0}_zqsb.`币种` = '{1}'
-                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
-                ORDER BY 币种,年月) qb
-                ON  qb.`币种` = qq.`币种` AND qb.`年月` = qq.`年月`AND qb.`产品名称` = qq.`产品名称`AND qb.`物流方式` = qq.`物流方式`AND qb.`旬` = qq.`旬`AND qq.`父级分类` = qb.`父级分类`
-                GROUP BY 年月,父级分类,产品名称,物流方式,旬
-                with rollup) ql;'''.format(team, tem)
-        print('正在获取-' + match1[team] + '品类直发签收率…………')
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        listT.append(df)
-        print('正在获取-' + match1[team] + '品类签收率…………')
-        df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
-        listT.append(df2)
-        print('----已获' + match1[team] + '品类签收率')
-        listTValue = []                                               # 查询df的结果 存放池
-        for df_val in listT:
-            columns = list(df_val.columns)                               # 获取数据的标题名，转为列表
-            columns_value = ['完成签收', '总计签收', '完成占比', '已完成/已发货', '退货率']
-            for column_val in columns_value:
-                if column_val in columns:
-                    df_val[column_val] = df_val[column_val].fillna(value=0)
-                    df_val[column_val] = df_val[column_val].apply(lambda x: format(x, '.2%'))
-            print(df_val)
-            listTValue.append(df_val)
-        print('正在写入EXECL中…………')
-        today = datetime.date.today().strftime('%Y.%m.%d')
-        df0 = pd.DataFrame(columns=['A', 'B', 'C', 'D'])
-        df0.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}---(品类)签收率.xlsx'.format(today, match1[team]), index=False)
-        writer = pd.ExcelWriter('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}---(品类)签收率.xlsx'.format(today, match1[team]))
-        listTValue[0].to_excel(excel_writer=writer, sheet_name=match1[team], index=False)
-        listTValue[1].to_excel(excel_writer=writer, sheet_name=match1[team] + '直发', index=False)
-        writer.save()
-        writer.close()
-        print('----已写入excel')
-        # filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}---签收率.xlsx'.format(today, match1[team])]
-        # print('输出文件成功…………')
-        # self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
-        #             emailAdd[team])
-    # 团队花费明细查询
+
+    # 团队花费明细查询（停用）
     def sl_tem_costT(self, team):
         match = {'slgat_zqsb': '港台',
                  'sltg_zqsb': '泰国',
@@ -977,31 +385,362 @@ where ql.`年月`>= '{1}' AND ql.`年月` <= '{2}';'''.format(team, last_month, 
         print('输出文件成功…………')
         # self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
         #             emailAdd[team])
+    # 团队订单签收率查询(停用)
+    def OrderQuan(self, team, tem):
+        match1 = {'slgat': '港台',
+                  'sltg': '泰国',
+                  'slxmt': '新马',
+                  'slzb': '直播团队',
+                  'slyn': '越南',
+                  'slrb': '日本'}
+        match = {'slgat': '"神龙家族-港澳台"',
+                 'sltg': '"神龙家族-泰国"',
+                 'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚"',
+                 'slzb': '"神龙家族-直播团队"',
+                 'slyn': '"神龙家族-越南"',
+                 'slrb': '"神龙家族-日本团队"'}
+        emailAdd = {'slgat': 'giikinliujun@163.com',
+                    'sltg': '1845389861@qq.com',
+                    'slxmt': 'zhangjing@giikin.com',
+                    'slzb': '直播团队',
+                    'slyn': '越南',
+                    'slrb': 'sunyaru@giikin.com'}
+        # yesterday = (datetime.datetime.now()).strftime('%Y-%m-%d') + ' 23:59:59'
+        yesterday = (datetime.datetime.now().replace(month=11, day=6)).strftime('%Y-%m')
+        print(yesterday)
+        # last_month = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
+        last_month = (datetime.datetime.now().replace(month=11, day=1)).strftime('%Y-%m')
+        print(last_month)
+        listT = []  # 查询sql的结果 存放池
+        if team == 'sltg' or team == 'slrb':
+            sql = '''SELECT IFNULL(ql.币种,'合计') 币种,IFNULL(ql.年月,'合计') 年月,IFNULL(ql.是否改派,'合计') 是否改派,IFNULL(ql.父级分类,'合计') 父级分类,IFNULL(ql.产品名称,'合计') 产品名称,IFNULL(ql.物流方式,'合计') 物流方式,IFNULL(ql.旬,'合计') 旬,签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成,全部,
+        ql.签收 / ql.已完成 AS 完成签收, ql.签收 / ql.全部 AS 总计签收, ql.已完成 / ql.全部 AS 完成占比 ,ql.已发货 / ql.已完成 AS '已完成/已发货' , ql.已退货 / ql.全部 AS 退货率,'' 已发货占比,'' 已完成占比,'' 全部占比 FROM
+(SELECT qq.币种,qq.年月,qq.是否改派,qq.父级分类,qq.产品名称,qq.物流方式, qq.旬,sum(签收) 签收,sum(拒收) 拒收,sum(在途) 在途,sum(未发货) 未发货,sum(未上线) 未上线,sum(已退货) 已退货,sum(理赔) 理赔,sum(自发头程丢件) 自发头程丢件,sum(已发货) 已发货,sum(已完成) 已完成,sum(全部) 全部 FROM
+(SELECT q.币种,q.年月,q.是否改派,q.父级分类,q.产品名称,q.物流方式, q.旬,已签收 签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成 FROM
+(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已签收 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('已签收')
+GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) q
+LEFT JOIN
+(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 拒收 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('拒收') 
+GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) j
+ON q.`币种` = j.`币种` AND q.`年月` = j.`年月` AND q.`产品名称` = j.`产品名称` AND q.`物流方式` = j.`物流方式` AND q.`旬` = j.`旬` AND q.`父级分类` = j.`父级分类` AND q.`是否改派` = j.`是否改派`
+LEFT JOIN
+(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 在途 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('在途') 
+GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) zz
+ON  q.`币种` = zz.`币种` AND q.`年月` = zz.`年月`AND q.`产品名称` = zz.`产品名称`AND q.`物流方式` = zz.`物流方式`AND q.`旬` = zz.`旬` AND q.`父级分类` = zz.`父级分类` AND q.`是否改派` = zz.`是否改派`
+LEFT JOIN
+(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未发货 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('未发货') 
+GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) wf
+ON  wf.`币种` = q.`币种` AND wf.`年月` = q.`年月`AND wf.`产品名称` = q.`产品名称`AND wf.`物流方式` = q.`物流方式`AND wf.`旬` = q.`旬` AND q.`父级分类` = wf.`父级分类` AND q.`是否改派` = wf.`是否改派`
+LEFT JOIN
+(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未上线 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('未上线')
+GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) ws
+ON  ws.`币种` = q.`币种` AND ws.`年月` = q.`年月`AND ws.`产品名称` = q.`产品名称`AND ws.`物流方式` = q.`物流方式`AND ws.`旬` = q.`旬`AND q.`父级分类` = ws.`父级分类` AND q.`是否改派` = ws.`是否改派`
+LEFT JOIN
+(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已退货 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('已退货') 
+GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) th
+ON  q.`币种` = th.`币种` AND q.`年月` = th.`年月`AND q.`产品名称` = th.`产品名称`AND q.`物流方式` = th.`物流方式`AND q.`旬` = th.`旬`AND q.`父级分类` = th.`父级分类`AND q.`是否改派` = th.`是否改派`
+LEFT JOIN
+(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 理赔 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('理赔') 
+GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) lp
+ON  lp.`币种` = q.`币种` AND lp.`年月` = q.`年月`AND lp.`产品名称` = q.`产品名称`AND lp.`物流方式` = q.`物流方式`AND lp.`旬` = q.`旬`AND q.`父级分类` = lp.`父级分类`AND q.`是否改派` = lp.`是否改派`
+LEFT JOIN
+(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 自发头程丢件 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('自发头程丢件') 
+GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) zf
+ON  zf.`币种` = q.`币种` AND zf.`年月` = q.`年月`AND zf.`产品名称` = q.`产品名称`AND zf.`物流方式` = q.`物流方式`AND zf.`旬` = q.`旬`AND q.`父级分类` = zf.`父级分类`AND q.`是否改派` = zf.`是否改派`
+LEFT JOIN
+(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已发货 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线') 
+GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) fh
+ON  fh.`币种` = q.`币种` AND fh.`年月` = q.`年月`AND fh.`产品名称` = q.`产品名称`AND fh.`物流方式` = q.`物流方式`AND fh.`旬` = q.`旬`AND q.`父级分类` = fh.`父级分类`AND q.`是否改派` = fh.`是否改派`
+LEFT JOIN
+(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已完成 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货') 
+GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) wc
+ON  wc.`币种` = q.`币种` AND wc.`年月` = q.`年月`AND wc.`产品名称` = q.`产品名称`AND wc.`物流方式` = q.`物流方式`AND wc.`旬` = q.`旬`AND q.`父级分类` = wc.`父级分类`AND q.`是否改派` = wc.`是否改派`
+ORDER BY 币种,年月) qq
+LEFT JOIN
+(SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 全部 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线','未发货')
+GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) qb
+ON  qb.`币种` = qq.`币种` AND qb.`年月` = qq.`年月`AND qb.`产品名称` = qq.`产品名称`AND qb.`物流方式` = qq.`物流方式`AND qb.`旬` = qq.`旬`AND qq.`父级分类` = qb.`父级分类`AND qq.`是否改派` = qb.`是否改派`
+GROUP BY 年月,是否改派,父级分类,产品名称,物流方式,旬
+with rollup) ql
+where ql.`年月`>= '{1}' AND ql.`年月` <= '{2}';'''.format(team, last_month, yesterday)
+            sql2 = '''SELECT IFNULL(ql.币种,'合计') 币种,IFNULL(ql.年月,'合计') 年月,IFNULL(ql.父级分类,'合计') 父级分类,IFNULL(ql.产品名称,'合计') 产品名称,IFNULL(ql.物流方式,'合计') 物流方式,IFNULL(ql.旬,'合计') 旬,签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成,全部,ql.签收 / ql.已完成 AS 完成签收, ql.签收 / ql.全部 AS 总计签收, ql.已完成 / ql.全部 AS 完成占比 ,ql.已发货 / ql.已完成 AS '已完成/已发货' , ql.已退货 / ql.全部 AS 退货率,'' 已发货占比,'' 已完成占比,'' 全部占比 FROM
+(SELECT qq.币种,qq.年月,qq.父级分类,qq.产品名称,qq.物流方式, qq.旬,sum(签收) 签收,sum(拒收) 拒收,sum(在途) 在途,sum(未发货) 未发货,sum(未上线) 未上线,sum(已退货) 已退货,sum(理赔) 理赔,sum(自发头程丢件) 自发头程丢件,sum(已发货) 已发货,sum(已完成) 已完成,sum(全部) 全部 FROM
+(SELECT q.币种,q.年月,q.父级分类,q.产品名称,q.物流方式, q.旬,已签收 签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成 FROM
+(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已签收 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('已签收')
+GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) q
+LEFT JOIN
+(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 拒收 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('拒收') 
+GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) j
+ON q.`币种` = j.`币种` AND q.`年月` = j.`年月` AND q.`产品名称` = j.`产品名称` AND q.`物流方式` = j.`物流方式` AND q.`旬` = j.`旬` AND q.`父级分类` = j.`父级分类` 
+LEFT JOIN
+(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 在途 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('在途') 
+GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) zz
+ON  q.`币种` = zz.`币种` AND q.`年月` = zz.`年月`AND q.`产品名称` = zz.`产品名称`AND q.`物流方式` = zz.`物流方式`AND q.`旬` = zz.`旬` AND q.`父级分类` = zz.`父级分类` 
+LEFT JOIN
+(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未发货 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('未发货') 
+GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) wf
+ON  wf.`币种` = q.`币种` AND wf.`年月` = q.`年月`AND wf.`产品名称` = q.`产品名称`AND wf.`物流方式` = q.`物流方式`AND wf.`旬` = q.`旬` AND q.`父级分类` = wf.`父级分类`
+LEFT JOIN
+(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未上线 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('未上线')
+GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) ws
+ON  ws.`币种` = q.`币种` AND ws.`年月` = q.`年月`AND ws.`产品名称` = q.`产品名称`AND ws.`物流方式` = q.`物流方式`AND ws.`旬` = q.`旬`AND q.`父级分类` = ws.`父级分类` 
+LEFT JOIN
+(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已退货 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('已退货') 
+GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) th
+ON  q.`币种` = th.`币种` AND q.`年月` = th.`年月`AND q.`产品名称` = th.`产品名称`AND q.`物流方式` = th.`物流方式`AND q.`旬` = th.`旬`AND q.`父级分类` = th.`父级分类`
+LEFT JOIN
+(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 理赔 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('理赔') 
+GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) lp
+ON  lp.`币种` = q.`币种` AND lp.`年月` = q.`年月`AND lp.`产品名称` = q.`产品名称`AND lp.`物流方式` = q.`物流方式`AND lp.`旬` = q.`旬`AND q.`父级分类` = lp.`父级分类`
+LEFT JOIN
+(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 自发头程丢件 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('自发头程丢件') 
+GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) zf
+ON  zf.`币种` = q.`币种` AND zf.`年月` = q.`年月`AND zf.`产品名称` = q.`产品名称`AND zf.`物流方式` = q.`物流方式`AND zf.`旬` = q.`旬`AND q.`父级分类` = zf.`父级分类`
+LEFT JOIN
+(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已发货 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线') 
+GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) fh
+ON  fh.`币种` = q.`币种` AND fh.`年月` = q.`年月`AND fh.`产品名称` = q.`产品名称`AND fh.`物流方式` = q.`物流方式`AND fh.`旬` = q.`旬`AND q.`父级分类` = fh.`父级分类`
+LEFT JOIN
+(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已完成 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货') 
+GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) wc
+ON  wc.`币种` = q.`币种` AND wc.`年月` = q.`年月`AND wc.`产品名称` = q.`产品名称`AND wc.`物流方式` = q.`物流方式`AND wc.`旬` = q.`旬`AND q.`父级分类` = wc.`父级分类`
+ORDER BY 币种,年月) qq
+LEFT JOIN
+(SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 全部 FROM {0}_zqsb 				
+WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线','未发货')
+GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+ORDER BY 币种,年月) qb
+ON  qb.`币种` = qq.`币种` AND qb.`年月` = qq.`年月`AND qb.`产品名称` = qq.`产品名称`AND qb.`物流方式` = qq.`物流方式`AND qb.`旬` = qq.`旬`AND qq.`父级分类` = qb.`父级分类`
+GROUP BY 年月,父级分类,产品名称,物流方式,旬
+with rollup) ql
+where ql.`年月`>= '{1}' AND ql.`年月` <= '{2}';'''.format(team, last_month, yesterday)
+        else:
+            sql = '''SELECT IFNULL(ql.币种,'合计') 币种,IFNULL(ql.年月,'合计') 年月,IFNULL(ql.是否改派,'合计') 是否改派,IFNULL(ql.父级分类,'合计') 父级分类,IFNULL(ql.产品名称,'合计') 产品名称,IFNULL(ql.物流方式,'合计') 物流方式,IFNULL(ql.旬,'合计') 旬,签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成,全部,ql.签收 / ql.已完成 AS 完成签收, ql.签收 / ql.全部 AS 总计签收, ql.已完成 / ql.全部 AS 完成占比 ,ql.已发货 / ql.已完成 AS '已完成/已发货' , ql.已退货 / ql.全部 AS 退货率,'' 已发货占比,'' 已完成占比,'' 全部占比 FROM
+                (SELECT qq.币种,qq.年月,qq.是否改派,qq.父级分类,qq.产品名称,qq.物流方式, qq.旬,sum(签收) 签收,sum(拒收) 拒收,sum(在途) 在途,sum(未发货) 未发货,sum(未上线) 未上线,sum(已退货) 已退货,sum(理赔) 理赔,sum(自发头程丢件) 自发头程丢件,sum(已发货) 已发货,sum(已完成) 已完成,sum(全部) 全部 FROM
+                (SELECT q.币种,q.年月,q.是否改派,q.父级分类,q.产品名称,q.物流方式, q.旬,已签收 签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成 FROM
+                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已签收 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('已签收') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) q
+                LEFT JOIN
+                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 拒收 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('拒收')  AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) j
+                ON q.`币种` = j.`币种` AND q.`年月` = j.`年月` AND q.`产品名称` = j.`产品名称` AND q.`物流方式` = j.`物流方式` AND q.`旬` = j.`旬` AND q.`父级分类` = j.`父级分类` AND q.`是否改派` = j.`是否改派`
+                LEFT JOIN
+                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 在途 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('在途') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) zz
+                ON  q.`币种` = zz.`币种` AND q.`年月` = zz.`年月`AND q.`产品名称` = zz.`产品名称`AND q.`物流方式` = zz.`物流方式`AND q.`旬` = zz.`旬` AND q.`父级分类` = zz.`父级分类` AND q.`是否改派` = zz.`是否改派`
+                LEFT JOIN
+                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未发货 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('未发货') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) wf
+                ON  wf.`币种` = q.`币种` AND wf.`年月` = q.`年月`AND wf.`产品名称` = q.`产品名称`AND wf.`物流方式` = q.`物流方式`AND wf.`旬` = q.`旬` AND q.`父级分类` = wf.`父级分类` AND q.`是否改派` = wf.`是否改派`
+                LEFT JOIN
+                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未上线 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('未上线')AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) ws
+                ON  ws.`币种` = q.`币种` AND ws.`年月` = q.`年月`AND ws.`产品名称` = q.`产品名称`AND ws.`物流方式` = q.`物流方式`AND ws.`旬` = q.`旬`AND q.`父级分类` = ws.`父级分类` AND q.`是否改派` = ws.`是否改派`
+                LEFT JOIN
+                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已退货 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('已退货') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) th
+                ON  q.`币种` = th.`币种` AND q.`年月` = th.`年月`AND q.`产品名称` = th.`产品名称`AND q.`物流方式` = th.`物流方式`AND q.`旬` = th.`旬`AND q.`父级分类` = th.`父级分类`AND q.`是否改派` = th.`是否改派`
+                LEFT JOIN
+                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 理赔 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('理赔') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) lp
+                ON  lp.`币种` = q.`币种` AND lp.`年月` = q.`年月`AND lp.`产品名称` = q.`产品名称`AND lp.`物流方式` = q.`物流方式`AND lp.`旬` = q.`旬`AND q.`父级分类` = lp.`父级分类`AND q.`是否改派` = lp.`是否改派`
+                LEFT JOIN
+                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 自发头程丢件 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('自发头程丢件') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) zf
+                ON  zf.`币种` = q.`币种` AND zf.`年月` = q.`年月`AND zf.`产品名称` = q.`产品名称`AND zf.`物流方式` = q.`物流方式`AND zf.`旬` = q.`旬`AND q.`父级分类` = zf.`父级分类`AND q.`是否改派` = zf.`是否改派`
+                LEFT JOIN
+                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已发货 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) fh
+                ON  fh.`币种` = q.`币种` AND fh.`年月` = q.`年月`AND fh.`产品名称` = q.`产品名称`AND fh.`物流方式` = q.`物流方式`AND fh.`旬` = q.`旬`AND q.`父级分类` = fh.`父级分类`AND q.`是否改派` = fh.`是否改派`
+                LEFT JOIN
+                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已完成 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) wc
+                ON  wc.`币种` = q.`币种` AND wc.`年月` = q.`年月`AND wc.`产品名称` = q.`产品名称`AND wc.`物流方式` = q.`物流方式`AND wc.`旬` = q.`旬`AND q.`父级分类` = wc.`父级分类`AND q.`是否改派` = wc.`是否改派`
+                ORDER BY 币种,年月) qq
+                LEFT JOIN
+                (SELECT 币种,年月,是否改派,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 全部 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线','未发货') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,是否改派,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) qb
+                ON  qb.`币种` = qq.`币种` AND qb.`年月` = qq.`年月`AND qb.`产品名称` = qq.`产品名称`AND qb.`物流方式` = qq.`物流方式`AND qb.`旬` = qq.`旬`AND qq.`父级分类` = qb.`父级分类`AND qq.`是否改派` = qb.`是否改派`
+                GROUP BY 年月,是否改派,父级分类,产品名称,物流方式,旬
+                with rollup) ql;'''.format(team, tem)
+            sql2 = '''SELECT IFNULL(ql.币种,'合计') 币种,IFNULL(ql.年月,'合计') 年月,IFNULL(ql.父级分类,'合计') 父级分类,IFNULL(ql.产品名称,'合计') 产品名称,IFNULL(ql.物流方式,'合计') 物流方式,IFNULL(ql.旬,'合计') 旬,签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成,全部,ql.签收 / ql.已完成 AS 完成签收, ql.签收 / ql.全部 AS 总计签收, ql.已完成 / ql.全部 AS 完成占比 ,ql.已发货 / ql.已完成 AS '已完成/已发货' , ql.已退货 / ql.全部 AS 退货率,'' 已发货占比,'' 已完成占比,'' 全部占比 FROM
+                (SELECT qq.币种,qq.年月,qq.父级分类,qq.产品名称,qq.物流方式, qq.旬,sum(签收) 签收,sum(拒收) 拒收,sum(在途) 在途,sum(未发货) 未发货,sum(未上线) 未上线,sum(已退货) 已退货,sum(理赔) 理赔,sum(自发头程丢件) 自发头程丢件,sum(已发货) 已发货,sum(已完成) 已完成,sum(全部) 全部 FROM
+                (SELECT q.币种,q.年月,q.父级分类,q.产品名称,q.物流方式, q.旬,已签收 签收,拒收,在途,未发货,未上线,已退货,理赔,自发头程丢件,已发货,已完成 FROM
+                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已签收 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('已签收') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) q
+                LEFT JOIN
+                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 拒收 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('拒收') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) j
+                ON q.`币种` = j.`币种` AND q.`年月` = j.`年月` AND q.`产品名称` = j.`产品名称` AND q.`物流方式` = j.`物流方式` AND q.`旬` = j.`旬` AND q.`父级分类` = j.`父级分类` 
+                LEFT JOIN
+                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 在途 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('在途') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) zz
+                ON  q.`币种` = zz.`币种` AND q.`年月` = zz.`年月`AND q.`产品名称` = zz.`产品名称`AND q.`物流方式` = zz.`物流方式`AND q.`旬` = zz.`旬` AND q.`父级分类` = zz.`父级分类` 
+                LEFT JOIN
+                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未发货 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('未发货') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) wf
+                ON  wf.`币种` = q.`币种` AND wf.`年月` = q.`年月`AND wf.`产品名称` = q.`产品名称`AND wf.`物流方式` = q.`物流方式`AND wf.`旬` = q.`旬` AND q.`父级分类` = wf.`父级分类`
+                LEFT JOIN
+                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 未上线 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('未上线')AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) ws
+                ON  ws.`币种` = q.`币种` AND ws.`年月` = q.`年月`AND ws.`产品名称` = q.`产品名称`AND ws.`物流方式` = q.`物流方式`AND ws.`旬` = q.`旬`AND q.`父级分类` = ws.`父级分类` 
+                LEFT JOIN
+                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已退货 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('已退货') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) th
+                ON  q.`币种` = th.`币种` AND q.`年月` = th.`年月`AND q.`产品名称` = th.`产品名称`AND q.`物流方式` = th.`物流方式`AND q.`旬` = th.`旬`AND q.`父级分类` = th.`父级分类`
+                LEFT JOIN
+                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 理赔 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('理赔') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) lp
+                ON  lp.`币种` = q.`币种` AND lp.`年月` = q.`年月`AND lp.`产品名称` = q.`产品名称`AND lp.`物流方式` = q.`物流方式`AND lp.`旬` = q.`旬`AND q.`父级分类` = lp.`父级分类`
+                LEFT JOIN
+                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 自发头程丢件 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('自发头程丢件') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) zf
+                ON  zf.`币种` = q.`币种` AND zf.`年月` = q.`年月`AND zf.`产品名称` = q.`产品名称`AND zf.`物流方式` = q.`物流方式`AND zf.`旬` = q.`旬`AND q.`父级分类` = zf.`父级分类`
+                LEFT JOIN
+                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已发货 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) fh
+                ON  fh.`币种` = q.`币种` AND fh.`年月` = q.`年月`AND fh.`产品名称` = q.`产品名称`AND fh.`物流方式` = q.`物流方式`AND fh.`旬` = q.`旬`AND q.`父级分类` = fh.`父级分类`
+                LEFT JOIN
+                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 已完成 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) wc
+                ON  wc.`币种` = q.`币种` AND wc.`年月` = q.`年月`AND wc.`产品名称` = q.`产品名称`AND wc.`物流方式` = q.`物流方式`AND wc.`旬` = q.`旬`AND q.`父级分类` = wc.`父级分类`
+                ORDER BY 币种,年月) qq
+                LEFT JOIN
+                (SELECT 币种,年月,父级分类,CONCAT(产品id, 产品名称) 产品名称,物流方式, 旬,COUNT(最终状态) 全部 FROM {0}_zqsb 				
+                WHERE {0}_zqsb.最终状态 IN ('已签收','拒收','理赔','已退货','在途','未上线','未发货') AND {0}_zqsb.`币种` = '{1}'
+                GROUP BY 币种,年月,父级分类,产品名称,物流方式,旬
+                ORDER BY 币种,年月) qb
+                ON  qb.`币种` = qq.`币种` AND qb.`年月` = qq.`年月`AND qb.`产品名称` = qq.`产品名称`AND qb.`物流方式` = qq.`物流方式`AND qb.`旬` = qq.`旬`AND qq.`父级分类` = qb.`父级分类`
+                GROUP BY 年月,父级分类,产品名称,物流方式,旬
+                with rollup) ql;'''.format(team, tem)
+        print('正在获取-' + match1[team] + '品类直发签收率…………')
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df)
+        print('正在获取-' + match1[team] + '品类签收率…………')
+        df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
+        listT.append(df2)
+        print('----已获' + match1[team] + '品类签收率')
+        listTValue = []  # 查询df的结果 存放池
+        for df_val in listT:
+            columns = list(df_val.columns)  # 获取数据的标题名，转为列表
+            columns_value = ['完成签收', '总计签收', '完成占比', '已完成/已发货', '退货率']
+            for column_val in columns_value:
+                if column_val in columns:
+                    df_val[column_val] = df_val[column_val].fillna(value=0)
+                    df_val[column_val] = df_val[column_val].apply(lambda x: format(x, '.2%'))
+            print(df_val)
+            listTValue.append(df_val)
+        print('正在写入EXECL中…………')
+        today = datetime.date.today().strftime('%Y.%m.%d')
+        df0 = pd.DataFrame(columns=['A', 'B', 'C', 'D'])
+        df0.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}---(品类)签收率.xlsx'.format(today, match1[team]),
+                     index=False)
+        writer = pd.ExcelWriter(
+            'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}---(品类)签收率.xlsx'.format(today, match1[team]))
+        listTValue[0].to_excel(excel_writer=writer, sheet_name=match1[team], index=False)
+        listTValue[1].to_excel(excel_writer=writer, sheet_name=match1[team] + '直发', index=False)
+        writer.save()
+        writer.close()
+        print('----已写入excel')
+        # filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}---签收率.xlsx'.format(today, match1[team])]
+        # print('输出文件成功…………')
+        # self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
+        #             emailAdd[team])
 if __name__ == '__main__':
     w = WlMysql()
-    # w.exportOrder(team)
-    # w.connectOrderT(team)
     # team = 'slxmt'
     # for tem in ['新加坡', '马来西亚']:
     #     w.OrderQuan(team, tem)
 
-    # team = 'slgat'
-    # for tem in ['台湾', '香港']:
-    #     w.OrderQuan(team, tem)
-
-    # tem = '泰国'
-    # team = 'sltg'
-    # w.OrderQuan(team, tem)
-
-    # tem = '泰国'
-    # team = 'sltg'
-    # w.OrderQuan(team, tem)
-
-    #  订单签收率查询
-    match9 = {'slgat_zqsb': '港台',
-              'sltg_zqsb': '泰国',
-              'slxmt_zqsb': '新马',
-              'slrb_zqsb_rb': '日本'}
+    # 订单签收率查询
+    # match9 = {'slgat_zqsb': '港台',
+    #           'sltg_zqsb': '泰国',
+    #           'slxmt_zqsb': '新马',
+    #           'slrb_zqsb_rb': '日本'}
     # tem = '日本'
-    team = 'slrb_zqsb_rb'
-    w.sl_tem_costT(team)
+    # team = 'slrb_zqsb_rb'
+    # w.sl_tem_costT(team)

@@ -58,23 +58,9 @@ print('输出耗时：', datetime.datetime.now() - start)
 
 
 
-
-
-
-
-
 # ---数据库分段读取---
 # m.creatMyOrder(team)   # 备用获取最近两个月全部订单信息
-
-# # 往前1-12月份的签收表
-# w.creatMyOrderT(team)  # 1-12月查询函数（公用）
-# print('处理耗时：', datetime.datetime.now() - start)
-# w.connectOrderT(team)  # 1-12月查询函数导出（公用）
-# print('输出耗时：', datetime.datetime.now() - start)
-#
-# # 最近两个月份的签收表(备用)
-# m.creatMyOrder(team)
-# # 输出签收率表、(备用)
+# 输出签收率表、(备用)
 # tem = '泰国'
 # w.OrderQuan(team, tem)
 # print('导出耗时：', datetime.datetime.now() - start)

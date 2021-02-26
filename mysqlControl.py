@@ -69,7 +69,7 @@ class MysqlControl(Settings):
         db = pd.read_sql_query(sql=sql, con=self.engine1)
         # db = pd.read_sql(sql=sql, con=self.engine1) or team == 'slgat'
         return db
-    # 备用查询函数--开始
+    # 备用查询函数--开始（停用）
     def creatMyOrder(self, team):
         match = {'slgat': '"神龙家族-港澳台"',
                  'sltg': '"神龙家族-泰国"',
@@ -180,7 +180,7 @@ class MysqlControl(Settings):
                 print('插入失败：', str(Exception) + str(e))
             # print(df)
         return '写入完成'
-    # 备用查询函数--结束
+    # 备用查询函数--结束（停用）
 
     def creatMyOrderSl(self, team):     # 最近五天的全部订单信息
         match = {'slgat': '"神龙家族-港澳台"',
@@ -1292,6 +1292,7 @@ class MysqlControl(Settings):
         # self.e.send(match[team] + '产品花费表', filePath,
         #             emailAdd[team])
         self.d.sl_tem_cost(match2[team], match[team])
+
     # 各团队(泰国)全部订单表-函数
     def tgOrderQuan(self, team):   # 3天内的
         match1 = {'slgat': '港台',
