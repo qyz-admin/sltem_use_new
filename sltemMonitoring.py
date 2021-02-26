@@ -93,11 +93,8 @@ class SltemMonitoring(Settings):
         if info == '---已确认，可以进行同期数据对比':
             print('++++++完成时间确认++++++')
             self.order_Monitoring(team)  # 各月缓存
-            print('缓存耗时：', datetime.datetime.now() - start)
             self.data_Monitoring(team)  # 两月数据
-            print('获取耗时：', datetime.datetime.now() - start)
             self.sl_Monitoring(team)  # 输出数据
-            print('处理耗时：', datetime.datetime.now() - start)
             print(team + '团队运行结束')
         else:
             print(info)
@@ -187,7 +184,7 @@ class SltemMonitoring(Settings):
         # df = pd.read_sql_query(sql=sql, con=self.engine2)
         # df.to_sql('zg_cost_缓存_month', con=self.engine1, index=False, if_exists='replace')
         # print('已导入' + team + '每月（全部）缓存成本表中+++')
-
+        print('缓存耗时：', datetime.datetime.now() - start)
     def data_Monitoring(self, team):     # 获取各团队近两个月的签收表数据
         match3 = {'新加坡': 'slxmt',
                   '马来西亚': 'slxmt',
@@ -234,7 +231,7 @@ class SltemMonitoring(Settings):
         except Exception as e:
             print('插入失败：', str(Exception) + str(e))
         print('----已写入' + team + '近两月监控-签收表中')
-
+        print('获取耗时：', datetime.datetime.now() - start)
     def costWaybill(self, team):        # 获取各团队近两个月的成本数据内容
         match = {'新加坡': 'SG',
                  '马来西亚': 'MY',
@@ -387,7 +384,6 @@ class SltemMonitoring(Settings):
         sql = 'INSERT IGNORE INTO zg_cost_sltem({}, 记录时间)  SELECT *, CURDATE() 记录时间  FROM zg_cost_缓存;'.format(columns)
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
         print('已导入成本总表中+++')
-
         # print('正在查询 ' + team + ' 品类近两个月成本…………')
         # sql = '''SELECT *
         #         FROM (SELECT a.rq AS 年月,
@@ -459,7 +455,7 @@ class SltemMonitoring(Settings):
         # sql = 'INSERT IGNORE INTO zg_cost_sltem_copy({}, 记录时间)  SELECT *, CURDATE() 记录时间  FROM zg_cost_缓存;'.format(columns)
         # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
         # print('已导入' + team + '成本两月表中+++')
-
+        print('成本耗时：', datetime.datetime.now() - start)
     def sl_Monitoring(self,team):
         match2 = {'新加坡': 'qsb_slxmt',
                   '马来西亚': 'qsb_slxmt',
@@ -2131,19 +2127,14 @@ if __name__ == '__main__':
     # # for team in ['日本']:
     # for team in ['台湾', '新加坡', '马来西亚', '泰国']:
     #     m.order_Monitoring(team)    # 各月缓存
-    #     print('缓存耗时：', datetime.datetime.now() - start)
     #     m.data_Monitoring(team)     # 两月数据
-    #     print('获取耗时：', datetime.datetime.now() - start)
     #     # m.costWaybill(team)       # 成本缓存 与 成本两月数据
-    #     # print('成本耗时：', datetime.datetime.now() - start)
     #     m.sl_Monitoring(team)       # 输出数据
-    #     print('处理耗时：', datetime.datetime.now() - start)
 
     # 获取签收表内容（二）
     # startday = '2021.01.24'
     # for team in ['日本', '香港', '台湾']:
     #     m.readForm(team, startday)
-    # print('处理耗时：', datetime.datetime.now() - start)
 
     # 获取监控表以上传的时间---监控运行（一）
     for team in ['香港', '台湾', '新加坡', '马来西亚', '泰国']:
