@@ -185,7 +185,7 @@ class MysqlControl(Settings):
     def creatMyOrderSl(self, team):     # 最近五天的全部订单信息
         match = {'slgat': '"神龙家族-港澳台"',
                  'sltg': '"神龙家族-泰国"',
-                 'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚"',
+                 'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
                  'slzb': '"神龙家族-直播团队"',
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
@@ -298,7 +298,7 @@ class MysqlControl(Settings):
     def creatMyOrderSlTWO(self, team):      # 最近两个月的更新订单信息
         match = {'slgat': '"神龙家族-港澳台"',
                  'sltg': '"神龙家族-泰国"',
-                 'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚"',
+                 'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
                  'slzb': '"神龙家族-直播团队"',
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
@@ -523,12 +523,13 @@ class MysqlControl(Settings):
     def data_wl(self, team):                                        # 获取各团队近两个月的物流数据
         match = {'slgat': ['台湾', '香港'],
                 'sltg': ['泰国'],
-                'slxmt': ['新加坡', '马来西亚'],
+                'slxmt': ['新加坡', '马来西亚', '菲律宾'],
                 'slrb': ['日本']}
         emailAdd = {'台湾': 'giikinliujun@163.com',
                     '香港': 'giikinliujun@163.com',
                     '新加坡': 'zhangjing@giikin.com',
                     '马来西亚': 'zhangjing@giikin.com',
+                    '菲律宾': 'zhangjing@giikin.com',
                     '泰国': '1845389861@qq.com',
                     '日本': 'sunyaru@giikin.com'}
         emailAdd2 = {'泰国': 'zhangjing@giikin.com'}
@@ -792,12 +793,13 @@ class MysqlControl(Settings):
     def data_wlT(self, team):                                       # 获取各团队近两个月的物流分旬数据
             match = {'slgat': ['台湾', '香港'],
                      'sltg': ['泰国'],
-                     'slxmt': ['新加坡', '马来西亚'],
+                     'slxmt': ['新加坡', '马来西亚', '菲律宾'],
                      'slrb': ['日本']}
             emailAdd = {'台湾': 'giikinliujun@163.com',
                         '香港': 'giikinliujun@163.com',
                         '新加坡': 'zhangjing@giikin.com',
                         '马来西亚': 'zhangjing@giikin.com',
+                        '菲律宾': 'zhangjing@giikin.com',
                         '泰国': '1845389861@qq.com',
                         '日本': 'sunyaru@giikin.com'}
             emailAdd2 = {'泰国': 'zhangjing@giikin.com'}
@@ -1083,7 +1085,7 @@ class MysqlControl(Settings):
                  'slrb': '日本'}
         match = {'slgat': '"神龙家族-港澳台"',
                  'sltg': '"神龙家族-泰国"',
-                 'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚"',
+                 'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
                  'slzb': '"神龙家族-直播团队"',
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
@@ -1146,19 +1148,22 @@ class MysqlControl(Settings):
             endDate = [endDate]
             startDate = [startDate]
         match = {'SG': '新加坡',
-                  'MY': '马来西亚',
-                  'JP': '日本',
-                  'HK': '香港',
-                  'TW': '台湾',
-                  'TH': '泰国'}
+                 'MY': '马来西亚',
+                 'PH': '菲律宾',
+                 'JP': '日本',
+                 'HK': '香港',
+                 'TW': '台湾',
+                 'TH': '泰国'}
         match2 = {'SG': 'slxmt_zqsb',
                   'MY': 'slxmt_zqsb',
+                  'PH': 'slxmt_zqsb',
                   'JP': 'slrb_zqsb_rb',
                   'HK': 'slgat_zqsb',
                   'TW': 'slgat_zqsb',
                   'TH': 'sltg_zqsb'}
         emailAdd = {'SG': 'zhangjing@giikin.com',
                   'MY': 'zhangjing@giikin.com',
+                  'PH': 'zhangjing@giikin.com',
                   'JP': 'sunyaru@giikin.com',
                   'HK': 'giikinliujun@163.com',
                   'TW': 'giikinliujun@163.com',
@@ -1297,7 +1302,7 @@ class MysqlControl(Settings):
                  'slrb': '日本'}
         match = {'slgat': '"神龙家族-港澳台"',
                  'sltg': '"神龙家族-泰国"',
-                 'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚"',
+                 'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
                  'slzb': '"神龙家族-直播团队"',
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
@@ -1361,27 +1366,28 @@ if __name__ == '__main__':
     m = MysqlControl()
     start = datetime.datetime.now()
 
-    # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:                             # 无运单号查询200
-    #     m.noWaybillNumber(team)
-    #
-    # match = {'SG': '新加坡',
-    #          'MY': '马来西亚',
-    #          'JP': '日本',
-    #          'HK': '香港',
-    #          'TW': '台湾',
-    #          'TH': '泰国'}
-    # # match = {'TH': '泰国'}
-    # for team in match.keys():                                                   # 产品花费表200
-    #     m.orderCost(team)
-    #
-    # sm = SltemMonitoring()
-    # for team in ['新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:         # 成本查询
-    #     sm.costWaybill(team)
-    #
-    # # （泰国）全部订单表200
-    # m.tgOrderQuan('sltg')
+    for team in ['sltg', 'slgat', 'slrb', 'slxmt']:                             # 无运单号查询200
+        m.noWaybillNumber(team)
 
-    team = 'slgat'
-    m.data_wl(team)
-    m.data_wlT(team)
+    match = {'SG': '新加坡',
+             'MY': '马来西亚',
+             'PH': '菲律宾',
+             'JP': '日本',
+             'HK': '香港',
+             'TW': '台湾',
+             'TH': '泰国'}
+    # match = {'PH': '菲律宾'}
+    for team in match.keys():                                                   # 产品花费表200
+        m.orderCost(team)
+
+    sm = SltemMonitoring()
+    for team in ['菲律宾','新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:         # 成本查询
+        sm.costWaybill(team)
+
+    # （泰国）全部订单表200
+    m.tgOrderQuan('sltg')
+
+    # team = 'slgat'
+    # m.data_wl(team)
+    # m.data_wlT(team)
 

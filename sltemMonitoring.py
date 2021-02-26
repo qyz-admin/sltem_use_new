@@ -45,11 +45,12 @@ class SltemMonitoring(Settings):
 
     def check_time(self, team):
         match = {'新加坡': 'slxmt',
-                  '马来西亚': 'slxmt',
-                  '日本': 'slrb',
-                  '香港': 'slgat',
-                  '台湾': 'slgat',
-                  '泰国': 'sltg'}
+                 '马来西亚': 'slxmt',
+                 '菲律宾': 'slxmt',
+                 '日本': 'slrb',
+                 '香港': 'slgat',
+                 '台湾': 'slgat',
+                 '泰国': 'sltg'}
         Time_day = []
         for i in range(1, datetime.datetime.now().month + 1):  # 获取当年当前的月份时间
             try:
@@ -101,17 +102,20 @@ class SltemMonitoring(Settings):
 
     def order_Monitoring(self, team):        # 获取各团队各月的签收表数据 和 成本数据内容
         match = {'新加坡': 'slxmt',
-                  '马来西亚': 'slxmt',
-                  '日本': 'slrb',
-                  '香港': 'slgat',
-                  '台湾': 'slgat',
-                  '泰国': 'sltg'}
+                 '马来西亚': 'slxmt',
+                 '菲律宾': 'slxmt',
+                 '日本': 'slrb',
+                 '香港': 'slgat',
+                 '台湾': 'slgat',
+                 '泰国': 'sltg'}
         match2 = {'新加坡': 'SG',
                   '马来西亚': 'MY',
+                  '菲律宾': 'PH',
                   '日本': 'JP',
                   '香港': 'HK',
                   '台湾': 'TW',
                   '泰国': 'TH'}
+        start: datetime = datetime.datetime.now()
         print('正在获取' + team + '每月（全部）缓存签收数据…………')
         Time_da = []
         for i in range(datetime.datetime.now().month + 1, 13):
@@ -188,10 +192,12 @@ class SltemMonitoring(Settings):
     def data_Monitoring(self, team):     # 获取各团队近两个月的签收表数据
         match3 = {'新加坡': 'slxmt',
                   '马来西亚': 'slxmt',
+                  '菲律宾': 'slxmt',
                   '日本': 'slrb',
                   '香港': 'slgat',
                   '台湾': 'slgat',
                   '泰国': 'sltg'}
+        start: datetime = datetime.datetime.now()
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         sql = '''SELECT 年月, 旬, 日期, 币种, 订单来源, a.订单编号 订单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', '', 出货时间) 出货时间,
@@ -235,10 +241,12 @@ class SltemMonitoring(Settings):
     def costWaybill(self, team):        # 获取各团队近两个月的成本数据内容
         match = {'新加坡': 'SG',
                  '马来西亚': 'MY',
+                 '菲律宾': 'PH',
                  '日本': 'JP',
                  '香港': 'HK',
                  '台湾': 'TW',
                  '泰国': 'TH'}
+        start: datetime = datetime.datetime.now()
         print('正在查询 {} 品类总成本…………'.format(team))
         yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d') + ' 23:59:59'
         print(yesterday)
@@ -459,6 +467,7 @@ class SltemMonitoring(Settings):
     def sl_Monitoring(self,team):
         match2 = {'新加坡': 'qsb_slxmt',
                   '马来西亚': 'qsb_slxmt',
+                  '菲律宾': 'qsb_slxmt',
                   '日本': 'qsb_slrb',
                   '香港': 'qsb_slgat',
                   '台湾': 'qsb_slgat',
@@ -467,6 +476,7 @@ class SltemMonitoring(Settings):
                   '泰国': r'D:\Users\Administrator\Desktop\查询\泰国监控',
                   '香港': r'D:\Users\Administrator\Desktop\查询\港台监控',
                   '台湾': r'D:\Users\Administrator\Desktop\查询\港台监控',
+                  '菲律宾': r'D:\Users\Administrator\Desktop\查询\新马监控',
                   '新加坡': r'D:\Users\Administrator\Desktop\查询\新马监控',
                   '马来西亚': r'D:\Users\Administrator\Desktop\查询\新马监控'}
         emailAdd = {'香港': 'giikinliujun@163.com',
@@ -474,6 +484,7 @@ class SltemMonitoring(Settings):
                     '泰国': '1845389861@qq.com',
                     '新加坡': 'zhangjing@giikin.com',
                     '马来西亚': 'zhangjing@giikin.com',
+                    '菲律宾': 'zhangjing@giikin.com',
                     '日本': 'sunyaru@giikin.com'}
         emailAdd2 = {'泰国': 'zhangjing@giikin.com'}
         # 筛选最大ID
@@ -482,7 +493,7 @@ class SltemMonitoring(Settings):
         # sql = '''SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} GROUP BY 订单编号);'''.format(match2[team])
         # df = pd.read_sql_query(sql=sql, con=self.engine1)
         # df.to_sql('qsb_临时', con=self.engine1, index=False, if_exists='replace')
-
+        start: datetime = datetime.datetime.now()
         Time_day = []
         for i in range(1, datetime.datetime.now().month + 1):  # 获取当年当前的月份时间
             try:
@@ -1981,7 +1992,7 @@ class SltemMonitoring(Settings):
             filePath = 'F:\\查询\\日本监控\\{} {}监控表.xlsx'.format(today, team)
         elif team == '泰国':
             filePath = 'F:\\查询\\泰国监控\\{} {}监控表.xlsx'.format(today, team)
-        elif team == '新加坡' or team == '马来西亚':
+        elif team == '新加坡' or team == '马来西亚' or team == '菲律宾':
             filePath = 'F:\\查询\\新马监控\\{} {}监控表.xlsx'.format(today, team)
         elif team == '香港' or team == '台湾':
             filePath = 'F:\\查询\\港台监控\\{} {}监控表.xlsx'.format(today, team)
@@ -2029,13 +2040,14 @@ class SltemMonitoring(Settings):
                  'slxmt': '新马',
                  'slrb': '日本'}
         match3 = {'新加坡': 'slxmt',
-                 '马来西亚': 'slxmt',
-                 '新马': 'slxmt',
-                 '日本': 'slrb',
-                 '香港': 'slgat',
-                 '台湾': 'slgat',
-                 '港台': 'slgat',
-                 '泰国': 'sltg'}
+                  '马来西亚': 'slxmt',
+                  '菲律宾': 'slxmt',
+                  '新马': 'slxmt',
+                  '日本': 'slrb',
+                  '香港': 'slgat',
+                  '台湾': 'slgat',
+                  '港台': 'slgat',
+                  '泰国': 'sltg'}
         start = datetime.datetime.now()
         # startday = datetime.datetime.now().strftime('%Y.%m.%d')
         path = r'F:\\查询\\订单数据'
@@ -2125,7 +2137,7 @@ if __name__ == '__main__':
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # # # 测试监控运行（三）
     # # for team in ['日本']:
-    # for team in ['台湾', '新加坡', '马来西亚', '泰国']:
+    # for team in ['菲律宾']:
     #     m.order_Monitoring(team)    # 各月缓存
     #     m.data_Monitoring(team)     # 两月数据
     #     # m.costWaybill(team)       # 成本缓存 与 成本两月数据
@@ -2137,6 +2149,6 @@ if __name__ == '__main__':
     #     m.readForm(team, startday)
 
     # 获取监控表以上传的时间---监控运行（一）
-    for team in ['香港', '台湾', '新加坡', '马来西亚', '泰国']:
-    # for team in ['日本']:
+    for team in ['香港', '台湾', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
+    # for team in ['菲律宾']:
         m.check_time(team)

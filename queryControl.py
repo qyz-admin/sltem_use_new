@@ -261,7 +261,7 @@ class QueryControl(Settings):
     def sl_tem_cost(self, team, tem):
         match = {'slgat_zqsb': '"台湾", "香港"',
                  'sltg_zqsb': '泰国',
-                 'slxmt_zqsb': '"新加坡", "马来西亚"',
+                 'slxmt_zqsb': '"新加坡", "马来西亚", "菲律宾"',
                  'slrb_zqsb_rb': '日本'}
         match1 = {'slgat_zqsb': 'slgat_month',
                   'sltg_zqsb': 'sltg_month',
@@ -269,6 +269,7 @@ class QueryControl(Settings):
                   'slrb_zqsb_rb': 'slrb_month'}
         match3 = {'新加坡': 'SG',
                   '马来西亚': 'MY',
+                  '菲律宾': 'PH',
                   '日本': 'JP',
                   '香港': 'HK',
                   '台湾': 'TW',
