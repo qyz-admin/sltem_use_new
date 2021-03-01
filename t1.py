@@ -46,12 +46,12 @@ for dir in dirs:
         print('单表+++导入-耗时：', datetime.datetime.now() - wb_start)
 print('导入耗时：', datetime.datetime.now() - start)
 
-# ---数据库分段读取---
+# TODO---数据库分段读取---
 m.creatMyOrderSl(team)      # 最近五天的全部订单信息
 print('------------更新部分：---------------------')
-m.creatMyOrderSlTWO(team)   # 最近两个月的更新订单信息
+# m.creatMyOrderSlTWO(team)   # 最近两个月的更新订单信息
 print('处理耗时：', datetime.datetime.now() - start)
-m.connectOrder(team)      # 最近两个月的订单信息导出
+# m.connectOrder(team)      # 最近两个月的订单信息导出
 print('输出耗时：', datetime.datetime.now() - start)
 
 
