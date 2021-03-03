@@ -96,7 +96,7 @@ class SltemMonitoring(Settings):
             self.order_Monitoring(team)  # 各月缓存
             self.data_Monitoring(team)  # 两月数据
             self.sl_Monitoring(team)  # 输出数据
-            print(team + '团队运行结束')
+            print('===>>>' + team + '团队运行结束<<<===')
         else:
             print(info)
 
@@ -289,16 +289,19 @@ class SltemMonitoring(Settings):
                             SUM(a.salesRMB_yqs) AS 签收额,
                             SUM(a.salesRMB_yjs) AS 拒收额,
                             SUM(a.gps) AS 改派订单量,
-                            SUM(a.cgcost) AS 总采购额,
-                            SUM(a.cgcost_zf) AS 直发采购额,
-                            SUM(a.adcost) AS 广告成本,
+                --          SUM(a.cgcost) AS 总采购额,
+                --          SUM(a.cgcost_zf) AS 直发采购额,
+                --          SUM(a.adcost) AS 广告成本,
+                            null 总采购额,
+                            null 直发采购额,
+                            null 广告成本,
                             SUM(a.wlcost) AS 物流成本,
                             SUM(a.qtcost) AS 手续费
-                    FROM gk_order_day a
+                    FROM gk_order_day_kf a
                         LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                         LEFT JOIN dim_area c on c.id = a.area_id
                         LEFT JOIN dim_cate d on d.id = a.third_cate_id
-                        LEFT JOIN gk_product e on e.id = a.product_id
+                        LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.product_id = a.product_id
                     WHERE a.rq >= '{0}'
                         AND a.rq < '{1}'
                         AND b.pcode = '{2}'
@@ -314,7 +317,7 @@ class SltemMonitoring(Settings):
                             c.uname AS leader,
                             d.ppname AS 品类,
                             SUM(a.orders) AS 订单品类量
-                FROM gk_order_day a
+                FROM gk_order_day_kf a
                     LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                     LEFT JOIN dim_area c on c.id = a.area_id
                     LEFT JOIN dim_cate d on d.id = a.third_cate_id
@@ -366,15 +369,17 @@ class SltemMonitoring(Settings):
                             SUM(a.salesRMB_yqs) AS 签收额,
                             SUM(a.salesRMB_yjs) AS 拒收额,
                             SUM(a.gps) AS 改派订单量,
-                            SUM(a.cgcost_zf) AS 直发采购额,
-                            SUM(a.adcost) AS 广告成本,
+                --          SUM(a.cgcost_zf) AS 直发采购额,
+                --          SUM(a.adcost) AS 广告成本,
+                            null 直发采购额,
+                            null 广告成本,
                             SUM(a.wlcost) AS 物流成本,
                             SUM(a.qtcost) AS 手续费
-                    FROM gk_order_day a
+                    FROM gk_order_day_kf a
                         LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                         LEFT JOIN dim_area c on c.id = a.area_id
                         LEFT JOIN dim_cate d on d.id = a.third_cate_id
-                        LEFT JOIN gk_product e on e.id = a.product_id
+                        LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.product_id = a.product_id
                     WHERE a.rq >= '{0}'
                         AND a.rq < '{1}'
                         AND b.pcode = '{2}'
@@ -2128,15 +2133,15 @@ if __name__ == '__main__':
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # # # 测试监控运行（三）
     # # for team in ['日本']:
-    # for team in ['菲律宾']:
+    # for team in ['香港', '台湾', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
     #     m.order_Monitoring(team)    # 各月缓存
     #     m.data_Monitoring(team)     # 两月数据
     #     # m.costWaybill(team)       # 成本缓存 与 成本两月数据
     #     m.sl_Monitoring(team)       # 输出数据
 
     # 获取签收表内容（二）
-    # startday = '2021.01.24'
-    # for team in ['日本', '香港', '台湾']:
+    # startday = '2021.02.02'
+    # for team in ['香港', '台湾', '日本', '新加坡', '马来西亚', '泰国']:
     #     m.readForm(team, startday)
 
     # 获取监控表以上传的时间---监控运行（一）

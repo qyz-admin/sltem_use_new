@@ -7,8 +7,9 @@ from wlMysql import WlMysql
 from wlExecl import WlExecl
 # from orderQuery import OrderQuery
 import datetime
+
 start: datetime = datetime.datetime.now()
-team = 'slxmt'
+team = 'slrb'
 match = {'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\日本签收表',
          'sltg': r'D:\Users\Administrator\Desktop\需要用到的文件\泰国签收表',
          'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\港台签收表',
@@ -47,13 +48,12 @@ for dir in dirs:
 print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
-m.creatMyOrderSl(team)      # 最近五天的全部订单信息
+m.creatMyOrderSl(team)  # 最近五天的全部订单信息
 print('------------更新部分：---------------------')
-# m.creatMyOrderSlTWO(team)   # 最近两个月的更新订单信息
+m.creatMyOrderSlTWO(team)   # 最近两个月的更新订单信息
 print('处理耗时：', datetime.datetime.now() - start)
-# m.connectOrder(team)      # 最近两个月的订单信息导出
+m.connectOrder(team)      # 最近两个月的订单信息导出
 print('输出耗时：', datetime.datetime.now() - start)
-
 
 
 
@@ -64,3 +64,17 @@ print('输出耗时：', datetime.datetime.now() - start)
 # tem = '泰国'
 # w.OrderQuan(team, tem)
 # print('导出耗时：', datetime.datetime.now() - start)
+
+
+'''
+    IDE很多技巧:
+    1,  `ctrl + alt + L`，格式化代码
+    2,  双击`shift`搜索一切，不管是IDE功能、文件、方法、变量……都能搜索
+    3,  `alt+enter`万能键
+    4,  `shift+enter`向下换行
+    5,  `shift+ctrl`向上换行
+    6,  `ctrl+space` 万能提示键，PyCharm的会根据上下文提供补全
+    7,  `ctrl+shift+f10`运行当前文件
+    8,  `ctrl+w`扩展选取和`ctrl+shift+w`缩减选区, `ctrl+alt+shift+T`重构选区
+    9,  `ctrl+q`查注释
+'''
