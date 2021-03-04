@@ -8,13 +8,13 @@ class Settings():
                       'datebase': 'logistics_status',   #数据库名称
                       'charset': 'utf8'         #数据库编码
                        }
-        # self.mysql2 = {'host': 'tidb.giikin.com',  # 数据库地址
-        #                'user': 'shenlongkf',  # 数据库账户
-        #                'port': '4000',
-        #                'password': 'SIK87&67asd',  # 数据库密码
-        #                'datebase': 'gdqs_shenlong',  # 数据库名称
-        #                'charset': 'utf8'  # 数据库编码
-        #                }
+        self.mysql20 = {'host': 'tidb.giikin.com',  # 数据库地址
+                       'user': 'shenlongkf',  # 数据库账户
+                       'port': '4000',
+                       'password': 'SIK87&67asd',  # 数据库密码
+                       'datebase': 'gdqs_shenlong',  # 数据库名称
+                       'charset': 'utf8'  # 数据库编码
+                       }
         self.mysql2 = {'host': 'tidb2.giikin.com',  # 数据库地址
                        'user': 'shenlong_kf',  # 数据库账户
                        'port': '39999',
