@@ -530,7 +530,7 @@ class MysqlControl(Settings):
                     'slyn': '越南',
                     'slrb': 'sunyaru@giikin.com'}
         emailAdd2 = {'sltg': 'zhangjing@giikin.com'}
-        if team == 'sltg0' or team == 'slxmt0' or team == 'slrb0' or team == 'slgat0':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb0' or team == 'slgat0':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
