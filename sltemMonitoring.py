@@ -1241,18 +1241,18 @@ class SltemMonitoring(Settings):
 				sl_rb.父级分类,
 				sl_rb.旬,
 				sl_rb.`总订单量` 总订单,
-				'' AS '总签收/完成',
-				'' AS '总签收/总计',
-				'' AS '退款率',
-				'' AS '总完成占比',
+				null AS '总签收/完成',
+				null AS '总签收/总计',
+				null AS '退款率',
+				null AS '总完成占比',
 				sl_rb.`直发订单量` 总计,
 				sl_rb.`直发已签收订单量` / sl_rb.`直发拒收订单量` AS '直发签收/完成',
 				sl_rb.`直发已签收订单量` / sl_rb.`直发订单量` AS '直发签收/总计',
 				sl_rb.`直发拒收订单量` / sl_rb.`直发订单量` AS '直发完成占比',
-				'' AS  改派总计,
-				'' AS '改派签收/完成',
-				'' AS '改派签收/总计',
-				'' AS '改派完成占比'
+				null AS  改派总计,
+				null AS '改派签收/完成',
+				null AS '改派签收/总计',
+				null AS '改派完成占比'
         FROM (SELECT  sl_zong.币种,
 						IFNULL(sl_zong.年月,'合计') 年月,
 						IFNULL(sl_zong.物流方式,'合计') 物流方式,
@@ -1352,23 +1352,23 @@ class SltemMonitoring(Settings):
         show_name.append(' 月（天）物流…………')
         # 月物流（月）---查询
         sqlWl3= '''SELECT sl_rb.`币种`,
-                    				sl_rb.`年月`,
-                    				sl_rb.物流方式,
-                    				sl_rb.父级分类,
-                    				sl_rb.旬,
-                    				sl_rb.`总订单量` 总订单,
-                    				'' AS '总签收/完成',
-                    				'' AS '总签收/总计',
-                    				'' AS '退款率',
-                    				'' AS '总完成占比',
-                    				sl_rb.`直发订单量` 总计,
-                    				sl_rb.`直发已签收订单量` / sl_rb.`直发拒收订单量` AS '直发签收/完成',
-                    				sl_rb.`直发已签收订单量` / sl_rb.`直发订单量` AS '直发签收/总计',
-                    				sl_rb.`直发拒收订单量` / sl_rb.`直发订单量` AS '直发完成占比',
-                    				'' AS  改派总计,
-                    				'' AS '改派签收/完成',
-                    				'' AS '改派签收/总计',
-                    				'' AS '改派完成占比'
+                    	sl_rb.`年月`,
+                    	sl_rb.物流方式,
+                    	sl_rb.父级分类,
+                    	sl_rb.旬,
+                    	sl_rb.`总订单量` 总订单,
+                    	null AS '总签收/完成',
+                    	null AS '总签收/总计',
+                    	null AS '退款率',
+                    	null AS '总完成占比',
+                    	sl_rb.`直发订单量` 总计,
+                    	sl_rb.`直发已签收订单量` / sl_rb.`直发拒收订单量` AS '直发签收/完成',
+                    	sl_rb.`直发已签收订单量` / sl_rb.`直发订单量` AS '直发签收/总计',
+                    	sl_rb.`直发拒收订单量` / sl_rb.`直发订单量` AS '直发完成占比',
+                    	null AS  改派总计,
+                    	null AS '改派签收/完成',
+                    	null AS '改派签收/总计',
+                    	null AS '改派完成占比'
         FROM (SELECT  sl_zong.币种,
                     						IFNULL(sl_zong.年月,'合计') 年月,
                     						IFNULL(sl_zong.物流方式,'合计') 物流方式,
@@ -1651,8 +1651,8 @@ class SltemMonitoring(Settings):
 				IFNULL(sl_rb.`直发出库完成时效`,0) 出库完成时效,
 				sl_rb.`直发下单完成单量`,
 				IFNULL(sl_rb.`直发下单完成时效`,0) 下单完成时效,
-				'' AS 改派下单完成单量,
-				'' AS 改派下单完成时效,
+				null AS 改派下单完成单量,
+				null AS 改派下单完成时效,
 				sl_rb.`直发已签收订单量` / sl_rb.`直发下单完成单量` AS '签收/完成',
 				sl_rb.`直发已签收订单量`/ sl_rb.`直发下单出库单量` AS '签收/总计'
             FROM( SELECT sl_zong.币种 币种,
@@ -1772,8 +1772,8 @@ class SltemMonitoring(Settings):
 				IFNULL(sl_rb.`直发出库完成时效`,0) 出库完成时效,
 				sl_rb.`直发下单完成单量`,
 				IFNULL(sl_rb.`直发下单完成时效`,0) 下单完成时效,
-				'' AS 改派下单完成单量,
-				'' AS 改派下单完成时效
+				null AS 改派下单完成单量,
+				null AS 改派下单完成时效
             FROM(SELECT sl_zong.币种 币种,
 						IFNULL(sl_zong.年月,'合计') 年月,
 						IFNULL(sl_zong.旬,'合计') 旬,
@@ -1867,8 +1867,8 @@ class SltemMonitoring(Settings):
 				sl_rb.`直发出库完成时效`,
 				sl_rb.`直发下单完成时效`,
 				sl_rb.`直发下单完成单量`,
-				'' AS 改派下单完成单量,
-				'' AS 改派下单完成时效,
+				null AS 改派下单完成单量,
+				null AS 改派下单完成时效,
 				sl_rb.`直发已签收订单量` / sl_rb.`直发下单完成单量` AS '签收/完成',
 				sl_rb.`直发已签收订单量`/ sl_rb.`直发下单出库单量` AS '签收/总计'
             FROM (SELECT sl_zong.币种 币种,
@@ -2666,18 +2666,18 @@ class SltemMonitoring(Settings):
 				sl_rb.父级分类,
 				sl_rb.旬,
 				sl_rb.`总订单量` 总订单,
-				'' AS '总签收/完成',
-				'' AS '总签收/总计',
-				'' AS '退款率',
-				'' AS '总完成占比',
+				null AS '总签收/完成',
+				null AS '总签收/总计',
+				null AS '退款率',
+				null AS '总完成占比',
 				sl_rb.`直发订单量` 总计,
 				sl_rb.`直发已签收订单量` / sl_rb.`直发拒收订单量` AS '直发签收/完成',
 				sl_rb.`直发已签收订单量` / sl_rb.`直发订单量` AS '直发签收/总计',
 				sl_rb.`直发拒收订单量` / sl_rb.`直发订单量` AS '直发完成占比',
-				'' AS  改派总计,
-				'' AS '改派签收/完成',
-				'' AS '改派签收/总计',
-				'' AS '改派完成占比'
+				null AS  改派总计,
+				null AS '改派签收/完成',
+				null AS '改派签收/总计',
+				null AS '改派完成占比'
         FROM (SELECT  sl_zong.币种,
 						IFNULL(sl_zong.年月,'合计') 年月,
 						IFNULL(sl_zong.物流方式,'合计') 物流方式,
@@ -2777,23 +2777,23 @@ class SltemMonitoring(Settings):
         show_name.append(' 月（天）物流…………')
         # 月物流（月）---查询
         sqlWl3= '''SELECT sl_rb.`币种`,
-                    				sl_rb.`年月`,
-                    				sl_rb.物流方式,
-                    				sl_rb.父级分类,
-                    				sl_rb.旬,
-                    				sl_rb.`总订单量` 总订单,
-                    				'' AS '总签收/完成',
-                    				'' AS '总签收/总计',
-                    				'' AS '退款率',
-                    				'' AS '总完成占比',
-                    				sl_rb.`直发订单量` 总计,
-                    				sl_rb.`直发已签收订单量` / sl_rb.`直发拒收订单量` AS '直发签收/完成',
-                    				sl_rb.`直发已签收订单量` / sl_rb.`直发订单量` AS '直发签收/总计',
-                    				sl_rb.`直发拒收订单量` / sl_rb.`直发订单量` AS '直发完成占比',
-                    				'' AS  改派总计,
-                    				'' AS '改派签收/完成',
-                    				'' AS '改派签收/总计',
-                    				'' AS '改派完成占比'
+                    	sl_rb.`年月`,
+                    	sl_rb.物流方式,
+                    	sl_rb.父级分类,
+                    	sl_rb.旬,
+                    	sl_rb.`总订单量` 总订单,
+                    	null AS '总签收/完成',
+                    	null AS '总签收/总计',
+                    	null AS '退款率',
+                    	null AS '总完成占比',
+                    	sl_rb.`直发订单量` 总计,
+                    	sl_rb.`直发已签收订单量` / sl_rb.`直发拒收订单量` AS '直发签收/完成',
+                    	sl_rb.`直发已签收订单量` / sl_rb.`直发订单量` AS '直发签收/总计',
+                    	sl_rb.`直发拒收订单量` / sl_rb.`直发订单量` AS '直发完成占比',
+                    	null AS  改派总计,
+                    	null AS '改派签收/完成',
+                    	null AS '改派签收/总计',
+                    	null AS '改派完成占比'
         FROM (SELECT  sl_zong.币种,
                     IFNULL(sl_zong.年月,'合计') 年月,
                     IFNULL(sl_zong.物流方式,'合计') 物流方式,
@@ -2905,10 +2905,10 @@ class SltemMonitoring(Settings):
 				IFNULL(sl_rb.`直发出库完成时效`,0) 出库完成时效,
 				sl_rb.`直发下单完成单量`,
 				IFNULL(sl_rb.`直发下单完成时效`,0) 下单完成时效,
-				'' AS 改派下单完成单量,
-				'' AS 改派下单完成时效,
-				sl_rb.`直发已签收订单量` / sl_rb.`直发下单完成单量` AS '签收/完成',
-				sl_rb.`直发已签收订单量`/ sl_rb.`直发下单出库单量` AS '签收/总计'
+				null AS 改派下单完成单量,
+				null AS 改派下单完成时效,
+				IFNULL(sl_rb.`直发已签收订单量` / sl_rb.`直发下单完成单量`,0)  AS '签收/完成',
+				IFNULL(sl_rb.`直发已签收订单量` / sl_rb.`直发下单出库单量`,0) AS '签收/总计'
             FROM( SELECT sl_zong.币种 币种,
 						IFNULL(sl_zong.年月,'合计') 年月,
 						IFNULL(sl_zong.物流方式,'合计') 物流方式,
@@ -3030,8 +3030,8 @@ class SltemMonitoring(Settings):
 				IFNULL(sl_rb.`直发出库完成时效`,0) 出库完成时效,
 				sl_rb.`直发下单完成单量`,
 				IFNULL(sl_rb.`直发下单完成时效`,0) 下单完成时效,
-				'' AS 改派下单完成单量,
-				'' AS 改派下单完成时效
+				null AS 改派下单完成单量,
+				null AS 改派下单完成时效
             FROM(SELECT sl_zong.币种 币种,
 						IFNULL(sl_zong.年月,'合计') 年月,
 						IFNULL(sl_zong.旬,'合计') 旬,
@@ -3128,10 +3128,10 @@ class SltemMonitoring(Settings):
 				sl_rb.`直发出库完成时效`,
 				sl_rb.`直发下单完成时效`,
 				sl_rb.`直发下单完成单量`,
-				'' AS 改派下单完成单量,
-				'' AS 改派下单完成时效,
+				null AS 改派下单完成单量,
+				null AS 改派下单完成时效,
 				sl_rb.`直发已签收订单量` / sl_rb.`直发下单完成单量` AS '签收/完成',
-				sl_rb.`直发已签收订单量`/ sl_rb.`直发下单出库单量` AS '签收/总计'
+				sl_rb.`直发已签收订单量` / sl_rb.`直发下单出库单量` AS '签收/总计'
             FROM (SELECT sl_zong.币种 币种,
 						IFNULL(sl_zong.年月,'合计') 年月,
 						IFNULL(sl_zong.物流方式,'合计') 物流方式,
@@ -3293,11 +3293,11 @@ class SltemMonitoring(Settings):
         app.quit()
         print('输出(监控)文件成功…………')
         file_Path.append(filePath)
-        self.e.send('{} {}上月数据监控表.xlsx'.format(today, team), file_Path,
-                    emailAdd[team])
-        if team =='泰国':
-            self.e.send('{} {}上月数据监控表.xlsx'.format(today, team), file_Path,
-                        emailAdd2[team])
+        # self.e.send('{} {}上月数据监控表.xlsx'.format(today, team), file_Path,
+        #             emailAdd[team])
+        # if team =='泰国':
+        #     self.e.send('{} {}上月数据监控表.xlsx'.format(today, team), file_Path,
+        #                 emailAdd2[team])
         print('处理耗时：', datetime.datetime.now() - start)
 
     # 获取签收表内容
