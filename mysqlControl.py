@@ -200,17 +200,14 @@ class MysqlControl(Settings):
         mm = int((datetime.datetime.now() - datetime.timedelta(days=5)).strftime('%m'))
         dd = int((datetime.datetime.now() - datetime.timedelta(days=5)).strftime('%d'))
         begin = datetime.date(yy, mm, dd)
+        # begin = datetime.date(2018, 1, 1)
         print(begin)
         yy2 = int(datetime.datetime.now().strftime('%Y'))
         mm2 = int(datetime.datetime.now().strftime('%m'))
         dd2 = int(datetime.datetime.now().strftime('%d'))
         end = datetime.date(yy2, mm2, dd2)
+        # end = datetime.date(2019, 1, 1)
         print(end)
-
-        # begin = datetime.date(2020, 12, 1)
-        # print(begin)
-        # end = datetime.date(2021, 1, 1)
-        # print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
             month_last = str(day)
@@ -540,7 +537,7 @@ class MysqlControl(Settings):
             print(month_begin)
         else:
             month_last = '2021-01-01'
-            month_yesterday = '2021-02-28'
+            month_yesterday = '2021-03-05'
             month_begin = '2020-11-01'
         if team == 'slgat':  # 港台查询函数导出
             # sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
@@ -550,7 +547,7 @@ class MysqlControl(Settings):
             #             IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
             #             IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
             #             是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,
-            #             # IF(ISNULL(a.产品id), f.id, a.产品id) 产品id,IF(ISNULL(a.产品名称), f.name, a.产品名称) 产品名称,
+            #             产品id,IF(ISNULL(a.产品名称), a.产品名称, f.name) 产品名称,
             #             产品id,产品名称,父级分类,
             #             二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
             #             包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
@@ -559,10 +556,11 @@ class MysqlControl(Settings):
             #             LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} WHERE {0}.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
             #             LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
             #             LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
-            #         --  LEFT JOIN dim_product f ON f.id = a.产品id
+            #             LEFT JOIN dim_product f ON f.id = a.产品id
             #         WHERE a.日期 >= '{2}' AND a.日期 <= '{3}'
             #             AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)','已退货(物流)', '已退货(不拆包物流)')
             #         ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
+
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
@@ -573,7 +571,7 @@ class MysqlControl(Settings):
                         二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
                         包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
                         b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间,数量
-                    FROM {0}_order_list a  
+                    FROM {0}_order_list a
                         LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} WHERE {0}.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
                         LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
                         LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
@@ -644,10 +642,10 @@ class MysqlControl(Settings):
             df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace')
         today = datetime.date.today().strftime('%Y.%m.%d')
         print('正在写入excel…………')
-        df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team]),
+        df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}1签收表.xlsx'.format(today, match[team]),
                     sheet_name=match[team], index=False)
         print('----已写入excel')
-        filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
+        filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}1签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
         if team == 'slgat':
@@ -664,9 +662,9 @@ class MysqlControl(Settings):
         if team == 'slgat0':
             print('---' + match[team] + ' 不打印文件')
         else:
-            # pass
-            self.data_wl(team)
-            self.data_wlT(team)
+            pass
+            # self.data_wl(team)
+            # self.data_wlT(team)
         print('正在写入' + match[team] + ' 全部签收表中…………')
         if team == 'slrb':
             sql = 'REPLACE INTO {0}_zqsb_rb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)
@@ -1528,33 +1526,34 @@ if __name__ == '__main__':
     #  messagebox.showinfo("提示！！！", "当前查询已完成--->>> 请前往（ 输出文件 ）查看")200
     m = MysqlControl()
     start = datetime.datetime.now()
+
     # 更新产品id的列表
-    # m.update_gk_product()
-    #
-    # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:  # 无运单号查询200
-    #     m.noWaybillNumber(team)
-    #
-    # match = {'SG': '新加坡',
-    #          'MY': '马来西亚',
-    #          'PH': '菲律宾',
-    #          'JP': '日本',
-    #          'HK': '香港',
-    #          'TW': '台湾',
-    #          'TH': '泰国'}
-    # # match = {'JP': '日本'}
-    # for team in match.keys():  # 产品花费表200
-    #     m.orderCost(team)
-    #
-    # sm = SltemMonitoring()
-    # for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:  # 成本查询
-    #     sm.costWaybill(team)
-    #
-    # # （泰国）全部订单表200
-    # m.tgOrderQuan('sltg')
+    m.update_gk_product()
+
+    for team in ['sltg', 'slgat', 'slrb', 'slxmt']:  # 无运单号查询200
+        m.noWaybillNumber(team)
+
+    match = {'SG': '新加坡',
+             'MY': '马来西亚',
+             'PH': '菲律宾',
+             'JP': '日本',
+             'HK': '香港',
+             'TW': '台湾',
+             'TH': '泰国'}
+    # match = {'JP': '日本'}
+    for team in match.keys():  # 产品花费表200
+        m.orderCost(team)
+
+    sm = SltemMonitoring()
+    for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:  # 成本查询
+        sm.costWaybill(team)
+
+    # （泰国）全部订单表200
+    m.tgOrderQuan('sltg')
 
     # team = 'slgat'
-    for team in ['sltg', 'slgat', 'slrb', 'slxmt']:
-        m.data_wl(team)
-        m.data_wlT(team)
+    # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:
+    #     m.data_wl(team)
+    #     m.data_wlT(team)
 
 
