@@ -3293,11 +3293,11 @@ class SltemMonitoring(Settings):
         app.quit()
         print('输出(监控)文件成功…………')
         file_Path.append(filePath)
-        # self.e.send('{} {}上月数据监控表.xlsx'.format(today, team), file_Path,
-        #             emailAdd[team])
-        # if team =='泰国':
-        #     self.e.send('{} {}上月数据监控表.xlsx'.format(today, team), file_Path,
-        #                 emailAdd2[team])
+        self.e.send('{} {}上月数据监控表.xlsx'.format(today, team), file_Path,
+                    emailAdd[team])
+        if team =='泰国':
+            self.e.send('{} {}上月数据监控表.xlsx'.format(today, team), file_Path,
+                        emailAdd2[team])
         print('处理耗时：', datetime.datetime.now() - start)
 
     # 获取签收表内容
