@@ -11,7 +11,7 @@ from settings import Settings
 from sqlalchemy import create_engine
 from queue import Queue
 from threading import Thread #  使用 threading 模块创建线程
-class BpsControl(Settings):
+class BpsControl99(Settings):
 	def __init__(self, userName, password):
 		Settings.__init__(self)
 		self.userName = userName
@@ -43,13 +43,13 @@ class BpsControl(Settings):
 		r_header = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36'}
 		r = self.session.post(url=url, headers=r_header, data=data)
 		print('------  成功登陆系统后台  -------')
-		print('               v           ')
+
+
 	def getOrderInfo(self, orderId, searchType):                  # 进入查询界面
 		url = 'https://goms.giikin.com/admin/order/orderquery.html'
 		data = {'phone': None,
-			'ship_email': None,
-			'ip': None
-				}
+				'ship_email': None,
+				'ip': None}
 		if searchType == '订单号':
 			data.update({'order_number': orderId,
 						'waybill_number': None})
@@ -57,10 +57,11 @@ class BpsControl(Settings):
 			data.update({'order_number': None,
 						'waybill_number': orderId})
 		req = self.session.post(url=url, data=data)
-		# print('-------已成功发送请求++++++')
-		orderInfo = self._parseDate(req)   			# 获取订单简单信息
+		print(req.text)
+		print('-------已成功发送请求++++++')
+		# orderInfo = self._parseDate(req)   			# 获取订单简单信息
 		# print(orderInfo)
-		return orderInfo
+		# return orderInfo
 	def _parseDate(self, req):  					# 对返回的response 进行处理
 		# print('-------正在处理订单简单信息---------')
 		soup = BeautifulSoup(req.text, 'lxml') 		# 创建 beautifulsoup 对象
@@ -82,8 +83,10 @@ class BpsControl(Settings):
 			self.q.put(orderInfo)
 		except Exception as e:
 			print('放入失败---：', str(Exception) + str(e))
-		# print(orderInfo)
+		print(orderInfo)
 		return orderInfo
+
+
 	def getNumberT(self, team, searchType): # ----主线程的执行（多线程函数）
 		match = {'slgat': '港台',
 				'sltg': '泰国',
@@ -152,76 +155,7 @@ class BpsControl(Settings):
 		pf = pf.astype(str)   # dataframe的类型为dtype: object无法导入mysql中，需要转换为str类型
 		print('------写入成功------')
 		today = datetime.date.today().strftime('%Y.%m.%d')
-		pf.to_excel('F:\\查询\\查询输出\\{} {} 订单查询.xlsx'.format(today, match[team]),
-					sheet_name=match[team], index=False)
-		print('------输出文件成功------')
-		return ordersDict
-	def getNumberAdd(self, team, searchType):   # ----主线程的执行（多线程函数）
-		match = {'slgat': '港台',
-				'sltg': '泰国',
-				'slxmt': '新马',
-				'slzb': '直播团队',
-				'slyn': '越南',
-				'slrb': '日本'}
-		print("========开始第二阶段查询（补充）======")
-		now_yesterday = (datetime.datetime.now() - datetime.timedelta(days=5)).strftime('%Y-%m-%d') + ' 00:00:00'
-		last_yesterday = (datetime.datetime.now() - datetime.timedelta(days=8)).strftime('%Y-%m-%d') + ' 00:00:00'
-		print('-------正在获取工作表的订单编号++++++')
-		start = datetime.datetime.now()
-		sql = '''SELECT order_number FROM 全部订单_{0} WHERE 全部订单_{0}.op_id= '' And 全部订单_{0}.addtime>= '{1}' AND 全部订单_{0}.addtime<= '{2}';'''.format(team, last_yesterday, now_yesterday)
-		ordersDict = pd.read_sql_query(sql=sql, con=self.engine3)
-		print(ordersDict)
-		ordersDict = ordersDict['order_number'].values.tolist()
-		# print(ordersDict)
-		print('获取耗时：', datetime.datetime.now() - start)
-		print('--------正在查询单个订单的详情++++++')
-		print('主线程开始执行……………………')
-		threads = []  # 多线程用线程池--
-		for order in ordersDict:     # 注意前后数组的取值长度一致
-			# print (order)   # print (ordersDict)
-			threads.append(Thread(target=self.getOrderInfo, args=(order, searchType)))    #  -----也即是子线程
-		print('子线程分配完成++++++')
-		if threads:                  # 当所有的线程都分配完成之后，通过调用每个线程的start()方法再让他们开始。
-			print(len(threads))
-			for th in threads:
-				th.start()           # print ("开启子线程…………")
-			for th in threads:
-				th.join()            # print ("退出子线程")
-		else:
-			print("没有需要运行子线程！！！")
-		print('子线程运行结束---------')
-		results = []
-		print(self.q.qsize())
-		print(self.q.empty())
-		print(self.q.full())
-		for i in range(len(ordersDict)):    # print(i)
-			try:
-				results.append(self.q.get())
-			except Exception as e:
-				print('取出失败---：', str(Exception) + str(e))
-		print('-----订单获取执行结束---------')
-		print('         V           ')
-		# print(results)
-		# pf = pd.DataFrame(list(results))  # 将字典列表转换为DataFrame
-		pf = pd.DataFrame(results)
-		pf.insert(0, '應付金額', '')
-		pf.insert(0, '支付方式', '')
-		pf.rename(columns={'规格': '规格中文'}, inplace=True)
-		pf.dropna(subset=['订单号'],inplace=True)
-		pf = pf[['订单号', '订单状态', '物流单号', '下单时间', '币种', '物流状态', '應付金額', '支付方式', '规格中文']]
-		pf = pf.loc[:, ['订单号', '订单状态', '物流单号', '下单时间', '币种', '物流状态', '應付金額', '支付方式', '规格中文']]
-		try:
-			print('正在写入缓存表中…………')
-			pf.to_sql('规格缓存_sltg', con=self.engine3, index=False, if_exists='replace')
-			sql = 'REPLACE INTO 全部订单规格_sltg SELECT *, NOW() 添加时间  FROM 规格缓存_sltg;'
-			# sql = 'UPDATE 全部订单_sltg r INNER JOIN (SELECT 订单号,规格中文 FROM 规格缓存_sltg) t ON r.order_number= t.`订单号` SET r.op_id = t.`规格中文`;'
-			pd.read_sql_query(sql=sql, con=self.engine3, chunksize=100)
-		except Exception as e:
-			print('缓存---：', str(Exception) + str(e))
-		pf = pf.astype(str)   # dataframe的类型为dtype: object无法导入mysql中，需要转换为str类型
-		print('------缓存成功------')
-		today = datetime.date.today().strftime('%Y.%m.%d')
-		pf.to_excel('F:\\查询\\查询输出\\{} {} 订单补充查询.xlsx'.format(today, match[team]),
+		pf.to_excel('F:\\查询\\查询输出\\{} {} 99订单查询.xlsx'.format(today, match[team]),
 					sheet_name=match[team], index=False)
 		print('------输出文件成功------')
 		return ordersDict
@@ -268,48 +202,37 @@ class BpsControl(Settings):
 					sheet_name=match1[house], index=False)
 		print('输出文件成功…………')
 if __name__ == '__main__':                    # 以老后台的简单查询为主，
-	start = datetime.datetime.now()	
-	print('======正在启动查询订单程序>>>>>')
-	print('               v           ')
-	# s = Bds('qiyuanzhang@jikeyin.com', 'qiyuanzhang123.')
-	s = BpsControl('nixiumin@giikin.com', 'nixiumin123@.')
-	# s.__load()
-	# # s.getOrderInfo("NR010230026492511", '订单号')
-	# s.getOrderInfo("TH009281245118873", '订单号')
+	start = datetime.datetime.now()
+	s = BpsControl99('qiyuanzhang@jikeyin.com', 'qiyuanzhang123.0')
+	s.getOrderInfo("NA201116233802701506", '订单号')
 
-	# 获取订单明细（各团队）
-	match = {'slgat': '港台',
-		'sltg': '泰国',
-		'slxmt': '新马',
-		'slzb': '直播团队',
-		'slyn': '越南',
-		'slrb': '日本'}
-	# team = 'slgat'
-	# searchType = '运单号'  # 运单号，订单号   查询切换
-	# s.getNumber(team, searchType)
 
-	# rq = '2020-09-29'
-	# team = 'sltg'
-	# searchType = '订单号'  # 运单号，订单号   查询切换
-	# print("========开始第一阶段查询（近6天）======")
-	# s.getNumberT(team, searchType, last_yesterday, now_yesterday)
-	# print('查询耗时：', datetime.datetime.now() - start)
-	# time.sleep(10)
+	# # 获取订单明细（各团队）
+	# match = {'slgat': '港台',
+	# 	'sltg': '泰国',
+	# 	'slxmt': '新马',
+	# 	'slzb': '直播团队',
+	# 	'slyn': '越南',
+	# 	'slrb': '日本'}
 	#
-	# print("========开始第二阶段查询（补充）======")
-	# s.getNumberAdd(team, searchType, last_yesterday, now_yesterday)
-	# print('补充耗时：', datetime.datetime.now() - start)
-	# print('         ^           ')
+	# rq = '2020-09-29'
+	# team = 'slgat'
+	# searchType = '订单号'  # 运单号，订单号   查询切换
+	# # print("========开始第一阶段查询（近6天）======")
+	# s.getNumberT(team, searchType)
+	#
+	#
+	#
+	#
+	# time.sleep(10)
 
-	# 获取泰国海外仓
-	house = 'shifeng'
-	match0 = {'shifeng': 'Tracking Number',
-			 'chaoshidai': '运单号',
-			'bojiatu': '上架单号', }
-	s.sltg_HaiWaiCang(house)
 
-	house = 'bojiatu'
-	s.sltg_HaiWaiCang(house)
 
+	# # 获取泰国海外仓
+	# house = 'shifeng'
+	# match0 = {'shifeng': 'Tracking Number',
+	# 		 'chaoshidai': '运单号',
+	# 		'bojiatu': '上架单号', }
+	# s.sltg_HaiWaiCang(house)
 
 

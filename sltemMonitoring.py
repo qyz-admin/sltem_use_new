@@ -93,12 +93,12 @@ class SltemMonitoring(Settings):
 
         if info == '---已确认，可以进行同期数据对比':
             print('++++++完成时间确认++++++')
-            print('===>>>已确认' + team + '团队开始运行<<<===')
+            print('===>>>已确认---' + team + '---团队开始运行<<<===')
             self.order_Monitoring(team)  # 各月缓存
             self.data_Monitoring(team)  # 两月数据
             self.sl_Monitoring(team)  # 输出数据
             self.sl_Monitoring_two(team)  # 输出数据
-            print('===>>>' + team + '团队运行结束<<<===')
+            print('===>>>---' + team + '---团队运行结束<<<===')
         else:
             print(info)
 

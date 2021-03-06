@@ -403,7 +403,7 @@ class MysqlControl(Settings):
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        if team == 'sltg0' or team == 'slxmt0' or team == 'slrb0' or team == 'slgat0':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb0' or team == 'slgat0':
             yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
             mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
             begin = datetime.date(yy, mm, 1)
@@ -416,7 +416,7 @@ class MysqlControl(Settings):
         else:
             begin = datetime.date(2021, 1, 1)
             print(begin)
-            end = datetime.date(2021, 3, 6)
+            end = datetime.date(2021, 3, 7)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -537,7 +537,7 @@ class MysqlControl(Settings):
             print(month_begin)
         else:
             month_last = '2021-01-01'
-            month_yesterday = '2021-03-06'
+            month_yesterday = '2021-03-07'
             month_begin = '2020-11-01'
         if team == 'slgat':  # 港台查询函数导出
             # sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
