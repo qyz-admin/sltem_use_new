@@ -29,6 +29,11 @@ class QueryControl(Settings):
                                                                                     self.mysql2['host'],
                                                                                     self.mysql2['port'],
                                                                                     self.mysql2['datebase']))
+        self.engine20 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql20['user'],
+                                                                                    self.mysql20['password'],
+                                                                                    self.mysql20['host'],
+                                                                                    self.mysql20['port'],
+                                                                                    self.mysql20['datebase']))
         self.engine3 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql3['user'],
                                                                                     self.mysql3['password'],
                                                                                     self.mysql3['host'],
@@ -463,7 +468,7 @@ class QueryControl(Settings):
                                         null 广告成本,
                                         SUM(a.wlcost) AS 物流成本,
                                         SUM(a.qtcost) AS 手续费 
-                                    FROM gk_order_day_kf a
+                                    FROM gk_order_day a
                                         LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                                         LEFT JOIN dim_area c on c.id = a.area_id
                                         LEFT JOIN dim_cate d on d.id = a.third_cate_id
@@ -589,7 +594,7 @@ class QueryControl(Settings):
                                         null 广告成本,
                                         SUM(a.wlcost) AS 物流成本,
                                         SUM(a.qtcost) AS 手续费 
-                                FROM gk_order_day_kf a
+                                FROM gk_order_day a
                                     LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                                     LEFT JOIN dim_area c on c.id = a.area_id
                                     LEFT JOIN dim_cate d on d.id = a.third_cate_id
@@ -655,7 +660,7 @@ class QueryControl(Settings):
                                         null 广告成本,
                                         SUM(a.wlcost) AS 物流成本,
                                         SUM(a.qtcost) AS 手续费 
-                                FROM gk_order_day_kf a
+                                FROM gk_order_day a
                                     LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                                     LEFT JOIN dim_area c on c.id = a.area_id
                                     LEFT JOIN dim_cate d on d.id = a.third_cate_id
@@ -680,7 +685,7 @@ class QueryControl(Settings):
             if i == 0 or i == 4:
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
             else:
-                df = pd.read_sql_query(sql=sql, con=self.engine2)
+                df = pd.read_sql_query(sql=sql, con=self.engine20)
             # print(df)
             columns = list(df.columns)  # 获取数据的标题名，转为列表
             columns_value = ['直发占比', '改派占比', '直发采购/总销售额', '广告占比', '总成本占比', '数量签收/总计',  '利润率', '采购/销售额', '直发采购/销售额', '运费占比', '手续费占比', '金额签收/完成', '金额签收/总计', '金额完成占比', '数量签收/完成', '数量完成占比']

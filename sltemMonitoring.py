@@ -24,6 +24,11 @@ class SltemMonitoring(Settings):
                                                                                     self.mysql2['host'],
                                                                                     self.mysql2['port'],
                                                                                     self.mysql2['datebase']))
+        self.engine20 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql20['user'],
+                                                                                    self.mysql20['password'],
+                                                                                    self.mysql20['host'],
+                                                                                    self.mysql20['port'],
+                                                                                    self.mysql20['datebase']))
         self.engine3 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql3['user'],
                                                                                     self.mysql3['password'],
                                                                                     self.mysql3['host'],
@@ -299,7 +304,7 @@ class SltemMonitoring(Settings):
                             null 广告成本,
                             SUM(a.wlcost) AS 物流成本,
                             SUM(a.qtcost) AS 手续费
-                    FROM gk_order_day_kf a
+                    FROM gk_order_day a
                         LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                         LEFT JOIN dim_area c on c.id = a.area_id
                         LEFT JOIN dim_cate d on d.id = a.third_cate_id
@@ -319,7 +324,7 @@ class SltemMonitoring(Settings):
                             c.uname AS leader,
                             d.ppname AS 品类,
                             SUM(a.orders) AS 订单品类量
-                FROM gk_order_day_kf a
+                FROM gk_order_day a
                     LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                     LEFT JOIN dim_area c on c.id = a.area_id
                     LEFT JOIN dim_cate d on d.id = a.third_cate_id
@@ -377,7 +382,7 @@ class SltemMonitoring(Settings):
                             null 广告成本,
                             SUM(a.wlcost) AS 物流成本,
                             SUM(a.qtcost) AS 手续费
-                    FROM gk_order_day_kf a
+                    FROM gk_order_day a
                         LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                         LEFT JOIN dim_area c on c.id = a.area_id
                         LEFT JOIN dim_cate d on d.id = a.third_cate_id
@@ -391,7 +396,7 @@ class SltemMonitoring(Settings):
                     GROUP BY b.pname, c.uname
                 ) s3
                 ORDER BY 订单量;'''.format(last_month, yesterday, match[team])
-        df = pd.read_sql_query(sql=sql, con=self.engine2)
+        df = pd.read_sql_query(sql=sql, con=self.engine20)
         columns = list(df)
         columns = ', '.join(columns)  # 插入mysql的标题使用，否则无法导入更新
         print('正在缓存…………')
