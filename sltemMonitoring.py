@@ -3413,7 +3413,7 @@ if __name__ == '__main__':
     #     m.readForm(team, startday)
 
     # 获取监控表以上传的时间---监控运行（一）
-    for team in ['香港', '台湾', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
-    # for team in ['菲律宾', '新加坡', '马来西亚']:
+    for team in ['台湾', '香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
+    # for team in ['香港', '台湾', '日本', '泰国']:
     # for team in ['菲律宾']:
         m.check_time(team)

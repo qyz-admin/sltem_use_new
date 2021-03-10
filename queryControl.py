@@ -1,7 +1,16 @@
 import pandas as pd
 import os
+import datetime
 import xlwings as xl
+
+import requests
+import json
+import sys
+from queue import Queue
+from dateutil.relativedelta import relativedelta
+from threading import Thread #  使用 threading 模块创建线程
 import pandas.io.formats.excel
+
 from sqlalchemy import create_engine
 from settings import Settings
 from emailControl import EmailControl
@@ -9,16 +18,13 @@ from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, \
     Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
 
-from tkinter import messagebox
-
-import datetime
-import xlwings as xw
-
 
 # -*- coding:utf-8 -*-
 class QueryControl(Settings):
     def __init__(self):
         Settings.__init__(self)
+        self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
+        self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -813,6 +819,130 @@ class QueryControl(Settings):
                             emailAdd2[team])
             print('处理耗时：', datetime.datetime.now() - start)
 
+    # 更新团队产品明细
+    def productIdInfo(self, searchType, team):  # 进入查询界面，
+        start = datetime.datetime.now()
+        month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y-%m-%d')
+        sql = '''SELECT id,`订单编号`  FROM {0}_order_list sl 
+    			WHERE sl.`日期`> '{1}' 
+    				AND  sl.`产品名称` IS NULL 
+    				AND sl.`系统订单状态` != '已删除' ;'''.format(team, month_begin)
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        if ordersDict.empty:
+            print('无需要更新的产品id信息！！！')
+            sys.exit()
+        orderId = list(ordersDict['订单编号'])
+        orderId = ', '.join(orderId)
+        print('获取耗时：', datetime.datetime.now() - start)
+        url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getQueryOrder'
+        data = {'phone': None,
+                'email': None,
+                'ip': None,
+                '_token': '05135e6a194a01c9c0b2d76ef221a770'}
+        if searchType == '订单号':
+            data.update({'orderPrefix': orderId,
+                         'shippingNumber': None})
+        elif searchType == '运单号':
+            data.update({'order_number': None,
+                         'shippingNumber': orderId})
+        r_header = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36',
+            'Referer': 'http://gimp.giikin.com/front/orderToolsServiceQuery'}
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('已成功发送请求++++++')
+        print('正在处理json数据…………')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        print('正在转化数据为dataframe…………')
+        ordersDict = []
+        for result in req['data']['list']:
+            print(result)
+            # 添加新的字典键-值对，为下面的重新赋值用
+            result['productId'] = 0
+            result['saleName'] = 0
+            result['saleProduct'] = 0
+            result['spec'] = 0
+            result['link'] = 0
+            # print(result['specs'])
+            # spe = ''
+            # spe2 = ''
+            # spe3 = ''
+            # spe4 = ''
+            # # 产品详细的获取
+            # for ind, re in enumerate(result['specs']):
+            #     print(ind)
+            #     print(re)
+            #     print(result['specs'][ind])
+            #     spe = spe + ';' + result['specs'][ind]['saleName']
+            #     spe2 = spe2 + ';' + result['specs'][ind]['saleProduct']
+            #     spe3 = spe3 + ';' + result['specs'][ind]['spec']
+            #     spe4 = spe4 + ';' + result['specs'][ind]['link']
+            #     spe = spe + ';' + result['specs'][ind]['saleProduct'] + result['specs'][ind]['spec'] + result['specs'][ind]['link'] + result['specs'][ind]['saleName']
+            # result['specs'] = spe
+            # # del result['specs']             # 删除多余的键值对
+            # result['saleName'] = spe
+            # result['saleProduct'] = spe2
+            # result['spec'] = spe3
+            # result['link'] = spe4
+            print(9555)
+            result['saleName'] = result['specs'][0]['saleName']
+            result['saleProduct'] = result['specs'][0]['saleProduct']
+            result['spec'] = result['specs'][0]['spec']
+            result['link'] = result['specs'][0]['link']
+            result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+            print(9555)
+            quest = ''
+            for re in result['questionReason']:
+                quest = quest + ';' + re
+            print(quest)
+            result['questionReason'] = quest
+            delr = ''
+            for re in result['delReason']:
+                delr = delr + ';' + re
+            print(delr)
+            result['delReason'] = delr
+            auto = ''
+            for re in result['autoVerify']:
+                auto = auto + ';' + re
+            print(auto)
+            result['autoVerify'] = auto
+            self.q.put(result)
+        print('00')
+        print(len(req['data']['list']))
+        print('99')
+        for i in range(len(req['data']['list'])):
+            ordersDict.append(self.q.get())
+        data = pd.json_normalize(ordersDict)
+        print(data)
+        print(data[['orderNumber', 'productId']])
+        print('正在写入缓存中......')
+        try:
+            data[['orderNumber', 'productId']].to_sql('d1', con=self.engine1, index=False, if_exists='replace')
+            sql = '''SELECT orderNumber ,
+    					productId,
+    					dp.`name` ,
+    					dc.ppname cate,
+    					dc.pname second_cate,
+    					dc.`name` third_cate
+    				FROM d1
+    				LEFT JOIN dim_product dp ON  d1.productId = dp.id
+    				LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            print(df)
+            df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
+            print('正在更新产品详情…………')
+            sql = '''update {0}_order_list a, tem_product_id b
+    		                        set a.`产品id`=b.`productId`,
+    		                            a.`产品名称`=b.`name`,
+    				                    a.`父级分类`=b.`cate` ,
+    				                    a.`二级分类`=b.`second_cate`,
+    				                    a.`三级分类`=b.`third_cate`
+    				                where a.`订单编号`=b.`orderNumber`;'''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        except Exception as e:
+            print('更新失败：', str(Exception) + str(e))
+        print('更新成功…………')
+        print('更新耗时：', datetime.datetime.now() - start)
+
     # 修改样式（备用）
     def xiugaiyangshi(self, filePath, sheetname):
         print('正在修改样式…………')
@@ -950,7 +1080,7 @@ class QueryControl(Settings):
         print('----已写入excel')
         #  https://www.cnblogs.com/liming19680104/p/11648048.html 修改表格样式
         filePath = r'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}---2200签收率.xlsx'.format(today, match1[team])
-        app = xw.App(visible=False, add_book=False)
+        app = xl.App(visible=False, add_book=False)
         wb = app.books.open(filePath, update_links=False, read_only=True)
         print(match[team])
         sht = wb.sheets[match[team]]
@@ -1047,3 +1177,6 @@ if __name__ == '__main__':
     # team = 'sltg_zqsb'
     # m.sl_tem_cost(team, match9[team])
 
+    # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:
+    for team in ['sltg']:
+        m.productIdInfo('订单号', team)

@@ -200,13 +200,13 @@ class MysqlControl(Settings):
         mm = int((datetime.datetime.now() - datetime.timedelta(days=5)).strftime('%m'))
         dd = int((datetime.datetime.now() - datetime.timedelta(days=5)).strftime('%d'))
         begin = datetime.date(yy, mm, dd)
-        # begin = datetime.date(2018, 1, 1)
+        # begin = datetime.date(2017, 1, 1)
         print(begin)
         yy2 = int(datetime.datetime.now().strftime('%Y'))
         mm2 = int(datetime.datetime.now().strftime('%m'))
         dd2 = int(datetime.datetime.now().strftime('%d'))
         end = datetime.date(yy2, mm2, dd2)
-        # end = datetime.date(2019, 1, 1)
+        # end = datetime.date(2018, 1, 1)
         print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -416,7 +416,7 @@ class MysqlControl(Settings):
         else:
             begin = datetime.date(2021, 1, 1)
             print(begin)
-            end = datetime.date(2021, 3, 10)
+            end = datetime.date(2021, 3, 15)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -537,30 +537,9 @@ class MysqlControl(Settings):
             print(month_begin)
         else:
             month_last = '2021-01-01'
-            month_yesterday = '2021-03-10'
+            month_yesterday = '2021-03-15'
             month_begin = '2020-11-01'
         if team == 'slgat':  # 港台查询函数导出
-            # sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-            #             IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
-            #             IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
-            #             IF(上线时间='1990-01-01 00:00:00' or 上线时间='1899-12-30 00:00:00' or 上线时间='0000-00-00 00:00:00', '', 上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
-            #             IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-            #             IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
-            #             是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,
-            #             产品id,IF(ISNULL(a.产品名称), a.产品名称, f.name) 产品名称,
-            #             产品id,产品名称,父级分类,
-            #             二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
-            #             包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-            #             b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间,数量
-            #         FROM {0}_order_list a
-            #             LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} WHERE {0}.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
-            #             LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
-            #             LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
-            #             LEFT JOIN dim_product f ON f.id = a.产品id
-            #         WHERE a.日期 >= '{2}' AND a.日期 <= '{3}'
-            #             AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)','已退货(物流)', '已退货(不拆包物流)')
-            #         ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
-
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
