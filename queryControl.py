@@ -830,7 +830,8 @@ class QueryControl(Settings):
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
         if ordersDict.empty:
             print('无需要更新的产品id信息！！！')
-            sys.exit()
+            # sys.exit()
+            return
         orderId = list(ordersDict['订单编号'])
         orderId = ', '.join(orderId)
         print('获取耗时：', datetime.datetime.now() - start)
@@ -1170,6 +1171,6 @@ if __name__ == '__main__':
     # m.sl_tem_cost(team, match9[team])
 
     # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:
-    for team in ['slgat']:
+    for team in ['slrb']:
         tokenid= '617410b7b2709c853777cb79fbccfa79'
         m.productIdInfo(tokenid, '订单号', team)
