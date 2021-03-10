@@ -820,7 +820,7 @@ class QueryControl(Settings):
             print('处理耗时：', datetime.datetime.now() - start)
 
     # 更新团队产品明细
-    def productIdInfo(self, searchType, team):  # 进入查询界面，
+    def productIdInfo(self, tokenid, searchType, team):  # 进入查询界面，
         start = datetime.datetime.now()
         month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y-%m-%d')
         sql = '''SELECT id,`订单编号`  FROM {0}_order_list sl 
@@ -838,7 +838,7 @@ class QueryControl(Settings):
         data = {'phone': None,
                 'email': None,
                 'ip': None,
-                '_token': '05135e6a194a01c9c0b2d76ef221a770'}
+                '_token': '617410b7b2709c853777cb79fbccfa79'}
         if searchType == '订单号':
             data.update({'orderPrefix': orderId,
                          'shippingNumber': None})
@@ -855,7 +855,7 @@ class QueryControl(Settings):
         print('正在转化数据为dataframe…………')
         ordersDict = []
         for result in req['data']['list']:
-            print(result)
+            # print(result)
             # 添加新的字典键-值对，为下面的重新赋值用
             result['productId'] = 0
             result['saleName'] = 0
@@ -883,36 +883,28 @@ class QueryControl(Settings):
             # result['saleProduct'] = spe2
             # result['spec'] = spe3
             # result['link'] = spe4
-            print(9555)
             result['saleName'] = result['specs'][0]['saleName']
             result['saleProduct'] = result['specs'][0]['saleProduct']
             result['spec'] = result['specs'][0]['spec']
             result['link'] = result['specs'][0]['link']
             result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
-            print(9555)
             quest = ''
             for re in result['questionReason']:
                 quest = quest + ';' + re
-            print(quest)
             result['questionReason'] = quest
             delr = ''
             for re in result['delReason']:
                 delr = delr + ';' + re
-            print(delr)
             result['delReason'] = delr
             auto = ''
             for re in result['autoVerify']:
                 auto = auto + ';' + re
-            print(auto)
             result['autoVerify'] = auto
             self.q.put(result)
-        print('00')
-        print(len(req['data']['list']))
-        print('99')
+        # print(len(req['data']['list']))
         for i in range(len(req['data']['list'])):
             ordersDict.append(self.q.get())
         data = pd.json_normalize(ordersDict)
-        print(data)
         print(data[['orderNumber', 'productId']])
         print('正在写入缓存中......')
         try:
@@ -1178,5 +1170,6 @@ if __name__ == '__main__':
     # m.sl_tem_cost(team, match9[team])
 
     # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:
-    for team in ['sltg']:
-        m.productIdInfo('订单号', team)
+    for team in ['slgat']:
+        tokenid= '617410b7b2709c853777cb79fbccfa79'
+        m.productIdInfo(tokenid, '订单号', team)
