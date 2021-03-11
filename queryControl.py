@@ -823,12 +823,13 @@ class QueryControl(Settings):
             return
         orderId = list(ordersDict['订单编号'])
         orderId = ', '.join(orderId)
+        print('需要查询的订单编号： ' + orderId)
         print('获取耗时：', datetime.datetime.now() - start)
         url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getQueryOrder'
         data = {'phone': None,
                 'email': None,
                 'ip': None,
-                '_token': '617410b7b2709c853777cb79fbccfa79'}
+                '_token': tokenid}
         if searchType == '订单号':
             data.update({'orderPrefix': orderId,
                          'shippingNumber': None})
@@ -843,9 +844,10 @@ class QueryControl(Settings):
         print('正在处理json数据…………')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         print('正在转化数据为dataframe…………')
+        print(req)
         ordersDict = []
         for result in req['data']['list']:
-            # print(result)
+            print(result)
             # 添加新的字典键-值对，为下面的重新赋值用
             result['productId'] = 0
             result['saleName'] = 0
@@ -1160,6 +1162,6 @@ if __name__ == '__main__':
     # m.sl_tem_cost(team, match9[team])
 
     # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:
-    for team in ['slrb']:
-        tokenid= '617410b7b2709c853777cb79fbccfa79'
+    for team in ['slgat']:
+        tokenid= '50fc36d46172dbc931b299deca35c78d'
         m.productIdInfo(tokenid, '订单号', team)

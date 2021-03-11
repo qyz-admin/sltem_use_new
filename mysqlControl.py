@@ -403,7 +403,7 @@ class MysqlControl(Settings):
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat0':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb0' or team == 'slgat0':
             yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
             mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
             begin = datetime.date(yy, mm, 1)
@@ -414,7 +414,7 @@ class MysqlControl(Settings):
             end = datetime.date(yy2, mm2, dd2)
             print(end)
         else:
-            begin = datetime.date(2021, 1, 1)
+            begin = datetime.date(2021, 3, 5)
             print(begin)
             end = datetime.date(2021, 3, 15)
             print(end)
@@ -540,7 +540,7 @@ class MysqlControl(Settings):
             month_begin = '2020-11-01'
         if team == 'slgat':  # 港台查询函数导出
             # 产品id详情更新   （参数一需要手动更换）
-            self.d.productIdInfo('617410b7b2709c853777cb79fbccfa79', '订单号', team)
+            self.d.productIdInfo('40115b168121902198da42261bab6c4c', '订单号', team)
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
@@ -1552,7 +1552,7 @@ class MysqlControl(Settings):
         pd.read_sql_query(sql=sql, con=self.engine3, chunksize=100)
         # 获取订单明细（泰国）
         print('======正在启动查询订单程序>>>>>')
-        b = BpsControl('nixiumin@giikin.com', 'nixiumin123@.')
+        b = BpsControl('gupeiyu@giikin.com', 'gu19931209*')
         match = {'slgat': '港台',
                  'sltg': '泰国',
                  'slxmt': '新马',
@@ -1573,26 +1573,26 @@ if __name__ == '__main__':
     m = MysqlControl()
     start = datetime.datetime.now()
 
-    # 更新产品id的列表
-    m.update_gk_product()
-
-    for team in ['sltg', 'slgat', 'slrb', 'slxmt']:  # 无运单号查询200
-        m.noWaybillNumber(team)
-
-    match = {'SG': '新加坡',
-             'MY': '马来西亚',
-             'PH': '菲律宾',
-             'JP': '日本',
-             'HK': '香港',
-             'TW': '台湾',
-             'TH': '泰国'}
-    # match = {'JP': '日本'}
-    for team in match.keys():  # 产品花费表200
-        m.orderCost(team)
-
-    sm = SltemMonitoring()
-    for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:  # 成本查询
-        sm.costWaybill(team)
+    # # 更新产品id的列表
+    # m.update_gk_product()
+    #
+    # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:  # 无运单号查询200
+    #     m.noWaybillNumber(team)
+    #
+    # match = {'SG': '新加坡',
+    #          'MY': '马来西亚',
+    #          'PH': '菲律宾',
+    #          'JP': '日本',
+    #          'HK': '香港',
+    #          'TW': '台湾',
+    #          'TH': '泰国'}
+    # match = {'TH': '泰国'}
+    # for team in match.keys():  # 产品花费表200
+    #     m.orderCost(team)
+    #
+    # sm = SltemMonitoring()
+    # for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:  # 成本查询
+    #     sm.costWaybill(team)
 
     # （泰国）全部订单表200
     m.tgOrderQuan('sltg')
