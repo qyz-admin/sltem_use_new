@@ -524,12 +524,11 @@ class MysqlControl(Settings):
                  'slyn': '越南',
                  'slrb': '日本'}
         emailAdd = {'slgat': 'giikinliujun@163.com',
-                    'sltg': '1845389861@qq.com',
+                    'sltg': 'zhangjing@giikin.com',
                     'slxmt': 'zhangjing@giikin.com',
                     'slzb': '直播团队',
                     'slyn': '越南',
                     'slrb': 'sunyaru@giikin.com'}
-        emailAdd2 = {'sltg': 'zhangjing@giikin.com'}
         if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat0':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
@@ -635,10 +634,6 @@ class MysqlControl(Settings):
         else:
             self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
                         emailAdd[team])
-        if team == 'sltg':  # 补充发送一份
-            self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
-                        emailAdd2[team])
-
         # 导入签收率表中和输出物流时效（不包含全部的订单状态）
         print('正在打印' + match[team] + ' 物流时效…………')
         if team == 'slgat0':
@@ -665,9 +660,8 @@ class MysqlControl(Settings):
                     '新加坡': 'zhangjing@giikin.com',
                     '马来西亚': 'zhangjing@giikin.com',
                     '菲律宾': 'zhangjing@giikin.com',
-                    '泰国': '1845389861@qq.com',
+                    '泰国': 'zhangjing@giikin.com',
                     '日本': 'sunyaru@giikin.com'}
-        emailAdd2 = {'泰国': 'zhangjing@giikin.com'}
         if team == 'sltg0' or team == 'slxmt0' or team == 'slrb0' or team == 'slgat0':
             month_last = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
         else:
@@ -1156,9 +1150,6 @@ class MysqlControl(Settings):
             filePath.append(file_path)
             self.e.send('{} {}物流时效.xlsx'.format(today, tem), filePath,
                         emailAdd[tem])
-            if team == 'sltg':
-                self.e.send('{} {}物流时效.xlsx'.format(today, tem), filePath,
-                            emailAdd2[tem])
 
     # 无运单号查询
     def noWaybillNumber(self, team):
@@ -1175,7 +1166,7 @@ class MysqlControl(Settings):
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         emailAdd = {'slgat': 'giikinliujun@163.com',
-                    'sltg': '1845389861@qq.com',
+                    'sltg': 'zhangjing@giikin.com',
                     'slxmt': 'zhangjing@giikin.com',
                     'slzb': '直播团队',
                     'slyn': '越南',
@@ -1273,7 +1264,7 @@ class MysqlControl(Settings):
                     'JP': 'sunyaru@giikin.com',
                     'HK': 'giikinliujun@163.com',
                     'TW': 'giikinliujun@163.com',
-                    'TH': '1845389861@qq.com'}
+                    'TH': 'zhangjing@giikin.com'}
         # filePath = []
         for i in range(len(endDate)):
             print('正在查询' + match[team] + '产品花费表…………')

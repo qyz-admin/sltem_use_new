@@ -493,12 +493,11 @@ class SltemMonitoring(Settings):
                   '马来西亚': r'D:\Users\Administrator\Desktop\查询\新马监控'}
         emailAdd = {'香港': 'giikinliujun@163.com',
                     '台湾': 'giikinliujun@163.com',
-                    '泰国': '1845389861@qq.com',
+                    '泰国': 'zhangjing@giikin.com',
                     '新加坡': 'zhangjing@giikin.com',
                     '马来西亚': 'zhangjing@giikin.com',
                     '菲律宾': 'zhangjing@giikin.com',
                     '日本': 'sunyaru@giikin.com'}
-        emailAdd2 = {'泰国': 'zhangjing@giikin.com'}
         # 筛选最大ID
         # print('正在创建临时监控数据源')
         # today = datetime.date.today().strftime('%Y.%m.%d')
@@ -2040,9 +2039,6 @@ class SltemMonitoring(Settings):
         file_Path.append(filePath)
         self.e.send('{} {}监控表.xlsx'.format(today, team), file_Path,
                     emailAdd[team])
-        if team =='泰国':
-            self.e.send('{} {}监控表.xlsx'.format(today, team), file_Path,
-                        emailAdd2[team])
         print('处理耗时：', datetime.datetime.now() - start)
 
         # 单月获取数据对比：
@@ -2063,12 +2059,11 @@ class SltemMonitoring(Settings):
                   '马来西亚': r'D:\Users\Administrator\Desktop\查询\新马监控'}
         emailAdd = {'香港': 'giikinliujun@163.com',
                     '台湾': 'giikinliujun@163.com',
-                    '泰国': '1845389861@qq.com',
+                    '泰国': 'zhangjing@giikin.com',
                     '新加坡': 'zhangjing@giikin.com',
                     '马来西亚': 'zhangjing@giikin.com',
                     '菲律宾': 'zhangjing@giikin.com',
                     '日本': 'sunyaru@giikin.com'}
-        emailAdd2 = {'泰国': 'zhangjing@giikin.com'}
         today = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         start: datetime = datetime.datetime.now()
         Time_day = []
@@ -3300,9 +3295,6 @@ class SltemMonitoring(Settings):
         file_Path.append(filePath)
         self.e.send('{} {}上月数据监控表.xlsx'.format(today, team), file_Path,
                     emailAdd[team])
-        if team =='泰国':
-            self.e.send('{} {}上月数据监控表.xlsx'.format(today, team), file_Path,
-                        emailAdd2[team])
         print('处理耗时：', datetime.datetime.now() - start)
 
     # 获取签收表内容

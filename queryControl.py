@@ -86,10 +86,6 @@ class QueryControl(Settings):
                  'sltg_zqsb': '泰国',
                  'slxmt_zqsb': '"新加坡", "马来西亚", "菲律宾"',
                  'slrb_zqsb_rb': '日本'}
-        match1 = {'slgat_zqsb': 'slgat_month',
-                  'sltg_zqsb': 'sltg_month',
-                  'slxmt_zqsb': 'slxmt_month',
-                  'slrb_zqsb_rb': 'slrb_month'}
         match3 = {'新加坡': 'SG',
                   '马来西亚': 'MY',
                   '菲律宾': 'PH',
@@ -98,12 +94,11 @@ class QueryControl(Settings):
                   '台湾': 'TW',
                   '泰国': 'TH'}
         emailAdd = {'slgat_zqsb': 'giikinliujun@163.com',
-                    'sltg_zqsb': '1845389861@qq.com',
+                    'sltg_zqsb': 'zhangjing@giikin.com',
                     'slxmt_zqsb': 'zhangjing@giikin.com',
                     'slzb': '直播团队',
                     'slyn': '越南',
                     'slrb_zqsb_rb': 'sunyaru@giikin.com'}
-        emailAdd2 = {'sltg_zqsb': 'zhangjing@giikin.com'}
         start = datetime.datetime.now()
         endDate = (datetime.datetime.now()).strftime('%Y%m')
         print(endDate)
@@ -741,9 +736,6 @@ class QueryControl(Settings):
             file_Path.append(filePath)
             self.e.send(tem + '产品花费表', file_Path,
                         emailAdd[team])
-            if tem == '泰国':
-                self.e.send(tem + '产品花费表', file_Path,
-                            emailAdd2[team])
         else:
             file_Path = []  # 发送邮箱文件使用
             filePath = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}上月产品花费表.xlsx'.format(today, tem)
@@ -814,9 +806,6 @@ class QueryControl(Settings):
             file_Path.append(filePathT)
             self.e.send(tem + '产品花费表', file_Path,
                         emailAdd[team])
-            if tem == '泰国':
-                self.e.send(tem + '产品花费表', file_Path,
-                            emailAdd2[team])
             print('处理耗时：', datetime.datetime.now() - start)
 
     # 更新团队产品明细
