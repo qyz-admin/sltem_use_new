@@ -473,7 +473,8 @@ class QueryControl(Settings):
                                         LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                                         LEFT JOIN dim_area c on c.id = a.area_id
                                         LEFT JOIN dim_cate d on d.id = a.third_cate_id
-                                        LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
+                                        LEFT JOIN gk_product e on e.id = a.product_id
+                            --          LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
                                     WHERE b.pcode = '{0}'
                                         AND EXTRACT(YEAR_MONTH FROM a.rq) >= '{start_Date}'
                                         AND EXTRACT(YEAR_MONTH FROM a.rq) <= '{end_Date}'
@@ -531,11 +532,12 @@ class QueryControl(Settings):
                                         null 广告成本,
 						                SUM(a.wlcost) AS 物流成本,
 						                SUM(a.qtcost) AS 手续费 
-			                        FROM gk_order_day_kf a
+			                        FROM gk_order_day a
 				                        LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
 				                        LEFT JOIN dim_area c on c.id = a.area_id
 				                        LEFT JOIN dim_cate d on d.id = a.third_cate_id
-                                        LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
+                                        LEFT JOIN gk_product e on e.id = a.product_id
+                            --          LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
                                     WHERE b.pcode = '{0}'
                                         AND EXTRACT(YEAR_MONTH FROM a.rq) >= '{start_Date}'
                                         AND EXTRACT(YEAR_MONTH FROM a.rq) <= '{end_Date}'
@@ -599,7 +601,8 @@ class QueryControl(Settings):
                                     LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                                     LEFT JOIN dim_area c on c.id = a.area_id
                                     LEFT JOIN dim_cate d on d.id = a.third_cate_id
-                                    LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
+                                    LEFT JOIN gk_product e on e.id = a.product_id
+                        --          LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
                                 WHERE b.pcode = '{0}'
                                     AND EXTRACT(YEAR_MONTH FROM a.rq) >= '{start_Date}'
                                     AND EXTRACT(YEAR_MONTH FROM a.rq) <= '{end_Date}'
@@ -665,7 +668,8 @@ class QueryControl(Settings):
                                     LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                                     LEFT JOIN dim_area c on c.id = a.area_id
                                     LEFT JOIN dim_cate d on d.id = a.third_cate_id
-                                    LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
+                                    LEFT JOIN gk_product e on e.id = a.product_id
+                        --          LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
                                 WHERE b.pcode = '{0}'
                                     AND EXTRACT(YEAR_MONTH FROM a.rq) >= '{start_Date}'
                                     AND EXTRACT(YEAR_MONTH FROM a.rq) <= '{end_Date}'
@@ -810,6 +814,7 @@ class QueryControl(Settings):
 
     # 更新团队产品明细（新后台的）
     def productIdInfo(self, tokenid, searchType, team):  # 进入查询界面，
+        print('正在获取需要更新的产品id信息')
         start = datetime.datetime.now()
         month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y-%m-%d')
         sql = '''SELECT id,`订单编号`  FROM {0}_order_list sl 
@@ -822,16 +827,12 @@ class QueryControl(Settings):
             # sys.exit()
             return
         orderId = list(ordersDict['订单编号'])
-        # orderId = ', '.join(orderId)
-        # print('需要查询的订单编号： ' + orderId)
         print('获取耗时：', datetime.datetime.now() - start)
-        # for ord in orderId:
-        #     print(ord)
-        #     self.productIdquery(tokenid, ord, searchType, team)
-        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+        max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
         n = 0
-        while n < max_count:  # 这里用到了一个while循环，穿越过来的
+        while n < max_count:        # 这里用到了一个while循环，穿越过来的
             ord = ', '.join(orderId[n:n + 5])
+            print(ord)
             n = n + 5
             self.productIdquery(tokenid, ord, searchType, team)
 

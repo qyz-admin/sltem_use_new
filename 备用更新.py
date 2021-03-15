@@ -43,7 +43,7 @@ class BpsControl99(Settings):
 		req = self.session.post(url=url, headers=r_header, data=data)
 		print('------  成功登陆系统后台  -------')
 
-	def tgetOrderInfo(self, orderId, searchType):                  # 进入查询界面
+	def newOrderInfo(self, orderId, searchType):                  # 进入查询界面
 		url = 'https://goms.giikin.com/admin/order/orderquery.html'
 		data = {'phone': None,
 				'ship_email': None,
@@ -58,7 +58,7 @@ class BpsControl99(Settings):
 		print('-------已成功发送请求++++++')
 		orderInfo = self.t_parseDate(req)   			# 获取订单简单信息
 		# print(orderInfo)
-	def t_parseDate(self, req):  					# 对返回的response 进行处理； 处理订单简单信息
+	def new_parseDate(self, req):  					# 对返回的response 进行处理； 处理订单简单信息
 		soup = BeautifulSoup(req.text, 'lxml') 		# 创建 beautifulsoup 对象
 		orderInfo = {}
 		labels = soup.find_all('th')   				# 获取行标签的th值
@@ -75,7 +75,7 @@ class BpsControl99(Settings):
 			print('放入失败---：', str(Exception) + str(e))
 		return orderInfo
 
-	def getNumberT(self, team, searchType, last_month): # ----主线程的执行（多线程函数）
+	def newUser(self, team, searchType, last_month): # ----主线程的执行（多线程函数）
 		match = {'slgat': '港台',
 				'sltg': '泰国',
 				'slxmt': '新马',
@@ -109,7 +109,7 @@ class BpsControl99(Settings):
 		print('主线程开始执行……………………')
 		threads = []  				 # 多线程用线程池--
 		for order in ordersDict:     # 注意前后数组的取值长度一致
-			threads.append(Thread(target=self.tgetOrderInfo, args=(order, searchType)))    #  -----也即是子线程
+			threads.append(Thread(target=self.newOrderInfo, args=(order, searchType)))    #  -----也即是子线程
 		print('子线程分配完成++++++')
 		if threads:                  # 当所有的线程都分配完成之后，通过调用每个线程的start()方法再让他们开始。
 			print(len(threads))
