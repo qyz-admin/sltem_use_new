@@ -56,7 +56,7 @@ class BpsControl99(Settings):
 						'waybill_number': orderId})
 		req = self.session.post(url=url, data=data)
 		print('-------已成功发送请求++++++')
-		orderInfo = self.t_parseDate(req)   			# 获取订单简单信息
+		orderInfo = self.new_parseDate(req)   			# 获取订单简单信息
 		# print(orderInfo)
 	def new_parseDate(self, req):  					# 对返回的response 进行处理； 处理订单简单信息
 		soup = BeautifulSoup(req.text, 'lxml') 		# 创建 beautifulsoup 对象
@@ -162,4 +162,4 @@ if __name__ == '__main__':                    # 以老后台的简单查询为�
 		print('正在更新 ' + last_month + ' 号订单信息…………')
 		team = 'slgat'
 		searchType = '订单号'  					# 运单号，订单号   查询切换
-		s.getNumberT(team, searchType, last_month)
+		s.newUser(team, searchType, last_month)
