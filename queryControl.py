@@ -808,7 +808,7 @@ class QueryControl(Settings):
                         emailAdd[team])
             print('处理耗时：', datetime.datetime.now() - start)
 
-    # 更新团队产品明细
+    # 更新团队产品明细（新后台的）
     def productIdInfo(self, tokenid, searchType, team):  # 进入查询界面，
         start = datetime.datetime.now()
         month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y-%m-%d')
@@ -822,9 +822,21 @@ class QueryControl(Settings):
             # sys.exit()
             return
         orderId = list(ordersDict['订单编号'])
-        orderId = ', '.join(orderId)
-        print('需要查询的订单编号： ' + orderId)
+        # orderId = ', '.join(orderId)
+        # print('需要查询的订单编号： ' + orderId)
         print('获取耗时：', datetime.datetime.now() - start)
+        # for ord in orderId:
+        #     print(ord)
+        #     self.productIdquery(tokenid, ord, searchType, team)
+        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+        n = 0
+        while n < max_count:  # 这里用到了一个while循环，穿越过来的
+            ord = ', '.join(orderId[n:n + 5])
+            n = n + 5
+            self.productIdquery(tokenid, ord, searchType, team)
+
+    def productIdquery(self, tokenid, orderId, searchType, team):  # 进入查询界面，
+        start = datetime.datetime.now()
         url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getQueryOrder'
         data = {'phone': None,
                 'email': None,
@@ -844,10 +856,10 @@ class QueryControl(Settings):
         print('正在处理json数据…………')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         print('正在转化数据为dataframe…………')
-        print(req)
+        # print(req)
         ordersDict = []
         for result in req['data']['list']:
-            print(result)
+            # print(result)
             # 添加新的字典键-值对，为下面的重新赋值用
             result['productId'] = 0
             result['saleName'] = 0
@@ -926,6 +938,7 @@ class QueryControl(Settings):
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
         print('更新耗时：', datetime.datetime.now() - start)
+
 
     # 修改样式（备用）
     def xiugaiyangshi(self, filePath, sheetname):
@@ -1163,5 +1176,6 @@ if __name__ == '__main__':
 
     # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:
     for team in ['slgat']:
-        tokenid= '50fc36d46172dbc931b299deca35c78d'
+        tokenid= '4fe9708a980265908267d14778aeeace'
+        # m.productIdInfo(tokenid, '订单号', team)
         m.productIdInfo(tokenid, '订单号', team)

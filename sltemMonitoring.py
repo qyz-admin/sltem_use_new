@@ -3392,20 +3392,20 @@ if __name__ == '__main__':
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # # # 测试监控运行（三）
     # for team in ['香港']:
-    # for team in ['香港', '台湾', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
-    #     m.order_Monitoring(team)    # 各月缓存
-    #     m.data_Monitoring(team)     # 两月数据
-    #     # m.costWaybill(team)       # 成本缓存 与 成本两月数据
-    #     m.sl_Monitoring(team)       # 输出数据
-    #     m.sl_Monitoring_two(team)  # 输出上月数据
+    # for team in ['台湾', '香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
+        # m.order_Monitoring(team)    # 各月缓存
+        # m.data_Monitoring(team)     # 两月数据
+        # m.costWaybill(team)       # 成本缓存 与 成本两月数据
+        # m.sl_Monitoring(team)       # 输出数据
+        # m.sl_Monitoring_two(team)  # 输出上月数据
 
     # 获取签收表内容（二）
-    # startday = '2021.02.02'
-    # for team in ['香港', '台湾', '日本', '新加坡', '马来西亚', '泰国']:
-    #     m.readForm(team, startday)
+    startday = '2021.02.02'
+    for team in ['香港', '台湾', '日本', '新加坡', '马来西亚', '泰国']:
+        m.readForm(team, startday)
 
-    # 获取监控表以上传的时间---监控运行（一）
-    for team in ['台湾', '香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
-    # for team in ['香港', '台湾', '日本', '泰国']:
-    # for team in ['菲律宾']:
-        m.check_time(team)
+    # # 获取监控表以上传的时间---监控运行（一）
+    # for team in ['台湾', '香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
+    # # for team in ['香港', '台湾', '日本', '泰国']:
+    # # for team in ['菲律宾']:
+    #     m.check_time(team)
