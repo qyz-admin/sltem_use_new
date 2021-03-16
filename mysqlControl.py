@@ -405,7 +405,7 @@ class MysqlControl(Settings):
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat0':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb0' or team == 'slgat0':
             yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
             mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
             begin = datetime.date(yy, mm, 1)
@@ -418,7 +418,7 @@ class MysqlControl(Settings):
         else:
             begin = datetime.date(2021, 1, 1)
             print(begin)
-            end = datetime.date(2021, 3, 16)
+            end = datetime.date(2021, 3, 17)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -532,14 +532,14 @@ class MysqlControl(Settings):
                     'slzb': '直播团队',
                     'slyn': '越南',
                     'slrb': 'sunyaru@giikin.com'}
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat0':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb0' or team == 'slgat0':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
             print(month_begin)
         else:
             month_last = '2021-01-01'
-            month_yesterday = '2021-03-16'
+            month_yesterday = '2021-03-17'
             month_begin = '2020-11-01'
         if team == 'slgat':  # 港台查询函数导出
             # 产品id详情更新   （参数一需要手动更换）
@@ -1499,76 +1499,6 @@ class MysqlControl(Settings):
         #             emailAdd[team])
         self.d.sl_tem_cost(match2[team], match[team])
 
-    # 各团队(泰国)全部订单表-函数
-    def tgOrderQuan(self, team):  # 3天内的
-        match1 = {'slgat': '港台',
-                  'sltg': '泰国',
-                  'slxmt': '新马',
-                  'slzb': '直播团队',
-                  'slyn': '越南',
-                  'slrb': '日本'}
-        match = {'slgat': '"神龙家族-港澳台"',
-                 'sltg': '"神龙家族-泰国"',
-                 'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
-                 'slzb': '"神龙家族-直播团队"',
-                 'slyn': '"神龙家族-越南"',
-                 'slrb': '"神龙家族-日本团队"'}
-        print('正在获取' + match1[team] + '最近 10 天订单…………')
-        yesterday = (datetime.datetime.now()).strftime('%Y-%m-%d')
-        # yesterday = (datetime.datetime.now().replace(month=1, day=10)).strftime('%Y-%m-%d')
-        print(yesterday)
-        last_month = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
-        # last_month = (datetime.datetime.now().replace(month=1, day=5)).strftime('%Y-%m-%d')
-        print(last_month)
-        sql = '''SELECT a.id,
-                        a.订单编号 order_number,
-                        a.团队 area_id,
-                        '' main_id,
-                        a.电话号码 ship_phone,
-                        a.邮编 ship_zip,
-                        a.价格 amount,
-                        a.系统订单状态 order_status,
-                        UPPER(a.运单编号) waybill_number,
-                        a.付款方式 pay_type,
-                        a.下单时间 addtime,
-                        a.审核时间 update_time,
-                        a.产品id goods_id, 
-                        '' quantity,
-                        a.物流方式 logistics_id,
-                        '' op_id,
-                        CONCAT(a.产品id,'#' ,a.产品名称) goods_name, 
-                        a.是否改派 secondsend_status,
-                        a.是否低价 low_price
-                FROM {}_order_list a 
-                WHERE a.日期 >= '{}' AND a.日期 <= '{}';'''.format(team, last_month, yesterday)
-        try:
-            df = pd.read_sql_query(sql=sql, con=self.engine1)
-            print(df)
-            print('正在写入缓存表中…………')
-            df.to_sql('tem_sl', con=self.engine3, index=False, if_exists='replace')
-            print('++++更新缓存完成++++')
-        except Exception as e:
-            print('更新缓存失败：', str(Exception) + str(e))
-        print('正在写入 ' + match1[team] + ' 全部订单表中…………')
-        sql = 'REPLACE INTO 全部订单_{} SELECT *, NOW() 添加时间 FROM tem_sl;'.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine3, chunksize=100)
-        # 获取订单明细（泰国）
-        print('======正在启动查询订单程序>>>>>')
-        b = BpsControl('gupeiyu@giikin.com', 'gu19931209*')
-        match = {'slgat': '港台',
-                 'sltg': '泰国',
-                 'slxmt': '新马',
-                 'slzb': '直播团队',
-                 'slyn': '越南',
-                 'slrb': '日本'}
-        team = 'sltg'
-        searchType = '订单号'  # 运单号，订单号；查询切换
-        b.getNumberT(team, searchType)
-        print('查询耗时：', datetime.datetime.now() - start)
-        time.sleep(10)
-        b.getNumberAdd(team, searchType)
-        print('补充耗时：', datetime.datetime.now() - start)
-
 
 if __name__ == '__main__':
     #  messagebox.showinfo("提示！！！", "当前查询已完成--->>> 请前往（ 输出文件 ）查看")200
@@ -1595,9 +1525,7 @@ if __name__ == '__main__':
     sm = SltemMonitoring()
     for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:  # 成本查询
         sm.costWaybill(team)
-    #
-    # # （泰国）全部订单表200
-    m.tgOrderQuan('sltg')
+
 
     # 测试物流时效
     # team = 'sltg'

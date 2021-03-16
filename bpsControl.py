@@ -267,39 +267,95 @@ class BpsControl(Settings):
 		df.to_excel('D:\\Users\\Administrator\\Desktop\\查询\\{} {}.xlsx'.format(today, match1[house]),
 					sheet_name=match1[house], index=False)
 		print('输出文件成功…………')
+
+	# 各团队(泰国)全部订单表-函数（停用）
+	def tgOrderQuan(self, team):  # 3天内的
+		match1 = {'slgat': '港台',
+			  	'sltg': '泰国',
+			  	'slxmt': '新马',
+			  	'slzb': '直播团队',
+			  	'slyn': '越南',
+			  	'slrb': '日本'}
+		match = {'slgat': '"神龙家族-港澳台"',
+			 	'sltg': '"神龙家族-泰国"',
+			 	'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
+			 	'slzb': '"神龙家族-直播团队"',
+			 	'slyn': '"神龙家族-越南"',
+			 	'slrb': '"神龙家族-日本团队"'}
+		print('正在获取' + match1[team] + '最近 10 天订单…………')
+		yesterday = (datetime.datetime.now()).strftime('%Y-%m-%d')
+		# yesterday = (datetime.datetime.now().replace(month=1, day=10)).strftime('%Y-%m-%d')
+		print(yesterday)
+		last_month = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
+		# last_month = (datetime.datetime.now().replace(month=1, day=5)).strftime('%Y-%m-%d')
+		print(last_month)
+		sql = '''SELECT a.id,
+                    a.订单编号 order_number,
+                    a.团队 area_id,
+                    '' main_id,
+                    a.电话号码 ship_phone,
+                    a.邮编 ship_zip,
+                    a.价格 amount,
+                    a.系统订单状态 order_status,
+                    UPPER(a.运单编号) waybill_number,
+                    a.付款方式 pay_type,
+                    a.下单时间 addtime,
+                    a.审核时间 update_time,
+                    a.产品id goods_id, 
+                    '' quantity,
+                    a.物流方式 logistics_id,
+                    '' op_id,
+                    CONCAT(a.产品id,'#' ,a.产品名称) goods_name, 
+                    a.是否改派 secondsend_status,
+                    a.是否低价 low_price
+            FROM {}_order_list a 
+            WHERE a.日期 >= '{}' AND a.日期 <= '{}';'''.format(team, last_month, yesterday)
+		try:
+			df = pd.read_sql_query(sql=sql, con=self.engine1)
+			print(df)
+			print('正在写入缓存表中…………')
+			df.to_sql('tem_sl', con=self.engine3, index=False, if_exists='replace')
+			print('++++更新缓存完成++++')
+		except Exception as e:
+			print('更新缓存失败：', str(Exception) + str(e))
+		print('正在写入 ' + match1[team] + ' 全部订单表中…………')
+		sql = 'REPLACE INTO 全部订单_{} SELECT *, NOW() 添加时间 FROM tem_sl;'.format(team)
+		pd.read_sql_query(sql=sql, con=self.engine3, chunksize=100)
+		# 获取订单明细（泰国）
+		print('======正在启动查询订单程序>>>>>')
+		b = BpsControl('gupeiyu@giikin.com', 'gu19931209*')
+		match = {'slgat': '港台',
+			 'sltg': '泰国',
+			 'slxmt': '新马',
+			 'slzb': '直播团队',
+			 'slyn': '越南',
+			 'slrb': '日本'}
+		team = 'sltg'
+		searchType = '订单号'  # 运单号，订单号；查询切换
+		b.getNumberT(team, searchType)
+		print('查询耗时：', datetime.datetime.now() - start)
+		time.sleep(10)
+		b.getNumberAdd(team, searchType)
+		print('补充耗时：', datetime.datetime.now() - start)
+
+
 if __name__ == '__main__':                    # 以老后台的简单查询为主，
 	start = datetime.datetime.now()	
 	print('======正在启动查询订单程序>>>>>')
 	print('               v           ')
 	# s = Bds('qiyuanzhang@jikeyin.com', 'qiyuanzhang123.')
 	s = BpsControl('nixiumin@giikin.com', 'nixiumin123@.')
-	# s.__load()
 	# # s.getOrderInfo("NR010230026492511", '订单号')
 	# s.getOrderInfo("TH009281245118873", '订单号')
 
-	# 获取订单明细（各团队）
+	# 获取全部订单表（各团队）
 	match = {'slgat': '港台',
 		'sltg': '泰国',
 		'slxmt': '新马',
 		'slzb': '直播团队',
 		'slyn': '越南',
 		'slrb': '日本'}
-	# team = 'slgat'
-	# searchType = '运单号'  # 运单号，订单号   查询切换
-	# s.getNumber(team, searchType)
-
-	# rq = '2020-09-29'
-	# team = 'sltg'
-	# searchType = '订单号'  # 运单号，订单号   查询切换
-	# print("========开始第一阶段查询（近6天）======")
-	# s.getNumberT(team, searchType, last_yesterday, now_yesterday)
-	# print('查询耗时：', datetime.datetime.now() - start)
-	# time.sleep(10)
-	#
-	# print("========开始第二阶段查询（补充）======")
-	# s.getNumberAdd(team, searchType, last_yesterday, now_yesterday)
-	# print('补充耗时：', datetime.datetime.now() - start)
-	# print('         ^           ')
+	s.tgOrderQuan('sltg')
 
 	# 获取泰国海外仓
 	house = 'shifeng'
@@ -307,9 +363,5 @@ if __name__ == '__main__':                    # 以老后台的简单查询为�
 			 'chaoshidai': '运单号',
 			'bojiatu': '上架单号', }
 	s.sltg_HaiWaiCang(house)
-
-	house = 'bojiatu'
-	s.sltg_HaiWaiCang(house)
-
 
 
