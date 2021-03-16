@@ -43,7 +43,7 @@ class BpsControl99(Settings):
 		req = self.session.post(url=url, headers=r_header, data=data)
 		print('------  成功登陆系统后台  -------')
 
-	def newOrderInfo(self, orderId, searchType):                  # 进入查询界面
+	def newOrderInfo(self, orderId, searchType):                  # 进入老后台查询界面
 		url = 'https://goms.giikin.com/admin/order/orderquery.html'
 		data = {'phone': None,
 				'ship_email': None,
@@ -97,8 +97,7 @@ class BpsControl99(Settings):
 		print("======== 开始订单详情查询 ======")
 		month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y-%m-%d')
 		start = datetime.datetime.now()
-		sql = '''SELECT id,`订单编号`  FROM slgat_order_list sl  
-				where sl.日期 ='{0}' and sl.币种 = '台币';'''.format(last_month)
+		sql = '''SELECT id,`订单编号`  FROM {0}_order_list sl  where sl.日期 ='{1}' and sl.币种 = '台币';'''.format(team, last_month)
 		ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
 		if ordersDict.empty:
 			print('无需要更新的产品id信息！！！')
@@ -133,15 +132,15 @@ class BpsControl99(Settings):
 		print('正在写入缓存中......')
 		try:
 			pf.to_sql('备用', con=self.engine1, index=False, if_exists='replace')
-			sql = '''update slgat_order_list a, 备用 b
-						set a.`币种`=IF(b.`币种`='{0}', '{1}', b.`币种`),
+			sql = '''update {0}_order_list a, 备用 b
+						set a.`币种`=IF(b.`币种`='{1}', '{2}', b.`币种`),
 							a.`数量`=b.`数量`,
 							a.`电话号码`=b.`电话` ,
 							a.`运单编号`=b.`物流单号`,
 							a.`系统订单状态`=b.`订单状态`,	
 							a.`系统物流状态`=b.`物流状态`,
 							a.`是否改派`=IF(b.`是否二次改派`='二次改派', '改派', b.`是否二次改派`)
-					where a.`订单编号`=b.`订单号`;'''.format(match2[team], match3[team])
+					where a.`订单编号`=b.`订单号`;'''.format(team, match2[team], match3[team])
 			pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
 		except Exception as e:
 			print('更新失败：', str(Exception) + str(e))
