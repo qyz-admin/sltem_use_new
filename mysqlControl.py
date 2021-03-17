@@ -232,7 +232,7 @@ class MysqlControl(Settings):
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         # 12-1月的
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat':
+        if team == 'sltg0' or team == 'slxmt0' or team == 'slrb0' or team == 'slgat0':
             # 获取日期时间
             sql = 'SELECT 日期 FROM {0}_order_list WHERE id = (SELECT MAX(id) FROM {0}_order_list);'.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -241,9 +241,6 @@ class MysqlControl(Settings):
             mm = int((rq - datetime.timedelta(days=3)).strftime('%m'))
             dd = int((rq - datetime.timedelta(days=3)).strftime('%d'))
             print(dd)
-            # yy = int(datetime.datetime.now().strftime('%Y'))
-            # mm = int(datetime.datetime.now().strftime('%m'))
-            # # dd = int((datetime.datetime.now() - datetime.timedelta(days=5)).strftime('%d'))
             begin = datetime.date(yy, mm, dd)
             print(begin)
             yy2 = int(datetime.datetime.now().strftime('%Y'))
@@ -253,9 +250,9 @@ class MysqlControl(Settings):
             print(end)
         else:
             # 11-12月的
-            begin = datetime.date(2021, 1, 4)
+            begin = datetime.date(2021, 3, 10)
             print(begin)
-            end = datetime.date(2021, 1, 5)
+            end = datetime.date(2021, 3, 16)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -418,7 +415,7 @@ class MysqlControl(Settings):
         else:
             begin = datetime.date(2021, 1, 1)
             print(begin)
-            end = datetime.date(2021, 3, 17)
+            end = datetime.date(2021, 3, 16)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -538,12 +535,12 @@ class MysqlControl(Settings):
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
             print(month_begin)
         else:
-            month_last = '2021-01-01'
+            month_last = '2021-02-01'
             month_yesterday = '2021-03-17'
             month_begin = '2020-11-01'
         if team == 'slgat':  # 港台查询函数导出
             # 产品id详情更新   （参数一需要手动更换）
-            self.d.productIdInfo('946746dc59803366cf12903096599c43', '订单号', team)
+            # self.d.productIdInfo('377a056df2aa3859689b4b2a5af8fe01', '订单号', team)
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
@@ -597,7 +594,7 @@ class MysqlControl(Settings):
                         AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
         else:
-            self.d.productIdInfo('946746dc59803366cf12903096599c43', '订单号', team)
+            # self.d.productIdInfo('377a056df2aa3859689b4b2a5af8fe01', '订单号', team)
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', null, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
@@ -632,14 +629,14 @@ class MysqlControl(Settings):
         filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
-        if team == 'slgat':
+        if team == 'slgat0':
             print('---' + match[team] + ' 不发送邮件')
         else:
             self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
                         emailAdd[team])
         # 导入签收率表中和输出物流时效（不包含全部的订单状态）
         print('正在打印' + match[team] + ' 物流时效…………')
-        if team == 'slgat0':
+        if team == 'slgat':
             print('---' + match[team] + ' 不打印文件')
         else:
             # pass
@@ -1531,6 +1528,7 @@ if __name__ == '__main__':
     # team = 'sltg'
     # m.data_wl(team)
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:
+    # for team in ['slgat']:
     #     m.data_wl(team)
 
 

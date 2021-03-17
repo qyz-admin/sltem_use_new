@@ -940,7 +940,6 @@ class QueryControl(Settings):
         print('更新成功…………')
         print('更新耗时：', datetime.datetime.now() - start)
 
-
     # 修改样式（备用）
     def xiugaiyangshi(self, filePath, sheetname):
         print('正在修改样式…………')
@@ -1174,9 +1173,3 @@ if __name__ == '__main__':
     #           'slrb_zqsb_rb': '日本'}
     # team = 'sltg_zqsb'
     # m.sl_tem_cost(team, match9[team])
-
-    # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:
-    for team in ['slgat']:
-        tokenid= '4fe9708a980265908267d14778aeeace'
-        # m.productIdInfo(tokenid, '订单号', team)
-        m.productIdInfo(tokenid, '订单号', team)

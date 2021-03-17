@@ -79,25 +79,27 @@ class BpsControl99(Settings):
 		match = {'slgat': '港台',
 				'sltg': '泰国',
 				'slxmt': '新马',
-				'slzb': '直播团队',
-				'slyn': '越南',
 				'slrb': '日本'}
 		match2 = {'slgat': '台币',
 				'sltg': '泰铢',
-				'slxmt': '新马',
-				'slzb': '直播团队',
-				'slyn': '越南',
+				'slxmt': '新加坡（英语）',
 				'slrb': '日币'}
 		match3 = {'slgat': '台湾',
 				'sltg': '泰国',
-				'slxmt': '新马',
-				'slzb': '直播团队',
-				'slyn': '越南',
+				'slxmt': '新加坡',
+				'slrb': '日本'}
+		match4 = {'slgat': '台湾',
+				'sltg': '泰国',
+				'slxmt': '马来西亚（繁体）',
+				'slrb': '日本'}
+		match5 = {'slgat': '台湾',
+				'sltg': '泰国',
+				'slxmt': '马来西亚',
 				'slrb': '日本'}
 		print("======== 开始订单详情查询 ======")
 		month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y-%m-%d')
 		start = datetime.datetime.now()
-		sql = '''SELECT id,`订单编号`  FROM {0}_order_list sl  where sl.日期 ='{1}' and sl.币种 = '台币';'''.format(team, last_month)
+		sql = '''SELECT id,`订单编号`  FROM {0}_order_list sl  where sl.日期 ='{1}';'''.format(team, last_month)
 		ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
 		if ordersDict.empty:
 			print('无需要更新的产品id信息！！！')
@@ -133,14 +135,14 @@ class BpsControl99(Settings):
 		try:
 			pf.to_sql('备用', con=self.engine1, index=False, if_exists='replace')
 			sql = '''update {0}_order_list a, 备用 b
-						set a.`币种`=IF(b.`币种`='{1}', '{2}', b.`币种`),
+						set a.`币种`=IF(IF(b.`币种` = '{1}', '{2}', b.`币种`) = '{3}', '{4}', b.`币种`),
 							a.`数量`=b.`数量`,
 							a.`电话号码`=b.`电话` ,
 							a.`运单编号`=b.`物流单号`,
 							a.`系统订单状态`=b.`订单状态`,	
 							a.`系统物流状态`=b.`物流状态`,
 							a.`是否改派`=IF(b.`是否二次改派`='二次改派', '改派', b.`是否二次改派`)
-					where a.`订单编号`=b.`订单号`;'''.format(team, match2[team], match3[team])
+					where a.`订单编号`=b.`订单号`;'''.format(team, match2[team], match3[team], match4[team], match5[team])
 			pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
 		except Exception as e:
 			print('更新失败：', str(Exception) + str(e))
@@ -149,16 +151,18 @@ class BpsControl99(Settings):
 
 if __name__ == '__main__':                    # 以老后台的简单查询为主，
 	start = datetime.datetime.now()
-	s = BpsControl99('qiyuanzhang@jikeyin.com', 'qiyuanzhang123.0')
+	# s = BpsControl99('qiyuanzhang@jikeyin.com', 'qiyuanzhang123.0')
+	# s = BpsControl99('gupeiyu@giikin.com', 'gu19931209*')
+	s = BpsControl99('zhangjing@giikin.com', 'Giao2020..0')
 	begin = datetime.date(2021, 2, 1)
 	print(begin)
-	end = datetime.date(2021, 3, 12)
+	end = datetime.date(2021, 2, 2)
 	print(end)
 	for i in range((end - begin).days):  		# 按天循环获取订单状态
 		day = begin + datetime.timedelta(days=i)
 		yesterday = str(day) + ' 23:59:59'
 		last_month = str(day)
 		print('正在更新 ' + last_month + ' 号订单信息…………')
-		team = 'slgat'
+		team = 'slxmt'
 		searchType = '订单号'  					# 运单号，订单号   查询切换
 		s.newUser(team, searchType, last_month)

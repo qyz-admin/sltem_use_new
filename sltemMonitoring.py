@@ -223,7 +223,7 @@ class SltemMonitoring(Settings):
                         ON b.物流状态 = c.签收表物流状态
                     LEFT JOIN {0}_return d
                         ON a.订单编号 = d.订单编号
-                    WHERE a.日期 >= '{1}' AND a.币种 = '{2}'
+                    WHERE a.日期 >= '{1}' and a.日期 <= '2021-03-15' AND a.币种 = '{2}'
                         AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                     ORDER BY a.`下单时间`;'''.format(match3[team], month_last, team)
         print('正在获取---' + team + '---最近两个月监控数据…………')
@@ -3394,9 +3394,9 @@ if __name__ == '__main__':
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # # # 测试监控运行（三）
     # for team in ['菲律宾', '新加坡', '马来西亚', '泰国']:
-    # # for team in ['台湾', '香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
+    for team in ['台湾', '香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
     #     m.order_Monitoring(team)    # 各月缓存
-    #     m.data_Monitoring(team)     # 两月数据
+        m.data_Monitoring(team)     # 两月数据
     #     m.costWaybill(team)       # 成本缓存 与 成本两月数据
     #     m.sl_Monitoring(team)       # 输出数据
     #     # m.sl_Monitoring_two(team)  # 输出上月数据
@@ -3409,5 +3409,5 @@ if __name__ == '__main__':
     # # 获取监控表以上传的时间---监控运行（一）
     # for team in ['台湾', '香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
     # for team in ['香港', '台湾', '日本', '泰国']:
-    for team in ['台湾', '香港']:
-        m.check_time(team)
+    # for team in ['台湾', '香港']:
+    #     m.check_time(team)
