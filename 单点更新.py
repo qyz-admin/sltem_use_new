@@ -262,7 +262,7 @@ class QueryControl(Settings):
                     FROM d1_host h 
                     LEFT JOIN dim_product ON  dim_product.id = h.产品id
                     LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id;'''.format(team)
-        elif team == 'slxmt':
+        else:
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
 				                IF(IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),'2') 旬,
 			                  DATE(h.下单时间) 日期,
@@ -326,10 +326,9 @@ class QueryControl(Settings):
         print('正在获取需要订单信息')
         start = datetime.datetime.now()
         month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y-%m-%d')
-        month_begin = '2021-01-01'
+        month_begin = '2021-02-01'
         yesterday_begin = '2021-03-16'
-        sql = '''SELECT id,`订单编号`  FROM {0}_order_list sl 
-    			WHERE sl.`日期`>= '{1}'  AND sl.`日期`<= '{2}';'''.format(team, month_begin, yesterday_begin)
+        sql = '''SELECT id,`订单编号`  FROM {0}_order_list sl WHERE sl.`日期`>= '{1}'  AND sl.`日期`<= '{2}';'''.format(team, month_begin, yesterday_begin)
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
         if ordersDict.empty:
             print('无需要更新订单信息！！！')
@@ -452,8 +451,8 @@ if __name__ == '__main__':
     #     m.readFormHost(team)
 
     # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:
-    for team in ['slrb']:
-        tokenid= '5b8fa0b2dd75148885f5fe775f4da686'
+    for team in ['slxmt']:
+        tokenid= 'a4d7c34a2c1fa6807e2cf80d79e894c9'
         # m.productIdInfo(tokenid, '订单号', team)
         # m.productIdInfo(tokenid, '订单号', team)
         m.orderInfo(tokenid, '订单号', team)

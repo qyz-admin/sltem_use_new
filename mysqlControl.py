@@ -529,13 +529,13 @@ class MysqlControl(Settings):
                     'slzb': '直播团队',
                     'slyn': '越南',
                     'slrb': 'sunyaru@giikin.com'}
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb0' or team == 'slgat0':
+        if team == 'sltg0' or team == 'slxmt0' or team == 'slrb0' or team == 'slgat0':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
             print(month_begin)
         else:
-            month_last = '2021-02-01'
+            month_last = '2021-03-16'
             month_yesterday = '2021-03-17'
             month_begin = '2020-11-01'
         if team == 'slgat':  # 港台查询函数导出
@@ -629,14 +629,14 @@ class MysqlControl(Settings):
         filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
-        if team == 'slgat0':
+        if team == 'slxmt':
             print('---' + match[team] + ' 不发送邮件')
         else:
             self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
                         emailAdd[team])
         # 导入签收率表中和输出物流时效（不包含全部的订单状态）
         print('正在打印' + match[team] + ' 物流时效…………')
-        if team == 'slgat':
+        if team == 'slxmt':
             print('---' + match[team] + ' 不打印文件')
         else:
             # pass
