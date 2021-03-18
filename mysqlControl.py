@@ -529,7 +529,7 @@ class MysqlControl(Settings):
                     'slzb': '直播团队',
                     'slyn': '越南',
                     'slrb': 'sunyaru@giikin.com'}
-        if team == 'sltg0' or team == 'slxmt0' or team == 'slrb' or team == 'slgat':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
@@ -629,14 +629,14 @@ class MysqlControl(Settings):
         filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
-        if team == 'slxmt0':
+        if team == 'slgat0':
             print('---' + match[team] + ' 不发送邮件')
         else:
             self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
                         emailAdd[team])
         # 导入签收率表中和输出物流时效（不包含全部的订单状态）
         print('正在打印' + match[team] + ' 物流时效…………')
-        if team == 'slxmt0':
+        if team == 'slgat0':
             print('---' + match[team] + ' 不打印文件')
         else:
             # pass

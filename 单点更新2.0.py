@@ -104,6 +104,7 @@ class QueryControl(Settings):
                     for column_val in columns_value:
                         if column_val in columns:
                             db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
+                    db['运单号'] = db['运单号'].str.strip()                     # 去掉运单号中的前后空字符串
                     print(db.columns)
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
@@ -336,7 +337,7 @@ class QueryControl(Settings):
                                     set a.`币种`=b.`币种`,
                                         a.`数量`=b.`数量`,
             		                    a.`电话号码`=b.`电话号码` ,
-            		                    a.`运单编号`=b.`运单编号`,
+            		                    a.`运单编号`= b.`运单编号`,
             		                    a.`系统订单状态`=b.`系统订单状态`,
             		                    a.`系统物流状态`=b.`系统物流状态`,
             		                    a.`是否改派`=b.`是否改派`,

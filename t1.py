@@ -9,7 +9,7 @@ from wlExecl import WlExecl
 import datetime
 
 start: datetime = datetime.datetime.now()
-team = 'slrb'
+team = 'slxmt'
 match = {'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\日本签收表',
          'sltg': r'D:\Users\Administrator\Desktop\需要用到的文件\泰国签收表',
          'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\港台签收表',
