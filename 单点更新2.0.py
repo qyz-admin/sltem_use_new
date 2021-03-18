@@ -456,7 +456,7 @@ if __name__ == '__main__':
               'slxmt': '新马',
               'slrb': '日本'}
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:
-    for team in ['slrb']:
+    for team in ['slxmt']:
         m.readFormHost(team)
 
     # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:

@@ -103,6 +103,7 @@ class QueryControl(Settings):
                     for column_val in columns_value:
                         if column_val in columns:
                             db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
+                    db['运单号'] = db['运单号'].str.strip()
                     print(db.columns)
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
@@ -451,8 +452,8 @@ if __name__ == '__main__':
               'slxmt': '新马',
               'slrb': '日本'}
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:
-    # for team in ['slgat']:
-    #     m.readFormHost(team)
+    for team in ['slxmt']:
+        m.readFormHost(team)
 
     # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:
     # for team in ['slxmt']:
@@ -464,16 +465,16 @@ if __name__ == '__main__':
     #   台湾token：3d87b7e525063b4cdb6e61dc52e4c248
     #   新马token,泰国token：9a7cd1c7889f72ad2be0128abab2327e
 
-    begin = datetime.date(2021, 2, 1)
-    print(begin)
-    end = datetime.date(2021, 3, 17)
-    print(end)
-    for i in range((end - begin).days):  # 按天循环获取订单状态
-        day = begin + datetime.timedelta(days=i)
-        yesterday = str(day) + ' 23:59:59'
-        last_month = str(day)
-        print('正在更新 ' + last_month + ' 号订单信息…………')
-        team = 'slgat'
-        searchType = '订单号'  # 运单号，订单号   查询切换
-        tokenid = '3d87b7e525063b4cdb6e61dc52e4c248'
-        m.orderInfo(tokenid, searchType, team, last_month)
+    # begin = datetime.date(2021, 2, 1)
+    # print(begin)
+    # end = datetime.date(2021, 3, 17)
+    # print(end)
+    # for i in range((end - begin).days):  # 按天循环获取订单状态
+    #     day = begin + datetime.timedelta(days=i)
+    #     yesterday = str(day) + ' 23:59:59'
+    #     last_month = str(day)
+    #     print('正在更新 ' + last_month + ' 号订单信息…………')
+    #     team = 'slgat'
+    #     searchType = '订单号'  # 运单号，订单号   查询切换
+    #     tokenid = '3d87b7e525063b4cdb6e61dc52e4c248'
+    #     m.orderInfo(tokenid, searchType, team, last_month)
