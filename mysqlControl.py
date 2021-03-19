@@ -11,7 +11,6 @@ from tkinter import messagebox
 import os
 import zipfile
 import xlwings as xl
-import xlwings
 import datetime
 from dateutil.relativedelta import relativedelta
 import time
@@ -540,7 +539,7 @@ class MysqlControl(Settings):
             month_begin = '2020-11-01'
         if team == 'slgat':  # 港台查询函数导出
             # 产品id详情更新   （参数一需要手动更换）
-            self.d.productIdInfo('3d87b7e525063b4cdb6e61dc52e4c248', '订单号', team)
+            self.d.productIdInfo('822c880fa174efd1228cce6802fd8783', '订单号', team)
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
@@ -594,7 +593,7 @@ class MysqlControl(Settings):
                         AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
         else:
-            # self.d.productIdInfo('377a056df2aa3859689b4b2a5af8fe01', '订单号', team)
+            self.d.productIdInfo('822c880fa174efd1228cce6802fd8783', '订单号', team)
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', null, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
@@ -1161,7 +1160,7 @@ class MysqlControl(Settings):
                   'slrb': '日本'}
         match = {'slgat': '"神龙家族-港澳台"',
                  'sltg': '"神龙家族-泰国"',
-                 'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
+                 'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾", "火凤凰家族-菲律宾", "火凤凰家族-菲律宾", "火凤凰家族-菲律宾"',
                  'slzb': '"神龙家族-直播团队"',
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}

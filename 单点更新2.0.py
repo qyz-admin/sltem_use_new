@@ -155,19 +155,19 @@ class QueryControl(Settings):
             				        下单时间,
             				        审核时间,
             				        h.发货时间 仓储扫描时间,
-            				        '' 完结状态,
+            				        null 完结状态,
             				        h.完成时间 完结状态时间,
-            				        '' 价格RMB,
-            				        '' 价格区间,
-            				        '' 成本价,
-            				        '' 物流花费,
-            				        '' 打包花费,
-            				        '' 其它花费,
+            				        null 价格RMB,
+            				        null 价格区间,
+            				        null 成本价,
+            				        null 物流花费,
+            				        null 打包花费,
+            				        null 其它花费,
             				        h.重量 包裹重量,
             				        h.体积 包裹体积,
             				        邮编,
             				        h.转采购时间 添加物流单号时间,
-            				        '' 订单删除原因,
+            				        null 订单删除原因,
             				        h.订单状态 系统订单状态,
             				        IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态
                             FROM d1_host h 
@@ -203,19 +203,19 @@ class QueryControl(Settings):
 				                下单时间,
 				                审核时间,
 				                h.发货时间 仓储扫描时间,
-				                '' 完结状态,
+				                null 完结状态,
 				                h.完成时间 完结状态时间,
-				                '' 价格RMB,
-				                '' 价格区间,
-				                '' 成本价,
-				                '' 物流花费,
-				                '' 打包花费,
-				                '' 其它花费,
+				                null 价格RMB,
+				                null 价格区间,
+				                null 成本价,
+				                null 物流花费,
+				                null 打包花费,
+				                null 其它花费,
 				                h.重量 包裹重量,
 				                h.体积 包裹体积,
 				                邮编,
 				                h.转采购时间 添加物流单号时间,
-				                '' 订单删除原因,
+				                null 订单删除原因,
 				                h.订单状态 系统订单状态,
 				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态
                     FROM d1_host h 
@@ -275,7 +275,7 @@ class QueryControl(Settings):
 			                  DATE(h.下单时间) 日期,
 				                h.运营团队 团队,
 -- 								IF(IF(h.`币种` = '马来西亚', 'MY', IF(h.`币种` ='菲律宾', 'PH',IF(h.`币种` = '新加坡', 'SG',h.`币种`)))) 区域,
-							    '' 区域,
+							    null 区域,
 				                币种,
 				                h.平台 订单来源,
 				                订单编号,
@@ -298,19 +298,19 @@ class QueryControl(Settings):
 				                下单时间,
 				                审核时间,
 				                h.发货时间 仓储扫描时间,
-				                '' 完结状态,
+				                null 完结状态,
 				                h.完成时间 完结状态时间,
-				                '' 价格RMB,
-				                '' 价格区间,
-				                '' 成本价,
-				                '' 物流花费,
-				                '' 打包花费,
-				                '' 其它花费,
+				                null 价格RMB,
+				                null 价格区间,
+				                null 成本价,
+				                null 物流花费,
+				                null 打包花费,
+				                null 其它花费,
 				                h.重量 包裹重量,
 				                h.体积 包裹体积,
 				                邮编,
 				                h.转采购时间 添加物流单号时间,
-				                '' 订单删除原因,
+				                null 订单删除原因,
 				                h.订单状态 系统订单状态,
 				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态
                     FROM d1_host h 
@@ -460,14 +460,11 @@ if __name__ == '__main__':
         m.readFormHost(team)
 
     # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:
-    # for team in ['slxmt']:
     #     tokenid= '3d87b7e525063b4cdb6e61dc52e4c248'
         # m.productIdInfo(tokenid, '订单号', team)
-        # m.productIdInfo(tokenid, '订单号', team)
 
-    #   日本token：d7e873b3f72c962c43a72901264db010
-    #   台湾token：3d87b7e525063b4cdb6e61dc52e4c248
-    #   新马token,泰国token：9a7cd1c7889f72ad2be0128abab2327e
+    #   台湾token, 日本token：822c880fa174efd1228cce6802fd8783
+    #   新马token, 泰国token：d1d26a93ebd20cc52dd389fe474016e2
 
     # begin = datetime.date(2021, 2, 1)
     # print(begin)
