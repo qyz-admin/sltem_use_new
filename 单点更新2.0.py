@@ -109,7 +109,7 @@ class QueryControl(Settings):
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
-                    print('++++正在导入：' + sht.name + ' 共：' + str(len(db)) + '行',
+                    print('++++正在导入更新：' + sht.name + ' 共：' + str(len(db)) + '行',
                           'sheet共：' + str(sht.used_range.last_cell.row) + '行')
                     # 将返回的dateFrame导入数据库的临时表
                     self.writeCacheHost(db)
@@ -333,7 +333,7 @@ class QueryControl(Settings):
             print('导入成功…………')
         elif query == '更新':
             try:
-                print('正在导入临时表中......')
+                print('正在更新临时表中......')
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
                 df.to_sql('d1_host_cp', con=self.engine1, index=False, if_exists='replace')
                 print('正在更新表总表中......')
@@ -462,7 +462,7 @@ if __name__ == '__main__':
     # 手动更新状态
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:
     for team in ['slxmt']:
-        query = '导入'         # 导入，更新--->>数据更新切换
+        query = '更新'         # 导入；，更新--->>数据更新切换
         m.readFormHost(team, query)
 
     # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:

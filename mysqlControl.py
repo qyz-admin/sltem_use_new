@@ -199,13 +199,13 @@ class MysqlControl(Settings):
         mm = int((datetime.datetime.now() - datetime.timedelta(days=5)).strftime('%m'))
         dd = int((datetime.datetime.now() - datetime.timedelta(days=5)).strftime('%d'))
         begin = datetime.date(yy, mm, dd)
-        # begin = datetime.date(2017, 1, 1)
+        # begin = datetime.date(2021, 3, 10)
         print(begin)
         yy2 = int(datetime.datetime.now().strftime('%Y'))
         mm2 = int(datetime.datetime.now().strftime('%m'))
         dd2 = int(datetime.datetime.now().strftime('%d'))
         end = datetime.date(yy2, mm2, dd2)
-        # end = datetime.date(2018, 1, 1)
+        # end = datetime.date(2021, 3, 19)
         print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -1504,23 +1504,23 @@ if __name__ == '__main__':
     # 更新产品id的列表
     m.update_gk_product()
 
-    for team in ['sltg', 'slgat', 'slrb', 'slxmt']:  # 无运单号查询200
-        m.noWaybillNumber(team)
-
-    match = {'SG': '新加坡',
-             'MY': '马来西亚',
-             'PH': '菲律宾',
-             'JP': '日本',
-             'HK': '香港',
-             'TW': '台湾',
-             'TH': '泰国'}
-    # match = {'TH': '泰国'}
-    for team in match.keys():  # 产品花费表200
-        m.orderCost(team)
+    # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:  # 无运单号查询200
+    #     m.noWaybillNumber(team)
     #
-    sm = SltemMonitoring()
-    for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:  # 成本查询
-        sm.costWaybill(team)
+    # match = {'SG': '新加坡',
+    #          'MY': '马来西亚',
+    #          'PH': '菲律宾',
+    #          'JP': '日本',
+    #          'HK': '香港',
+    #          'TW': '台湾',
+    #          'TH': '泰国'}
+    # # match = {'TH': '泰国'}
+    # for team in match.keys():  # 产品花费表200
+    #     m.orderCost(team)
+    # #
+    # sm = SltemMonitoring()
+    # for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:  # 成本查询
+    #     sm.costWaybill(team)
 
 
     # 测试物流时效
