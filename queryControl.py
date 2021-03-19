@@ -831,9 +831,9 @@ class QueryControl(Settings):
         max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
         n = 0
         while n < max_count:        # 这里用到了一个while循环，穿越过来的
-            ord = ', '.join(orderId[n:n + 5])
+            ord = ', '.join(orderId[n:n + 10])
             print(ord)
-            n = n + 5
+            n = n + 10
             self.productIdquery(tokenid, ord, searchType, team)
 
     def productIdquery(self, tokenid, orderId, searchType, team):  # 进入查询界面，
@@ -910,18 +910,20 @@ class QueryControl(Settings):
         for i in range(len(req['data']['list'])):
             ordersDict.append(self.q.get())
         data = pd.json_normalize(ordersDict)
-        print(data[['orderNumber', 'productId']])
+        df = data[['orderNumber', 'wayBillNumber', 'logisticsName', 'logisticsStatus', 'orderStatus', 'isSecondSend',
+                   'currency', 'area', 'currency', 'shipInfo.shipPhone', 'quantity', 'productId']]
+        print(df)
         print('正在写入缓存中......')
         try:
-            data[['orderNumber', 'productId']].to_sql('d1', con=self.engine1, index=False, if_exists='replace')
-            sql = '''SELECT orderNumber ,
+            df.to_sql('d1_cp', con=self.engine1, index=False, if_exists='replace')
+            sql = '''SELECT orderNumber,
     					productId,
-    					dp.`name` ,
+    					dp.`name`,
     					dc.ppname cate,
     					dc.pname second_cate,
     					dc.`name` third_cate
-    				FROM d1
-    				LEFT JOIN dim_product dp ON  d1.productId = dp.id
+    				FROM d1_cp
+    				LEFT JOIN dim_product dp ON  d1_cp.productId = dp.id
     				LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             print(df)

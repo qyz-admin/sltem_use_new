@@ -59,7 +59,7 @@ class QueryControl(Settings):
                                                                                     self.mysql2['datebase']))
 
     # 获取签收表内容
-    def readFormHost(self, team):
+    def readFormHost(self, team, query):
         match2 = {'slgat': '港台',
                  'sltg': '泰国',
                  'slxmt': '新马',
@@ -81,10 +81,10 @@ class QueryControl(Settings):
             filePath = os.path.join(path, dir)
             if dir[:2] != '~$':
                 print(filePath)
-                self.wbsheetHost(filePath, team)
+                self.wbsheetHost(filePath, team, query)
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
-    def wbsheetHost(self, filePath, team):
+    def wbsheetHost(self, filePath, team, query):
         print('---正在获取签收表的详情++++++')
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
@@ -115,7 +115,7 @@ class QueryControl(Settings):
                     self.writeCacheHost(db)
                     print('++++正在更新：' + sht.name + '--->>>到总订单')
                     # 将数据库的临时表替换进指定的总表
-                    self.replaceSqlHost(team)
+                    self.replaceSqlHost(team, query)
                     print('++++----->>>' + sht.name + '：订单更新完成++++')
                 else:
                     print('----------数据为空导入失败：' + sht.name)
@@ -126,7 +126,7 @@ class QueryControl(Settings):
     def writeCacheHost(self, dataFrame):
         dataFrame.to_sql('d1_host', con=self.engine1, index=False, if_exists='replace')
     # 写入总表
-    def replaceSqlHost(self, team):
+    def replaceSqlHost(self, team, query):
         if team == 'slgat':
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
             				        IF(IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),'2') 旬,
@@ -317,23 +317,27 @@ class QueryControl(Settings):
                     LEFT JOIN dim_product ON  dim_product.id = h.产品id
                     LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                     LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
-        # try:
-        #     print('正在导入临时表中......')
-        #     df = pd.read_sql_query(sql=sql, con=self.engine1)
-        #     columns = list(df.columns)
-        #     columns = ', '.join(columns)
-        #     df.to_sql('d1_host_cp', con=self.engine1, index=False, if_exists='replace')
-        #     print('正在更新表总表中......')
-        #     sql = '''INSERT IGNORE INTO {}_order_list({}, 记录时间) SELECT *, NOW() 记录时间 FROM d1_host_cp; '''.format(team, columns)
-        #     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=2000)
-        # except Exception as e:
-        #     print('插入失败：', str(Exception) + str(e))
-        try:
-            print('正在导入临时表中......')
-            df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_sql('d1_host_cp', con=self.engine1, index=False, if_exists='replace')
-            print('正在更新表总表中......')
-            sql = '''update {0}_order_list a, d1_host_cp b
+
+        if query == '导入':
+            try:
+                print('正在导入临时表中......')
+                df = pd.read_sql_query(sql=sql, con=self.engine1)
+                columns = list(df.columns)
+                columns = ', '.join(columns)
+                df.to_sql('d1_host_cp', con=self.engine1, index=False, if_exists='replace')
+                print('正在导入表总表中......')
+                sql = '''INSERT IGNORE INTO {}_order_list({}, 记录时间) SELECT *, NOW() 记录时间 FROM d1_host_cp; '''.format(team, columns)
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=2000)
+            except Exception as e:
+                print('插入失败：', str(Exception) + str(e))
+            print('导入成功…………')
+        elif query == '更新':
+            try:
+                print('正在导入临时表中......')
+                df = pd.read_sql_query(sql=sql, con=self.engine1)
+                df.to_sql('d1_host_cp', con=self.engine1, index=False, if_exists='replace')
+                print('正在更新表总表中......')
+                sql = '''update {0}_order_list a, d1_host_cp b
                                     set a.`币种`=b.`币种`,
                                         a.`数量`=b.`数量`,
             		                    a.`电话号码`=b.`电话号码` ,
@@ -348,10 +352,10 @@ class QueryControl(Settings):
             		                    a.`仓储扫描时间`=b.`仓储扫描时间`,
             		                    a.`完结状态时间`=b.`完结状态时间`
             		                where a.`订单编号`=b.`订单编号`;'''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
-        except Exception as e:
-            print('更新失败：', str(Exception) + str(e))
-        print('更新成功…………')
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            except Exception as e:
+                print('更新失败：', str(Exception) + str(e))
+            print('更新成功…………')
 
     # 更新团队订单明细（新后台的）
     def orderInfo(self, tokenid, searchType, team, last_month):  # 进入查询界面，
@@ -455,9 +459,11 @@ if __name__ == '__main__':
               'sltg': '泰国',
               'slxmt': '新马',
               'slrb': '日本'}
+    # 手动更新状态
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:
     for team in ['slxmt']:
-        m.readFormHost(team)
+        query = '导入'         # 导入，更新--->>数据更新切换
+        m.readFormHost(team, query)
 
     # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:
     #     tokenid= '3d87b7e525063b4cdb6e61dc52e4c248'
