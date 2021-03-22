@@ -819,7 +819,7 @@ class QueryControl(Settings):
         month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y-%m-%d')
         sql = '''SELECT id,`订单编号`  FROM {0}_order_list sl 
     			WHERE sl.`日期`> '{1}' 
-    				AND  sl.`产品名称` IS NULL 
+    				AND  ( sl.`产品名称` IS NULL  or  sl.`父级分类` IS NULL)
     				AND sl.`系统订单状态` != '已删除' ;'''.format(team, month_begin)
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
         if ordersDict.empty:

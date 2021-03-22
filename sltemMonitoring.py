@@ -216,7 +216,7 @@ class SltemMonitoring(Settings):
                         IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
                         是否改派,物流方式,物流名称,运输方式,是否低价,产品id,产品名称,父级分类,二级分类,三级分类,下单时间,
                         审核时间,仓储扫描时间,完结状态时间,价格区间,价格RMB
-                    FROM {0}_order_list_cpy a
+                    FROM {0}_order_list a
                     LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} GROUP BY 运单编号) ORDER BY id) b
                         ON a.`运单编号` = b.`运单编号`
                     LEFT JOIN {0}_logisitis_match c
@@ -496,7 +496,7 @@ class SltemMonitoring(Settings):
                   '马来西亚': r'D:\Users\Administrator\Desktop\查询\新马监控'}
         emailAdd = {'香港': 'giikinliujun@163.com',
                     '台湾': 'giikinliujun@163.com',
-                    '泰国': '1845389861@qq.com',
+                    '泰国': 'zhangjing@giikin.com',
                     '新加坡': 'zhangjing@giikin.com',
                     '马来西亚': 'zhangjing@giikin.com',
                     '菲律宾': 'zhangjing@giikin.com',
@@ -3405,19 +3405,19 @@ if __name__ == '__main__':
     # for team in ['台湾', '香港']:
     # # # for team in ['台湾', '香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
     #     m.order_Monitoring(team)    # 各月缓存
-    #     m.data_Monitoring(team)     # 两月数据
+        # m.data_Monitoring(team)     # 两月数据
     # # #     m.costWaybill(team)       # 成本缓存 与 成本两月数据
     #     m.sl_Monitoring(team)       # 输出数据
     # #     # m.sl_Monitoring_two(team)  # 输出上月数据
 
     # 获取签收表内容（二）
-    # startday = '2021.02.20'
+    # startday = '2021.03.22'
     # for team in ['香港', '台湾', '日本', '新加坡', '马来西亚', '泰国']:
-    # for team in ['香港', '台湾']:
-    #     m.readForm(team, startday)
+    # for team in ['香港', '台湾', '港台']:
+        # m.readForm(team, startday)
 
     # # 获取监控表以上传的时间---监控运行（一）
-    # for team in ['台湾', '香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
+    for team in ['日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
     # for team in ['日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
     # for team in ['台湾', '香港']:
-    #     m.check_time(team)
+        m.check_time(team)
