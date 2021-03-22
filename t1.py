@@ -1,19 +1,20 @@
 import os
-from datetime import datetime
 from openpyxl import Workbook, load_workbook
 from excelControl import ExcelControl
 from mysqlControl import MysqlControl
 from wlMysql import WlMysql
 from wlExecl import WlExecl
-# from orderQuery import OrderQuery
+from 单点更新 import QueryTwo
+
 import datetime
 
 start: datetime = datetime.datetime.now()
-team = 'slxmt'
+team = 'slgat'
 match = {'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\日本签收表',
          'sltg': r'D:\Users\Administrator\Desktop\需要用到的文件\泰国签收表',
          'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\港台签收表',
-         'slxmt': r'D:\Users\Administrator\Desktop\需要用到的文件\新马签收表'}
+         'slxmt': r'D:\Users\Administrator\Desktop\需要用到的文件\新马签收表',
+         'slxmt_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\火凤凰新马签收表'}
 '''    msyql 语法:      show processlist;
 备注：  港台 需整理的表：香港立邦>(明细再copy一份保存) ； 台湾龟山改派>(copy保存为xlsx格式);
 说明：  日本 需整理的表：1、吉客印神龙直发签收表=密码：‘JKTSL’>(明细再copy保存；改派明细不需要);2、直发签收表>(明细再copy保存；3、状态更新需要copy保存);
@@ -24,7 +25,7 @@ e = ExcelControl()
 m = MysqlControl()
 w = WlMysql()
 we = WlExecl()
-# qo = OrderQuery()
+
 # 上传退货
 e.readReturnOrder(team)
 print('退货导入耗时：', datetime.datetime.now() - start)
@@ -48,11 +49,11 @@ for dir in dirs:
 print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
-# m.creatMyOrderSl(team)  # 最近五天的全部订单信息
+m.creatMyOrderSl(team)  # 最近五天的全部订单信息
 print('------------更新部分：---------------------')
 # m.creatMyOrderSlTWO(team)   # 最近两个月的更新订单信息
 print('处理耗时：', datetime.datetime.now() - start)
-m.connectOrder(team)      # 最近两个月的订单信息导出
+# m.connectOrder(team)      # 最近两个月的订单信息导出
 print('输出耗时：', datetime.datetime.now() - start)
 
 

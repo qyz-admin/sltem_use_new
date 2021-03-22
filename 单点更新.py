@@ -20,7 +20,7 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, \
 
 
 # -*- coding:utf-8 -*-
-class QueryControl(Settings):
+class QueryTwo(Settings):
     def __init__(self):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
@@ -63,6 +63,7 @@ class QueryControl(Settings):
         match2 = {'slgat': '港台',
                  'sltg': '泰国',
                  'slxmt': '新马',
+                 'slxmt_hfh': '火凤凰新马',
                  'slrb': '日本'}
         match3 = {'新加坡': 'slxmt',
                   '马来西亚': 'slxmt',
@@ -269,6 +270,54 @@ class QueryControl(Settings):
                     LEFT JOIN dim_product ON  dim_product.id = h.产品id
                     LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                     LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
+        elif team == 'slxmt_hfh':
+            sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
+            				                IF(IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),'2') 旬,
+            			                  DATE(h.下单时间) 日期,
+            				                h.运营团队 团队,
+            -- 								IF(IF(h.`币种` = '马来西亚', 'MY', IF(h.`币种` ='菲律宾', 'PH',IF(h.`币种` = '新加坡', 'SG',h.`币种`)))) 区域,
+            							    null 区域,
+            				                币种,
+            				                h.平台 订单来源,
+            				                订单编号,
+            				                数量,
+            				                h.联系电话 电话号码,
+            				                h.运单号 运单编号,
+            				                IF(h.`订单类型` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
+            				                h.物流渠道 物流方式,
+            								dim_trans_way.simple_name 物流名称,
+            				                dim_trans_way.remark 运输方式,
+            				                IF(h.`货物类型` = 'P 普通货', 'P', IF(h.`货物类型` = 'T 特殊货', 'T', h.`货物类型`)) 货物类型,
+            				                是否低价,
+            				                产品id,
+            				                产品名称,
+            				                dim_cate.ppname 父级分类,
+            				                dim_cate.pname 二级分类,
+                		                    dim_cate.`name` 三级分类,
+            				                h.支付方式 付款方式,
+            				                h.应付金额 价格,
+            				                下单时间,
+            				                审核时间,
+            				                h.发货时间 仓储扫描时间,
+            				                null 完结状态,
+            				                h.完成时间 完结状态时间,
+            				                null 价格RMB,
+            				                null 价格区间,
+            				                null 成本价,
+            				                null 物流花费,
+            				                null 打包花费,
+            				                null 其它花费,
+            				                h.重量 包裹重量,
+            				                h.体积 包裹体积,
+            				                邮编,
+            				                h.转采购时间 添加物流单号时间,
+            				                null 订单删除原因,
+            				                h.订单状态 系统订单状态,
+            				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态
+                                FROM d1_host h 
+                                LEFT JOIN dim_product ON  dim_product.id = h.产品id
+                                LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
+                                LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
         else:
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
 				                IF(IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),'2') 旬,
@@ -326,7 +375,7 @@ class QueryControl(Settings):
                 columns = ', '.join(columns)
                 df.to_sql('d1_host_cp', con=self.engine1, index=False, if_exists='replace')
                 print('正在导入表总表中......')
-                sql = '''INSERT IGNORE INTO {}_order_list({}, 记录时间) SELECT *, NOW() 记录时间 FROM d1_host_cp; '''.format(team, columns)
+                sql = '''REPLACE INTO {}_order_list_cpy({}, 记录时间) SELECT *, NOW() 记录时间 FROM d1_host_cp; '''.format(team,columns)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=2000)
             except Exception as e:
                 print('插入失败：', str(Exception) + str(e))
@@ -337,7 +386,7 @@ class QueryControl(Settings):
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
                 df.to_sql('d1_host_cp', con=self.engine1, index=False, if_exists='replace')
                 print('正在更新表总表中......')
-                sql = '''update {0}_order_list a, d1_host_cp b
+                sql = '''update {0}_order_list_cpy a, d1_host_cp b
                                     set a.`币种`=b.`币种`,
                                         a.`数量`=b.`数量`,
             		                    a.`电话号码`=b.`电话号码` ,
@@ -454,16 +503,23 @@ class QueryControl(Settings):
                     sheet_name='日本0', index=False)
 
 if __name__ == '__main__':
-    m = QueryControl()
+    m = QueryTwo()
     match1 = {'slgat': '港台',
               'sltg': '泰国',
               'slxmt': '新马',
+              'slxmt_hfh': '火凤凰新马',
               'slrb': '日本'}
+    # 手动导入状态
+    # for team in ['sltg', 'slgat', 'slrb', 'slxmt', 'slxmt_hfh']:
+    for team in ['slxmt_hfh']:
+        query = '导入'         # 导入；，更新--->>数据更新切换
+        m.readFormHost(team, query)
     # 手动更新状态
-    # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:
-    for team in ['slxmt']:
+    # for team in ['sltg', 'slgat', 'slrb', 'slxmt', 'slxmt_hfh']:
+    for team in ['slxmt_hfh']:
         query = '更新'         # 导入；，更新--->>数据更新切换
         m.readFormHost(team, query)
+
 
     # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:
     #     tokenid= '3d87b7e525063b4cdb6e61dc52e4c248'
