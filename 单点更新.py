@@ -128,7 +128,7 @@ class QueryTwo(Settings):
         dataFrame.to_sql('d1_host', con=self.engine1, index=False, if_exists='replace')
     # 写入总表
     def replaceSqlHost(self, team, query):
-        if team == 'slgat':
+        if team == 'slgat' or team == 'slgat_hfh':
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
             				        IF(IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),'2') 旬,
             			            DATE(h.下单时间) 日期,
@@ -273,10 +273,10 @@ class QueryTwo(Settings):
         elif team == 'slxmt_hfh':
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
             				                IF(IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),'2') 旬,
-            			                  DATE(h.下单时间) 日期,
+            			                    DATE(h.下单时间) 日期,
             				                h.运营团队 团队,
-            				                IF(IF(h.`币种` = '马来西亚', 'MY', IF(h.`币种` ='菲律宾', 'PH',IF(h.`币种` = '新加坡', 'SG',h.`币种`)))) 区域,
-            -- 								null 区域,
+            --				                IF(IF(h.`币种` = '马来西亚'), 'MY', IF(h.`币种` ='菲律宾', 'PH',IF(h.`币种` = '新加坡', 'SG',h.`币种`)),'','') 区域,
+            				                null 区域,
             				                币种,
             				                h.平台 订单来源,
             				                订单编号,
@@ -386,7 +386,7 @@ class QueryTwo(Settings):
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
                 df.to_sql('d1_host_cp', con=self.engine1, index=False, if_exists='replace')
                 print('正在更新表总表中......')
-                sql = '''update {0}_order_list_cpy a, d1_host_cp b
+                sql = '''update {0}_order_list a, d1_host_cp b
                                     set a.`币种`=b.`币种`,
                                         a.`数量`=b.`数量`,
             		                    a.`电话号码`=b.`电话号码` ,
@@ -510,15 +510,15 @@ if __name__ == '__main__':
               'slxmt_hfh': '火凤凰新马',
               'slrb': '日本'}
     # 手动导入状态
-    # for team in ['sltg', 'slgat', 'slrb', 'slxmt', 'slxmt_hfh']:
-    for team in ['slxmt_hfh']:
-        query = '导入'         # 导入；，更新--->>数据更新切换
-        m.readFormHost(team, query)
+    # for team in ['sltg', 'slgat', 'slrb', 'slxmt', 'slxmt_hfh','slgat_hfh']:
+    # for team in ['slxmt_hfh']:
+    #     query = '导入'         # 导入；，更新--->>数据更新切换
+    #     m.readFormHost(team, query)
     # 手动更新状态
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt', 'slxmt_hfh']:
-    # for team in ['slxmt_hfh']:
-    #     query = '更新'         # 导入；，更新--->>数据更新切换
-    #     m.readFormHost(team, query)
+    for team in ['slxmt_hfh']:
+        query = '更新'         # 导入；，更新--->>数据更新切换
+        m.readFormHost(team, query)
 
 
     # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:
