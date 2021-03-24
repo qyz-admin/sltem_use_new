@@ -401,7 +401,7 @@ class MysqlControl(Settings):
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        if team == 'sltg' or team == 'slxmt0' or team == 'slrb' or team == 'slgat':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat':
             yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
             mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
             begin = datetime.date(yy, mm, 1)
@@ -541,7 +541,7 @@ class MysqlControl(Settings):
             month_last = '2021-03-01'
             month_yesterday = '2021-03-20'
             month_begin = '2020-11-01'
-        token = '2a3e1751a6f90c88d43e3fcf0e117770'        # 补充查询产品信息需要
+        token = '9141b00d1888ccd9d37b0fa2bdd2d313'        # 补充查询产品信息需要
         if team == 'slgat':  # 港台查询函数导出
             # 产品id详情更新   （参数一需要手动更换）
             self.d.productIdInfo(token, '订单号', team)
@@ -663,14 +663,23 @@ class MysqlControl(Settings):
             df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace')
         today = datetime.date.today().strftime('%Y.%m.%d')
         print('正在写入excel…………')
-        df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team]),
-                    sheet_name=match[team], index=False)
-        print('----已写入excel')
-        filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
+        if team == 'slgat_hfh' or team == 'slxmt_hfh':
+            df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}签收表.xlsx'.format(today, match[team]),
+                        sheet_name=match[team], index=False)
+            print('----已写入excel')
+            filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}签收表.xlsx'.format(today, match[team])]
+        else:
+            df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team]),
+                        sheet_name=match[team], index=False)
+            print('----已写入excel')
+            filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
         if team == 'slgat_hfh0':
             print('---' + match[team] + ' 不发送邮件')
+        elif team == 'slgat_hfh' or team == 'slxmt_hfh':
+            self.e.send('{} {}签收表.xlsx'.format(today, match[team]), filePath,
+                        emailAdd[team])
         else:
             self.e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath,
                         emailAdd[team])
@@ -679,7 +688,6 @@ class MysqlControl(Settings):
         if team == 'slgat_hfh0':
             print('---' + match[team] + ' 不打印文件')
         else:
-            # pass
             self.data_wl(team)
         print('正在写入' + match[team] + ' 全部签收表中…………')
         if team == 'slrb':
@@ -722,6 +730,7 @@ class MysqlControl(Settings):
     # 物流时效
     def data_wl(self, team):  # 获取各团队近两个月的物流数据
         match = {'slgat': ['台湾', '香港'],
+                 'slgat_hfh': ['台湾', '香港'],
                  'sltg': ['泰国'],
                  'slxmt': ['新加坡', '马来西亚', '菲律宾'],
                  'slxmt_hfh': ['新加坡', '马来西亚', '菲律宾'],
@@ -1195,7 +1204,10 @@ class MysqlControl(Settings):
             listT.append(df40)
             print('正在写入excel…………')
             today = datetime.date.today().strftime('%Y.%m.%d')
-            file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}物流时效.xlsx'.format(today, tem)
+            if team == 'slgat_hfh' or team == 'slxmt_hfh':
+                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰{}物流时效.xlsx'.format(today, tem)
+            else:
+                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}物流时效.xlsx'.format(today, tem)
             sheet_name = ['下单出库时', '出库完成时', '下单完成时', '改派下单完成时', '下单出库(分旬)', '出库完成(分旬)', '下单完成(分旬)', '改派下单完成(分旬)']
             df0 = pd.DataFrame([])                       # 创建空的dataframe数据框
             df0.to_excel(file_path, index=False)         # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -1224,8 +1236,12 @@ class MysqlControl(Settings):
             app.quit()
             print('----已写入excel ')
             filePath.append(file_path)
-            self.e.send('{} {}物流时效.xlsx'.format(today, tem), filePath,
-                        emailAdd[tem])
+            if team == 'slgat_hfh' or team == 'slxmt_hfh':
+                self.e.send('{} 火凤凰{}物流时效.xlsx'.format(today, tem), filePath,
+                            emailAdd[tem])
+            else:
+                self.e.send('{} 神龙{}物流时效.xlsx'.format(today, tem), filePath,
+                            emailAdd[tem])
 
     # 无运单号查询
     def noWaybillNumber(self, team):
@@ -1580,33 +1596,33 @@ if __name__ == '__main__':
     start = datetime.datetime.now()
 
     # 更新产品id的列表
-    m.update_gk_product()
-
-    for team in ['sltg', 'slgat', 'slrb', 'slxmt']:  # 无运单号查询200
-        m.noWaybillNumber(team)
-
-    match = {'SG': '新加坡',
-             'MY': '马来西亚',
-             'PH': '菲律宾',
-             'JP': '日本',
-             'HK': '香港',
-             'TW': '台湾',
-             'TH': '泰国'}
-    # match = {'TH': '泰国'}
-    for team in match.keys():  # 产品花费表200
-        m.orderCost(team)
+    # m.update_gk_product()
     #
-    sm = SltemMonitoring()
-    for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:  # 成本查询
-        sm.costWaybill(team)
+    # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:  # 无运单号查询200
+    #     m.noWaybillNumber(team)
+    #
+    # match = {'SG': '新加坡',
+    #          'MY': '马来西亚',
+    #          'PH': '菲律宾',
+    #          'JP': '日本',
+    #          'HK': '香港',
+    #          'TW': '台湾',
+    #          'TH': '泰国'}
+    # # match = {'TH': '泰国'}
+    # for team in match.keys():  # 产品花费表200
+    #     m.orderCost(team)
+    # #
+    # sm = SltemMonitoring()
+    # for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:  # 成本查询
+    #     sm.costWaybill(team)
 
 
     # 测试物流时效
     # team = 'sltg'
     # m.data_wl(team)
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:
-    # for team in ['slgat']:
-    #     m.data_wl(team)
+    for team in ['slgat_hfh']:
+        m.data_wl(team)
 
 
 

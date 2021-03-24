@@ -9,12 +9,12 @@ from 单点更新 import QueryTwo
 import datetime
 
 start: datetime = datetime.datetime.now()
-team = 'slxmt'
-match = {'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\日本签收表',
-         'sltg': r'D:\Users\Administrator\Desktop\需要用到的文件\泰国签收表',
-         'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\港台签收表',
+team = 'slxmt_hfh'
+match = {'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙日本签收表',
+         'sltg': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙泰国签收表',
+         'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙港台签收表',
          'slgat_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\火凤凰港台签收表',
-         'slxmt': r'D:\Users\Administrator\Desktop\需要用到的文件\新马签收表',
+         'slxmt': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙新马签收表',
          'slxmt_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\火凤凰新马签收表'}
 '''    msyql 语法:      show processlist;
 备注：  港台 需整理的表：香港立邦>(明细再copy一份保存) ； 台湾龟山改派>(copy保存为xlsx格式);

@@ -106,6 +106,7 @@ class QueryTwo(Settings):
                         if column_val in columns:
                             db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
                     db['运单号'] = db['运单号'].str.strip()                     # 去掉运单号中的前后空字符串
+                    db['物流渠道'] = db['物流渠道'].str.strip()
                     print(db.columns)
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
@@ -251,19 +252,19 @@ class QueryTwo(Settings):
 				                下单时间,
 				                审核时间,
 				                h.发货时间 仓储扫描时间,
-				                '' 完结状态,
+				                null 完结状态,
 				                h.完成时间 完结状态时间,
-				                '' 价格RMB,
-				                '' 价格区间,
-				                '' 成本价,
-				                '' 物流花费,
-				                '' 打包花费,
-				                '' 其它花费,
+				                null 价格RMB,
+				                null 价格区间,
+				                null 成本价,
+				                null 物流花费,
+				                null 打包花费,
+				                null 其它花费,
 				                h.重量 包裹重量,
 				                h.体积 包裹体积,
 				                邮编,
 				                h.转采购时间 添加物流单号时间,
-				                '' 订单删除原因,
+				                null 订单删除原因,
 				                h.订单状态 系统订单状态,
 				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态
                     FROM d1_host h 
@@ -511,7 +512,7 @@ if __name__ == '__main__':
               'slrb': '日本'}
     # 手动导入状态
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt', 'slxmt_hfh','slgat_hfh']:
-    # for team in ['slxmt_hfh']:
+    # for team in ['slxmt']:
     #     query = '导入'         # 导入；，更新--->>数据更新切换
     #     m.readFormHost(team, query)
     # 手动更新状态
