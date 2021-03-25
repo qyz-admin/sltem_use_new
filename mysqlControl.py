@@ -532,19 +532,19 @@ class MysqlControl(Settings):
                     'slzb': '直播团队',
                     'slyn': '越南',
                     'slrb': 'sunyaru@giikin.com'}
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat' or team == 'slgat_hfh' or team == 'slxmt_hfh':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat0' or team == 'slgat_hfh' or team == 'slxmt_hfh':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
             print(month_begin)
         else:
-            month_last = '2021-03-01'
-            month_yesterday = '2021-03-20'
+            month_last = '2021-01-01'
+            month_yesterday = '2021-02-1'
             month_begin = '2020-11-01'
         token = '9141b00d1888ccd9d37b0fa2bdd2d313'        # 补充查询产品信息需要
         if team == 'slgat':  # 港台查询函数导出
             # 产品id详情更新   （参数一需要手动更换）
-            self.d.productIdInfo(token, '订单号', team)
+            # self.d.productIdInfo(token, '订单号', team)
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
@@ -675,7 +675,7 @@ class MysqlControl(Settings):
             filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
-        if team == 'slgat_hfh0':
+        if team == 'slgat':
             print('---' + match[team] + ' 不发送邮件')
         elif team == 'slgat_hfh' or team == 'slxmt_hfh':
             self.e.send('{} {}签收表.xlsx'.format(today, match[team]), filePath,
@@ -685,7 +685,7 @@ class MysqlControl(Settings):
                         emailAdd[team])
         # 导入签收率表中和输出物流时效（不包含全部的订单状态）
         print('正在打印' + match[team] + ' 物流时效…………')
-        if team == 'slgat_hfh0':
+        if team == 'slgat':
             print('---' + match[team] + ' 不打印文件')
         else:
             self.data_wl(team)
@@ -1596,33 +1596,33 @@ if __name__ == '__main__':
     start = datetime.datetime.now()
 
     # 更新产品id的列表
-    # m.update_gk_product()
+    m.update_gk_product()
+
+    for team in ['sltg', 'slgat', 'slrb', 'slxmt']:  # 无运单号查询200
+        m.noWaybillNumber(team)
+
+    match = {'SG': '新加坡',
+             'MY': '马来西亚',
+             'PH': '菲律宾',
+             'JP': '日本',
+             'HK': '香港',
+             'TW': '台湾',
+             'TH': '泰国'}
+    # match = {'TH': '泰国'}
+    for team in match.keys():  # 产品花费表200
+        m.orderCost(team)
     #
-    # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:  # 无运单号查询200
-    #     m.noWaybillNumber(team)
-    #
-    # match = {'SG': '新加坡',
-    #          'MY': '马来西亚',
-    #          'PH': '菲律宾',
-    #          'JP': '日本',
-    #          'HK': '香港',
-    #          'TW': '台湾',
-    #          'TH': '泰国'}
-    # # match = {'TH': '泰国'}
-    # for team in match.keys():  # 产品花费表200
-    #     m.orderCost(team)
-    # #
-    # sm = SltemMonitoring()
-    # for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:  # 成本查询
-    #     sm.costWaybill(team)
+    sm = SltemMonitoring()
+    for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾', '泰国']:  # 成本查询
+        sm.costWaybill(team)
 
 
     # 测试物流时效
     # team = 'sltg'
     # m.data_wl(team)
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:
-    for team in ['slgat_hfh']:
-        m.data_wl(team)
+    # for team in ['slgat_hfh']:
+    #     m.data_wl(team)
 
 
 
