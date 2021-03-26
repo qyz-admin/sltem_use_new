@@ -532,7 +532,7 @@ class MysqlControl(Settings):
                     'slzb': '直播团队',
                     'slyn': '越南',
                     'slrb': 'sunyaru@giikin.com'}
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat0' or team == 'slgat_hfh' or team == 'slxmt_hfh':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat' or team == 'slgat_hfh' or team == 'slxmt_hfh':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
@@ -541,10 +541,10 @@ class MysqlControl(Settings):
             month_last = '2021-01-01'
             month_yesterday = '2021-02-1'
             month_begin = '2020-11-01'
-        token = '9141b00d1888ccd9d37b0fa2bdd2d313'        # 补充查询产品信息需要
+        token = 'c649eff626886a1f38e2e11c85cc6ba9'        # 补充查询产品信息需要
         if team == 'slgat':  # 港台查询函数导出
             # 产品id详情更新   （参数一需要手动更换）
-            # self.d.productIdInfo(token, '订单号', team)
+            self.d.productIdInfo(token, '订单号', team)
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
@@ -675,7 +675,7 @@ class MysqlControl(Settings):
             filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
-        if team == 'slgat':
+        if team == 'slgat0':
             print('---' + match[team] + ' 不发送邮件')
         elif team == 'slgat_hfh' or team == 'slxmt_hfh':
             self.e.send('{} {}签收表.xlsx'.format(today, match[team]), filePath,
@@ -685,7 +685,7 @@ class MysqlControl(Settings):
                         emailAdd[team])
         # 导入签收率表中和输出物流时效（不包含全部的订单状态）
         print('正在打印' + match[team] + ' 物流时效…………')
-        if team == 'slgat':
+        if team == 'slgat0':
             print('---' + match[team] + ' 不打印文件')
         else:
             self.data_wl(team)

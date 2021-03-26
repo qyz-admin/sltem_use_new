@@ -68,6 +68,10 @@ class ExcelControl():
             wb.close()
             # 退出excel app
             app.quit()
+    def date(para):
+        delta = pd.Timedelta(str(para) + 'days')
+        time = pd.to_datetime('1899-12-30') + delta
+        return time
     def isRightSheet(self, df, team, shtName):
         '''
         根据团队，判断DateFrame是否是正确的明细表，并整理数据，输出需要的格式
@@ -252,6 +256,7 @@ class ExcelControl():
                     # df['状态时间'] = df['状态时间'].str.strip()
                     df['订单编号'] = df['订单编号'].str.replace('原内单号：', '')
                     df['订单编号'] = df['订单编号'].str.replace('原单:', '')
+                    # df['出货时间'] = df['出货时间'].astype(str)
                     # print(df['出货时间'])
                     # print(df['运单编号'])
                 except Exception as e:
@@ -279,6 +284,7 @@ class ExcelControl():
             return df
         else:
             return None
+
     def readReturnOrder(self, team):
         import os
         path = r'D:\Users\Administrator\Desktop\需要用到的文件\退货'
