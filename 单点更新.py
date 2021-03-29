@@ -107,6 +107,7 @@ class QueryTwo(Settings):
                             db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
                     db['运单号'] = db['运单号'].str.strip()                     # 去掉运单号中的前后空字符串
                     db['物流渠道'] = db['物流渠道'].str.strip()
+                    db['产品名称'] = db['产品名称'].str.split('#', expand=True)[1]
                     print(db.columns)
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
@@ -512,12 +513,12 @@ if __name__ == '__main__':
               'slrb': '日本'}
     # 手动导入状态
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt', 'slxmt_hfh','slgat_hfh']:
-    for team in ['slgat']:
+    for team in ['slxmt']:
         query = '导入'         # 导入；，更新--->>数据更新切换
         m.readFormHost(team, query)
     # 手动更新状态
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt', 'slxmt_hfh']:
-    # for team in ['slgat']:
+    # for team in ['slxmt_hfh']:
     #     query = '更新'         # 导入；，更新--->>数据更新切换
     #     m.readFormHost(team, query)
 

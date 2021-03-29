@@ -113,7 +113,7 @@ class QueryControl(Settings):
         listT = []  # 查询sql 存放池
         show_name = []  # 打印进度需要
         for i in range(len(end_Date)):
-            # # 总花费明细表---查询
+            # 总花费明细表---查询
             # sql20 = '''SELECT *
             #         FROM (
             #             SELECT sl_zong.币种,
@@ -271,6 +271,7 @@ class QueryControl(Settings):
             #         WHERE sl_zong_wl.`旬` = '合计';'''.format(team, tem, start_Date=start_Date[i], end_Date=end_Date[i])
             # listT.append(sql20)
             # show_name.append(start_Date[i] + '月（总）详细花费数据…………')
+
             # 直发花费明细表---查询
             # sql30 = '''SELECT sl.`币种`,
             #                     sl.`年月`,
@@ -296,6 +297,7 @@ class QueryControl(Settings):
             #          WHERE sl.`币种` = '{1}'
             #             AND sl.`旬` = CONVERT('合计' USING utf8) COLLATE utf8_general_ci
             #             AND sl.`年月` = CONVERT('{end_Date}' USING utf8) COLLATE utf8_general_ci;'''.format(match1[team], tem, end_Date=end_Date[i])
+
             sql30 = '''SELECT *
                     FROM (
                         SELECT sl_zong.币种,
@@ -419,6 +421,7 @@ class QueryControl(Settings):
                     WHERE sl_zong_wl.`旬` = '合计';'''.format(team, tem, start_Date=start_Date[i], end_Date=end_Date[i])
             listT.append(sql30)
             show_name.append(start_Date[i] + '月（直发）详细花费数据…………')
+
             # 总成本父级
             sql40 = '''SELECT *
                         FROM(
@@ -468,13 +471,14 @@ class QueryControl(Settings):
                                         null 直发采购额,
                                         null 广告成本,
                                         SUM(a.wlcost) AS 物流成本,
-                                        SUM(a.qtcost) AS 手续费 
+                            --          SUM(a.qtcost) AS 手续费 
+                                        null 手续费 
                                     FROM gk_order_day a
                                         LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                                         LEFT JOIN dim_area c on c.id = a.area_id
                                         LEFT JOIN dim_cate d on d.id = a.third_cate_id
-                                        LEFT JOIN gk_product e on e.id = a.product_id
-                            --          LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
+                            --          LEFT JOIN gk_product e on e.id = a.product_id
+                                        LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
                                     WHERE b.pcode = '{0}'
                                         AND EXTRACT(YEAR_MONTH FROM a.rq) >= '{start_Date}'
                                         AND EXTRACT(YEAR_MONTH FROM a.rq) <= '{end_Date}'
@@ -531,13 +535,14 @@ class QueryControl(Settings):
                                         null 直发采购额,
                                         null 广告成本,
 						                SUM(a.wlcost) AS 物流成本,
-						                SUM(a.qtcost) AS 手续费 
+                            --          SUM(a.qtcost) AS 手续费 
+                                        null 手续费 
 			                        FROM gk_order_day a
 				                        LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
 				                        LEFT JOIN dim_area c on c.id = a.area_id
 				                        LEFT JOIN dim_cate d on d.id = a.third_cate_id
-                                        LEFT JOIN gk_product e on e.id = a.product_id
-                            --          LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
+                            --          LEFT JOIN gk_product e on e.id = a.product_id
+                                        LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
                                     WHERE b.pcode = '{0}'
                                         AND EXTRACT(YEAR_MONTH FROM a.rq) >= '{start_Date}'
                                         AND EXTRACT(YEAR_MONTH FROM a.rq) <= '{end_Date}'
@@ -596,13 +601,14 @@ class QueryControl(Settings):
                                         null 直发采购额,
                                         null 广告成本,
                                         SUM(a.wlcost) AS 物流成本,
-                                        SUM(a.qtcost) AS 手续费 
+                            --          SUM(a.qtcost) AS 手续费 
+                                        null 手续费  
                                 FROM gk_order_day a
                                     LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                                     LEFT JOIN dim_area c on c.id = a.area_id
                                     LEFT JOIN dim_cate d on d.id = a.third_cate_id
-                                    LEFT JOIN gk_product e on e.id = a.product_id
-                        --          LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
+                        --          LEFT JOIN gk_product e on e.id = a.product_id
+                                    LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
                                 WHERE b.pcode = '{0}'
                                     AND EXTRACT(YEAR_MONTH FROM a.rq) >= '{start_Date}'
                                     AND EXTRACT(YEAR_MONTH FROM a.rq) <= '{end_Date}'
@@ -663,13 +669,14 @@ class QueryControl(Settings):
                                         null 直发采购额,
                                         null 广告成本,
                                         SUM(a.wlcost) AS 物流成本,
-                                        SUM(a.qtcost) AS 手续费 
+                            --          SUM(a.qtcost) AS 手续费 
+                                        null 手续费 
                                 FROM gk_order_day a
                                     LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                                     LEFT JOIN dim_area c on c.id = a.area_id
                                     LEFT JOIN dim_cate d on d.id = a.third_cate_id
-                                    LEFT JOIN gk_product e on e.id = a.product_id
-                        --          LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
+                        --          LEFT JOIN gk_product e on e.id = a.product_id
+                                    LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.id = a.product_id
                                 WHERE b.pcode = '{0}'
                                     AND EXTRACT(YEAR_MONTH FROM a.rq) >= '{start_Date}'
                                     AND EXTRACT(YEAR_MONTH FROM a.rq) <= '{end_Date}'
@@ -690,7 +697,7 @@ class QueryControl(Settings):
             if i == 0 or i == 4:
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
             else:
-                df = pd.read_sql_query(sql=sql, con=self.engine20)
+                df = pd.read_sql_query(sql=sql, con=self.engine2)
             # print(df)
             columns = list(df.columns)  # 获取数据的标题名，转为列表
             columns_value = ['直发占比', '改派占比', '直发采购/总销售额', '广告占比', '总成本占比', '数量签收/总计',  '利润率', '采购/销售额', '直发采购/销售额', '运费占比', '手续费占比', '金额签收/完成', '金额签收/总计', '金额完成占比', '数量签收/完成', '数量完成占比']

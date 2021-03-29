@@ -303,13 +303,14 @@ class SltemMonitoring(Settings):
                             null 直发采购额,
                             null 广告成本,
                             SUM(a.wlcost) AS 物流成本,
-                            SUM(a.qtcost) AS 手续费
+                --          SUM(a.qtcost) AS 手续费
+                            null 手续费
                     FROM gk_order_day a
                         LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                         LEFT JOIN dim_area c on c.id = a.area_id
                         LEFT JOIN dim_cate d on d.id = a.third_cate_id
-                        LEFT JOIN gk_product e on e.id = a.product_id
-                --      LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.product_id = a.product_id
+                --      LEFT JOIN gk_product e on e.id = a.product_id
+                        LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.product_id = a.product_id
                     WHERE a.rq >= '{0}'
                         AND a.rq < '{1}'
                         AND b.pcode = '{2}'
@@ -382,13 +383,14 @@ class SltemMonitoring(Settings):
                             null 直发采购额,
                             null 广告成本,
                             SUM(a.wlcost) AS 物流成本,
-                            SUM(a.qtcost) AS 手续费
+                --          SUM(a.qtcost) AS 手续费
+                            null 手续费
                     FROM gk_order_day a
                         LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                         LEFT JOIN dim_area c on c.id = a.area_id
                         LEFT JOIN dim_cate d on d.id = a.third_cate_id
-                        LEFT JOIN gk_product e on e.id = a.product_id
-                --      LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.product_id = a.product_id
+                --      LEFT JOIN gk_product e on e.id = a.product_id
+                        LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.product_id = a.product_id
                     WHERE a.rq >= '{0}'
                         AND a.rq < '{1}'
                         AND b.pcode = '{2}'
@@ -3351,7 +3353,7 @@ class SltemMonitoring(Settings):
                     columns_value = ['团队', '区域', '电话号码', '运单编号', '物流状态', '物流状态代码', '货物类型', '付款方式', '价格',
                                      '包裹重量', '包裹体积', '邮编', '签收表是否存在', '签收表订单编号', '签收表运单编号',
                                      '原运单号', '签收表物流状态', '添加时间', '成本价', '物流花费', '打包花费', '其它花费',
-                                     '添加物流单号时间', '订单删除原因', 'Nan']
+                                     '添加物流单号时间', '订单删除原因', '数量', 'Nan']
                     for column_val in columns_value:
                         if column_val in columns:
                             db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
@@ -3411,13 +3413,13 @@ if __name__ == '__main__':
     #     m.sl_Monitoring_two(team)  # 输出上月数据
 
     # 获取签收表内容（二）
-    # startday = '2021.02.25'
+    # startday = '2021.02.26'
     # # for team in ['香港', '台湾', '日本', '新加坡', '马来西亚', '泰国']:
     # for team in ['香港', '台湾', '港台']:
     #     m.readForm(team, startday)
 
     # # 获取监控表以上传的时间---监控运行（一）
-    for team in ['日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
+    for team in ['菲律宾', '新加坡', '马来西亚', '泰国']:
     # # for team in ['日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
     # for team in ['泰国']:
         m.check_time(team)

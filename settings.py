@@ -16,10 +16,10 @@ class Settings():
                        'charset': 'utf8'  # 数据库编码
                        }
         self.mysql2 = {'host': 'tidb2.giikin.com',  # 数据库地址
-                       'user': 'shenlong_kf',  # 数据库账户
+                       'user': 'tw',  # 数据库账户
                        'port': '39999',
-                       'password': 'SIK87&67asd',  # 数据库密码
-                       'datebase': 'gdqs_shenlong',  # 数据库名称
+                       'password': '1tSRyqQEfF',  # 数据库密码
+                       'datebase': 'gdqs_hw',  # 数据库名称
                        'charset': 'utf8'  # 数据库编码
                        }
         self.mysql3 = {'host': 'localhost',      #数据库地址
