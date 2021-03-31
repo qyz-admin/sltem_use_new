@@ -133,7 +133,7 @@ class MysqlControl(Settings):
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         # 12-1月的
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat' or team == 'slgat_hfh' or team == 'slxmt_hfh':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb0' or team == 'slgat0' or team == 'slgat_hfh' or team == 'slxmt_hfh':
             # 获取日期时间
             sql = 'SELECT 日期 FROM {0}_order_list WHERE id = (SELECT MAX(id) FROM {0}_order_list);'.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -153,7 +153,7 @@ class MysqlControl(Settings):
             # 11-12月的
             begin = datetime.date(2021, 2, 1)
             print(begin)
-            end = datetime.date(2021, 3, 30)
+            end = datetime.date(2021, 4, 2)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -213,7 +213,7 @@ class MysqlControl(Settings):
                             left join dim_cate ON dim_cate.id = a.third_cate_id
                             left join intervals ON intervals.id = a.intervals
                             left join dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
-                    WHERE a.rq = '{0}' AND a.rq <= '{1}'
+                    WHERE  a.rq = '{0}' AND a.rq <= '{1}'
                         AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
             print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
             df = pd.read_sql_query(sql=sql, con=self.engine2)
@@ -248,7 +248,7 @@ class MysqlControl(Settings):
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat' or team == 'slgat_hfh0' or team == 'slxmt_hfh':
+        if team == 'sltg' or team == 'slxmt0' or team == 'slrb0' or team == 'slgat0' or team == 'slgat_hfh0' or team == 'slxmt_hfh0':
             yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
             mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
             begin = datetime.date(yy, mm, 1)
@@ -259,7 +259,7 @@ class MysqlControl(Settings):
             end = datetime.date(yy2, mm2, dd2)
             print(end)
         else:
-            begin = datetime.date(2021, 3, 10)
+            begin = datetime.date(2021, 2, 1)
             print(begin)
             end = datetime.date(2021, 3, 31)
             print(end)
@@ -349,16 +349,16 @@ class MysqlControl(Settings):
                     'slzb': '直播团队',
                     'slyn': '越南',
                     'slrb': 'sunyaru@giikin.com'}
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat' or team == 'slgat_hfh' or team == 'slxmt_hfh':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb0' or team == 'slgat0' or team == 'slgat_hfh0' or team == 'slxmt_hfh':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
             print(month_begin)
         else:
-            month_last = '2021-01-01'
-            month_yesterday = '2021-03-29'
-            month_begin = '2020-11-01'
-        token = '6a4a306ff5fa7aa82c8a4835975d5c3c'        # 补充查询产品信息需要
+            month_last = '2020-01-01'
+            month_yesterday = '2021-04-01'
+            month_begin = '2020-12-01'
+        token = '1b4a0d9c0f62c43e4a97f8cf250b06a8'        # 补充查询产品信息需要
         if team == 'slgat':  # 港台查询函数导出
             # 产品id详情更新   （参数一需要手动更换）
             self.d.productIdInfo(token, '订单号', team)
@@ -377,7 +377,7 @@ class MysqlControl(Settings):
                         LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
                         LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
                     WHERE a.日期 >= '{2}' AND a.日期 <= '{3}'
-                        AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)','已退货(物流)', '已退货(不拆包物流)')
+                        AND a.系统订单状态 IN ('已审核', '待发货', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)', '待发货转审核')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
         elif team == 'slgat_hfh':  # 新马物流查询函数导出
             self.d.productIdInfo(token, '订单号', team)
@@ -452,7 +452,7 @@ class MysqlControl(Settings):
                         AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
         else:
-            self.d.productIdInfo(token, '订单号', team)
+            # self.d.productIdInfo(token, '订单号', team)
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', null, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
@@ -524,7 +524,7 @@ class MysqlControl(Settings):
                         LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} WHERE {0}.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
                         LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
                         LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
-                    WHERE a.日期 >= '{2}' AND a.日期 <= '{3}' and (a.订单编号 like '%UP%' or a.订单编号 like '%IG%') 
+                    WHERE a.日期 >= '{2}' AND a.日期 <= '{3}' and (a.订单编号 like '%UP%' or a.订单编号 like '%IG%')
                         AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)','已退货(物流)', '已退货(不拆包物流)')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
             print('正在获取---' + match[team] + ' ---商城IG和UP订单数据内容…………')

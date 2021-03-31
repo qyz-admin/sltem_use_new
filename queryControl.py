@@ -1482,7 +1482,7 @@ class QueryControl(Settings):
             app.quit()
             # self.xiugaiyangshi(filePath, sheet_name[1])
             file_Path.append(filePath)
-            self.e.send(tem + '产品花费表', file_Path,
+            self.e.send('火凤凰-' + tem + '产品花费表', file_Path,
                         emailAdd[team])
         else:
             file_Path = []  # 发送邮箱文件使用
@@ -1556,7 +1556,7 @@ class QueryControl(Settings):
                         emailAdd[team])
             print('处理耗时：', datetime.datetime.now() - start)
 
-    # 更新团队产品明细（新后台的）
+    # 更新团队产品明细（新后台的第一部分）
     def productIdInfo(self, tokenid, searchType, team):  # 进入查询界面，
         print('正在获取需要更新的产品id信息')
         start = datetime.datetime.now()
@@ -1586,6 +1586,8 @@ class QueryControl(Settings):
         data = {'phone': None,
                 'email': None,
                 'ip': None,
+                'page': 1,
+                'pageSize': 100,
                 '_token': tokenid}
         if searchType == '订单号':
             data.update({'orderPrefix': orderId,
@@ -1601,7 +1603,7 @@ class QueryControl(Settings):
         print('正在处理json数据…………')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         print('正在转化数据为dataframe…………')
-        print(req)
+        # print(req)
         ordersDict = []
         for result in req['data']['list']:
             # print(result)
@@ -1665,8 +1667,8 @@ class QueryControl(Settings):
             df.to_sql('d1_cp', con=self.engine1, index=False, if_exists='replace')
             if team == 'slgat' or team == 'slgat_hfh':
                 sql = '''SELECT orderNumber,
-                    logisticsName 物流名称,
-                    IF(logisticsName LIKE '%易速配%', '易速配', IF(logisticsName LIKE '%速派%','速派国际', IF(logisticsName LIKE '%森鸿%', '森鸿国际', IF(logisticsName LIKE '%壹加壹%', '壹加壹', IF(logisticsName LIKE '%立邦%','立邦国际', IF(logisticsName LIKE '%天马%全家%','天马运通', IF(logisticsName LIKE '%天马%711%','天马运通', IF(logisticsName LIKE '%天马%新竹%','天马运通', IF(logisticsName LIKE '%天马%顺丰%','天马物流', logisticsName))))))))) 物流方式,
+                    logisticsName 物流方式,
+                    IF(logisticsName LIKE '%易速配%', '易速配', IF(logisticsName LIKE '%速派%','速派国际', IF(logisticsName LIKE '%森鸿%', '森鸿国际', IF(logisticsName LIKE '%壹加壹%', '壹加壹', IF(logisticsName LIKE '%立邦%','立邦国际', IF(logisticsName LIKE '%天马%全家%','天马运通', IF(logisticsName LIKE '%天马%711%','天马运通', IF(logisticsName LIKE '%天马%新竹%','天马运通', IF(logisticsName LIKE '%天马%顺丰%','天马物流', logisticsName))))))))) 物流名称,
                     productId,
                     dp.`name`,
                     dc.ppname cate,
@@ -1678,9 +1680,8 @@ class QueryControl(Settings):
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
             elif team == 'slrb':
                 sql = '''SELECT orderNumber,
-                        logisticsName 物流名称,
-                --        logisticsName 物流方式,
-                        IF(logisticsName LIKE '%捷浩通%', '捷浩通', IF(logisticsName LIKE '%翼通达%','翼通达', IF(logisticsName LIKE '%博佳图%', '博佳图', IF(logisticsName LIKE '%保辉达%', '保辉达物流', IF(logisticsName LIKE '%万立德%','万立德', logisticsName))))) 物流方式,
+                        logisticsName 物流方式,
+                        IF(logisticsName LIKE '%捷浩通%', '捷浩通', IF(logisticsName LIKE '%翼通达%','翼通达', IF(logisticsName LIKE '%博佳图%', '博佳图', IF(logisticsName LIKE '%保辉达%', '保辉达物流', IF(logisticsName LIKE '%万立德%','万立德', logisticsName))))) 物流名称,
     					productId,
     					dp.`name`,
     					dc.ppname cate,
@@ -1692,19 +1693,70 @@ class QueryControl(Settings):
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
             print(df)
             df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
-            # print('正在更新产品详情…………')
-            # sql = '''update {0}_order_list a, tem_product_id b
-    		#                         set a.`产品id`=b.`productId`,
-    		#                             a.`产品名称`=b.`name`,
-    		# 		                    a.`父级分类`=b.`cate` ,
-    		# 		                    a.`二级分类`=b.`second_cate`,
-    		# 		                    a.`三级分类`=b.`third_cate`
-    		# 		                where a.`订单编号`=b.`orderNumber`;'''.format(team)
-            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            print('正在更新产品详情…………')
+            sql = '''update {0}_order_list a, tem_product_id b
+    		                        set a.`物流方式`=b.`物流方式`,
+    		                            a.`物流名称`=b.`物流名称`,
+    		                            a.`产品id`=b.`productId`,
+    		                            a.`产品名称`=b.`name`,
+    				                    a.`父级分类`=b.`cate` ,
+    				                    a.`二级分类`=b.`second_cate`,
+    				                    a.`三级分类`=b.`third_cate`
+    				                where a.`订单编号`=b.`orderNumber`;'''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
         print('更新耗时：', datetime.datetime.now() - start)
+
+    # 更新团队产品明细（新后台的第二部分）
+    def productIdInfoTT(self, tokenid, searchType, team):  # 进入产品id查询界面(补充查询)，
+        print('正在获取需要更新的产品id信息')
+        start = datetime.datetime.now()
+        month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y-%m-%d')
+        sql = '''SELECT id,`订单编号`  
+                FROM {0}_order_list sl 
+    			WHERE sl.`日期`> '{1}' AND sl.`父级分类` IS NULL
+    				AND ( NOT sl.`系统订单状态` IN ('已删除','问题订单','支付失败','未支付'));'''.format(team, month_begin)
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        if ordersDict.empty:
+            print('无需要更新的产品id信息！！！')
+            # sys.exit()
+            return
+        orderId = list(ordersDict['订单编号'])
+        print('获取耗时：', datetime.datetime.now() - start)
+        max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
+        n = 0
+        while n < max_count:        # 这里用到了一个while循环，穿越过来的
+            ord = ', '.join(orderId[n:n + 10])
+            print(ord)
+            n = n + 10
+            # self.productIdqueryTT(tokenid, ord, team)
+
+    def productIdqueryTT(self):  # 进入产品id查询界面，
+        start = datetime.datetime.now()
+        url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getProductList&page=1&pageSize=10&productId=182907&productName=&status=&source=&isSensitive=&isGift=&isDistribution=&chooserId=&buyerId='
+        data = {'productId': 182907,
+                'productName': None,
+                'status': None,
+                'source': None,
+                'isSensitive': None,
+                'isGift': None,
+                'isDistribution': None,
+                'chooserId': None,
+                'buyerId': None}
+        r_header = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36',
+            'Referer': 'http://gimp.giikin.com/front/orderToolsServiceQuery'}
+        # req = self.session.get(url=url, headers=r_header, data=data)
+        req = requests.get(url=url)
+        print(req.status_code)
+        print('已成功发送请求++++++')
+        print('正在处理json数据…………')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        print('正在转化数据为dataframe…………')
+
+
 
     # 修改样式（备用）
     def xiugaiyangshi(self, filePath, sheetname):
@@ -1940,6 +1992,12 @@ if __name__ == '__main__':
     # team = 'sltg_zqsb'
     # m.sl_tem_cost(team, match9[team])
 
-    team = 'slrb'
-    token = '6a4a306ff5fa7aa82c8a4835975d5c3c'
-    m.productIdquery(token, 'NJ210330085757094517', '订单号', team)
+    # team = 'slgat_hfh'  # 第一部分查询
+    # token = '1b4a0d9c0f62c43e4a97f8cf250b06a8'
+    # m.productIdquery(token, 'NJ210330085757094517', '订单号', team)
+    # m.productIdInfo(token, '订单号', team)
+
+    # team = 'slgat_hfh'  # 第二部分查询
+    # token = 'b28f877ee2b82c6bc9253e1b4a676001'
+    m.productIdqueryTT()
+    # m.productIdInfoTT(token, '订单号', team)
