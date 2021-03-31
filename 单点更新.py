@@ -132,7 +132,7 @@ class QueryTwo(Settings):
     def replaceSqlHost(self, team, query):
         if team == 'slgat' or team == 'slgat_hfh':
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
-            				        IF(IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),'2') 旬,
+            				        IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
             			            DATE(h.下单时间) 日期,
             				        h.运营团队 团队,
             				        IF(h.`币种` = '台币', 'TW', IF(h.`币种` = '港币', 'HK', h.`币种`)) 区域,
@@ -179,7 +179,7 @@ class QueryTwo(Settings):
                             LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`; '''.format(team)
         elif team == 'slrb':
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
-				                IF(IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),'2') 旬,
+			                    IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
 			                    DATE(h.下单时间) 日期,
 				                h.运营团队 团队,
 				                IF(h.`币种` = '日币', 'JP', h.`币种`) 区域,
@@ -227,7 +227,7 @@ class QueryTwo(Settings):
                     LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
         elif team == 'sltg':
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
-				                IF(IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),'2') 旬,
+                                IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
 			                    DATE(h.下单时间) 日期,
 				                h.运营团队 团队,
 				                IF(h.`币种` = '泰铢', 'TH', h.`币种`) 区域,
@@ -274,11 +274,10 @@ class QueryTwo(Settings):
                     LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
         elif team == 'slxmt_hfh':
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
-            				                IF(IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),'2') 旬,
+                                            IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
             			                    DATE(h.下单时间) 日期,
             				                h.运营团队 团队,
-            --				                IF(IF(h.`币种` = '马来西亚'), 'MY', IF(h.`币种` ='菲律宾', 'PH',IF(h.`币种` = '新加坡', 'SG',h.`币种`)),'','') 区域,
-            				                null 区域,
+            				                IF(h.`币种` = '马来西亚', 'MY', IF(h.`币种` ='菲律宾', 'PH', IF(h.`币种` = '新加坡', 'SG', null))) 区域,
             				                币种,
             				                h.平台 订单来源,
             				                订单编号,
@@ -322,11 +321,10 @@ class QueryTwo(Settings):
                                 LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
         else:
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
-				                IF(IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),IF(DAYOFMONTH(h.下单时间) > '20', '3', IF(DAYOFMONTH(h.下单时间) < '10', '2', h.`币种`)),'2') 旬,
-			                  DATE(h.下单时间) 日期,
+                                IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
+			                    DATE(h.下单时间) 日期,
 				                h.运营团队 团队,
--- 								IF(IF(h.`币种` = '马来西亚', 'MY', IF(h.`币种` ='菲律宾', 'PH',IF(h.`币种` = '新加坡', 'SG',h.`币种`)))) 区域,
-							    null 区域,
+							    IF(h.`币种` = '马来西亚', 'MY', IF(h.`币种` ='菲律宾', 'PH', IF(h.`币种` = '新加坡', 'SG', null))) 区域,
 				                币种,
 				                h.平台 订单来源,
 				                订单编号,
@@ -368,7 +366,6 @@ class QueryTwo(Settings):
                     LEFT JOIN dim_product ON  dim_product.id = h.产品id
                     LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                     LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
-
         if query == '导入':
             try:
                 print('正在导入临时表中......')
@@ -377,7 +374,7 @@ class QueryTwo(Settings):
                 columns = ', '.join(columns)
                 df.to_sql('d1_host_cp', con=self.engine1, index=False, if_exists='replace')
                 print('正在导入表总表中......')
-                sql = '''REPLACE INTO {}_order_list({}, 记录时间) SELECT *, NOW() 记录时间 FROM d1_host_cp; '''.format(team,columns)
+                sql = '''REPLACE INTO {}_order_list({}, 记录时间) SELECT *, CURDATE() 记录时间 FROM d1_host_cp; '''.format(team,columns)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=2000)
             except Exception as e:
                 print('插入失败：', str(Exception) + str(e))
@@ -513,12 +510,12 @@ if __name__ == '__main__':
               'slrb': '日本'}
     # 手动导入状态
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt', 'slxmt_hfh','slgat_hfh']:
-    for team in ['slxmt']:
+    for team in ['sltg']:
         query = '导入'         # 导入；，更新--->>数据更新切换
         m.readFormHost(team, query)
     # 手动更新状态
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt', 'slxmt_hfh']:
-    # for team in ['slxmt_hfh']:
+    # for team in ['slgat_hfh']:
     #     query = '更新'         # 导入；，更新--->>数据更新切换
     #     m.readFormHost(team, query)
 

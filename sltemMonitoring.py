@@ -400,7 +400,7 @@ class SltemMonitoring(Settings):
                     GROUP BY b.pname, c.uname
                 ) s3
                 ORDER BY 订单量;'''.format(last_month, yesterday, match[team])
-        df = pd.read_sql_query(sql=sql, con=self.engine20)
+        df = pd.read_sql_query(sql=sql, con=self.engine2)
         columns = list(df)
         columns = ', '.join(columns)  # 插入mysql的标题使用，否则无法导入更新
         print('正在缓存…………')
@@ -534,6 +534,11 @@ class SltemMonitoring(Settings):
         # Time_day = ['2021-02-24', '2020-12-19', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2021-01-24']
         # 对时间数组进行排序  list.sort(cmp=None, key=None, reverse=False)；reverse -- 排序规则，reverse = True 降序， reverse = False 升序（默认）
         Time_day.sort()
+        print(Time_day[11])
+        print(Time_day[10])
+        Time_day[11] = '2021-03-30'
+        Time_day[10] = '2021-02-28'
+        print(88)
         print(Time_day[11])
         print(Time_day[10])
         listT = []  # 查询sql 存放池
@@ -3404,22 +3409,22 @@ if __name__ == '__main__':
 
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # # # 测试监控运行（三）
-    # for team in ['台湾', '香港']:
+    for team in ['菲律宾', '新加坡', '马来西亚']:
     # # # for team in ['台湾', '香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
-    #     m.order_Monitoring(team)    # 各月缓存
-        # m.data_Monitoring(team)     # 两月数据
-    # # #     m.costWaybill(team)       # 成本缓存 与 成本两月数据
-    #     m.sl_Monitoring(team)       # 输出数据
+        m.order_Monitoring(team)    # 各月缓存
+        m.data_Monitoring(team)     # 两月数据
+    #     m.costWaybill(team)       # 成本缓存 与 成本两月数据
+        m.sl_Monitoring(team)       # 输出数据
     #     m.sl_Monitoring_two(team)  # 输出上月数据
 
     # 获取签收表内容（二）
-    # startday = '2021.02.26'
-    # # for team in ['香港', '台湾', '日本', '新加坡', '马来西亚', '泰国']:
-    # for team in ['香港', '台湾', '港台']:
-    #     m.readForm(team, startday)
+    # startday = '2021.02.28'
+    # # for team in ['香港', '台湾','港台', '日本', '新加坡', '马来西亚', '泰国']:
+    # for team in ['香港', '台湾']:
+        # m.readForm(team, startday)
 
     # # 获取监控表以上传的时间---监控运行（一）
-    for team in ['菲律宾', '新加坡', '马来西亚', '泰国']:
+    # for team in ['菲律宾', '新加坡', '马来西亚', '泰国']:
     # # for team in ['日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
     # for team in ['泰国']:
-        m.check_time(team)
+    #     m.check_time(team)
