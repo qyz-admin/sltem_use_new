@@ -510,14 +510,14 @@ if __name__ == '__main__':
               'slrb': '日本'}
     # 手动导入状态
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt', 'slxmt_hfh','slgat_hfh']:
-    for team in ['sltg']:
-        query = '导入'         # 导入；，更新--->>数据更新切换
-        m.readFormHost(team, query)
+    # for team in ['sltg']:
+    #     query = '导入'         # 导入；，更新--->>数据更新切换
+    #     m.readFormHost(team, query)
     # 手动更新状态
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt', 'slxmt_hfh']:
-    # for team in ['slgat_hfh']:
-    #     query = '更新'         # 导入；，更新--->>数据更新切换
-    #     m.readFormHost(team, query)
+    for team in ['sltg']:
+        query = '更新'         # 导入；，更新--->>数据更新切换
+        m.readFormHost(team, query)
 
 
     # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:

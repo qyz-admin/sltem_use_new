@@ -536,7 +536,7 @@ class SltemMonitoring(Settings):
         Time_day.sort()
         print(Time_day[11])
         print(Time_day[10])
-        Time_day[11] = '2021-03-30'
+        Time_day[11] = '2021-03-31'
         Time_day[10] = '2021-02-28'
         print(88)
         print(Time_day[11])
@@ -3409,6 +3409,7 @@ if __name__ == '__main__':
 
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # # # 测试监控运行（三）
+    # for team in ['台湾', '香港']:
     for team in ['菲律宾', '新加坡', '马来西亚']:
     # # # for team in ['台湾', '香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
         m.order_Monitoring(team)    # 各月缓存
@@ -3418,9 +3419,9 @@ if __name__ == '__main__':
     #     m.sl_Monitoring_two(team)  # 输出上月数据
 
     # 获取签收表内容（二）
-    # startday = '2021.02.28'
+    # startday = '2021.03.31'
     # # for team in ['香港', '台湾','港台', '日本', '新加坡', '马来西亚', '泰国']:
-    # for team in ['香港', '台湾']:
+    # for team in ['香港', '台湾','港台']:
         # m.readForm(team, startday)
 
     # # 获取监控表以上传的时间---监控运行（一）

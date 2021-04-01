@@ -92,7 +92,7 @@ class MysqlControl(Settings):
         mm2 = int(datetime.datetime.now().strftime('%m'))
         dd2 = int(datetime.datetime.now().strftime('%d'))
         end = datetime.date(yy2, mm2, dd2)
-        # end = datetime.date(2021, 3, 19)
+        # end = datetime.date(2021, 3, 31)
         print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -112,7 +112,7 @@ class MysqlControl(Settings):
 		            FROM gk_sale gs
 		            WHERE gs.rq >= '{0}';'''.format(month_last)
             print('正在获取 ' + month_last + ' 号以后的产品详情…………')
-            df = pd.read_sql_query(sql=sql, con=self.engine20)
+            df = pd.read_sql_query(sql=sql, con=self.engine2)
             print('正在写入产品缓存中…………')
             df.to_sql('tem_product', con=self.engine1, index=False, if_exists='replace')
             try:
@@ -248,7 +248,7 @@ class MysqlControl(Settings):
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat' or team == 'slgat_hfh' or team == 'slxmt_hfh':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat' or team == 'slgat_hfh0' or team == 'slxmt_hfh':
             yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
             mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
             begin = datetime.date(yy, mm, 1)
@@ -259,9 +259,9 @@ class MysqlControl(Settings):
             end = datetime.date(yy2, mm2, dd2)
             print(end)
         else:
-            begin = datetime.date(2021, 2, 1)
+            begin = datetime.date(2021, 3, 10)
             print(begin)
-            end = datetime.date(2021, 3, 23)
+            end = datetime.date(2021, 3, 31)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -358,7 +358,7 @@ class MysqlControl(Settings):
             month_last = '2021-01-01'
             month_yesterday = '2021-03-29'
             month_begin = '2020-11-01'
-        token = 'ae9496509bfd0c7e6ff16cb34af1aa1f'        # 补充查询产品信息需要
+        token = '6a4a306ff5fa7aa82c8a4835975d5c3c'        # 补充查询产品信息需要
         if team == 'slgat':  # 港台查询函数导出
             # 产品id详情更新   （参数一需要手动更换）
             self.d.productIdInfo(token, '订单号', team)
@@ -1410,11 +1410,11 @@ class MysqlControl(Settings):
                 df[column] = df[column].apply(lambda x: format(x, '.2%'))
             today = datetime.date.today().strftime('%Y.%m.%d')
             if i == 0:
-                df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰{}上月产品花费表.xlsx'.format(today, match[team]),
+                df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰-{}上月产品花费表.xlsx'.format(today, match[team]),
                             sheet_name=match[team], index=False)
                 # filePath.append('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰{}上月产品花费表.xlsx'.format(today, match[team]))
             else:
-                df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰{}本月产品花费表.xlsx'.format(today, match[team]),
+                df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰-{}本月产品花费表.xlsx'.format(today, match[team]),
                             sheet_name=match[team], index=False)
                 # filePath.append('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰{}本月产品花费表.xlsx'.format(today, match[team]))
         # self.e.send(match[team] + '产品花费表', filePath,
@@ -1428,27 +1428,30 @@ if __name__ == '__main__':
     start = datetime.datetime.now()
 
     # 更新产品id的列表
-    # m.update_gk_product()
+    m.update_gk_product()
 
-    # for team in ['slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_hfh']:  # 无运单号查询200
-    #     m.noWaybillNumber(team)
+    for team in ['slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_hfh']:  # 无运单号查询200
+        m.noWaybillNumber(team)
 
-    # match = {'SG': '新加坡',
-    #          'MY': '马来西亚',
-    #          'PH': '菲律宾',
-    #          'JP': '日本',
-    #          'HK': '香港',
-    #          'TW': '台湾'}
     match = {'SG': '新加坡',
              'MY': '马来西亚',
-             'PH': '菲律宾'}
+             'PH': '菲律宾',
+             'JP': '日本',
+             'HK': '香港',
+             'TW': '台湾'}
+    # match = {'SG': '新加坡',
+    #          'MY': '马来西亚',
+    #          'PH': '菲律宾'}
     for team in match.keys():  # 产品花费表200
-        # m.orderCost(team)
-        m.orderCostHFH(team)
+        if team == 'JP':
+            m.orderCost(team)
+        else:
+            m.orderCost(team)
+            m.orderCostHFH(team)
 
-    # sm = SltemMonitoring()
-    # for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾']:  # 成本查询
-    #     sm.costWaybill(team)
+    sm = SltemMonitoring()
+    for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾']:  # 成本查询
+        sm.costWaybill(team)
 
 
     # 测试物流时效

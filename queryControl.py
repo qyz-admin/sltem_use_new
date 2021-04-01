@@ -1450,7 +1450,7 @@ class QueryControl(Settings):
         sheet_name = ['直发成本', '父级成本', '二级成本', '三级成本']  # 生成的工作表的表名
         if len(listTValue) == 4:
             file_Path = []  # 发送邮箱文件使用
-            filePath = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰{}上月产品花费表.xlsx'.format(today, tem)
+            filePath = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰-{}上月产品花费表.xlsx'.format(today, tem)
             if os.path.exists(filePath):  # 判断是否有需要的表格
                 print("正在使用(上月-单月)文件......")
                 filePath = filePath
@@ -1486,7 +1486,7 @@ class QueryControl(Settings):
                         emailAdd[team])
         else:
             file_Path = []  # 发送邮箱文件使用
-            filePath = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰{}上月产品花费表.xlsx'.format(today, tem)
+            filePath = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰-{}上月产品花费表.xlsx'.format(today, tem)
             if os.path.exists(filePath):  # 判断是否有需要的表格
                 print("正在使用(上月)文件......")
                 filePath = filePath
@@ -1520,7 +1520,7 @@ class QueryControl(Settings):
             # self.xiugaiyangshi(filePath, sheet_name[1])
             file_Path.append(filePath)
             print('------分割线------')
-            filePathT = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰{}本月产品花费表.xlsx'.format(today, tem)
+            filePathT = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰-{}本月产品花费表.xlsx'.format(today, tem)
             if os.path.exists(filePathT):  # 判断是否有需要的表格
                 print("正在使用(本月)文件......")
                 filePathT = filePathT
@@ -1563,8 +1563,8 @@ class QueryControl(Settings):
         month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y-%m-%d')
         sql = '''SELECT id,`订单编号`  FROM {0}_order_list sl 
     			WHERE sl.`日期`> '{1}' 
-    				AND  ( sl.`产品名称` IS NULL  or  sl.`父级分类` IS NULL)
-    				AND sl.`系统订单状态` != '已删除';'''.format(team, month_begin)
+    				AND (sl.`产品名称` IS NULL or sl.`父级分类` IS NULL or  sl.`物流方式` IS NULL)
+    				AND ( NOT sl.`系统订单状态` IN ('已删除','问题订单','支付失败','未支付'));'''.format(team, month_begin)
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
         if ordersDict.empty:
             print('无需要更新的产品id信息！！！')
@@ -1601,7 +1601,7 @@ class QueryControl(Settings):
         print('正在处理json数据…………')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         print('正在转化数据为dataframe…………')
-        # print(req)
+        print(req)
         ordersDict = []
         for result in req['data']['list']:
             # print(result)
@@ -1665,8 +1665,8 @@ class QueryControl(Settings):
             df.to_sql('d1_cp', con=self.engine1, index=False, if_exists='replace')
             if team == 'slgat' or team == 'slgat_hfh':
                 sql = '''SELECT orderNumber,
-                    logisticsName 物流方式,
-                    IF(logisticsName LIKE '%捷浩通%', '捷浩通', IF(logisticsName LIKE '%翼通达%','翼通达', IF(logisticsName LIKE '%博佳图%', '博佳图', IF(logisticsName LIKE '%保辉达%', '保辉达物流', IF(logisticsName LIKE '%万立德%','万立德', '未知'))))) 物流名称,
+                    logisticsName 物流名称,
+                    IF(logisticsName LIKE '%易速配%', '易速配', IF(logisticsName LIKE '%速派%','速派国际', IF(logisticsName LIKE '%森鸿%', '森鸿国际', IF(logisticsName LIKE '%壹加壹%', '壹加壹', IF(logisticsName LIKE '%立邦%','立邦国际', IF(logisticsName LIKE '%天马%全家%','天马运通', IF(logisticsName LIKE '%天马%711%','天马运通', IF(logisticsName LIKE '%天马%新竹%','天马运通', IF(logisticsName LIKE '%天马%顺丰%','天马物流', logisticsName))))))))) 物流方式,
                     productId,
                     dp.`name`,
                     dc.ppname cate,
@@ -1679,8 +1679,8 @@ class QueryControl(Settings):
             elif team == 'slrb':
                 sql = '''SELECT orderNumber,
                         logisticsName 物流名称,
-                        logisticsName 物流方式,
-                        IF(logisticsName LIKE '%捷浩通%', '捷浩通', IF(logisticsName LIKE '%翼通达%','翼通达', IF(logisticsName LIKE '%博佳图%', '博佳图', IF(logisticsName LIKE '%保辉达%', '保辉达物流', IF(logisticsName LIKE '%万立德%','万立德', '未知'))))) 物流方式,
+                --        logisticsName 物流方式,
+                        IF(logisticsName LIKE '%捷浩通%', '捷浩通', IF(logisticsName LIKE '%翼通达%','翼通达', IF(logisticsName LIKE '%博佳图%', '博佳图', IF(logisticsName LIKE '%保辉达%', '保辉达物流', IF(logisticsName LIKE '%万立德%','万立德', logisticsName))))) 物流方式,
     					productId,
     					dp.`name`,
     					dc.ppname cate,
@@ -1692,15 +1692,15 @@ class QueryControl(Settings):
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
             print(df)
             df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
-            print('正在更新产品详情…………')
-            sql = '''update {0}_order_list a, tem_product_id b
-    		                        set a.`产品id`=b.`productId`,
-    		                            a.`产品名称`=b.`name`,
-    				                    a.`父级分类`=b.`cate` ,
-    				                    a.`二级分类`=b.`second_cate`,
-    				                    a.`三级分类`=b.`third_cate`
-    				                where a.`订单编号`=b.`orderNumber`;'''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            # print('正在更新产品详情…………')
+            # sql = '''update {0}_order_list a, tem_product_id b
+    		#                         set a.`产品id`=b.`productId`,
+    		#                             a.`产品名称`=b.`name`,
+    		# 		                    a.`父级分类`=b.`cate` ,
+    		# 		                    a.`二级分类`=b.`second_cate`,
+    		# 		                    a.`三级分类`=b.`third_cate`
+    		# 		                where a.`订单编号`=b.`orderNumber`;'''.format(team)
+            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
@@ -1941,5 +1941,5 @@ if __name__ == '__main__':
     # m.sl_tem_cost(team, match9[team])
 
     team = 'slrb'
-    token = '33177ac705bb70382b78a68e8935b911'
-    m.productIdquery(token, 'GT210327121943649055', '订单号', team)
+    token = '6a4a306ff5fa7aa82c8a4835975d5c3c'
+    m.productIdquery(token, 'NJ210330085757094517', '订单号', team)
