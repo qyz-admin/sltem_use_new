@@ -133,7 +133,7 @@ class MysqlControl(Settings):
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         # 12-1月的
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb0' or team == 'slgat0' or team == 'slgat_hfh' or team == 'slxmt_hfh':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat' or team == 'slgat_hfh' or team == 'slxmt_hfh':
             # 获取日期时间
             sql = 'SELECT 日期 FROM {0}_order_list WHERE id = (SELECT MAX(id) FROM {0}_order_list);'.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -248,7 +248,7 @@ class MysqlControl(Settings):
                  'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        if team == 'sltg' or team == 'slxmt0' or team == 'slrb0' or team == 'slgat0' or team == 'slgat_hfh0' or team == 'slxmt_hfh0':
+        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat' or team == 'slgat_hfh' or team == 'slxmt_hfh':
             yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
             mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
             begin = datetime.date(yy, mm, 1)
@@ -355,10 +355,10 @@ class MysqlControl(Settings):
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
             print(month_begin)
         else:
-            month_last = '2020-01-01'
-            month_yesterday = '2021-04-01'
+            month_last = '2021-03-01'
+            month_yesterday = '2021-03-31'
             month_begin = '2020-12-01'
-        token = '1b4a0d9c0f62c43e4a97f8cf250b06a8'        # 补充查询产品信息需要
+        token = 'f0a8bfb664417f8e09992b517d4cc423'        # 补充查询产品信息需要
         if team == 'slgat':  # 港台查询函数导出
             # 产品id详情更新   （参数一需要手动更换）
             self.d.productIdInfo(token, '订单号', team)
@@ -452,7 +452,7 @@ class MysqlControl(Settings):
                         AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
         else:
-            # self.d.productIdInfo(token, '订单号', team)
+            self.d.productIdInfo(token, '订单号', team)
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', null, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
@@ -487,7 +487,7 @@ class MysqlControl(Settings):
         filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
-        if team == 'slgat':
+        if team == 'slgat0':
             print('---' + match[team] + ' 不发送邮件')
         else:
             self.e.send('{} {}签收表.xlsx'.format(today, match[team]), filePath,
