@@ -1,3 +1,4 @@
+# coding:utf-8
 import pandas as pd
 import os
 import datetime
@@ -1603,7 +1604,7 @@ class QueryControl(Settings):
         print('正在处理json数据…………')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         print('正在转化数据为dataframe…………')
-        # print(req)
+        print(req)
         ordersDict = []
         for result in req['data']['list']:
             # print(result)
@@ -1658,45 +1659,31 @@ class QueryControl(Settings):
         data = pd.json_normalize(ordersDict)
         df = data[['orderNumber', 'wayBillNumber', 'logisticsName', 'logisticsStatus', 'orderStatus', 'isSecondSend',
                    'currency', 'area', 'currency', 'shipInfo.shipPhone', 'quantity', 'productId']]
-        # df['wayBillNumber'] = df['wayBillNumber'].str.strip()  # 去掉运单号中的前后空字符串
-        # df['logisticsName'] = df['logisticsName'].str.strip()
-        # df['productId'] = df['productId'].str.split('#', expand=True)[1]
         print(df)
         print('正在写入缓存中......')
         try:
             df.to_sql('d1_cp', con=self.engine1, index=False, if_exists='replace')
-            if team == 'slgat' or team == 'slgat_hfh':
-                sql = '''SELECT orderNumber,
-                    logisticsName 物流方式,
-                    IF(logisticsName LIKE '%易速配%', '易速配', IF(logisticsName LIKE '%速派%','速派国际', IF(logisticsName LIKE '%森鸿%', '森鸿国际', IF(logisticsName LIKE '%壹加壹%', '壹加壹', IF(logisticsName LIKE '%立邦%','立邦国际', IF(logisticsName LIKE '%天马%全家%','天马运通', IF(logisticsName LIKE '%天马%711%','天马运通', IF(logisticsName LIKE '%天马%新竹%','天马运通', IF(logisticsName LIKE '%天马%顺丰%','天马物流', logisticsName))))))))) 物流名称,
-                    productId,
-                    dp.`name`,
-                    dc.ppname cate,
-                    dc.pname second_cate,
-                    dc.`name` third_cate
-                FROM d1_cp
-                LEFT JOIN dim_product dp ON  d1_cp.productId = dp.id
-                LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''
-                df = pd.read_sql_query(sql=sql, con=self.engine1)
-            elif team == 'slrb':
-                sql = '''SELECT orderNumber,
-                        logisticsName 物流方式,
-                        IF(logisticsName LIKE '%捷浩通%', '捷浩通', IF(logisticsName LIKE '%翼通达%','翼通达', IF(logisticsName LIKE '%博佳图%', '博佳图', IF(logisticsName LIKE '%保辉达%', '保辉达物流', IF(logisticsName LIKE '%万立德%','万立德', logisticsName))))) 物流名称,
-    					productId,
-    					dp.`name`,
-    					dc.ppname cate,
-    					dc.pname second_cate,
-    					dc.`name` third_cate
-    				FROM d1_cp
-    				LEFT JOIN dim_product dp ON  d1_cp.productId = dp.id
-    				LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''
-                df = pd.read_sql_query(sql=sql, con=self.engine1)
+            sql = '''SELECT orderNumber,
+                                logisticsName 物流方式,
+                                dim_trans_way.simple_name 物流名称,
+    					        dim_trans_way.remark 运输方式,
+    					        productId,
+    					        dp.`name`,
+    					        dc.ppname cate,
+    					        dc.pname second_cate,
+    					        dc.`name` third_cate
+    				    FROM d1_cp
+    				        LEFT JOIN dim_product dp ON  d1_cp.productId = dp.id
+    				        LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id
+    				        LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = d1_cp.logisticsName;'''
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
             print(df)
             df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
             print('正在更新产品详情…………')
             sql = '''update {0}_order_list a, tem_product_id b
     		                        set a.`物流方式`=b.`物流方式`,
     		                            a.`物流名称`=b.`物流名称`,
+    		                            a.`运输方式`=b.`运输方式`,
     		                            a.`产品id`=b.`productId`,
     		                            a.`产品名称`=b.`name`,
     				                    a.`父级分类`=b.`cate` ,
@@ -1708,6 +1695,8 @@ class QueryControl(Settings):
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
         print('更新耗时：', datetime.datetime.now() - start)
+
+
 
     # 更新团队产品明细（新后台的第二部分）
     def productIdInfoTT(self, tokenid, searchType, team):  # 进入产品id查询界面(补充查询)，
@@ -1992,12 +1981,12 @@ if __name__ == '__main__':
     # team = 'sltg_zqsb'
     # m.sl_tem_cost(team, match9[team])
 
-    # team = 'slgat_hfh'  # 第一部分查询
-    # token = '1b4a0d9c0f62c43e4a97f8cf250b06a8'
-    # m.productIdquery(token, 'NJ210330085757094517', '订单号', team)
+    team = 'slrb'  # 第一部分查询
+    token = '068bc932646d72fb0537bcd785b2ed79'
+    m.productIdquery(token, 'NJ210330085757094517', '订单号', team)
     # m.productIdInfo(token, '订单号', team)
 
     # team = 'slgat_hfh'  # 第二部分查询
     # token = 'b28f877ee2b82c6bc9253e1b4a676001'
-    m.productIdqueryTT()
+    # m.productIdqueryTT()
     # m.productIdInfoTT(token, '订单号', team)

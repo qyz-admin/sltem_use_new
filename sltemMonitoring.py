@@ -2044,7 +2044,6 @@ class SltemMonitoring(Settings):
         print('处理耗时：', datetime.datetime.now() - start)
 
         # 单月获取数据对比：
-
     def sl_Monitoring_two(self,team):
         match2 = {'新加坡': 'qsb_slxmt',
                   '马来西亚': 'qsb_slxmt',
