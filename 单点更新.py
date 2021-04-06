@@ -534,39 +534,40 @@ class QueryTwo(Settings):
 if __name__ == '__main__':
     m = QueryTwo()
     match1 = {'slgat': '港台',
+              'slgat_hfh': '火凤凰港台',
               'sltg': '泰国',
               'slxmt': '新马',
               'slxmt_hfh': '火凤凰新马',
               'slrb': '日本'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # for team in ['sltg', 'slgat','slgat_hfh', 'slrb', 'slxmt', 'slxmt_hfh']:
-    for team in ['slxmt_hfh']:
+    for team in ['sltg']:
         query = '导入'         # 导入；，更新--->>数据更新切换
         m.readFormHost(team, query)
     # 手动更新状态
     # for team in ['sltg', 'slgat', 'slrb', 'slxmt', 'slxmt_hfh']:
-    for team in ['slxmt_hfh']:
-        query = '更新'         # 导入；，更新--->>数据更新切换
-        m.readFormHost(team, query)
+    # for team in ['slxmt_hfh']:
+    #     query = '更新'         # 导入；，更新--->>数据更新切换
+    #     m.readFormHost(team, query)
 
-    # -----------------------------------------------系统导入状态（二）-----------------------------------------
+    # -----------------------------------------------系统导入状态运行（二）-----------------------------------------
     # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:
     #     tokenid= '3d87b7e525063b4cdb6e61dc52e4c248'
         # m.productIdInfo(tokenid, '订单号', team)
 
-    #   台湾token, 日本token：822c880fa174efd1228cce6802fd8783
-    #   新马token, 泰国token：d1d26a93ebd20cc52dd389fe474016e2
+    #   台湾token, 日本token：168f7db44890bb8fb91f8fbb5cea6376
+    #   新马token, 泰国token：ecd7527086e20821bda78961c7c6d14d
 
-    begin = datetime.date(2021, 2, 1)
+    begin = datetime.date(2021, 3, 1)
     print(begin)
-    end = datetime.date(2021, 2, 2)
+    end = datetime.date(2021, 4, 6)
     print(end)
     for i in range((end - begin).days):  # 按天循环获取订单状态
         day = begin + datetime.timedelta(days=i)
         yesterday = str(day) + ' 23:59:59'
         last_month = str(day)
         print('正在更新 ' + last_month + ' 号订单信息…………')
-        team = 'slgat'              # ['slgat', 'slrb', 'sltg', 'slxmt']
+        team = 'sltg'              # ['slgat', 'slrb', 'sltg', 'slxmt']
         searchType = '订单号'      # 运单号，订单号   查询切换
-        tokenid = '168f7db44890bb8fb91f8fbb5cea6376'
+        tokenid = 'ecd7527086e20821bda78961c7c6d14d'
         m.orderInfo(tokenid, searchType, team, last_month)

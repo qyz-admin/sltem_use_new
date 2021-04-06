@@ -3293,7 +3293,7 @@ class SltemMonitoring(Settings):
         print('处理耗时：', datetime.datetime.now() - start)
 
 
-    def sl_MonitoringTHR(self, team, today):   # 单独监控对比运行
+    def sl_MonitoringTHR(self, team, today, Time_one, Time_two):   # 单独监控对比运行
         match2 = {'新加坡': 'qsb_slxmt_copy',
                   '马来西亚': 'qsb_slxmt_copy',
                   '菲律宾': 'qsb_slxmt_copy',
@@ -3310,8 +3310,6 @@ class SltemMonitoring(Settings):
                     '日本': 'sunyaru@giikin.com'}
         start: datetime = datetime.datetime.now()
         # 确定需查询的日期
-        Time_one = '2021-03-31'
-        Time_two = '2021-02-28'
         print(Time_one)
         print(Time_two)
         listT = []  # 查询sql 存放池
@@ -4747,11 +4745,11 @@ if __name__ == '__main__':
 
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # # # 测试监控运行（三）
-    # for team in ['台湾', '香港']:
+    for team in ['台湾', '香港']:
     # for team in ['日本']:
     # # # for team in ['台湾', '香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
     #     m.order_Monitoring(team)    # 各月缓存
-    #     m.data_Monitoring(team)     # 两月数据
+        m.data_Monitoring(team)     # 两月数据
     #     m.costWaybill(team)       # 成本缓存 与 成本两月数据
     #     m.sl_Monitoring(team)       # 输出数据
         # m.sl_Monitoring_two(team)  # 输出上月数据
@@ -4763,16 +4761,18 @@ if __name__ == '__main__':
         # m.readForm(team, startday, '导入')
 
     # # 获取监控表以上传的时间---监控运行（一）
-    # for team in ['菲律宾', '新加坡', '马来西亚']:
+    # for team in ['菲律宾', '新加坡', '马来西亚', '泰国']:
     # # for team in ['日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
-    for team in ['日本']:
-        m.check_time(team)
+    # for team in ['日本']:
+    #     m.check_time(team)
 
     # -----------------------------------------------单独监控运行（四）-----------------------------------------
     # startday = '2021.03.31'    # 上传记录时间
-    #     # for team in ['香港', '台湾', '港台']:
-    #     #     m.readForm(team, startday, '单独导入')
+    # for team in ['香港', '台湾', '港台']:
+    #     m.readForm(team, startday, '单独导入')
 
-    # today = '2021.04.02'        # 导表的显示时间
+    # today = '2021.04.06'        # 导表的显示时间
+    # Time_one = '2021-03-31'     # 确定需查询的日期
+    # Time_two = '2021-02-28'
     # for team in ['台湾', '香港']:
-    #     m.sl_MonitoringTHR(team, today)       # 输出数据
+    #     m.sl_MonitoringTHR(team, today, Time_one, Time_two)       # 输出数据
