@@ -495,7 +495,7 @@ class QueryTwo(Settings):
             print('正在更新临时表中......')
             df.to_sql('d1_cp', con=self.engine1, index=False, if_exists='replace')
             sql = '''SELECT DATE(h.addTime) 日期,
-            				    IF(h.`currency` = '日币', '日本', h.`currency`) 币种,
+            				    IF(h.`currency` = '日币', '日本', IF(h.`currency` = '泰铢', '泰国', IF(h.`currency` = '港币', '香港', IF(h.`currency` = '台币', '台湾', h.`currency`)))) 币种,
             				    h.orderNumber 订单编号,
             				    h.quantity 数量,
             				    h.`shipInfo.shipPhone` 电话号码,
