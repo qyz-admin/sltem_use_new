@@ -1596,10 +1596,13 @@ class QueryControl(Settings):
         elif searchType == '运单号':
             data.update({'order_number': None,
                          'shippingNumber': orderId})
+        proxy = '39.105.167.0:40005'    # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
         r_header = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36',
             'Referer': 'http://gimp.giikin.com/front/orderToolsServiceQuery'}
-        req = self.session.post(url=url, headers=r_header, data=data)
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         print('已成功发送请求++++++')
         print('正在处理json数据…………')
         req = json.loads(req.text)  # json类型数据转换为dict字典
@@ -1681,70 +1684,105 @@ class QueryControl(Settings):
             df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
             print('正在更新产品详情…………')
             sql = '''update {0}_order_list a, tem_product_id b
-    		                        set a.`物流方式`=b.`物流方式`,
-    		                            a.`物流名称`=b.`物流名称`,
-    		                            a.`运输方式`=b.`运输方式`,
-    		                            a.`产品id`=b.`productId`,
-    		                            a.`产品名称`=b.`name`,
-    				                    a.`父级分类`=b.`cate` ,
-    				                    a.`二级分类`=b.`second_cate`,
-    				                    a.`三级分类`=b.`third_cate`
-    				                where a.`订单编号`=b.`orderNumber`;'''.format(team)
+    		                        set a.`物流方式`= IF(b.`物流方式` = '',NULL, b.`物流方式`),
+    		                            a.`物流名称`= IF(b.`物流名称` = '',NULL, b.`物流名称`),
+    		                            a.`运输方式`= b.`运输方式`,
+    		                            a.`产品id`= b.`productId`,
+    		                            a.`产品名称`= IF(b.`name` = '',NULL, b.`name`),
+    				                    a.`父级分类`= IF(b.`cate` = '',NULL, b.`cate`),
+    				                    a.`二级分类`= IF(b.`second_cate` = '',NULL, b.`second_cate`),
+    				                    a.`三级分类`= IF(b.`third_cate` = '',NULL, b.`third_cate`)
+    				                where a.`订单编号`= b.`orderNumber`;'''.format(team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
         print('更新耗时：', datetime.datetime.now() - start)
 
-
-
-    # 更新团队产品明细（新后台的第二部分）
-    def productIdInfoTT(self, tokenid, searchType, team):  # 进入产品id查询界面(补充查询)，
+    # 更新团队品类明细（新后台的第二部分）
+    def cateIdInfo(self, tokenid, team):  # 进入产品检索界面，
         print('正在获取需要更新的产品id信息')
         start = datetime.datetime.now()
         month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y-%m-%d')
-        sql = '''SELECT id,`订单编号`  
-                FROM {0}_order_list sl 
-    			WHERE sl.`日期`> '{1}' AND sl.`父级分类` IS NULL
+        sql = '''SELECT id,`订单编号`, `产品id` , null 父级分类, null 二级分类, null 三级分类 FROM {0}_order_list sl 
+    			WHERE sl.`日期`> '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类` = '')
     				AND ( NOT sl.`系统订单状态` IN ('已删除','问题订单','支付失败','未支付'));'''.format(team, month_begin)
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        ordersDict.to_sql('d1_cp_cate', con=self.engine1, index=False, if_exists='replace')  # 写入临时品类缓存表中
         if ordersDict.empty:
-            print('无需要更新的产品id信息！！！')
-            # sys.exit()
+            print('无需要更新的品类id信息！！！')
             return
-        orderId = list(ordersDict['订单编号'])
+        orderId = list(ordersDict['产品id'])
+        orderId = [str(i) for i in orderId]  # join函数就是字符串的函数,参数和插入的都要是字符串
         print('获取耗时：', datetime.datetime.now() - start)
         max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
         n = 0
         while n < max_count:        # 这里用到了一个while循环，穿越过来的
-            ord = ', '.join(orderId[n:n + 10])
-            print(ord)
-            n = n + 10
-            # self.productIdqueryTT(tokenid, ord, team)
+            cateid = ', '.join(orderId[n:n + 90])
+            print(cateid)
+            n = n + 90
+            self.cateIdquery(tokenid, cateid, team)
 
-    def productIdqueryTT(self):  # 进入产品id查询界面，
+    def cateIdquery(self, tokenid, cateid, team):  # 进入产品检索界面，
         start = datetime.datetime.now()
-        url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getProductList&page=1&pageSize=10&productId=182907&productName=&status=&source=&isSensitive=&isGift=&isDistribution=&chooserId=&buyerId='
-        data = {'productId': 182907,
-                'productName': None,
-                'status': None,
-                'source': None,
-                'isSensitive': None,
-                'isGift': None,
-                'isDistribution': None,
-                'chooserId': None,
-                'buyerId': None}
+        # productid = '508746'
+        # token = '7dd7c0085722cf49493c5ab2ecbc6234'
+        proxy = '39.105.167.0:40005'    # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy
+                   }
+        url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getProductList&page=1&pageSize=90'\
+              r'&productName=&status=&source=&isSensitive=&isGift=&isDistribution=&chooserId=&buyerId='\
+              r'&productId=' + str(cateid) + '&_token=' + str(tokenid)
         r_header = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36',
             'Referer': 'http://gimp.giikin.com/front/orderToolsServiceQuery'}
-        # req = self.session.get(url=url, headers=r_header, data=data)
-        req = requests.get(url=url)
-        print(req.status_code)
+        # rq = requests.get(url=url, headers=r_header, proxies=proxies)
+        rq = requests.get(url=url, headers=r_header)
         print('已成功发送请求++++++')
-        print('正在处理json数据…………')
-        req = json.loads(req.text)  # json类型数据转换为dict字典
+        req = rq.json()  # json类型数据
         print('正在转化数据为dataframe…………')
-
+        # print(req)
+        ordersDict = []
+        for result in req['data']['list']:
+            # print(result)
+            result['cate_id'] = 0
+            result['second_cate_id'] = 0
+            result['third_cate_id'] = 0
+            result['cate_id'] = (result['categorys']).split('>')[2]
+            result['second_cate_id'] = (result['categorys']).split('>')[1]
+            result['third_cate_id'] = (result['categorys']).split('>')[0]
+            self.q.put(result)
+            # 添加新的字典键-值对，为下面的重新赋值用
+        for i in range(len(req['data']['list'])):
+            ordersDict.append(self.q.get())
+        data = pd.json_normalize(ordersDict)        # 多层结构字典Mixing dicts转化df
+        print('正在写入缓存中......')
+        data['name'] = data['name'].str.strip()
+        data['cate_id'] = data['cate_id'].str.strip()
+        data['second_cate_id'] = data['second_cate_id'].str.strip()
+        data['third_cate_id'] = data['third_cate_id'].str.strip()
+        df = data[['id', 'name', 'categorys', 'cate_id', 'second_cate_id', 'third_cate_id', 'status', 'price', 'createTime']]
+        print(df)
+        try:
+            df.to_sql('d1_cp', con=self.engine1, index=False, if_exists='replace')
+            print('正在更新品类缓存中......')
+            sql = '''update d1_cp_cate a, d1_cp b
+                            set a.`父级分类`= b.`cate_id`,
+                                a.`二级分类`= b.`second_cate_id`,
+                                a.`三级分类`= b.`third_cate_id`
+                    where a.`产品id`=b.`id`;'''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            print('正在更新总表中......')
+            sql = '''update {0}_order_list a, d1_cp_cate b
+                            set a.`父级分类`= b.`父级分类`,
+                                a.`二级分类`= b.`二级分类`,
+                                a.`三级分类`= b.`三级分类`
+                    where a.`订单编号`=b.`订单编号`;'''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        except Exception as e:
+            print('更新失败：', str(Exception) + str(e))
+        print('更新成功…………')
 
 
     # 修改样式（备用）

@@ -389,17 +389,17 @@ class QueryTwo(Settings):
                                     set a.`币种`=b.`币种`,
                                         a.`数量`=b.`数量`,
             		                    a.`电话号码`=b.`电话号码` ,
-            		                    a.`运单编号`= b.`运单编号`,
-            		                    a.`系统订单状态`=b.`系统订单状态`,
-            		                    a.`系统物流状态`=b.`系统物流状态`,
-            		                    a.`是否改派`=b.`是否改派`,
-            		                    a.`物流方式`=b.`物流方式`,
-            		                    a.`物流名称`=b.`物流名称`,
-            		                    a.`货物类型`=b.`货物类型`,
-            		                    a.`审核时间`=b.`审核时间`,
-            		                    a.`仓储扫描时间`=b.`仓储扫描时间`,
-            		                    a.`完结状态时间`=b.`完结状态时间`
-            		                where a.`订单编号`=b.`订单编号`;'''.format(team)
+            		                    a.`运单编号`= IF(b.`运单编号` = '', NULL, b.`运单编号`),
+            		                    a.`系统订单状态`= IF(b.`系统订单状态` = '', NULL, b.`系统订单状态`),
+            		                    a.`系统物流状态`= IF(b.`系统物流状态` = '', NULL, b.`系统物流状态`),
+            		                    a.`是否改派`= b.`是否改派`,
+            		                    a.`物流方式`= IF(b.`物流方式` = '', NULL, b.`物流方式`),
+            		                    a.`物流名称`= b.`物流名称`,
+            		                    a.`货物类型`= b.`货物类型`,
+            		                    a.`审核时间`= b.`审核时间`,
+            		                    a.`仓储扫描时间`= b.`仓储扫描时间`,
+            		                    a.`完结状态时间`= b.`完结状态时间`
+            		                where a.`订单编号`= b.`订单编号`;'''.format(team)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
             except Exception as e:
                 print('更新失败：', str(Exception) + str(e))
@@ -422,11 +422,11 @@ class QueryTwo(Settings):
         max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
         n = 0
         while n < max_count:        # 这里用到了一个while循环，穿越过来的
-            ord = ', '.join(orderId[n:n + 300])
+            ord = ', '.join(orderId[n:n + 500])
             print(ord)
-            n = n + 300
+            n = n + 500
             self.orderInfoQuery(tokenid, ord, searchType, team)
-        print('更新耗时：', datetime.datetime.now() - start)
+        print('单日查询耗时：', datetime.datetime.now() - start)
 
     def orderInfoQuery(self, tokenid, orderId, searchType, team):  # 进入订单检索界面
         url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
@@ -434,7 +434,7 @@ class QueryTwo(Settings):
                 'email': None,
                 'ip': None,
                 'page': 1,
-                'pageSize': 300,
+                'pageSize': 500,
                 '_token': tokenid}
         if searchType == '订单号':
             data.update({'orderPrefix': orderId,
@@ -442,9 +442,14 @@ class QueryTwo(Settings):
         elif searchType == '运单号':
             data.update({'order_number': None,
                          'shippingNumber': orderId})
+        proxy = '39.105.167.0:40005'    # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy
+                   }
         r_header = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36',
             'Referer': 'http://gimp.giikin.com/front/orderToolsServiceQuery'}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
         print('已成功发送请求++++++')
         print('正在处理json数据转化为dataframe…………')
@@ -512,19 +517,19 @@ class QueryTwo(Settings):
             df.to_sql('d1_cp_copy', con=self.engine1, index=False, if_exists='replace')
             print('正在更新表总表中......')
             sql = '''update {0}_order_list a, d1_cp_copy b
-                            set a.`币种`=b.`币种`,
-                                a.`数量`=b.`数量`,
-                                a.`电话号码`=b.`电话号码` ,
-                                a.`运单编号`= b.`运单编号`,
-                                a.`系统订单状态`=b.`系统订单状态`,
-                                a.`系统物流状态`=b.`系统物流状态`,
-                                a.`是否改派`=b.`是否改派`,
-                                a.`物流方式`=b.`物流方式`,
-                                a.`物流名称`=b.`物流名称`,
-                                a.`货物类型`=b.`货物类型`,
-                                a.`审核时间`=b.`审核时间`,
-                                a.`仓储扫描时间`=b.`仓储扫描时间`,
-                                a.`完结状态时间`=b.`完结状态时间`
+                            set a.`币种`= b.`币种`,
+                                a.`数量`= b.`数量`,
+                                a.`电话号码`= b.`电话号码` ,
+                                a.`运单编号`= IF(b.`运单编号` = '', NULL, b.`运单编号`),
+                                a.`系统订单状态`= IF(b.`系统订单状态` = '', NULL, b.`系统订单状态`),
+                                a.`系统物流状态`= IF(b.`系统物流状态` = '', NULL, b.`系统物流状态`),
+                                a.`是否改派`= b.`是否改派`,
+                                a.`物流方式`= IF(b.`物流方式` = '',NULL, b.`物流方式`),
+                                a.`物流名称`= b.`物流名称`,
+                                a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),
+                                a.`审核时间`= b.`审核时间`,
+                                a.`仓储扫描时间`= b.`仓储扫描时间`,
+                                a.`完结状态时间`= b.`完结状态时间`
                     where a.`订单编号`=b.`订单编号`;'''.format(team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:
@@ -533,6 +538,7 @@ class QueryTwo(Settings):
 
 if __name__ == '__main__':
     m = QueryTwo()
+    start: datetime = datetime.datetime.now()
     match1 = {'slgat': '港台',
               'slgat_hfh': '火凤凰港台',
               'sltg': '泰国',
@@ -555,19 +561,26 @@ if __name__ == '__main__':
     #     tokenid= '3d87b7e525063b4cdb6e61dc52e4c248'
         # m.productIdInfo(tokenid, '订单号', team)
 
-    #   台湾token, 日本token：168f7db44890bb8fb91f8fbb5cea6376
-    #   新马token, 泰国token：ecd7527086e20821bda78961c7c6d14d
+    #   台湾token, 日本token：aa57bf4a0cdc0fbfcf1f093732b96005
+    #   新马token, 泰国token：7a7fd102fb6999c2d087cbe91079f294
 
     begin = datetime.date(2021, 3, 1)
     print(begin)
-    end = datetime.date(2021, 4, 6)
+    end = datetime.date(2021, 4, 7)
     print(end)
     for i in range((end - begin).days):  # 按天循环获取订单状态
         day = begin + datetime.timedelta(days=i)
         yesterday = str(day) + ' 23:59:59'
         last_month = str(day)
         print('正在更新 ' + last_month + ' 号订单信息…………')
-        team = 'sltg'              # ['slgat', 'slrb', 'sltg', 'slxmt']
+        team = 'slxmt_hfh'              # ['slgat', 'slrb', 'sltg', 'slxmt']
         searchType = '订单号'      # 运单号，订单号   查询切换
-        tokenid = 'ecd7527086e20821bda78961c7c6d14d'
+        tokenid = '7a7fd102fb6999c2d087cbe91079f294'
         m.orderInfo(tokenid, searchType, team, last_month)
+    print('更新耗时：', datetime.datetime.now() - start)
+
+    # -----------------------------------------------单个查询测试使用（三）-----------------------------------------
+    # team = 'sltg'              # ['slgat', 'slrb', 'sltg', 'slxmt']
+    # searchType = '订单号'      # 运单号，订单号   查询切换
+    # tokenid = '7a7fd102fb6999c2d087cbe91079f294'
+    # m.orderInfoQuery(tokenid, 'ST210302180819736702', searchType, team)
