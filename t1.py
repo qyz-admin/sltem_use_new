@@ -9,7 +9,7 @@ from 单点更新 import QueryTwo
 import datetime
 
 start: datetime = datetime.datetime.now()
-team = 'slxmt_hfh'
+team = 'sltg'
 match = {'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙日本签收表',
          'sltg': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙泰国签收表',
          'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙港台签收表',
