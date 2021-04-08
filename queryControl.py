@@ -422,7 +422,6 @@ class QueryControl(Settings):
                     WHERE sl_zong_wl.`旬` = '合计';'''.format(team, tem, start_Date=start_Date[i], end_Date=end_Date[i])
             listT.append(sql30)
             show_name.append(start_Date[i] + '月（直发）详细花费数据…………')
-
             # 总成本父级
             sql40 = '''SELECT *
                         FROM(
@@ -1159,7 +1158,6 @@ class QueryControl(Settings):
                     WHERE sl_zong_wl.`旬` = '合计';'''.format(team, tem, start_Date=start_Date[i], end_Date=end_Date[i])
             listT.append(sql30)
             show_name.append(start_Date[i] + '月（直发）详细花费数据…………')
-
             # 总成本父级
             sql40 = '''SELECT *
                         FROM(
