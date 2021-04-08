@@ -422,9 +422,9 @@ class QueryTwo(Settings):
         max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
         n = 0
         while n < max_count:        # 这里用到了一个while循环，穿越过来的
-            ord = ', '.join(orderId[n:n + 500])
+            ord = ', '.join(orderId[n:n + 490])
             print(ord)
-            n = n + 500
+            n = n + 490
             self.orderInfoQuery(tokenid, ord, searchType, team)
         print('单日查询耗时：', datetime.datetime.now() - start)
 
@@ -449,8 +449,8 @@ class QueryTwo(Settings):
         r_header = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36',
             'Referer': 'http://gimp.giikin.com/front/orderToolsServiceQuery'}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data)
         print('已成功发送请求++++++')
         print('正在处理json数据转化为dataframe…………')
         req = json.loads(req.text)  # json类型数据转换为dict字典
@@ -503,7 +503,7 @@ class QueryTwo(Settings):
             				    h.orderStatus 系统订单状态,
             				    IF(h.`logisticsStatus` in ('发货中'), '在途', h.`logisticsStatus`) 系统物流状态,
             				    IF(h.`reassignmentTypeName` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
-            				    h.logisticsName 物流方式,
+            				    TRIM(h.logisticsName) 物流方式,
             				    dim_trans_way.simple_name 物流名称,
             				    IF(h.`dpeStyle` = 'P 普通货', 'P', IF(h.`dpeStyle` = 'T 特殊货', 'T', h.`dpeStyle`)) 货物类型,
             				    h.transferTime 审核时间,
@@ -512,7 +512,7 @@ class QueryTwo(Settings):
                             FROM d1_cp h
                                 LEFT JOIN dim_product ON  dim_product.id = h.productId
                                 LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
-                                LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`logisticsName`;'''.format(team)
+                                LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = TRIM(h.logisticsName);'''.format(team)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             df.to_sql('d1_cp_copy', con=self.engine1, index=False, if_exists='replace')
             print('正在更新表总表中......')
@@ -561,12 +561,12 @@ if __name__ == '__main__':
     #     tokenid= '3d87b7e525063b4cdb6e61dc52e4c248'
         # m.productIdInfo(tokenid, '订单号', team)
 
-    #   台湾token, 日本token：aa57bf4a0cdc0fbfcf1f093732b96005
-    #   新马token, 泰国token：7a7fd102fb6999c2d087cbe91079f294
+    #   台湾token, 日本token：c5e52455c0ebf8a23964c45d5c0ca161
+    #   新马token, 泰国token：b9b9c45d0d9212134ce3465a4b974f58
 
-    begin = datetime.date(2021, 3, 1)
+    begin = datetime.date(2021, 3, 18)
     print(begin)
-    end = datetime.date(2021, 4, 7)
+    end = datetime.date(2021, 4, 8)
     print(end)
     for i in range((end - begin).days):  # 按天循环获取订单状态
         day = begin + datetime.timedelta(days=i)
@@ -575,7 +575,7 @@ if __name__ == '__main__':
         print('正在更新 ' + last_month + ' 号订单信息…………')
         team = 'slxmt_hfh'              # ['slgat', 'slrb', 'sltg', 'slxmt']
         searchType = '订单号'      # 运单号，订单号   查询切换
-        tokenid = '7a7fd102fb6999c2d087cbe91079f294'
+        tokenid = 'b9b9c45d0d9212134ce3465a4b974f58'
         m.orderInfo(tokenid, searchType, team, last_month)
     print('更新耗时：', datetime.datetime.now() - start)
 

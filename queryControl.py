@@ -1605,7 +1605,7 @@ class QueryControl(Settings):
         print('正在处理json数据…………')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         print('正在转化数据为dataframe…………')
-        print(req)
+        # print(req)
         ordersDict = []
         for result in req['data']['list']:
             # print(result)
