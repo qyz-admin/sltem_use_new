@@ -1640,7 +1640,6 @@ class SltemMonitoring(Settings):
         # listT.append(sqlcost4)
         # show_name.append(' 月（各月）成本…………')
 
-        # 月时效（天）---查询
         sqltime2 = '''SELECT sl_rb.`币种`,
     				sl_rb.`年月`,
     				sl_rb.`物流方式`,
@@ -1653,8 +1652,8 @@ class SltemMonitoring(Settings):
     				IFNULL(sl_rb.`直发出库完成时效`,0) 出库完成时效,
     				sl_rb.`直发下单完成单量`,
     				IFNULL(sl_rb.`直发下单完成时效`,0) 下单完成时效,
-    				null AS 改派下单完成单量,
-    				null AS 改派下单完成时效,
+    				sl_rb.`直发上线完成量`,
+    				IFNULL(sl_rb.`直发上线完成时效`,0) 上线完成时效,
     				sl_rb.`直发已签收订单量` / sl_rb.`直发下单完成单量` AS '签收/完成',
     				sl_rb.`直发已签收订单量`/ sl_rb.`直发下单出库单量` AS '签收/总计'
                 FROM( SELECT sl_zong.币种 币种,
@@ -1669,7 +1668,10 @@ class SltemMonitoring(Settings):
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成单量,
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库-完成时`,0)) / SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成时效,
     						SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成单量,
-    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效
+    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效,
+								
+							SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成量,
+    						SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
     			    FROM (SELECT  币种,
     										年月,
     										物流方式,
@@ -1733,14 +1735,16 @@ class SltemMonitoring(Settings):
     								AND sl_cx_zf_qs.`旬` = sl_zong.`旬`
     				LEFT JOIN
     						(SELECT 币种,
-    										年月,
-    										物流方式,
-    										父级分类,
-    										旬,
-    										COUNT(`订单编号`) 直发出库完成量,
-    										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
-    										COUNT(`订单编号`) 直发下单完成量,
-    										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时'
+    									年月,
+    									物流方式,
+    									父级分类,
+    									旬,
+    									COUNT(`订单编号`) 直发出库完成量,
+    									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
+    									COUNT(`订单编号`) 直发下单完成量,
+    									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
+    									COUNT(`订单编号`) 直发上线完成量,
+    									SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
     						FROM  {0}	sl_cx_zf_wancheng
     						WHERE sl_cx_zf_wancheng.`币种` = '{1}'
     								AND sl_cx_zf_wancheng.`记录时间`= '{2}'
@@ -1758,7 +1762,7 @@ class SltemMonitoring(Settings):
     								AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
     				GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.旬
     				with rollup
-    			) sl_rb;'''.format(match2[team], team, Time_day[11])
+    			) sl_rb;'''.format(match2[team], team, Time_day[11])    # 月时效（天）---查询
         listT.append(sqltime2)
         show_name.append(' 月（天）时效…………')
         # 月时效（旬）---查询
@@ -1774,8 +1778,8 @@ class SltemMonitoring(Settings):
     				IFNULL(sl_rb.`直发出库完成时效`,0) 出库完成时效,
     				sl_rb.`直发下单完成单量`,
     				IFNULL(sl_rb.`直发下单完成时效`,0) 下单完成时效,
-    				null AS 改派下单完成单量,
-    				null AS 改派下单完成时效
+    				sl_rb.`直发上线完成量`,
+    				IFNULL(sl_rb.`直发上线完成时效`,0) 上线完成时效
                 FROM(SELECT sl_zong.币种 币种,
     						IFNULL(sl_zong.年月,'合计') 年月,
     						IFNULL(sl_zong.旬,'合计') 旬,
@@ -1787,7 +1791,10 @@ class SltemMonitoring(Settings):
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成单量,
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库-完成时`,0)) / SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成时效,
     						SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成单量,
-    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效
+    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效,
+								
+							SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成量,
+    						SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
     			    FROM ( SELECT 币种,
     										年月,
     										旬,
@@ -1828,14 +1835,16 @@ class SltemMonitoring(Settings):
     								AND sl_zong_zf.`旬` = sl_zong.`旬` 
     				LEFT JOIN
     						(SELECT 币种,
-    										年月,
-    										旬,
-    										物流方式,
-    										父级分类,		
-    										COUNT(`订单编号`) 直发出库完成量,
-    										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
-    										COUNT(`订单编号`) 直发下单完成量,
-    										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时'
+    									年月,
+    									旬,
+    									物流方式,
+    									父级分类,		
+    									COUNT(`订单编号`) 直发出库完成量,
+    									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
+    									COUNT(`订单编号`) 直发下单完成量,
+    									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
+    									COUNT(`订单编号`) 直发上线完成量,
+    									SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
     						FROM  {0}	sl_cx_zf_wancheng
     						WHERE sl_cx_zf_wancheng.`币种` = '{1}'
                     AND sl_cx_zf_wancheng.`记录时间`= '{2}'
@@ -1865,12 +1874,12 @@ class SltemMonitoring(Settings):
     				sl_rb.`总单量`,
     				sl_rb.`直发下单出库单量`,
     				sl_rb.`直发下单出库时效`,
+    				sl_rb.`直发上线完成时效`,
+    				sl_rb.`直发上线完成量`,
     				sl_rb.`直发出库完成单量`,
     				sl_rb.`直发出库完成时效`,
     				sl_rb.`直发下单完成时效`,
     				sl_rb.`直发下单完成单量`,
-    				null AS 改派下单完成单量,
-    				null AS 改派下单完成时效,
     				sl_rb.`直发已签收订单量` / sl_rb.`直发下单完成单量` AS '签收/完成',
     				sl_rb.`直发已签收订单量`/ sl_rb.`直发下单出库单量` AS '签收/总计'
                 FROM (SELECT sl_zong.币种 币种,
@@ -1885,7 +1894,10 @@ class SltemMonitoring(Settings):
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成单量,
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库-完成时`,0)) / SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成时效,
     						SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成单量,
-    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效
+    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效,
+								
+							SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成量,
+    						SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
     			    FROM (SELECT  币种,
     										年月,
     										物流方式,
@@ -1953,7 +1965,9 @@ class SltemMonitoring(Settings):
     									COUNT(`订单编号`) 直发出库完成量,
     									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
     									COUNT(`订单编号`) 直发下单完成量,
-    									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时'
+    									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
+    									COUNT(`订单编号`) 直发上线完成量,
+    									SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
     						FROM  {0}	sl_cx_zf_wancheng
     						WHERE sl_cx_zf_wancheng.`币种` = '{1}'
     							AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL
@@ -2044,6 +2058,7 @@ class SltemMonitoring(Settings):
         print('处理耗时：', datetime.datetime.now() - start)
 
         # 单月获取数据对比：
+    # 手动---单上月获取数据对比：
     def sl_Monitoring_two(self,team):
         match2 = {'新加坡': 'qsb_slxmt',
                   '马来西亚': 'qsb_slxmt',
@@ -2900,8 +2915,8 @@ class SltemMonitoring(Settings):
 				IFNULL(sl_rb.`直发出库完成时效`,0) 出库完成时效,
 				sl_rb.`直发下单完成单量`,
 				IFNULL(sl_rb.`直发下单完成时效`,0) 下单完成时效,
-				null AS 改派下单完成单量,
-				null AS 改派下单完成时效,
+				sl_rb.`直发上线完成量`,
+                IFNULL(sl_rb.`直发上线完成时效`,0) 上线完成时效,
 				IFNULL(sl_rb.`直发已签收订单量` / sl_rb.`直发下单完成单量`,0)  AS '签收/完成',
 				IFNULL(sl_rb.`直发已签收订单量` / sl_rb.`直发下单出库单量`,0) AS '签收/总计'
             FROM( SELECT sl_zong.币种 币种,
@@ -2916,7 +2931,9 @@ class SltemMonitoring(Settings):
 						SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成单量,
 						SUM(IFNULL(sl_cx_zf_wc.`直发出库-完成时`,0)) / SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成时效,
 						SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成单量,
-						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效
+						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效,
+						SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成量,
+                        SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
 			    FROM (SELECT  币种,
 										年月,
 										物流方式,
@@ -2990,7 +3007,9 @@ class SltemMonitoring(Settings):
 										COUNT(`订单编号`) 直发出库完成量,
 										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
 										COUNT(`订单编号`) 直发下单完成量,
-										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时'
+										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
+										COUNT(`订单编号`) 直发上线完成量,
+                                        SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
 						FROM  {0}	sl_cx_zf_wancheng
 						WHERE sl_cx_zf_wancheng.`币种` = '{1}'
 							AND (sl_cx_zf_wancheng.`记录时间`= '{2}' AND sl_cx_zf_wancheng.`日期` < DATE_SUB('{2}', INTERVAL DAY('{2}')-1 DAY)
@@ -3025,8 +3044,8 @@ class SltemMonitoring(Settings):
 				IFNULL(sl_rb.`直发出库完成时效`,0) 出库完成时效,
 				sl_rb.`直发下单完成单量`,
 				IFNULL(sl_rb.`直发下单完成时效`,0) 下单完成时效,
-				null AS 改派下单完成单量,
-				null AS 改派下单完成时效
+				sl_rb.`直发上线完成量`,
+                IFNULL(sl_rb.`直发上线完成时效`,0) 上线完成时效
             FROM(SELECT sl_zong.币种 币种,
 						IFNULL(sl_zong.年月,'合计') 年月,
 						IFNULL(sl_zong.旬,'合计') 旬,
@@ -3038,7 +3057,9 @@ class SltemMonitoring(Settings):
 						SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成单量,
 						SUM(IFNULL(sl_cx_zf_wc.`直发出库-完成时`,0)) / SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成时效,
 						SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成单量,
-						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效
+						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效,
+                        SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成量,
+                        SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
 			    FROM ( SELECT 币种,
 										年月,
 										旬,
@@ -3088,7 +3109,9 @@ class SltemMonitoring(Settings):
 										COUNT(`订单编号`) 直发出库完成量,
 										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
 										COUNT(`订单编号`) 直发下单完成量,
-										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时'
+										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
+										COUNT(`订单编号`) 直发上线完成量,
+                                        SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
 						FROM  {0}	sl_cx_zf_wancheng
 						WHERE sl_cx_zf_wancheng.`币种` = '{1}'
 							AND (sl_cx_zf_wancheng.`记录时间`= '{2}' AND sl_cx_zf_wancheng.`日期` < DATE_SUB('{2}', INTERVAL DAY('{2}')-1 DAY)
@@ -3119,12 +3142,12 @@ class SltemMonitoring(Settings):
 				sl_rb.`总单量`,
 				sl_rb.`直发下单出库单量`,
 				sl_rb.`直发下单出库时效`,
+				sl_rb.`直发上线完成时效`,
+				sl_rb.`直发上线完成量`,
 				sl_rb.`直发出库完成单量`,
 				sl_rb.`直发出库完成时效`,
 				sl_rb.`直发下单完成时效`,
 				sl_rb.`直发下单完成单量`,
-				null AS 改派下单完成单量,
-				null AS 改派下单完成时效,
 				sl_rb.`直发已签收订单量` / sl_rb.`直发下单完成单量` AS '签收/完成',
 				sl_rb.`直发已签收订单量` / sl_rb.`直发下单出库单量` AS '签收/总计'
             FROM (SELECT sl_zong.币种 币种,
@@ -3139,7 +3162,9 @@ class SltemMonitoring(Settings):
 						SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成单量,
 						SUM(IFNULL(sl_cx_zf_wc.`直发出库-完成时`,0)) / SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成时效,
 						SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成单量,
-						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效
+						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效,
+						SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成量,
+                        SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
 			    FROM (SELECT  币种,
 										年月,
 										物流方式,
@@ -3207,7 +3232,9 @@ class SltemMonitoring(Settings):
 									COUNT(`订单编号`) 直发出库完成量,
 									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
 									COUNT(`订单编号`) 直发下单完成量,
-									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时'
+									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
+									COUNT(`订单编号`) 直发上线完成量,
+                                    SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
 						FROM  {0}	sl_cx_zf_wancheng
 						WHERE sl_cx_zf_wancheng.`币种` = '{1}'
 							AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL
@@ -3293,7 +3320,7 @@ class SltemMonitoring(Settings):
         print('处理耗时：', datetime.datetime.now() - start)
 
 
-    def sl_MonitoringTHR(self, team, today, Time_one, Time_two):   # 单独监控对比运行
+    def sl_MonitoringTHR(self, team, today, Time_one, Time_two):   # 手动---单独监控对比运行
         match2 = {'新加坡': 'qsb_slxmt_copy',
                   '马来西亚': 'qsb_slxmt_copy',
                   '菲律宾': 'qsb_slxmt_copy',
@@ -4266,8 +4293,8 @@ class SltemMonitoring(Settings):
     				IFNULL(sl_rb.`直发出库完成时效`,0) 出库完成时效,
     				sl_rb.`直发下单完成单量`,
     				IFNULL(sl_rb.`直发下单完成时效`,0) 下单完成时效,
-    				null AS 改派下单完成单量,
-    				null AS 改派下单完成时效,
+    				sl_rb.`直发上线完成量`,
+                    IFNULL(sl_rb.`直发上线完成时效`,0) 上线完成时效,
     				sl_rb.`直发已签收订单量` / sl_rb.`直发下单完成单量` AS '签收/完成',
     				sl_rb.`直发已签收订单量`/ sl_rb.`直发下单出库单量` AS '签收/总计'
                 FROM( SELECT sl_zong.币种 币种,
@@ -4282,7 +4309,9 @@ class SltemMonitoring(Settings):
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成单量,
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库-完成时`,0)) / SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成时效,
     						SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成单量,
-    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效
+    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效,
+    						SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成量,
+                            SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
     			    FROM (SELECT  币种,
     										年月,
     										物流方式,
@@ -4353,7 +4382,9 @@ class SltemMonitoring(Settings):
     										COUNT(`订单编号`) 直发出库完成量,
     										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
     										COUNT(`订单编号`) 直发下单完成量,
-    										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时'
+    										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
+    										COUNT(`订单编号`) 直发上线完成量,
+                                            SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
     						FROM  {0}	sl_cx_zf_wancheng
     						WHERE sl_cx_zf_wancheng.`币种` = '{1}'
     								AND sl_cx_zf_wancheng.`记录时间`= '{2}'
@@ -4387,8 +4418,8 @@ class SltemMonitoring(Settings):
     				IFNULL(sl_rb.`直发出库完成时效`,0) 出库完成时效,
     				sl_rb.`直发下单完成单量`,
     				IFNULL(sl_rb.`直发下单完成时效`,0) 下单完成时效,
-    				null AS 改派下单完成单量,
-    				null AS 改派下单完成时效
+    				sl_rb.`直发上线完成量`,
+                    IFNULL(sl_rb.`直发上线完成时效`,0) 上线完成时效
                 FROM(SELECT sl_zong.币种 币种,
     						IFNULL(sl_zong.年月,'合计') 年月,
     						IFNULL(sl_zong.旬,'合计') 旬,
@@ -4400,7 +4431,9 @@ class SltemMonitoring(Settings):
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成单量,
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库-完成时`,0)) / SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成时效,
     						SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成单量,
-    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效
+    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效,
+    						SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成量,
+                            SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
     			    FROM ( SELECT 币种,
     										年月,
     										旬,
@@ -4448,7 +4481,9 @@ class SltemMonitoring(Settings):
     										COUNT(`订单编号`) 直发出库完成量,
     										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
     										COUNT(`订单编号`) 直发下单完成量,
-    										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时'
+    										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
+    										COUNT(`订单编号`) 直发上线完成量,
+                                            SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
     						FROM  {0}	sl_cx_zf_wancheng
     						WHERE sl_cx_zf_wancheng.`币种` = '{1}'
                     AND sl_cx_zf_wancheng.`记录时间`= '{2}'
@@ -4478,12 +4513,12 @@ class SltemMonitoring(Settings):
     				sl_rb.`总单量`,
     				sl_rb.`直发下单出库单量`,
     				sl_rb.`直发下单出库时效`,
+    				sl_rb.`直发上线完成时效`,
+    				sl_rb.`直发上线完成量`,
     				sl_rb.`直发出库完成单量`,
     				sl_rb.`直发出库完成时效`,
     				sl_rb.`直发下单完成时效`,
     				sl_rb.`直发下单完成单量`,
-    				null AS 改派下单完成单量,
-    				null AS 改派下单完成时效,
     				sl_rb.`直发已签收订单量` / sl_rb.`直发下单完成单量` AS '签收/完成',
     				sl_rb.`直发已签收订单量`/ sl_rb.`直发下单出库单量` AS '签收/总计'
                 FROM (SELECT sl_zong.币种 币种,
@@ -4498,7 +4533,9 @@ class SltemMonitoring(Settings):
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成单量,
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库-完成时`,0)) / SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成时效,
     						SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成单量,
-    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效
+    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效,
+    						SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成量,
+                            SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
     			    FROM (SELECT  币种,
     										年月,
     										物流方式,
@@ -4562,11 +4599,13 @@ class SltemMonitoring(Settings):
     									年月,
     									物流方式,
     									父级分类,
-    										    旬,
+    									旬,
     									COUNT(`订单编号`) 直发出库完成量,
     									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
     									COUNT(`订单编号`) 直发下单完成量,
-    									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时'
+    									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
+    									COUNT(`订单编号`) 直发上线完成量,
+                                        SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
     						FROM  {0}	sl_cx_zf_wancheng
     						WHERE sl_cx_zf_wancheng.`币种` = '{1}'
     							AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL
@@ -4645,7 +4684,7 @@ class SltemMonitoring(Settings):
         self.e.send('{} {}-手动 监控表.xlsx'.format(today, team), file_Path,
                     emailAdd[team])
         print('处理耗时：', datetime.datetime.now() - start)
-    # 单月获取数据对比：
+    # 手动---单上月获取数据对比：
     def sl_MonitoringTHR_two(self, team, today, Time_one, Time_two):
         match2 = {'新加坡': 'qsb_slxmt_copy',
                   '马来西亚': 'qsb_slxmt_copy',
@@ -4671,8 +4710,7 @@ class SltemMonitoring(Settings):
                 Time_day.append(daytime)
             except Exception as e:
                 print('xxxx时间配置出错,已手动调整：' + str(i) + '月份', str(Exception) + str(e))
-                Time_day.append(
-                    str(int(datetime.datetime.now().year)) + '-' + str(i) + (
+                Time_day.append(str(int(datetime.datetime.now().year)) + '-' + str(i) + (
                         datetime.datetime.now().strftime('-%d')))
         for i in range(datetime.datetime.now().month + 1, 13):  # 获取往年当前的月份时间
             try:
@@ -4687,8 +4725,6 @@ class SltemMonitoring(Settings):
         # Time_day = ['2021-02-24', '2020-12-19', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2020-12-14', '2021-01-24']
         # 对时间数组进行排序  list.sort(cmp=None, key=None, reverse=False)；reverse -- 排序规则，reverse = True 降序， reverse = False 升序（默认）
         Time_day.sort()
-        # print(Time_day[11])
-        # print(Time_day[10])
         listT = []  # 查询sql 存放池
         show_name = []  # 打印进度需要
         # 月签收率（天）---查询
@@ -5504,8 +5540,8 @@ class SltemMonitoring(Settings):
     				IFNULL(sl_rb.`直发出库完成时效`,0) 出库完成时效,
     				sl_rb.`直发下单完成单量`,
     				IFNULL(sl_rb.`直发下单完成时效`,0) 下单完成时效,
-    				null AS 改派下单完成单量,
-    				null AS 改派下单完成时效,
+    				sl_rb.`直发上线完成量`,
+                    IFNULL(sl_rb.`直发上线完成时效`,0) 上线完成时效,
     				IFNULL(sl_rb.`直发已签收订单量` / sl_rb.`直发下单完成单量`,0)  AS '签收/完成',
     				IFNULL(sl_rb.`直发已签收订单量` / sl_rb.`直发下单出库单量`,0) AS '签收/总计'
                 FROM( SELECT sl_zong.币种 币种,
@@ -5520,7 +5556,9 @@ class SltemMonitoring(Settings):
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成单量,
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库-完成时`,0)) / SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成时效,
     						SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成单量,
-    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效
+    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效,
+    						SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成量,
+                            SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
     			    FROM (SELECT  币种,
     										年月,
     										物流方式,
@@ -5594,7 +5632,9 @@ class SltemMonitoring(Settings):
     										COUNT(`订单编号`) 直发出库完成量,
     										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
     										COUNT(`订单编号`) 直发下单完成量,
-    										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时'
+    										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
+    										COUNT(`订单编号`) 直发上线完成量,
+                                            SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
     						FROM  {0}	sl_cx_zf_wancheng
     						WHERE sl_cx_zf_wancheng.`币种` = '{1}'
     							AND (sl_cx_zf_wancheng.`记录时间`= '{2}' AND sl_cx_zf_wancheng.`日期` < DATE_SUB('{2}', INTERVAL DAY('{2}')-1 DAY)
@@ -5629,8 +5669,8 @@ class SltemMonitoring(Settings):
     				IFNULL(sl_rb.`直发出库完成时效`,0) 出库完成时效,
     				sl_rb.`直发下单完成单量`,
     				IFNULL(sl_rb.`直发下单完成时效`,0) 下单完成时效,
-    				null AS 改派下单完成单量,
-    				null AS 改派下单完成时效
+    				sl_rb.`直发上线完成量`,
+                    IFNULL(sl_rb.`直发上线完成时效`,0) 上线完成时效
                 FROM(SELECT sl_zong.币种 币种,
     						IFNULL(sl_zong.年月,'合计') 年月,
     						IFNULL(sl_zong.旬,'合计') 旬,
@@ -5642,7 +5682,9 @@ class SltemMonitoring(Settings):
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成单量,
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库-完成时`,0)) / SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成时效,
     						SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成单量,
-    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效
+    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效,
+    						SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成量,
+                            SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
     			    FROM ( SELECT 币种,
     										年月,
     										旬,
@@ -5692,7 +5734,9 @@ class SltemMonitoring(Settings):
     										COUNT(`订单编号`) 直发出库完成量,
     										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
     										COUNT(`订单编号`) 直发下单完成量,
-    										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时'
+    										SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
+    										COUNT(`订单编号`) 直发上线完成量,
+                                            SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
     						FROM  {0}	sl_cx_zf_wancheng
     						WHERE sl_cx_zf_wancheng.`币种` = '{1}'
     							AND (sl_cx_zf_wancheng.`记录时间`= '{2}' AND sl_cx_zf_wancheng.`日期` < DATE_SUB('{2}', INTERVAL DAY('{2}')-1 DAY)
@@ -5723,12 +5767,12 @@ class SltemMonitoring(Settings):
     				sl_rb.`总单量`,
     				sl_rb.`直发下单出库单量`,
     				sl_rb.`直发下单出库时效`,
+    				sl_rb.`直发上线完成时效`,
+    				sl_rb.`直发上线完成量`,
     				sl_rb.`直发出库完成单量`,
     				sl_rb.`直发出库完成时效`,
     				sl_rb.`直发下单完成时效`,
     				sl_rb.`直发下单完成单量`,
-    				null AS 改派下单完成单量,
-    				null AS 改派下单完成时效,
     				sl_rb.`直发已签收订单量` / sl_rb.`直发下单完成单量` AS '签收/完成',
     				sl_rb.`直发已签收订单量` / sl_rb.`直发下单出库单量` AS '签收/总计'
                 FROM (SELECT sl_zong.币种 币种,
@@ -5743,7 +5787,9 @@ class SltemMonitoring(Settings):
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成单量,
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库-完成时`,0)) / SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成时效,
     						SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成单量,
-    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效
+    						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效,
+    						SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成量,
+                            SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
     			    FROM (SELECT  币种,
     										年月,
     										物流方式,
@@ -5811,7 +5857,9 @@ class SltemMonitoring(Settings):
     									COUNT(`订单编号`) 直发出库完成量,
     									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
     									COUNT(`订单编号`) 直发下单完成量,
-    									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时'
+    									SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
+    									COUNT(`订单编号`) 直发上线完成量,
+                                        SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
     						FROM  {0}	sl_cx_zf_wancheng
     						WHERE sl_cx_zf_wancheng.`币种` = '{1}'
     							AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL
@@ -5836,11 +5884,14 @@ class SltemMonitoring(Settings):
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             print(df)
             columns = list(df.columns)  # 获取数据的标题名，转为列表
-            columns_value = ['采购/销售额', '直发采购/销售额', '运费占比', '手续费占比', '金额签收/完成', '金额签收/总计', '金额完成占比', '数量签收/完成',
-                            '数量完成占比','签收/完成', '签收/总计', '完成占比', '总签收/完成', '总签收/总计', '退款率', '总完成占比', '直发签收/完成', '直发签收/总计',
-                            '直发完成占比','改派签收/完成', '改派签收/总计', '改派完成占比', '总签收/完成(金额)', '总签收/总计(金额)', '退款率(金额)', '总完成占比(金额)',
-                            '直发签收/完成(金额)','直发签收/总计(金额)', '直发完成占比(金额)', '改派签收/完成(金额)', '改派签收/总计(金额)', '改派完成占比(金额)', '订单品类占比',
-                            '直发采购额/销售额','花费占比', '总成本', '利润率', '改派占比', '采购占比', '广告占比', '总成本占比', '签收/完成', '签收/总计', '完成占比']
+            columns_value = ['采购/销售额', '直发采购/销售额', '运费占比', '手续费占比', '金额签收/完成', '金额签收/总计', '金额完成占比', '数量签收/完成', '数量完成占比',
+                             '签收/完成', '签收/总计', '完成占比', '总签收/完成', '总签收/总计', '退款率', '总完成占比', '直发签收/完成', '直发签收/总计',
+                             '直发完成占比',
+                             '改派签收/完成', '改派签收/总计', '改派完成占比', '总签收/完成(金额)', '总签收/总计(金额)', '退款率(金额)', '总完成占比(金额)',
+                             '直发签收/完成(金额)',
+                             '直发签收/总计(金额)', '直发完成占比(金额)', '改派签收/完成(金额)', '改派签收/总计(金额)', '改派完成占比(金额)', '订单品类占比',
+                             '直发采购额/销售额',
+                             '花费占比', '总成本', '利润率', '改派占比', '采购占比', '广告占比', '总成本占比', '签收/完成', '签收/总计', '完成占比']
             for column_val in columns_value:
                 if column_val in columns:
                     try:
@@ -5853,8 +5904,7 @@ class SltemMonitoring(Settings):
         today = datetime.date.today().strftime('%Y.%m.%d')
         sheet_name = ['签率(天)_', '签率(月)_', '签率(旬)_', '签率(总)_', '物流(天)_', '物流(月)_', '时效(天)_', '时效(旬)_', '时效(总)_']  # 生成的工作表的表名
         file_Path = []  # 发送邮箱文件使用
-        filePath = ''
-        filePath = 'F:\\查询\\查询输出\\{} {}-手动 监控表.xlsx'.format(today, team)
+        filePath = 'F:\\查询\\查询输出\\{} {}-手动 上月数据监控表.xlsx'.format(today, team)
         if os.path.exists(filePath):  # 判断是否有需要的表格
             print("正在使用(上月)文件......")
             filePath = filePath
@@ -5888,7 +5938,6 @@ class SltemMonitoring(Settings):
         self.e.send('{} {}-手动 上月数据监控表.xlsx'.format(today, team), file_Path,
                     emailAdd[team])
         print('处理耗时：', datetime.datetime.now() - start)
-
 
 
     # 获取签收表内容
@@ -5999,27 +6048,27 @@ if __name__ == '__main__':
     #     m.sl_Monitoring_two(team)  # 输出上月数据
 
     # 获取签收表内容（二）qsb_slgat
-    # startday = '2021.03.08'
+    # startday = '2021.03.13'
     # for team in ['日本', '新加坡', '马来西亚', '菲律宾', '泰国']:
     # for team in ['香港', '台湾', '港台']:
     #     m.readForm(team, startday, '导入')
 
     # # 获取监控表以上传的时间---监控运行（一）
-    # for team in ['菲律宾', '新加坡', '马来西亚', '泰国']:
+    # for team in ['菲律宾', '新加坡', '马来西亚']:
     # for team in ['日本', '菲律宾', '新加坡', '马来西亚']:
-    # for team in ['台湾','香港']:
-        # m.check_time(team)
+    # for team in ['日本']:
+    #     m.check_time(team)
 
 
 
     # -----------------------------------------------单独监控运行（四）-----------------------------------------
-    # startday = '2021.04.08'    # 上传记录时间（qsb_slgat_copy）
+    # startday = '2021.03.13'    # 上传记录时间（qsb_slgat_copy）
     # for team in ['香港', '台湾', '港台']:
     #     m.readForm(team, startday, '单独导入')
 
-    today = '2021.04.08'        # 导表的显示时间
-    Time_one = '2021-04-08'     # 确定需查询的日期
-    Time_two = '2021-03-08'
+    today = '2021.04.13'        # 导表的显示时间
+    Time_one = '2021-04-13'     # 确定需查询的日期
+    Time_two = '2021-03-13'
     for team in ['台湾', '香港']:
         m.sl_MonitoringTHR(team, today, Time_one, Time_two)       # 输出数据
-        m.sl_MonitoringTHR_two(team, today, Time_one, Time_two)       # 输出数据
+        # m.sl_MonitoringTHR_two(team, today, Time_one, Time_two)       # 输出数据

@@ -44,3 +44,8 @@ class Settings():
                       'password': 'VTOYQJKMQOCSFSGE'}
         #  https://blog.csdn.net/weixin_36931308/article/details/103767758 （危机处理需要）
         #  LECOGDYYBJUJJBST
+
+        #  台湾token, 日本token:  token_sl
+        #  新马token, 泰国token:  token_hfh
+        self.token = {'token_sl': 'fa1e6e884f18c4151be7b33cdec00f79',
+                      'token_hfh': 'c96f9540a158db716dbdfb8e0a695b35'}

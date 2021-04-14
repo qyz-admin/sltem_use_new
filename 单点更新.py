@@ -60,11 +60,6 @@ class QueryTwo(Settings):
 
     # 获取签收表内容
     def readFormHost(self, team, query):
-        match2 = {'slgat': '港台',
-                 'sltg': '泰国',
-                 'slxmt': '新马',
-                 'slxmt_hfh': '火凤凰新马',
-                 'slrb': '日本'}
         match3 = {'新加坡': 'slxmt',
                   '马来西亚': 'slxmt',
                   '菲律宾': 'slxmt',
@@ -86,7 +81,14 @@ class QueryTwo(Settings):
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
     def wbsheetHost(self, filePath, team, query):
-        print('---正在获取签收表的详情++++++')
+        match2 = {'slgat': '港台',
+                  'slgat_hfh': '火凤凰港台',
+                  'sltg': '泰国',
+                  'slxmt': '新马',
+                  'slxmt_t': 'T新马',
+                  'slxmt_hfh': '火凤凰新马',
+                  'slrb': '日本'}
+        print('---正在获取 ' + match2[team] + ' 签收表的详情++++++')
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
         app.display_alerts = False
@@ -410,9 +412,9 @@ class QueryTwo(Settings):
     def orderInfo(self, tokenid, searchType, team, last_month):  # 进入订单检索界面，
         print('正在获取需要订单信息')
         start = datetime.datetime.now()
-        # month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y-%m-%d')
-        sql = '''SELECT id,`订单编号`  FROM {0}_order_list sl WHERE sl.`日期` = '{1}' ;'''.format(team, last_month)
+        sql = '''SELECT id,`订单编号`  FROM {0}_order_list sl WHERE sl.`日期` = '{1}';'''.format(team, last_month)
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        # print(ordersDict)
         if ordersDict.empty:
             print('无需要更新订单信息！！！')
             # sys.exit()
@@ -422,9 +424,9 @@ class QueryTwo(Settings):
         max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
         n = 0
         while n < max_count:        # 这里用到了一个while循环，穿越过来的
-            ord = ', '.join(orderId[n:n + 490])
-            print(ord)
-            n = n + 490
+            ord = ', '.join(orderId[n:n + 500])
+            # print(ord)
+            n = n + 500
             self.orderInfoQuery(tokenid, ord, searchType, team)
         print('单日查询耗时：', datetime.datetime.now() - start)
 
@@ -444,13 +446,12 @@ class QueryTwo(Settings):
                          'shippingNumber': orderId})
         proxy = '39.105.167.0:40005'    # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy
-                   }
+                   'https': 'socks5://' + proxy}
         r_header = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36',
             'Referer': 'http://gimp.giikin.com/front/orderToolsServiceQuery'}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
         print('已成功发送请求++++++')
         print('正在处理json数据转化为dataframe…………')
         req = json.loads(req.text)  # json类型数据转换为dict字典
@@ -458,17 +459,20 @@ class QueryTwo(Settings):
         ordersDict = []
         for result in req['data']['list']:
             # print(result)
-            # 添加新的字典键-值对，为下面的重新赋值用
-            result['productId'] = 0
-            result['saleName'] = 0
-            result['saleProduct'] = 0
-            result['spec'] = 0
-            result['link'] = 0
-            result['saleName'] = result['specs'][0]['saleName']
-            result['saleProduct'] = result['specs'][0]['saleProduct']
-            result['spec'] = result['specs'][0]['spec']
-            result['link'] = result['specs'][0]['link']
-            result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+            try:
+                # 添加新的字典键-值对，为下面的重新赋值用
+                result['productId'] = 0
+                # result['saleName'] = 0
+                result['saleProduct'] = 0
+                result['spec'] = 0
+                result['link'] = 0
+                # result['saleName'] = result['specs'][0]['saleName']
+                result['saleProduct'] = result['specs'][0]['saleProduct']
+                result['spec'] = result['specs'][0]['spec']
+                result['link'] = result['specs'][0]['link']
+                result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+            except Exception as e:
+                print('转化失败：', str(Exception) + str(e) + str(result['orderNumber']))
             quest = ''
             for re in result['questionReason']:
                 quest = quest + ';' + re
@@ -490,7 +494,7 @@ class QueryTwo(Settings):
         df = data[['orderNumber', 'currency', 'area', 'productId', 'quantity', 'shipInfo.shipPhone', 'wayBillNumber',
                    'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'finishTime', 'transferTime',
                    'deliveryTime', 'reassignmentTypeName', 'dpeStyle', 'amount']]
-        # print(df)
+        print(df)
         try:
             print('正在更新临时表中......')
             df.to_sql('d1_cp', con=self.engine1, index=False, if_exists='replace')
@@ -546,41 +550,50 @@ if __name__ == '__main__':
               'slxmt_hfh': '火凤凰新马',
               'slrb': '日本'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
-    # for team in ['sltg', 'slgat','slgat_hfh', 'slrb', 'slxmt', 'slxmt_hfh']:
-    for team in ['sltg']:
+    for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
+    # for team in ['slxmt']:
         query = '导入'         # 导入；，更新--->>数据更新切换
         m.readFormHost(team, query)
     # 手动更新状态
-    # for team in ['sltg', 'slgat', 'slrb', 'slxmt', 'slxmt_hfh']:
-    # for team in ['slxmt_hfh']:
-    #     query = '更新'         # 导入；，更新--->>数据更新切换
-    #     m.readFormHost(team, query)
+    for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
+    # for team in ['slxmt']:
+        query = '更新'         # 导入；，更新--->>数据更新切换
+        m.readFormHost(team, query)
 
     # -----------------------------------------------系统导入状态运行（二）-----------------------------------------
-    # for team in ['slgat', 'slrb', 'sltg', 'slxmt']:
-    #     tokenid= '3d87b7e525063b4cdb6e61dc52e4c248'
-        # m.productIdInfo(tokenid, '订单号', team)
+    #   台湾token, 日本token： 94e795a3877e5bfe4f0784a95947b4c1
+    #   新马token：f2556932300c3506512610bdb950c9b3
+    #   泰国token：9231fa3657bb349142ca45d9ea8c9d58
 
-    #   台湾token, 日本token：c5e52455c0ebf8a23964c45d5c0ca161
-    #   新马token, 泰国token：b9b9c45d0d9212134ce3465a4b974f58
-
-    begin = datetime.date(2021, 3, 18)
+    yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 若无法查询，切换代理和直连的网络
+    mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
+    begin = datetime.date(yy, mm, 1)
     print(begin)
-    end = datetime.date(2021, 4, 8)
+    yy2 = int(datetime.datetime.now().strftime('%Y'))
+    mm2 = int(datetime.datetime.now().strftime('%m'))
+    dd2 = int(datetime.datetime.now().strftime('%d'))
+    end = datetime.date(yy2, mm2, dd2)
     print(end)
+
+    # begin = datetime.date(2021, 3, 5)       # 若无法查询，切换代理和直连的网络
+    # print(begin)
+    # end = datetime.date(2021, 4, 13)
+    # print(end)
     for i in range((end - begin).days):  # 按天循环获取订单状态
         day = begin + datetime.timedelta(days=i)
         yesterday = str(day) + ' 23:59:59'
         last_month = str(day)
         print('正在更新 ' + last_month + ' 号订单信息…………')
-        team = 'slxmt_hfh'              # ['slgat', 'slrb', 'sltg', 'slxmt']
+        team = 'slxmt_hfh'              # ['slgat', 'slgat_hfh', 'slrb', 'sltg', 'slxmt', 'slxmt_hfh']
         searchType = '订单号'      # 运单号，订单号   查询切换
-        tokenid = 'b9b9c45d0d9212134ce3465a4b974f58'
+        tokenid = '7e371c4e4bb32707a8741068d3c346b9'
         m.orderInfo(tokenid, searchType, team, last_month)
     print('更新耗时：', datetime.datetime.now() - start)
 
     # -----------------------------------------------单个查询测试使用（三）-----------------------------------------
-    # team = 'sltg'              # ['slgat', 'slrb', 'sltg', 'slxmt']
-    # searchType = '订单号'      # 运单号，订单号   查询切换
-    # tokenid = '7a7fd102fb6999c2d087cbe91079f294'
-    # m.orderInfoQuery(tokenid, 'ST210302180819736702', searchType, team)
+    team = 'slxmt_hfh'              # ['slgat', 'slgat_hfh', 'slrb', 'sltg', 'slxmt', 'slxmt_hfh']
+    searchType = '订单号'      # 运单号，订单号   查询切换
+    tokenid = 'bd27079ba18197646b1ff3df466445b3'
+    m.orderInfoQuery(tokenid, 'XH210318131046093233', searchType, team)
+    # last_month = '2021-03-18'
+    # m.orderInfo(tokenid, searchType, team, last_month)

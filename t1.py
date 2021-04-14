@@ -9,12 +9,13 @@ from 单点更新 import QueryTwo
 import datetime
 
 start: datetime = datetime.datetime.now()
-team = 'slxmt_hfh'
+team = 'slxmt'
 match = {'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙日本签收表',
          'sltg': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙泰国签收表',
          'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙港台签收表',
          'slgat_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\火凤凰港台签收表',
          'slxmt': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙新马签收表',
+         'slxmt_t': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙T新马菲签收表',
          'slxmt_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\火凤凰新马签收表'}
 '''    msyql 语法:      show processlist;
 备注：  港台 需整理的表：香港立邦>(明细再copy一份保存) ； 台湾龟山改派>(copy保存为xlsx格式);
@@ -50,7 +51,7 @@ for dir in dirs:
 print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
-# m.creatMyOrderSl(team)  # 最近五天的全部订单信息
+m.creatMyOrderSl(team)  # 最近五天的全部订单信息
 print('------------更新部分：---------------------')
 m.creatMyOrderSlTWO(team)   # 最近两个月的更新订单信息
 print('处理耗时：', datetime.datetime.now() - start)

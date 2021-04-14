@@ -128,12 +128,11 @@ class MysqlControl(Settings):
                  'slgat_hfh': '"火凤凰-港澳台"',
                  'sltg': '"神龙家族-泰国"',
                  'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
+                 'slxmt_t': '"神龙-T新马菲"',
                  'slxmt_hfh': '"火凤凰-新加坡", "火凤凰-马来西亚", "火凤凰-菲律宾"',
-                 'slzb': '"神龙家族-直播团队"',
-                 'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         # 12-1月的
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat' or team == 'slgat_hfh' or team == 'slxmt_hfh':
+        if team in ('sltg', 'slrb', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             # 获取日期时间
             sql = 'SELECT 日期 FROM {0}_order_list WHERE id = (SELECT MAX(id) FROM {0}_order_list);'.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -151,9 +150,9 @@ class MysqlControl(Settings):
             print(end)
         else:
             # 11-12月的
-            begin = datetime.date(2021, 2, 1)
+            begin = datetime.date(2021, 4, 12)
             print(begin)
-            end = datetime.date(2021, 2, 2)
+            end = datetime.date(2021, 4, 13)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -243,12 +242,11 @@ class MysqlControl(Settings):
                  'slgat_hfh': '"火凤凰-港澳台"',
                  'sltg': '"神龙家族-泰国"',
                  'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
+                 'slxmt_t': '"神龙-T新马菲"',
                  'slxmt_hfh': '"火凤凰-新加坡", "火凤凰-马来西亚", "火凤凰-菲律宾"',
-                 'slzb': '"神龙家族-直播团队"',
-                 'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat' or team == 'slgat_hfh' or team == 'slxmt_hfh0':
+        if team in ('sltg', 'slrb', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
             mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
             begin = datetime.date(yy, mm, 1)
@@ -259,9 +257,9 @@ class MysqlControl(Settings):
             end = datetime.date(yy2, mm2, dd2)
             print(end)
         else:
-            begin = datetime.date(2021, 3, 18)
+            begin = datetime.date(2021, 3, 20)
             print(begin)
-            end = datetime.date(2021, 4, 8)
+            end = datetime.date(2021, 4, 9)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -336,20 +334,18 @@ class MysqlControl(Settings):
         match = {'slgat': '神龙-港台',
                  'slgat_hfh': '火凤凰-港台',
                  'sltg': '神龙-泰国',
-                 'slxmt': '神龙-新马',
-                 'slzb': '直播团队',
-                 'slyn': '越南',
                  'slrb': '神龙-日本',
+                 'slxmt': '神龙-新马',
+                 'slxmt_t': '神龙-T新马',
                  'slxmt_hfh': '火凤凰-新马'}
         emailAdd = {'slgat': 'giikinliujun@163.com',
                     'slgat_hfh': 'giikinliujun@163.com',
                     'sltg': 'zhangjing@giikin.com',
                     'slxmt': 'zhangjing@giikin.com',
+                    'slxmt_t': 'zhangjing@giikin.com',
                     'slxmt_hfh': 'zhangjing@giikin.com',
-                    'slzb': '直播团队',
-                    'slyn': '越南',
                     'slrb': 'sunyaru@giikin.com'}
-        if team == 'sltg' or team == 'slxmt' or team == 'slrb' or team == 'slgat' or team == 'slgat_hfh' or team == 'slxmt_hfh':
+        if team in ('sltg', 'slrb', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
@@ -358,7 +354,7 @@ class MysqlControl(Settings):
             month_last = '2021-03-01'
             month_yesterday = '2021-04-07'
             month_begin = '2020-12-01'
-        token = 'c5e52455c0ebf8a23964c45d5c0ca161'        # 补充查询产品信息需要
+        token = '94e795a3877e5bfe4f0784a95947b4c1'        # 补充查询产品信息需要
         if team == 'slgat':  # 港台查询函数导出
             self.d.productIdInfo(token, '订单号', team)   # 产品id详情更新   （参数一需要手动更换）
             # self.d.cateIdInfo(token, team)              # 进入产品检索界面（参数一需要手动更换）
@@ -417,21 +413,20 @@ class MysqlControl(Settings):
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
         elif team == 'slxmt_hfh':
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-                            IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', null, 出货时间) 出货时间,
-                            IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
-                            IF(上线时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 上线时间='1899-12-30 00:00:00' or 上线时间='0000-00-00 00:00:00', '', 上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
-                            IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                            IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
-                            是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
-                            二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
-                            包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-                            b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间,数量
+                        IF(ISNULL(b.出货时间) or b.出货时间='1899-12-29 00:00:00' or b.出货时间='0000-00-00 00:00:00' or b.状态时间='1990-01-01 00:00:00', g.出货时间, b.出货时间) 出货时间, IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
+                        IF(b.状态时间='1990-01-01 00:00:00' or b.状态时间='1899-12-30 00:00:00' or b.状态时间='0000-00-00 00:00:00', '', b.状态时间) 状态时间, 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态, IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
+                        IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
+                        是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
+                        二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
+                        包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
+                        b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间,数量
                     FROM {0}_order_list a
                         LEFT JOIN (SELECT * FROM slxmt WHERE id IN (SELECT MAX(id) FROM slxmt WHERE slxmt.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
                         LEFT JOIN slxmt_logisitis_match c ON b.物流状态 = c.签收表物流状态
                         LEFT JOIN slxmt_return d ON a.订单编号 = d.订单编号
+                        LEFT JOIN (SELECT * FROM slxmtwl WHERE id IN (SELECT MAX(id) FROM slxmtwl  WHERE slxmtwl.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) g ON a.运单编号 = g.运单编号
                     WHERE a.日期 >= '{2}' AND a.日期 <= '{3}'
-                        AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+                        AND a.系统订单状态 IN ('已审核', '待发货', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)', '待发货转审核')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
         elif team == 'sltg':
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
@@ -443,7 +438,7 @@ class MysqlControl(Settings):
                             是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
                             二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
                             包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-                            b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间,数量
+                            b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间, 数量, b.问题明细
                     FROM {0}_order_list a
                         LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} WHERE {0}.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
                         LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
@@ -473,7 +468,6 @@ class MysqlControl(Settings):
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
         print('正在获取---' + match[team] + ' ---全部导出数据内容…………')
         df = pd.read_sql_query(sql=sql, con=self.engine1)
-
         # 备用临时缓存表
         print('正在写入---' + match[team] + ' ---临时缓存…………')
         if team == 'sl':
@@ -488,7 +482,7 @@ class MysqlControl(Settings):
         filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
-        if team == 'sltg0':
+        if team == 'sltg':
             print('---' + match[team] + ' 不发送邮件')
         else:
             self.e.send('{} {}签收表.xlsx'.format(today, match[team]), filePath,
@@ -550,6 +544,7 @@ class MysqlControl(Settings):
                  'slgat_hfh': ['台湾', '香港'],
                  'sltg': ['泰国'],
                  'slxmt': ['新加坡', '马来西亚', '菲律宾'],
+                 'slxmt_t': ['马来西亚', '菲律宾'],
                  'slxmt_hfh': ['新加坡', '马来西亚', '菲律宾'],
                  'slrb': ['日本']}
         emailAdd = {'台湾': 'giikinliujun@163.com',
@@ -559,7 +554,7 @@ class MysqlControl(Settings):
                     '菲律宾': 'zhangjing@giikin.com',
                     '泰国': 'zhangjing@giikin.com',
                     '日本': 'sunyaru@giikin.com'}
-        if team == 'sltg0' or team == 'slxmt0' or team == 'slrb0' or team == 'slgat0':
+        if team in ('sltg', 'slrb', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             month_last = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
         else:
             pass
@@ -1018,6 +1013,8 @@ class MysqlControl(Settings):
             today = datetime.date.today().strftime('%Y.%m.%d')
             if team == 'slgat_hfh' or team == 'slxmt_hfh':
                 file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰-{}物流时效.xlsx'.format(today, tem)
+            elif team == 'slxmt_t':
+                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙T-{}物流时效.xlsx'.format(today, tem)
             else:
                 file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙-{}物流时效.xlsx'.format(today, tem)
             sheet_name = ['下单出库时', '出库完成时', '下单完成时', '改派下单完成时', '下单出库(分旬)', '出库完成(分旬)', '下单完成(分旬)', '改派下单完成(分旬)']
@@ -1051,6 +1048,11 @@ class MysqlControl(Settings):
             if team == 'slgat_hfh' or team == 'slxmt_hfh':
                 self.e.send('{} 火凤凰-{}物流时效.xlsx'.format(today, tem), filePath,
                             emailAdd[tem])
+            elif team == 'slxmt_t':
+                self.e.send('{} 神龙T-{}物流时效.xlsx'.format(today, tem), filePath,
+                            emailAdd[tem])
+            elif team == 'sltg':
+                print('---' + tem + ' 不发送邮件')
             else:
                 self.e.send('{} 神龙-{}物流时效.xlsx'.format(today, tem), filePath,
                             emailAdd[tem])
@@ -1061,25 +1063,22 @@ class MysqlControl(Settings):
                   'slgat_hfh': '火凤凰-港台',
                   'sltg': '神龙-泰国',
                   'slxmt': '神龙-新马',
+                  'slxmt_t': '神龙T-新马',
                   'slxmt_hfh': '火凤凰-新马',
-                  'slzb': '直播团队',
-                  'slyn': '越南',
                   'slrb': '神龙-日本'}
         match = {'slgat': '"神龙家族-港澳台"',
                  'slgat_hfh': '"火凤凰-港澳台"',
                  'sltg': '"神龙家族-泰国"',
                  'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
+                 'slxmt_t': '"神龙-T新马菲"',
                  'slxmt_hfh': '"火凤凰-新加坡", "火凤凰-马来西亚", "火凤凰-菲律宾"',
-                 'slzb': '"神龙家族-直播团队"',
-                 'slyn': '"神龙家族-越南"',
                  'slrb': '"神龙家族-日本团队"'}
         emailAdd = {'slgat': 'giikinliujun@163.com',
                     'slgat_hfh': 'giikinliujun@163.com',
                     'sltg': 'zhangjing@giikin.com',
                     'slxmt': 'zhangjing@giikin.com',
+                    'slxmt_t': 'zhangjing@giikin.com',
                     'slxmt_hfh': 'zhangjing@giikin.com',
-                    'slzb': '直播团队',
-                    'slyn': '越南',
                     'slrb': 'sunyaru@giikin.com'}
         emailAdd2 = {'sltg': 'libin@giikin.com'}
         print('正在查询{}无运单订单列表…………'.format(match[team]))
@@ -1428,6 +1427,147 @@ class MysqlControl(Settings):
         # self.e.send(match[team] + '产品花费表', filePath,
         #             emailAdd[team])
         self.d.sl_tem_costHFH(match2[team], match[team])
+    def orderCostT(self, team):
+        if datetime.datetime.now().day >= 9:
+            endDate = datetime.datetime.now().replace(day=1).strftime('%Y-%m-%d')
+            startDate = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+            endDate = [endDate, datetime.datetime.now().strftime('%Y-%m-%d')]
+            startDate = [startDate, datetime.datetime.now().replace(day=1).strftime('%Y-%m-%d')]
+        else:
+            endDate = datetime.datetime.now().replace(day=1).strftime('%Y-%m-%d')
+            startDate = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+            endDate = [endDate]
+            startDate = [startDate]
+        match = {'SG': '新加坡',
+                 'MY': '马来西亚',
+                 'PH': '菲律宾'}
+        match2 = {'SG': 'slxmt_t_zqsb',
+                  'MY': 'slxmt_t_zqsb',
+                  'PH': 'slxmt_t_zqsb'}
+        emailAdd = {'SG': 'zhangjing@giikin.com',
+                    'MY': 'zhangjing@giikin.com',
+                    'PH': 'zhangjing@giikin.com'}
+        # filePath = []
+        for i in range(len(endDate)):
+            print('正在查询' + match[team] + '产品花费表…………')
+            sql = '''SELECT s1.`month` AS '月份',
+                         s1.area AS '地区',
+                         s1.leader AS '负责人',
+                         s1.pid AS '产品ID',
+                         s1.pname AS '产品名称',
+                         s1.cate1 AS '一级品类',
+                         s1.cate2 AS '二级品类',
+                         s1.cate3 AS '三级品类',
+                         s1.orders AS '订单量',
+                         s1.orders - s1.gps AS '直发订单量',
+                         s1.gps AS '改派订单量',
+                         s1.salesRMB / s1.orders AS '客单价',
+                         s1.salesRMB / s1.adcost AS 'ROI',
+                         s1.orders / s2.orders AS '订单品类占比',
+                         s1.cgcost_zf / s1.salesRMB AS '直发采购/销售额',
+                         s1.adcost / s1.salesRMB AS '花费占比',
+                         s1.wlcost / s1.salesRMB AS '运费占比',
+                         s1.qtcost / s1.salesRMB AS '手续费占比',
+                         ( s1.cgcost_zf + s1.adcost + s1.wlcost + s1.qtcost ) / s1.salesRMB AS '总成本占比',
+                         s1.salesRMB_yqs / (s1.salesRMB_yqs + s1.salesRMB_yjs) AS '金额签收/完成',
+                         s1.salesRMB_yqs / s1.salesRMB AS '金额签收/总计',
+                         (s1.salesRMB_yqs + s1.salesRMB_yjs) / s1.salesRMB AS '金额完成占比',
+                         s1.yqs / (s1.yqs + s1.yjs) AS '数量签收/完成',
+                         (s1.yqs + s1.yjs) / s1.orders AS '数量完成占比',
+                         s3.orders AS '昨日订单量'
+            FROM (  SELECT DISTINCT EXTRACT(YEAR_MONTH FROM a.rq) AS `month`,
+                                     b.pname AS area,
+                                     c.uname AS leader,
+                                     a.product_id AS pid,
+                                     e.`product_name` AS pname,
+            --                       e.`name` AS pname,
+                                     d.ppname AS cate1,
+                                     d.pname AS cate2,
+                                     d.`name` AS cate3,
+            -- 						 GROUP_CONCAT(DISTINCT a.low_price) AS low_price,
+                                     SUM(a.orders) AS orders,
+                                     SUM(a.yqs) AS yqs,
+                                     SUM(a.yjs) AS yjs,
+                                     SUM(a.salesRMB) AS salesRMB,
+                                     SUM(a.salesRMB_yqs) AS salesRMB_yqs,
+                                     SUM(a.salesRMB_yjs) AS salesRMB_yjs,
+                                     SUM(a.gps) AS gps,
+            --                       SUM(a.cgcost_zf) AS cgcost_zf,
+            --                       SUM(a.adcost) AS adcost,
+                                     null cgcost_zf,
+                                     null adcost,
+                                     SUM(a.wlcost) AS wlcost,
+            --                       SUM(a.qtcost) AS qtcost
+                                     null qtcost
+                        FROM gk_order_day a
+                            LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
+                            LEFT JOIN dim_area c on c.id = a.area_id
+                            LEFT JOIN dim_cate d on d.id = a.third_cate_id
+            --              LEFT JOIN gk_product e on e.id = a.product_id
+                          LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.product_id = a.product_id
+                        WHERE a.rq >= '{startDate}'
+                            AND a.rq < '{endDate}'
+                            AND b.pcode = '{team}'
+                            AND c.uname = '王冰'
+                            AND a.beform <> 'mf'
+                            AND c.uid <> 10099  -- 过滤翼虎
+                        GROUP BY EXTRACT(YEAR_MONTH FROM a.rq), b.pname, c.uname, a.product_id
+                     ) s1
+                      LEFT JOIN
+                     (  SELECT EXTRACT(YEAR_MONTH FROM a.rq) AS `month`,
+                                     b.pname AS area,
+                                     c.uname AS leader,
+                                     d.ppname AS cate1,
+                                     SUM(a.orders) AS orders
+                        FROM gk_order_day a
+                            LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
+                            LEFT JOIN dim_area c on c.id = a.area_id
+                            LEFT JOIN dim_cate d on d.id = a.third_cate_id
+                        WHERE a.rq >= '{startDate}'
+                            AND a.rq < '{endDate}'
+                            AND b.pcode = '{team}'
+                            AND c.uname = '王冰'
+                            AND a.beform <> 'mf'
+                            AND c.uid <> 10099
+                        GROUP BY EXTRACT(YEAR_MONTH FROM a.rq), b.pname, c.uname, d.ppname
+                     ) s2  ON s1.`month`=s2.`month` AND s1.area=s2.area AND s1.leader=s2.leader AND s1.cate1=s2.cate1
+                      LEFT JOIN
+                     (  SELECT EXTRACT(YEAR_MONTH FROM a.rq) AS `month`,
+                                     b.pname AS area,
+                                     c.uname AS leader,
+                                     a.product_id AS pid,
+                                     SUM(a.orders) AS orders
+                        FROM gk_order_day a
+                            LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
+                            LEFT JOIN dim_area c on c.id = a.area_id
+                        WHERE a.rq = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                    AND b.pcode = '{team}'
+                                    AND c.uname = '王冰'
+                                    AND a.beform <> 'mf'
+                                    AND c.uid <> 10099
+                        GROUP BY EXTRACT(YEAR_MONTH FROM a.rq), b.pname, c.uname, a.product_id
+                     ) s3 ON s1.area=s3.area AND s1.leader=s3.leader AND s1.pid=s3.pid
+            WHERE s1.orders > 0
+            ORDER BY s1.orders DESC'''.format(team=team, startDate=startDate[i], endDate=endDate[i])
+            df = pd.read_sql_query(sql=sql, con=self.engine2)
+            print('正在输出' + match[team] + '产品花费表…………')
+            columns = ['订单品类占比', '直发采购/销售额', '花费占比', '运费占比', '手续费占比', '总成本占比',
+                       '金额签收/完成', '金额签收/总计', '金额完成占比', '数量签收/完成', '数量完成占比']
+            for column in columns:
+                df[column] = df[column].fillna(value=0)
+                df[column] = df[column].apply(lambda x: format(x, '.2%'))
+            today = datetime.date.today().strftime('%Y.%m.%d')
+            if i == 0:
+                df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙T-{}上月产品花费表.xlsx'.format(today, match[team]),
+                            sheet_name=match[team], index=False)
+                # filePath.append('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰{}上月产品花费表.xlsx'.format(today, match[team]))
+            else:
+                df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙T-{}本月产品花费表.xlsx'.format(today, match[team]),
+                            sheet_name=match[team], index=False)
+                # filePath.append('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰{}本月产品花费表.xlsx'.format(today, match[team]))
+        # self.e.send(match[team] + '产品花费表', filePath,
+        #             emailAdd[team])
+        self.d.sl_tem_costT(match2[team], match[team])
 
 
 if __name__ == '__main__':
@@ -1438,7 +1578,7 @@ if __name__ == '__main__':
     # # 更新产品id的列表
     m.update_gk_product()
 
-    for team in ['slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_hfh']:  # 无运单号查询200
+    for team in ['slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:  # 无运单号查询200
         m.noWaybillNumber(team)
 
     match = {'SG': '新加坡',
@@ -1453,9 +1593,13 @@ if __name__ == '__main__':
     for team in match.keys():  # 产品花费表200
         if team == 'JP':
             m.orderCost(team)
+        elif team in ('HK', 'TW') :
+            m.orderCost(team)
+            m.orderCostHFH(team)
         else:
             m.orderCost(team)
             m.orderCostHFH(team)
+            m.orderCostT(team)
 
     sm = SltemMonitoring()
     for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾']:  # 成本查询

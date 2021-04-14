@@ -96,6 +96,7 @@ class ExcelControl():
                          '运单编号': [True, ['运单号', '新运单号', '转单号', '跟踪单号', 'Tracking ID'], []],
                          '物流状态': [True, ['物流状态', '订单状态', '最新扫描类型', 'Status'], []],
                          '状态时间': [True, ['状态时间', '時間', '最新扫描时间', 'Last Update/Scan'], []],
+                         '问题明细': [False, ['问题件明细'], []],
                          '航班时间': [False, ['航班起飞时间', '''国内清关时间
 （或航班起飞时间）'''], ['航班起飞时间']],
                          '清关时间': [False, ['''泰国清关时间
@@ -127,7 +128,7 @@ class ExcelControl():
                                         'Tracking ID', 'Waybill Number'], []],
                         '物流状态': [True, ['状态', '订单状态', 'Granular Status', 'Status', 'status', 'Order Status'], []],
                         '状态时间': [True, ['Last Update/Scan', 'Last Delivery Date', 'Last Delivey Date', '日期',
-                                        'Latest Service End Time','Last Valid Delivery Attempt Datetime', '签收时间',
+                                        'Latest Service End Time', 'Last Valid Delivery Attempt Datetime', '签收时间',
                                         'Last Valid Delivery Attempt Date', 'Last Valid', 'SigningTime'], []],
                         '航班时间': [False, [], []],
                         '清关时间': [False, [], []],
