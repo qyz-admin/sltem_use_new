@@ -497,9 +497,10 @@ class QueryTwo(Settings):
         print(df)
         try:
             print('正在更新临时表中......')
-            df.to_sql('d1_cp', con=self.engine1, index=False, if_exists='replace')
+            # df.to_sql('d1_cp_{0}', con=self.engine1, index=False, if_exists='replace').format(team)
+            df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
             sql = '''SELECT DATE(h.addTime) 日期,
-            				    IF(h.`currency` = '日币', '日本', IF(h.`currency` = '泰铢', '泰国', IF(h.`currency` = '港币', '香港', IF(h.`currency` = '台币', '台湾', h.`currency`)))) 币种,
+            				    IF(h.`currency` = '日币', '日本', IF(h.`currency` = '泰铢', '泰国', IF(h.`currency` = '港币', '香港', IF(h.`currency` = '台币', '台湾', IF(h.`currency` = '韩元', '韩国', h.`currency`))))) 币种,
             				    h.orderNumber 订单编号,
             				    h.quantity 数量,
             				    h.`shipInfo.shipPhone` 电话号码,
@@ -513,14 +514,15 @@ class QueryTwo(Settings):
             				    h.transferTime 审核时间,
             				    h.deliveryTime 仓储扫描时间,
             				    h.finishTime 完结状态时间
-                            FROM d1_cp h
+                            FROM d1_cpy h
                                 LEFT JOIN dim_product ON  dim_product.id = h.productId
                                 LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                                 LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = TRIM(h.logisticsName);'''.format(team)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_sql('d1_cp_copy', con=self.engine1, index=False, if_exists='replace')
+            # df.to_sql('d1_cp_copy_{0}', con=self.engine1, index=False, if_exists='replace').format(team)
+            df.to_sql('d1_cpy_cp', con=self.engine1, index=False, if_exists='replace')
             print('正在更新表总表中......')
-            sql = '''update {0}_order_list a, d1_cp_copy b
+            sql = '''update {0}_order_list a, d1_cpy_cp b
                             set a.`币种`= b.`币种`,
                                 a.`数量`= b.`数量`,
                                 a.`电话号码`= b.`电话号码` ,
@@ -543,27 +545,33 @@ class QueryTwo(Settings):
 if __name__ == '__main__':
     m = QueryTwo()
     start: datetime = datetime.datetime.now()
-    match1 = {'slgat': '港台',
-              'slgat_hfh': '火凤凰港台',
-              'sltg': '泰国',
-              'slxmt': '新马',
-              'slxmt_hfh': '火凤凰新马',
-              'slrb': '日本'}
+    match1 = {'slgat': '神龙-港台',
+             'slgat_hfh': '火凤凰-港台',
+             'sltg': '神龙-泰国',
+             'slrb': '神龙-日本',
+             'slrb_jl': '精灵-日本',
+             'slxmt': '神龙-新马',
+             'slxmt_t': '神龙-T新马',
+             'slxmt_hfh': '火凤凰-新马'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
-    for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    # for team in ['slxmt']:
+    # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
+    for team in ['sltg']:
         query = '导入'         # 导入；，更新--->>数据更新切换
         m.readFormHost(team, query)
     # 手动更新状态
-    for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
+    # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
     # for team in ['slxmt']:
-        query = '更新'         # 导入；，更新--->>数据更新切换
-        m.readFormHost(team, query)
+    #     query = '更新'         # 导入；，更新--->>数据更新切换
+    #     m.readFormHost(team, query)
+
 
     # -----------------------------------------------系统导入状态运行（二）-----------------------------------------
-    #   台湾token, 日本token： 94e795a3877e5bfe4f0784a95947b4c1
-    #   新马token：f2556932300c3506512610bdb950c9b3
-    #   泰国token：9231fa3657bb349142ca45d9ea8c9d58
+    #   台湾token, 日本token, 新马token, 泰国token： f5c38f80bf2733252e6517a44ef94ba2
+
+    # begin = datetime.date(2021, 3, 5)       # 若无法查询，切换代理和直连的网络
+    # print(begin)
+    # end = datetime.date(2021, 4, 13)
+    # print(end)
 
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 若无法查询，切换代理和直连的网络
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
@@ -575,25 +583,27 @@ if __name__ == '__main__':
     end = datetime.date(yy2, mm2, dd2)
     print(end)
 
-    # begin = datetime.date(2021, 3, 5)       # 若无法查询，切换代理和直连的网络
-    # print(begin)
-    # end = datetime.date(2021, 4, 13)
-    # print(end)
-    for i in range((end - begin).days):  # 按天循环获取订单状态
-        day = begin + datetime.timedelta(days=i)
-        yesterday = str(day) + ' 23:59:59'
-        last_month = str(day)
-        print('正在更新 ' + last_month + ' 号订单信息…………')
-        team = 'slxmt_hfh'              # ['slgat', 'slgat_hfh', 'slrb', 'sltg', 'slxmt', 'slxmt_hfh']
-        searchType = '订单号'      # 运单号，订单号   查询切换
-        tokenid = '7e371c4e4bb32707a8741068d3c346b9'
-        m.orderInfo(tokenid, searchType, team, last_month)
+    # for team in ['slrb', 'slrb_jl']:
+    # for team in ['slgat', 'slgat_hfh']:
+    for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
+    # for team in ['sltg']:
+        print('++++++正在获取 ' + match1[team] + ' 信息++++++')
+        for i in range((end - begin).days):  # 按天循环获取订单状态
+            day = begin + datetime.timedelta(days=i)
+            yesterday = str(day) + ' 23:59:59'
+            last_month = str(day)
+            print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
+            searchType = '订单号'      # 运单号，订单号   查询切换
+            tokenid = 'f5c38f80bf2733252e6517a44ef94ba2'
+            m.orderInfo(tokenid, searchType, team, last_month)
     print('更新耗时：', datetime.datetime.now() - start)
 
+
+
     # -----------------------------------------------单个查询测试使用（三）-----------------------------------------
-    team = 'slxmt_hfh'              # ['slgat', 'slgat_hfh', 'slrb', 'sltg', 'slxmt', 'slxmt_hfh']
-    searchType = '订单号'      # 运单号，订单号   查询切换
-    tokenid = 'bd27079ba18197646b1ff3df466445b3'
-    m.orderInfoQuery(tokenid, 'XH210318131046093233', searchType, team)
+    # team = 'slxmt_hfh'              # ['slgat', 'slgat_hfh', 'slrb', 'sltg', 'slxmt', 'slxmt_hfh']
+    # searchType = '订单号'      # 运单号，订单号   查询切换
+    # tokenid = 'bd27079ba18197646b1ff3df466445b3'
+    # m.orderInfoQuery(tokenid, 'XH210318131046093233', searchType, team)
     # last_month = '2021-03-18'
     # m.orderInfo(tokenid, searchType, team, last_month)

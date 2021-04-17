@@ -130,9 +130,10 @@ class MysqlControl(Settings):
                  'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
                  'slxmt_t': '"神龙-T新马菲"',
                  'slxmt_hfh': '"火凤凰-新加坡", "火凤凰-马来西亚", "火凤凰-菲律宾"',
-                 'slrb': '"神龙家族-日本团队"'}
+                 'slrb': '"神龙家族-日本团队"',
+                 'slrb_jl': '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"'}
         # 12-1月的
-        if team in ('sltg', 'slrb', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             # 获取日期时间
             sql = 'SELECT 日期 FROM {0}_order_list WHERE id = (SELECT MAX(id) FROM {0}_order_list);'.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -150,16 +151,131 @@ class MysqlControl(Settings):
             print(end)
         else:
             # 11-12月的
-            begin = datetime.date(2021, 4, 12)
+            begin = datetime.date(2021, 4, 14)
             print(begin)
-            end = datetime.date(2021, 4, 13)
+            end = datetime.date(2021, 4, 16)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
             # print(str(day))
             yesterday = str(day) + ' 23:59:59'
             last_month = str(day)
-            sql = '''SELECT a.id,
+            if team in ('slxmt', 'slxmt_t', 'slxmt_hfh'):
+                sql = '''SELECT a.id,
+                            a.month 年月,
+                            a.month_mid 旬,
+                            a.rq 日期,
+                            dim_area.name 团队,
+                            a.region_code 区域,
+                            dim_currency_lang.pname 币种,
+                            a.beform 订单来源,
+                            a.order_number 订单编号,
+                            a.qty 数量,
+                            a.ship_phone 电话号码,
+                            UPPER(a.waybill_number) 运单编号,
+                            a.order_status 系统订单状态id,
+                            a.logistics_status 系统物流状态id,
+                            IF(a.second=0,'直发','改派') 是否改派,
+                            dim_trans_way.all_name 物流方式,
+                            dim_trans_way.simple_name 物流名称,
+                            dim_trans_way.remark 运输方式,
+                            a.logistics_type 货物类型,
+                            IF(a.low_price=0,'否','是') 是否低价,
+                            a.product_id 产品id,
+             		        gs.product_name 产品名称,
+            --              e.`name` 产品名称,
+                            dim_cate.ppname 父级分类,
+                            dim_cate.pname 二级分类,
+                            dim_cate.name 三级分类,
+                            dim_payment.pay_name 付款方式,
+                            a.amount 价格,
+                            a.addtime 下单时间,
+                            a.verity_time 审核时间,
+                            a.delivery_time 仓储扫描时间,
+                            a.finish_status 完结状态,
+                            a.endtime 完结状态时间,
+                            a.salesRMB 价格RMB,
+                            intervals.intervals 价格区间,
+                            null 成本价,
+                            a.logistics_cost 物流花费,
+                            null 打包花费,
+                            a.other_fee 其它花费,
+                            a.weight 包裹重量,
+                            a.volume 包裹体积,
+                            a.ship_zip 邮编,
+                            a.turn_purchase_time 添加物流单号时间,
+                            a.del_reason 订单删除原因,
+                            a.ship_state 省洲
+                    FROM gk_order a
+                            left join dim_area ON dim_area.id = a.area_id
+                            left join dim_payment ON dim_payment.id = a.payment_id
+            --               LEFT JOIN gk_product e on e.id = a.product_id
+             				left join (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) gs ON gs.product_id = a.product_id
+                            left join dim_trans_way ON dim_trans_way.id = a.logistics_id
+                            left join dim_cate ON dim_cate.id = a.third_cate_id
+                            left join intervals ON intervals.id = a.intervals
+                            left join dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
+                    WHERE  a.rq = '{0}' AND a.rq <= '{1}'
+                        AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
+            elif team == 'slrb_jl':
+                sql = '''SELECT a.id,
+                            a.month 年月,
+                            a.month_mid 旬,
+                            a.rq 日期,
+                            dim_area.name 团队,
+                            a.region_code 区域,
+                            dim_currency_lang.pname 币种,
+                            a.beform 订单来源,
+                            a.order_number 订单编号,
+                            a.qty 数量,
+                            a.ship_phone 电话号码,
+                            UPPER(a.waybill_number) 运单编号,
+                            a.order_status 系统订单状态id,
+                            a.logistics_status 系统物流状态id,
+                            IF(a.second=0,'直发','改派') 是否改派,
+                            dim_trans_way.all_name 物流方式,
+                            dim_trans_way.simple_name 物流名称,
+                            dim_trans_way.remark 运输方式,
+                            a.logistics_type 货物类型,
+                            IF(a.low_price=0,'否','是') 是否低价,
+                            a.product_id 产品id,
+             		        gs.product_name 产品名称,
+            --              e.`name` 产品名称,
+                            dim_cate.ppname 父级分类,
+                            dim_cate.pname 二级分类,
+                            dim_cate.name 三级分类,
+                            dim_payment.pay_name 付款方式,
+                            a.amount 价格,
+                            a.addtime 下单时间,
+                            a.verity_time 审核时间,
+                            a.delivery_time 仓储扫描时间,
+                            a.finish_status 完结状态,
+                            a.endtime 完结状态时间,
+                            a.salesRMB 价格RMB,
+                            intervals.intervals 价格区间,
+                            null 成本价,
+                            a.logistics_cost 物流花费,
+                            null 打包花费,
+                            a.other_fee 其它花费,
+                            a.weight 包裹重量,
+                            a.volume 包裹体积,
+                            a.ship_zip 邮编,
+                            a.turn_purchase_time 添加物流单号时间,
+                            a.del_reason 订单删除原因,
+                            IF(dim_area.name = '精灵家族-品牌',IF(a.coll_id=1000000269,'饰品','内衣'),a.coll_id) 站点ID
+                    FROM gk_order a
+                            left join dim_area ON dim_area.id = a.area_id
+                            left join dim_payment ON dim_payment.id = a.payment_id
+            --               LEFT JOIN gk_product e on e.id = a.product_id
+             				left join (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) gs ON gs.product_id = a.product_id
+                            left join dim_trans_way ON dim_trans_way.id = a.logistics_id
+                            left join dim_cate ON dim_cate.id = a.third_cate_id
+                            left join intervals ON intervals.id = a.intervals
+                            left join dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
+                    WHERE  a.rq = '{0}' AND a.rq <= '{1}'
+                        AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
+            else:
+                sql = '''SELECT a.id,
                             a.month 年月,
                             a.month_mid 旬,
                             a.rq 日期,
@@ -244,9 +360,10 @@ class MysqlControl(Settings):
                  'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
                  'slxmt_t': '"神龙-T新马菲"',
                  'slxmt_hfh': '"火凤凰-新加坡", "火凤凰-马来西亚", "火凤凰-菲律宾"',
-                 'slrb': '"神龙家族-日本团队"'}
+                 'slrb': '"神龙家族-日本团队"',
+                 'slrb_jl': '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        if team in ('sltg', 'slrb', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
             mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
             begin = datetime.date(yy, mm, 1)
@@ -335,6 +452,7 @@ class MysqlControl(Settings):
                  'slgat_hfh': '火凤凰-港台',
                  'sltg': '神龙-泰国',
                  'slrb': '神龙-日本',
+                 'slrb_jl': '精灵-日本',
                  'slxmt': '神龙-新马',
                  'slxmt_t': '神龙-T新马',
                  'slxmt_hfh': '火凤凰-新马'}
@@ -344,17 +462,18 @@ class MysqlControl(Settings):
                     'slxmt': 'zhangjing@giikin.com',
                     'slxmt_t': 'zhangjing@giikin.com',
                     'slxmt_hfh': 'zhangjing@giikin.com',
-                    'slrb': 'sunyaru@giikin.com'}
-        if team in ('sltg', 'slrb', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+                    'slrb': 'sunyaru@giikin.com',
+                    'slrb_jl': 'sunyaru@giikin.com'}
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slgat0', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
             print(month_begin)
         else:
-            month_last = '2021-03-01'
-            month_yesterday = '2021-04-07'
-            month_begin = '2020-12-01'
-        token = '94e795a3877e5bfe4f0784a95947b4c1'        # 补充查询产品信息需要
+            month_last = '2021-04-11'
+            month_yesterday = '2021-04-16'
+            month_begin = '2020-1-01'
+        token = 'f5c38f80bf2733252e6517a44ef94ba2'        # 补充查询产品信息需要
         if team == 'slgat':  # 港台查询函数导出
             self.d.productIdInfo(token, '订单号', team)   # 产品id详情更新   （参数一需要手动更换）
             # self.d.cateIdInfo(token, team)              # 进入产品检索界面（参数一需要手动更换）
@@ -402,7 +521,7 @@ class MysqlControl(Settings):
                         是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
                         二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
                         包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-                        b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间,数量
+                        b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间,数量, a.省洲
                     FROM {0}_order_list a
                         LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} WHERE {0}.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
                         LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
@@ -411,7 +530,7 @@ class MysqlControl(Settings):
                     WHERE a.日期 >= '{2}' AND a.日期 <= '{3}'
                         AND a.系统订单状态 IN ('已审核', '待发货', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)', '待发货转审核')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
-        elif team == 'slxmt_hfh':
+        elif team == 'slxmt_hfh' or team == 'slxmt_t':
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(ISNULL(b.出货时间) or b.出货时间='1899-12-29 00:00:00' or b.出货时间='0000-00-00 00:00:00' or b.状态时间='1990-01-01 00:00:00', g.出货时间, b.出货时间) 出货时间, IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
                         IF(b.状态时间='1990-01-01 00:00:00' or b.状态时间='1899-12-30 00:00:00' or b.状态时间='0000-00-00 00:00:00', '', b.状态时间) 状态时间, 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态, IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
@@ -419,7 +538,7 @@ class MysqlControl(Settings):
                         是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
                         二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
                         包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-                        b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间,数量
+                        b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间,数量, a.省洲
                     FROM {0}_order_list a
                         LEFT JOIN (SELECT * FROM slxmt WHERE id IN (SELECT MAX(id) FROM slxmt WHERE slxmt.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
                         LEFT JOIN slxmt_logisitis_match c ON b.物流状态 = c.签收表物流状态
@@ -443,6 +562,25 @@ class MysqlControl(Settings):
                         LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} WHERE {0}.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
                         LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
                         LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
+                    WHERE a.日期 >= '{2}' AND a.日期 <= '{3}'
+                        AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+                    ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
+        elif team == 'slrb_jl':
+            self.d.productIdInfo(token, '订单号', team)   # 产品id详情更新   （参数一需要手动更换）
+            sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
+                        IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', null, 出货时间) 出货时间,
+                        IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
+                        IF(上线时间='1990-01-01 00:00:00' or 上线时间='1899-12-29 00:00:00' or 上线时间='1899-12-30 00:00:00' or 上线时间='0000-00-00 00:00:00', '', 上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
+                        IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
+                        IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
+                        是否改派,物流方式,物流名称,运输方式,'货到付款' AS 货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
+                        二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
+                        包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
+                        b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态,b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间, 数量, a.站点ID
+                    FROM {0}_order_list a
+                        LEFT JOIN (SELECT * FROM slrb WHERE id IN (SELECT MAX(id) FROM slrb WHERE slrb.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
+                        LEFT JOIN slrb_logisitis_match c ON b.物流状态 = c.签收表物流状态
+                        LEFT JOIN slrb_return d ON a.订单编号 = d.订单编号
                     WHERE a.日期 >= '{2}' AND a.日期 <= '{3}'
                         AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
@@ -544,24 +682,37 @@ class MysqlControl(Settings):
                  'slgat_hfh': ['台湾', '香港'],
                  'sltg': ['泰国'],
                  'slxmt': ['新加坡', '马来西亚', '菲律宾'],
-                 'slxmt_t': ['马来西亚', '菲律宾'],
+                 'slxmt_t': ['新加坡', '马来西亚', '菲律宾'],
                  'slxmt_hfh': ['新加坡', '马来西亚', '菲律宾'],
-                 'slrb': ['日本']}
+                 'slrb': ['日本'],
+                 'slrb_jl': ['日本', '韩国']}
+        match1 = {'slgat': ['台湾|神龙家族-港澳台', '香港|神龙家族-港澳台'],
+                  'slgat_hfh': ['台湾|火凤凰-港澳台', '香港|火凤凰-港澳台'],
+                  'sltg': ['泰国|神龙家族-泰国'],
+                  'slxmt': ['新加坡|神龙家族-新加坡', '马来西亚|神龙家族-马来西亚', '菲律宾|神龙家族-菲律宾'],
+                  'slxmt_t': ['新加坡|神龙-T新马菲', '马来西亚|神龙-T新马菲', '菲律宾|神龙-T新马菲'],
+                  'slxmt_hfh': ['新加坡|火凤凰-新加坡', '马来西亚|火凤凰-马来西亚', '菲律宾|火凤凰-菲律宾'],
+                  'slrb': ['日本|神龙家族-日本团队'],
+                  'slrb_jl': ['日本|精灵家族-日本', '韩国|精灵家族-韩国', '品牌|精灵家族-品牌']}
         emailAdd = {'台湾': 'giikinliujun@163.com',
                     '香港': 'giikinliujun@163.com',
                     '新加坡': 'zhangjing@giikin.com',
                     '马来西亚': 'zhangjing@giikin.com',
                     '菲律宾': 'zhangjing@giikin.com',
                     '泰国': 'zhangjing@giikin.com',
-                    '日本': 'sunyaru@giikin.com'}
-        if team in ('sltg', 'slrb', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+                    '日本': 'sunyaru@giikin.com',
+                    '韩国': 'sunyaru@giikin.com',
+                    '品牌': 'sunyaru@giikin.com'}
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             month_last = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
         else:
             pass
-        for tem in match[team]:
+        for tem in match1[team]:
+            tem1 = tem.split('|')[0]
+            tem2 = tem.split('|')[1]
             filePath = []
             listT = []  # 查询sql的结果 存放池
-            print('正在获取---' + tem + '---物流时效…………')
+            print('正在获取---' + tem2 + '---物流时效…………')
             # 总月
             sql = '''SELECT 年月,币种,物流方式,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
                     FROM (SELECT IFNULL(年月,'总计') AS 年月,
@@ -577,7 +728,7 @@ class MysqlControl(Settings):
                         FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,IF(ISNULL(gat_z.下单出库时), 90, gat_z.下单出库时) AS 天数, 订单量 总计,签收量,完成量
                             FROM (SELECT  年月,币种,物流方式,DATEDIFF(`仓储扫描时间`,`下单时间`) AS 下单出库时,COUNT(`订单编号`) AS 订单量
                                 FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	
+                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                     AND  cx.`是否改派` = '直发'
     			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                 GROUP BY 年月,币种,物流方式,下单出库时
@@ -586,7 +737,7 @@ class MysqlControl(Settings):
                             LEFT JOIN  
                                 (SELECT  年月,币种,物流方式,DATEDIFF(`仓储扫描时间`,`下单时间`) AS 下单出库时,COUNT(`订单编号`) AS 签收量
                                 FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'		
+                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                     AND  cx.`是否改派` = '直发'
                                     AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                     AND  cx.`最终状态` = '已签收'
@@ -600,7 +751,7 @@ class MysqlControl(Settings):
                             LEFT JOIN 
                                 (SELECT  年月,币种,物流方式,DATEDIFF(`仓储扫描时间`,`下单时间`) AS 下单出库时,COUNT(`订单编号`) AS 完成量
                                 FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	
+                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                     AND  cx.`是否改派` = '直发'
     			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                     AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
@@ -614,7 +765,7 @@ class MysqlControl(Settings):
                         )	sl
                         GROUP BY 年月,币种,物流方式,sl.天数
                         with rollup
-                    ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem)
+                    ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             listT.append(df)
             sql2 = '''SELECT 年月,币种,物流方式,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
@@ -631,7 +782,7 @@ class MysqlControl(Settings):
                         FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,IF(ISNULL(gat_z.出库完成时), 90, gat_z.出库完成时) AS 天数, 订单量 总计,签收量,完成量
                             FROM (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`) AS 出库完成时,COUNT(`订单编号`) AS 订单量
                                 FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	
+                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                     AND  cx.`是否改派` = '直发'
     			                          AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                 GROUP BY 年月,币种,物流方式,出库完成时
@@ -640,7 +791,7 @@ class MysqlControl(Settings):
                             LEFT JOIN  
                                 (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`) AS 出库完成时,COUNT(`订单编号`) AS 签收量
                                 FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'
+                                WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}'
                                     AND  cx.`是否改派` = '直发'
                                     AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                     AND  cx.`最终状态` = '已签收'
@@ -654,7 +805,7 @@ class MysqlControl(Settings):
                             LEFT JOIN 
                                 (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`) AS 出库完成时,COUNT(`订单编号`) AS 完成量
                                 FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	
+                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                     AND  cx.`是否改派` = '直发'
     			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                     AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
@@ -668,7 +819,7 @@ class MysqlControl(Settings):
                         )	sl
                         GROUP BY 年月,币种,物流方式,sl.天数
                         with rollup
-                    ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem)
+                    ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
             df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
             listT.append(df2)
             sql3 = '''SELECT 年月,币种,物流方式,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
@@ -685,7 +836,7 @@ class MysqlControl(Settings):
                         FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,IF(ISNULL(gat_z.下单完成时), 90, gat_z.下单完成时) AS 天数, 订单量 总计,签收量,完成量
                             FROM (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 订单量
                                 FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	
+                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                     AND  cx.`是否改派` = '直发'
     			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                 GROUP BY 年月,币种,物流方式,下单完成时
@@ -694,7 +845,7 @@ class MysqlControl(Settings):
                             LEFT JOIN  
                                 (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 签收量
                                 FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}' 	
+                                WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}'
                                     AND  cx.`是否改派` = '直发'
                                     AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                     AND  cx.`最终状态` = '已签收'
@@ -708,7 +859,7 @@ class MysqlControl(Settings):
                             LEFT JOIN 
                                 (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 完成量
                                 FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	
+                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                     AND  cx.`是否改派` = '直发'
     			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                     AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
@@ -722,13 +873,13 @@ class MysqlControl(Settings):
                         )	sl
                         GROUP BY 年月,币种,物流方式,sl.天数
                         with rollup
-                    ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem)
+                    ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
             df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
             listT.append(df3)
             sql4 = '''SELECT 年月,币种,物流方式,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
                     FROM (SELECT IFNULL(年月,'总计') AS 年月,
-												IFNULL(币种,'总计') AS 币种,
-                        IFNULL(物流方式,'总计') AS 物流方式,
+								IFNULL(币种,'总计') AS 币种,
+                                IFNULL(物流方式,'总计') AS 物流方式,
 				                IFNULL(天数,'总计') AS 天数,
 				                SUM(总计) AS 总计 ,
 				                IFNULL(SUM(签收量),0) AS 签收量,
@@ -739,7 +890,7 @@ class MysqlControl(Settings):
                         FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,IF(ISNULL(gat_z.下单完成时), 90, gat_z.下单完成时) AS 天数, 订单量 总计,签收量,完成量
                             FROM (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 订单量
                                 FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	
+                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                     AND  cx.`是否改派` = '改派'
     			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                 GROUP BY 年月,币种,物流方式,下单完成时
@@ -748,7 +899,7 @@ class MysqlControl(Settings):
                             LEFT JOIN  
                                 (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 签收量
                                 FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}' 	
+                                WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}'
                                     AND  cx.`是否改派` = '改派'
                                     AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                     AND  cx.`最终状态` = '已签收'
@@ -762,7 +913,7 @@ class MysqlControl(Settings):
                             LEFT JOIN 
                                 (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 完成量
                                 FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	
+                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                     AND  cx.`是否改派` = '改派'
     			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                     AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
@@ -776,7 +927,7 @@ class MysqlControl(Settings):
                         )	sl
                         GROUP BY 年月,币种,物流方式,sl.天数
                         with rollup
-                    ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem)
+                    ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
             df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
             listT.append(df4)
             # 分旬
@@ -796,7 +947,7 @@ class MysqlControl(Settings):
                                     FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,gat_z.旬,IF(ISNULL(gat_z.下单出库时), 90, gat_z.下单出库时) AS 天数, 订单量 总计,签收量,完成量
                                         FROM (SELECT  年月,币种,物流方式,旬,DATEDIFF(`仓储扫描时间`,`下单时间`) AS 下单出库时,COUNT(`订单编号`) AS 订单量
                                             FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	
+                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                                 AND  cx.`是否改派` = '直发'
                 			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                             GROUP BY 年月,币种,物流方式,旬,下单出库时
@@ -805,7 +956,7 @@ class MysqlControl(Settings):
                                         LEFT JOIN  
                                             (SELECT  年月,币种,物流方式,旬,DATEDIFF(`仓储扫描时间`,`下单时间`) AS 下单出库时,COUNT(`订单编号`) AS 签收量
                                             FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}' 	
+                                            WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}'
                                                 AND  cx.`是否改派` = '直发'
                                                 AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                                 AND  cx.`最终状态` = '已签收'
@@ -820,7 +971,7 @@ class MysqlControl(Settings):
                                         LEFT JOIN 
                                             (SELECT  年月,币种,物流方式,旬,DATEDIFF(`仓储扫描时间`,`下单时间`) AS 下单出库时,COUNT(`订单编号`) AS 完成量
                                             FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	
+                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                                 AND  cx.`是否改派` = '直发'
                 			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                                 AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
@@ -835,7 +986,7 @@ class MysqlControl(Settings):
                                     )	sl
                                     GROUP BY 年月,币种,物流方式,旬,sl.天数
                                     with rollup
-                                ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem)
+                                ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
             df10 = pd.read_sql_query(sql=sql10, con=self.engine1)
             listT.append(df10)
             sql20 = '''SELECT 年月,币种,物流方式,旬,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
@@ -853,7 +1004,7 @@ class MysqlControl(Settings):
                                     FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,gat_z.旬,IF(ISNULL(gat_z.出库完成时), 90, gat_z.出库完成时) AS 天数, 订单量 总计,签收量,完成量
                                         FROM (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`) AS 出库完成时,COUNT(`订单编号`) AS 订单量
                                             FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	
+                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                                 AND  cx.`是否改派` = '直发'
                 			                          AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                             GROUP BY 年月,币种,物流方式,旬,出库完成时
@@ -862,7 +1013,7 @@ class MysqlControl(Settings):
                                         LEFT JOIN  
                                             (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`) AS 出库完成时,COUNT(`订单编号`) AS 签收量
                                             FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}' 	
+                                            WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}'
                                                 AND  cx.`是否改派` = '直发'
                                                 AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                                 AND  cx.`最终状态` = '已签收'
@@ -877,7 +1028,7 @@ class MysqlControl(Settings):
                                         LEFT JOIN 
                                             (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`) AS 出库完成时,COUNT(`订单编号`) AS 完成量
                                             FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	
+                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                                 AND  cx.`是否改派` = '直发'
                 			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                                 AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
@@ -892,7 +1043,7 @@ class MysqlControl(Settings):
                                     )	sl
                                     GROUP BY 年月,币种,物流方式,旬,sl.天数
                                     with rollup
-                                ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem)
+                                ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
             df20 = pd.read_sql_query(sql=sql20, con=self.engine1)
             listT.append(df20)
             sql30 = '''SELECT 年月,币种,物流方式,旬,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
@@ -910,7 +1061,7 @@ class MysqlControl(Settings):
                                     FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,gat_z.旬,IF(ISNULL(gat_z.下单完成时), 90, gat_z.下单完成时) AS 天数, 订单量 总计,签收量,完成量
                                         FROM (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 订单量
                                             FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	
+                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                                 AND  cx.`是否改派` = '直发'
                 			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                             GROUP BY 年月,币种,物流方式,旬,下单完成时
@@ -919,7 +1070,7 @@ class MysqlControl(Settings):
                                         LEFT JOIN  
                                             (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 签收量
                                             FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}' 	
+                                            WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}'
                                                 AND  cx.`是否改派` = '直发'
                                                 AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                                 AND  cx.`最终状态` = '已签收'
@@ -934,7 +1085,7 @@ class MysqlControl(Settings):
                                         LEFT JOIN 
                                             (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 完成量
                                             FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	
+                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                                 AND  cx.`是否改派` = '直发'
                 			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                                 AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
@@ -949,14 +1100,14 @@ class MysqlControl(Settings):
                                     )	sl
                                     GROUP BY 年月,币种,物流方式,旬,sl.天数
                                     with rollup
-                                ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem)
+                                ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
             df30 = pd.read_sql_query(sql=sql30, con=self.engine1)
             listT.append(df30)
             sql40 = '''SELECT 年月,币种,物流方式,旬,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
                                 FROM (SELECT IFNULL(年月,'总计') AS 年月,
-            												IFNULL(币种,'总计') AS 币种,
-                                    IFNULL(物流方式,'总计') AS 物流方式,
-                                    IFNULL(旬,'总计') AS 旬,
+            								IFNULL(币种,'总计') AS 币种,
+                                            IFNULL(物流方式,'总计') AS 物流方式,
+                                            IFNULL(旬,'总计') AS 旬,
             				                IFNULL(天数,'总计') AS 天数,
             				                SUM(总计) AS 总计 ,
             				                IFNULL(SUM(签收量),0) AS 签收量,
@@ -967,7 +1118,7 @@ class MysqlControl(Settings):
                                     FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,gat_z.旬,IF(ISNULL(gat_z.下单完成时), 90, gat_z.下单完成时) AS 天数, 订单量 总计,签收量,完成量
                                         FROM (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 订单量
                                             FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	
+                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                                 AND  cx.`是否改派` = '改派'
                 			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                             GROUP BY 年月,币种,物流方式,旬,下单完成时
@@ -976,7 +1127,7 @@ class MysqlControl(Settings):
                                         LEFT JOIN  
                                             (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 签收量
                                             FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}' 	
+                                            WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}'
                                                 AND  cx.`是否改派` = '改派'
                                                 AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                                 AND  cx.`最终状态` = '已签收'
@@ -991,7 +1142,7 @@ class MysqlControl(Settings):
                                         LEFT JOIN 
                                             (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 完成量
                                             FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	
+                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
                                                 AND  cx.`是否改派` = '改派'
                 			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                                                 AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
@@ -1006,17 +1157,19 @@ class MysqlControl(Settings):
                                     )	sl
                                     GROUP BY 年月,币种,物流方式,旬,sl.天数
                                     with rollup
-                                ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem)
+                                ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
             df40 = pd.read_sql_query(sql=sql40, con=self.engine1)
             listT.append(df40)
             print('正在写入excel…………')
             today = datetime.date.today().strftime('%Y.%m.%d')
             if team == 'slgat_hfh' or team == 'slxmt_hfh':
-                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰-{}物流时效.xlsx'.format(today, tem)
+                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰-{}物流时效.xlsx'.format(today, tem1)
             elif team == 'slxmt_t':
-                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙T-{}物流时效.xlsx'.format(today, tem)
+                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙T-{}物流时效.xlsx'.format(today, tem1)
+            elif team == 'slrb_jl':
+                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 精灵-{}物流时效.xlsx'.format(today, tem1)
             else:
-                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙-{}物流时效.xlsx'.format(today, tem)
+                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙-{}物流时效.xlsx'.format(today, tem1)
             sheet_name = ['下单出库时', '出库完成时', '下单完成时', '改派下单完成时', '下单出库(分旬)', '出库完成(分旬)', '下单完成(分旬)', '改派下单完成(分旬)']
             df0 = pd.DataFrame([])                       # 创建空的dataframe数据框
             df0.to_excel(file_path, index=False)         # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -1046,16 +1199,19 @@ class MysqlControl(Settings):
             print('----已写入excel ')
             filePath.append(file_path)
             if team == 'slgat_hfh' or team == 'slxmt_hfh':
-                self.e.send('{} 火凤凰-{}物流时效.xlsx'.format(today, tem), filePath,
-                            emailAdd[tem])
+                self.e.send('{} 火凤凰-{}物流时效.xlsx'.format(today, tem1), filePath,
+                            emailAdd[tem1])
             elif team == 'slxmt_t':
-                self.e.send('{} 神龙T-{}物流时效.xlsx'.format(today, tem), filePath,
-                            emailAdd[tem])
+                self.e.send('{} 神龙T-{}物流时效.xlsx'.format(today, tem1), filePath,
+                            emailAdd[tem1])
+            elif team == 'slrb_jl':
+                self.e.send('{} 精灵-{}物流时效.xlsx'.format(today, tem1), filePath,
+                            emailAdd[tem1])
             elif team == 'sltg':
-                print('---' + tem + ' 不发送邮件')
+                print('---' + tem1 + ' 不发送邮件')
             else:
-                self.e.send('{} 神龙-{}物流时效.xlsx'.format(today, tem), filePath,
-                            emailAdd[tem])
+                self.e.send('{} 神龙-{}物流时效.xlsx'.format(today, tem1), filePath,
+                            emailAdd[tem1])
 
     # 无运单号查询
     def noWaybillNumber(self, team):
@@ -1065,21 +1221,24 @@ class MysqlControl(Settings):
                   'slxmt': '神龙-新马',
                   'slxmt_t': '神龙T-新马',
                   'slxmt_hfh': '火凤凰-新马',
-                  'slrb': '神龙-日本'}
+                  'slrb': '神龙-日本',
+                  'slrb_jl': '精灵-日本'}
         match = {'slgat': '"神龙家族-港澳台"',
                  'slgat_hfh': '"火凤凰-港澳台"',
                  'sltg': '"神龙家族-泰国"',
                  'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
                  'slxmt_t': '"神龙-T新马菲"',
                  'slxmt_hfh': '"火凤凰-新加坡", "火凤凰-马来西亚", "火凤凰-菲律宾"',
-                 'slrb': '"神龙家族-日本团队"'}
+                 'slrb': '"神龙家族-日本团队"',
+                 'slrb_jl': '"精灵家族-日本"'}
         emailAdd = {'slgat': 'giikinliujun@163.com',
                     'slgat_hfh': 'giikinliujun@163.com',
                     'sltg': 'zhangjing@giikin.com',
                     'slxmt': 'zhangjing@giikin.com',
                     'slxmt_t': 'zhangjing@giikin.com',
                     'slxmt_hfh': 'zhangjing@giikin.com',
-                    'slrb': 'sunyaru@giikin.com'}
+                    'slrb': 'sunyaru@giikin.com',
+                    'slrb_jl': 'sunyaru@giikin.com'}
         emailAdd2 = {'sltg': 'libin@giikin.com'}
         print('正在查询{}无运单订单列表…………'.format(match[team]))
         yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
@@ -1578,7 +1737,7 @@ if __name__ == '__main__':
     # # 更新产品id的列表
     m.update_gk_product()
 
-    for team in ['slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:  # 无运单号查询200
+    for team in ['slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:  # 无运单号查询200
         m.noWaybillNumber(team)
 
     match = {'SG': '新加坡',
@@ -1587,13 +1746,12 @@ if __name__ == '__main__':
              'JP': '日本',
              'HK': '香港',
              'TW': '台湾'}
-    # match = {'JP': '日本',
-    #          'HK': '香港',
+    # match = {'HK': '香港',
     #          'TW': '台湾'}
     for team in match.keys():  # 产品花费表200
         if team == 'JP':
             m.orderCost(team)
-        elif team in ('HK', 'TW') :
+        elif team in ('HK', 'TW'):
             m.orderCost(team)
             m.orderCostHFH(team)
         else:
@@ -1601,16 +1759,16 @@ if __name__ == '__main__':
             m.orderCostHFH(team)
             m.orderCostT(team)
 
-    sm = SltemMonitoring()
-    for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾']:  # 成本查询
+    sm = SltemMonitoring() # 成本查询
+    for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾']:
         sm.costWaybill(team)
 
 
     # 测试物流时效
     # team = 'sltg'
     # m.data_wl(team)
-    # for team in ['sltg', 'slgat', 'slrb', 'slxmt']:
-    # for team in ['sltg']:
+    # for team in ['slgat', 'slgat_hfh', 'slrb', 'slrb_jl', 'sltg', 'slxmt', 'slxmt_hfh']:
+    # for team in ['slrb_jl']:
     #     m.data_wl(team)
 
 

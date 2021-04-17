@@ -1561,7 +1561,7 @@ class QueryControl(Settings):
                   '马来西亚': 'MY',
                   '菲律宾': 'PH'}
         emailAdd = {'slxmt_hfh_zqsb': 'zhangjing@giikin.com',
-                    'slxmt_t': 'zhangjing@giikin.com'}
+                    'slxmt_t_zqsb': 'zhangjing@giikin.com'}
         start = datetime.datetime.now()
         endDate = (datetime.datetime.now()).strftime('%Y%m')
         print(endDate)
@@ -2141,7 +2141,8 @@ class QueryControl(Settings):
         r_header = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36',
             'Referer': 'http://gimp.giikin.com/front/orderToolsServiceQuery'}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
         print('已成功发送请求++++++')
         print('正在处理json数据…………')
         req = json.loads(req.text)  # json类型数据转换为dict字典
