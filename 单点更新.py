@@ -87,7 +87,8 @@ class QueryTwo(Settings):
                   'slxmt': '新马',
                   'slxmt_t': 'T新马',
                   'slxmt_hfh': '火凤凰新马',
-                  'slrb': '日本'}
+                  'slrb': '日本',
+                  'slrb_jl': '日本'}
         print('---正在获取 ' + match2[team] + ' 签收表的详情++++++')
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
@@ -179,7 +180,7 @@ class QueryTwo(Settings):
                             LEFT JOIN dim_product ON  dim_product.id = h.产品id
                             LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                             LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`; '''.format(team)
-        elif team == 'slrb':
+        elif team == 'slrb' or team == 'slrb_jl':
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
 			                    IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
 			                    DATE(h.下单时间) 日期,
@@ -491,11 +492,11 @@ class QueryTwo(Settings):
             ordersDict.append(self.q.get())
         data = pd.json_normalize(ordersDict)
         print('正在写入缓存中......')
-        df = data[['orderNumber', 'currency', 'area', 'productId', 'quantity', 'shipInfo.shipPhone', 'wayBillNumber',
-                   'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'finishTime', 'transferTime',
-                   'deliveryTime', 'reassignmentTypeName', 'dpeStyle', 'amount']]
-        print(df)
         try:
+            df = data[['orderNumber', 'currency', 'area', 'productId', 'quantity', 'shipInfo.shipPhone', 'wayBillNumber',
+                       'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'finishTime', 'transferTime',
+                       'deliveryTime', 'reassignmentTypeName', 'dpeStyle', 'amount']]
+            print(df)
             print('正在更新临时表中......')
             # df.to_sql('d1_cp_{0}', con=self.engine1, index=False, if_exists='replace').format(team)
             df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
@@ -566,11 +567,11 @@ if __name__ == '__main__':
 
 
     # -----------------------------------------------系统导入状态运行（二）-----------------------------------------
-    #   台湾token, 日本token, 新马token, 泰国token： f5c38f80bf2733252e6517a44ef94ba2
+    #   台湾token, 日本token, 新马token, 泰国token： 83583b29fc24ec0529082ff7928246a6
 
-    # begin = datetime.date(2021, 3, 5)       # 若无法查询，切换代理和直连的网络
+    # begin = datetime.date(2021, 4, 1)       # 若无法查询，切换代理和直连的网络
     # print(begin)
-    # end = datetime.date(2021, 4, 13)
+    # end = datetime.date(2021, 4, 19)
     # print(end)
 
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 若无法查询，切换代理和直连的网络
@@ -585,7 +586,8 @@ if __name__ == '__main__':
 
     # for team in ['slrb', 'slrb_jl']:
     # for team in ['slgat', 'slgat_hfh']:
-    for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
+    # for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
+    for team in ['slxmt_hfh']:
     # for team in ['sltg']:
         print('++++++正在获取 ' + match1[team] + ' 信息++++++')
         for i in range((end - begin).days):  # 按天循环获取订单状态
@@ -594,7 +596,7 @@ if __name__ == '__main__':
             last_month = str(day)
             print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
             searchType = '订单号'      # 运单号，订单号   查询切换
-            tokenid = 'f5c38f80bf2733252e6517a44ef94ba2'
+            tokenid = '83583b29fc24ec0529082ff7928246a6'
             m.orderInfo(tokenid, searchType, team, last_month)
     print('更新耗时：', datetime.datetime.now() - start)
 
@@ -607,3 +609,6 @@ if __name__ == '__main__':
     # m.orderInfoQuery(tokenid, 'XH210318131046093233', searchType, team)
     # last_month = '2021-03-18'
     # m.orderInfo(tokenid, searchType, team, last_month)
+
+
+    # -----------------------------------------------手动查询使用（四）-----------------------------------------

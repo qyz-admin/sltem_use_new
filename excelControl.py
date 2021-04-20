@@ -80,11 +80,11 @@ class ExcelControl():
         :param shtName: sht名字，有些sheet需要特殊处理
         :return: 可以直接导入数据库的DateFrame
         '''
-        math = {'slrb': {'出货时间': [True, ['出货日期', '出库日期', '发表时间','日期', '出货日', '发货日期', '业务日期', '物流发货日期', '提货日期'], []],
-                         '订单编号': [True, ['原单号', '顾客管理号码', '订单编号', '订单号', '内单号', '单号'], []],
-                         '运单编号': [True, ['渠道转单号', '系统单号', '系统运单号', '转单号', 'BJT转单号', '系统运单号', '运单编号',
+        math = {'slrb': {'出货时间': [True, ['出货日期', '出库日期', '发表时间', '日期', '出货日', '发货日期', '业务日期', '物流发货日期', '提货日期', '到货日期'], []],
+                         '订单编号': [True, ['原单号', '顾客管理号码', '订单编号', '订单号', '内单号', '单号', '参考号'], []],
+                         '运单编号': [True, ['渠道转单号', '系统单号', '系统运单号', '转单号', 'BJT转单号', '系统运单号', '运单编号', '跟踪号',
                                          '运单号', '跟踪单号', '改派单号', '国内物流运单号（订单号）'], []],
-                         '物流状态': [True, ['状况', '物流状态', '状态'], []],
+                         '物流状态': [True, ['状况', '物流状态', '状态', '轨迹状态'], []],
                          '状态时间': [True, ['轨迹日期', '状态时间', '时间', '末条信息日期时间', '出货预定日', '签收时间'], []],
                          '航班时间': [False, ['航班起飞时间'], []],
                          '清关时间': [False, ['日本清关时间', '清关时间'], []],
@@ -124,7 +124,7 @@ class ExcelControl():
                           '原运单号': [False, ['原单号', '原單號', '原始顺丰订单号'], []]},
                 'slxmt': {'出货时间': [True, ['出货时间', 'Inbound Datetime'], []],
                         '订单编号': [True, ['订单号', '订单编号', 'Shipper Order Number', 'Shipper Reference Number'], []],
-                        '运单编号': [True, ['转单号', '运单号', '运单编号','Tracking ID', 'Tracking Id ', 'tracking_id',
+                        '运单编号': [True, ['转单号', '运单号', '运单编号', 'Tracking ID', 'Tracking Id ', 'tracking_id',
                                         'Tracking ID', 'Waybill Number'], []],
                         '物流状态': [True, ['状态', '订单状态', 'Granular Status', 'Status', 'status', 'Order Status'], []],
                         '状态时间': [True, ['Last Update/Scan', 'Last Delivery Date', 'Last Delivey Date', '日期',
@@ -169,6 +169,9 @@ class ExcelControl():
                 df.rename(columns={'转单号': '原运单号'}, inplace=True)
             if 'BJT转单号' in columns and '跟踪单号' in columns:
                 df.drop(labels=['跟踪单号'], axis=1, inplace=True)
+                # print(df.columns)
+            if '参考号' in columns and '跟踪号' in columns and '渠道转单号' in columns:   # 义达表
+                df.drop(labels=['渠道转单号'], axis=1, inplace=True)
                 # print(df.columns)
             if '订单号' in columns and '原单号' in columns:
                 df.drop(labels=['原单号'], axis=1, inplace=True)
