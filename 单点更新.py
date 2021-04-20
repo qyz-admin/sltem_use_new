@@ -102,14 +102,16 @@ class QueryTwo(Settings):
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                     columns = list(db.columns)  # 获取数据的标题名，转为列表
                     columns_value = ['商品链接', '规格(中文)', '收货人', '拉黑率', '电话长度', '邮编长度', '配送地址', '地址翻译',
-                                     '邮箱', '留言', '审核人', '预选物流公司(新)', '是否api下单', '特价', '站点ID', '异常提示',
-                                     '删除原因', '备注', '删除人', 'IP', '超商店铺ID', '超商店铺名称', '超商网点地址', '超商类型',
-                                     '省洲', '市/区', '优化师', '问题原因', '审单类型']
+                                     '邮箱', '留言', '审核人', '预选物流公司(新)', '是否api下单', '特价', '异常提示', '删除原因',
+                                     '备注', '删除人', 'IP', '超商店铺ID', '超商店铺名称', '超商网点地址', '超商类型',
+                                     '市/区', '优化师', '问题原因', '审单类型', '是否克隆', '代下单客服',
+                                     '改派的原运单号', '改派的下架时间']
                     for column_val in columns_value:
                         if column_val in columns:
                             db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
                     db['运单号'] = db['运单号'].str.strip()                     # 去掉运单号中的前后空字符串
                     db['物流渠道'] = db['物流渠道'].str.strip()
+                    db['站点ID'] = db['站点ID'].str.strip()
                     db['产品名称'] = db['产品名称'].str.split('#', expand=True)[1]
                     print(db.columns)
                 except Exception as e:
@@ -180,7 +182,7 @@ class QueryTwo(Settings):
                             LEFT JOIN dim_product ON  dim_product.id = h.产品id
                             LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                             LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`; '''.format(team)
-        elif team == 'slrb' or team == 'slrb_jl':
+        elif team == 'slrb_jl':
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
 			                    IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
 			                    DATE(h.下单时间) 日期,
@@ -221,6 +223,7 @@ class QueryTwo(Settings):
 				                h.体积 包裹体积,
 				                邮编,
 				                h.转采购时间 添加物流单号时间,
+				                IF(h.运营团队 = '精灵家族-品牌',IF(h.站点ID=1000000269,'饰品','内衣'),h.站点ID) 站点ID,
 				                null 订单删除原因,
 				                h.订单状态 系统订单状态,
 				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态
@@ -228,6 +231,54 @@ class QueryTwo(Settings):
                     LEFT JOIN dim_product ON  dim_product.id = h.产品id
                     LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                     LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
+        elif team == 'slrb':
+            sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
+        			                    IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
+        			                    DATE(h.下单时间) 日期,
+        				                h.运营团队 团队,
+        				                IF(h.`币种` = '日币', 'JP', h.`币种`) 区域,
+        				                IF(h.`币种` = '日币', '日本', h.`币种`) 币种,
+        				                h.平台 订单来源,
+        				                订单编号,
+        				                数量,
+        				                h.联系电话 电话号码,
+        				                h.运单号 运单编号,
+        				                IF(h.`订单类型` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
+        				                h.物流渠道 物流方式,
+        			--	                IF(h.`物流渠道` LIKE '%捷浩通%', '捷浩通', IF(h.`物流渠道` LIKE '%翼通达%','翼通达', IF(h.`物流渠道` LIKE '%博佳图%', '博佳图', IF(h.`物流渠道` LIKE '%保辉达%', '保辉达物流', IF(h.`物流渠道` LIKE '%万立德%','万立德', h.`物流渠道`))))) 物流名称,
+        				                dim_trans_way.simple_name 物流名称,
+        				                dim_trans_way.remark 运输方式,
+        				                IF(h.`货物类型` = 'P 普通货', 'P', IF(h.`货物类型` = 'T 特殊货', 'T', h.`货物类型`)) 货物类型,
+        				                是否低价,
+        				                产品id,
+        				                产品名称,
+        				                dim_cate.ppname 父级分类,
+        				                dim_cate.pname 二级分类,
+            		                    dim_cate.`name` 三级分类,
+        				                h.支付方式 付款方式,
+        				                h.应付金额 价格,
+        				                下单时间,
+        				                审核时间,
+        				                h.发货时间 仓储扫描时间,
+        				                null 完结状态,
+        				                h.完成时间 完结状态时间,
+        				                null 价格RMB,
+        				                null 价格区间,
+        				                null 成本价,
+        				                null 物流花费,
+        				                null 打包花费,
+        				                null 其它花费,
+        				                h.重量 包裹重量,
+        				                h.体积 包裹体积,
+        				                邮编,
+        				                h.转采购时间 添加物流单号时间,
+        				                null 订单删除原因,
+        				                h.订单状态 系统订单状态,
+        				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态
+                            FROM d1_host h 
+                            LEFT JOIN dim_product ON  dim_product.id = h.产品id
+                            LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
+                            LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
         elif team == 'sltg':
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
                                 IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
@@ -275,100 +326,54 @@ class QueryTwo(Settings):
                     LEFT JOIN dim_product ON  dim_product.id = h.产品id
                     LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                     LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
-        elif team == 'slxmt_hfh':
+        elif team in ('slxmt', 'slxmt_t', 'slxmt_hfh'):
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
-                                            IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
-            			                    DATE(h.下单时间) 日期,
-            				                h.运营团队 团队,
-            				                IF(h.`币种` = '马来西亚', 'MY', IF(h.`币种` ='菲律宾', 'PH', IF(h.`币种` = '新加坡', 'SG', null))) 区域,
-            				                币种,
-            				                h.平台 订单来源,
-            				                订单编号,
-            				                数量,
-            				                h.联系电话 电话号码,
-            				                h.运单号 运单编号,
-            				                IF(h.`订单类型` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
-            				                h.物流渠道 物流方式,
-            								dim_trans_way.simple_name 物流名称,
-            				                dim_trans_way.remark 运输方式,
-            				                IF(h.`货物类型` = 'P 普通货', 'P', IF(h.`货物类型` = 'T 特殊货', 'T', h.`货物类型`)) 货物类型,
-            				                是否低价,
-            				                产品id,
-            				                产品名称,
-            				                dim_cate.ppname 父级分类,
-            				                dim_cate.pname 二级分类,
-                		                    dim_cate.`name` 三级分类,
-            				                h.支付方式 付款方式,
-            				                h.应付金额 价格,
-            				                下单时间,
-            				                审核时间,
-            				                h.发货时间 仓储扫描时间,
-            				                null 完结状态,
-            				                h.完成时间 完结状态时间,
-            				                null 价格RMB,
-            				                null 价格区间,
-            				                null 成本价,
-            				                null 物流花费,
-            				                null 打包花费,
-            				                null 其它花费,
-            				                h.重量 包裹重量,
-            				                h.体积 包裹体积,
-            				                邮编,
-            				                h.转采购时间 添加物流单号时间,
-            				                null 订单删除原因,
-            				                h.订单状态 系统订单状态,
-            				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态
-                                FROM d1_host h 
-                                LEFT JOIN dim_product ON  dim_product.id = h.产品id
-                                LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
-                                LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
-        else:
-            sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
-                                IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
-			                    DATE(h.下单时间) 日期,
-				                h.运营团队 团队,
-							    IF(h.`币种` = '马来西亚', 'MY', IF(h.`币种` ='菲律宾', 'PH', IF(h.`币种` = '新加坡', 'SG', null))) 区域,
-				                币种,
-				                h.平台 订单来源,
-				                订单编号,
-				                数量,
-				                h.联系电话 电话号码,
-				                h.运单号 运单编号,
-				                IF(h.`订单类型` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
-				                h.物流渠道 物流方式,
-								dim_trans_way.simple_name 物流名称,
-				                dim_trans_way.remark 运输方式,
-				                IF(h.`货物类型` = 'P 普通货', 'P', IF(h.`货物类型` = 'T 特殊货', 'T', h.`货物类型`)) 货物类型,
-				                是否低价,
-				                产品id,
-				                产品名称,
-				                dim_cate.ppname 父级分类,
-				                dim_cate.pname 二级分类,
-    		                    dim_cate.`name` 三级分类,
-				                h.支付方式 付款方式,
-				                h.应付金额 价格,
-				                下单时间,
-				                审核时间,
-				                h.发货时间 仓储扫描时间,
-				                null 完结状态,
-				                h.完成时间 完结状态时间,
-				                null 价格RMB,
-				                null 价格区间,
-				                null 成本价,
-				                null 物流花费,
-				                null 打包花费,
-				                null 其它花费,
-				                h.重量 包裹重量,
-				                h.体积 包裹体积,
-				                邮编,
-				                h.转采购时间 添加物流单号时间,
-				                null 订单删除原因,
-				                h.订单状态 系统订单状态,
-				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态
-                    FROM d1_host h 
-                    LEFT JOIN dim_product ON  dim_product.id = h.产品id
-                    LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
-                    LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
+                            IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
+                            DATE(h.下单时间) 日期,
+                            h.运营团队 团队,
+                            IF(h.`币种` = '马来西亚', 'MY', IF(h.`币种` ='菲律宾', 'PH', IF(h.`币种` = '新加坡', 'SG', null))) 区域,
+                            币种,
+                            h.平台 订单来源,
+                            订单编号,
+                            数量,
+                            h.联系电话 电话号码,
+                            h.运单号 运单编号,
+                            IF(h.`订单类型` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
+                            h.物流渠道 物流方式,
+                            dim_trans_way.simple_name 物流名称,
+                            dim_trans_way.remark 运输方式,
+                            IF(h.`货物类型` = 'P 普通货', 'P', IF(h.`货物类型` = 'T 特殊货', 'T', h.`货物类型`)) 货物类型,
+                            是否低价,
+                            产品id,
+                            产品名称,
+                            dim_cate.ppname 父级分类,
+                            dim_cate.pname 二级分类,
+                            dim_cate.`name` 三级分类,
+                            h.支付方式 付款方式,
+                            h.应付金额 价格,
+                            下单时间,
+                            审核时间,
+                            h.发货时间 仓储扫描时间,
+                            null 完结状态,
+                            h.完成时间 完结状态时间,
+                            null 价格RMB,
+                            null 价格区间,
+                            null 成本价,
+                            null 物流花费,
+                            null 打包花费,
+                            null 其它花费,
+                            h.重量 包裹重量,
+                            h.体积 包裹体积,
+                            邮编,
+                            h.转采购时间 添加物流单号时间,
+                            null 订单删除原因,
+                            h.省洲 省洲,
+                            h.订单状态 系统订单状态,
+                            IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态
+                        FROM d1_host h 
+                            LEFT JOIN dim_product ON  dim_product.id = h.产品id
+                            LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
+                            LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
         if query == '导入':
             try:
                 print('正在导入临时表中......')
@@ -585,9 +590,9 @@ if __name__ == '__main__':
     print(end)
 
     # for team in ['slrb', 'slrb_jl']:
-    # for team in ['slgat', 'slgat_hfh']:
+    for team in ['slgat', 'slgat_hfh']:
     # for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
-    for team in ['slxmt_hfh']:
+    # for team in ['slxmt_hfh']:
     # for team in ['sltg']:
         print('++++++正在获取 ' + match1[team] + ' 信息++++++')
         for i in range((end - begin).days):  # 按天循环获取订单状态
