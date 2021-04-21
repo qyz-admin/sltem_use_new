@@ -546,7 +546,7 @@ class QueryTwo(Settings):
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
-        print('更新成功…………')
+        print('++++++本批次更新成功+++++++')
 
 if __name__ == '__main__':
     m = QueryTwo()
@@ -572,7 +572,8 @@ if __name__ == '__main__':
 
 
     # -----------------------------------------------系统导入状态运行（二）-----------------------------------------
-    #   台湾token, 日本token, 新马token, 泰国token： 83583b29fc24ec0529082ff7928246a6
+    #   台湾token, 日本token, 新马token：  118ea851c8e5cdd0a5d200aee7b75b1a
+    #   泰国token： 83583b29fc24ec0529082ff7928246a6
 
     # begin = datetime.date(2021, 4, 1)       # 若无法查询，切换代理和直连的网络
     # print(begin)
@@ -581,7 +582,7 @@ if __name__ == '__main__':
 
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 若无法查询，切换代理和直连的网络
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
-    begin = datetime.date(yy, mm, 1)
+    begin = datetime.date(yy, 4, 1)
     print(begin)
     yy2 = int(datetime.datetime.now().strftime('%Y'))
     mm2 = int(datetime.datetime.now().strftime('%m'))
@@ -590,8 +591,8 @@ if __name__ == '__main__':
     print(end)
 
     # for team in ['slrb', 'slrb_jl']:
-    for team in ['slgat', 'slgat_hfh']:
-    # for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
+    # for team in ['slgat', 'slgat_hfh']:
+    for team in ['slxmt_hfh', 'slxmt_t']:
     # for team in ['slxmt_hfh']:
     # for team in ['sltg']:
         print('++++++正在获取 ' + match1[team] + ' 信息++++++')
@@ -601,19 +602,17 @@ if __name__ == '__main__':
             last_month = str(day)
             print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
             searchType = '订单号'      # 运单号，订单号   查询切换
-            tokenid = '83583b29fc24ec0529082ff7928246a6'
+            tokenid = '118ea851c8e5cdd0a5d200aee7b75b1a'
             m.orderInfo(tokenid, searchType, team, last_month)
     print('更新耗时：', datetime.datetime.now() - start)
 
 
 
     # -----------------------------------------------单个查询测试使用（三）-----------------------------------------
-    # team = 'slxmt_hfh'              # ['slgat', 'slgat_hfh', 'slrb', 'sltg', 'slxmt', 'slxmt_hfh']
+    # team = 'slgat'              # ['slgat', 'slgat_hfh', 'slrb', 'sltg', 'slxmt', 'slxmt_hfh']
     # searchType = '订单号'      # 运单号，订单号   查询切换
-    # tokenid = 'bd27079ba18197646b1ff3df466445b3'
-    # m.orderInfoQuery(tokenid, 'XH210318131046093233', searchType, team)
+    # tokenid = '83583b29fc24ec0529082ff7928246a6'
+    # m.orderInfoQuery(tokenid, 'NR103021446315734', searchType, team)
+
     # last_month = '2021-03-18'
     # m.orderInfo(tokenid, searchType, team, last_month)
-
-
-    # -----------------------------------------------手动查询使用（四）-----------------------------------------

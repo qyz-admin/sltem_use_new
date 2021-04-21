@@ -55,6 +55,8 @@ class SltemMonitoring(Settings):
                  '日本': 'slrb',
                  '香港': 'slgat',
                  '台湾': 'slgat',
+                 '火凤凰台湾': 'slgat_hfh',
+                 '火凤凰香港': 'slgat_hfh',
                  '泰国': 'sltg'}
         Time_day = []
         for i in range(1, datetime.datetime.now().month + 1):  # 获取当年当前的月份时间
@@ -114,14 +116,18 @@ class SltemMonitoring(Settings):
                  '日本': 'slrb',
                  '香港': 'slgat',
                  '台湾': 'slgat',
+                 '火凤凰台湾': 'slgat_hfh',
+                 '火凤凰香港': 'slgat_hfh',
                  '泰国': 'sltg'}
-        match2 = {'新加坡': 'SG',
-                  '马来西亚': 'MY',
-                  '菲律宾': 'PH',
-                  '日本': 'JP',
-                  '香港': 'HK',
-                  '台湾': 'TW',
-                  '泰国': 'TH'}
+        match2 = {'新加坡': '新加坡',
+                  '马来西亚': '马来西亚',
+                  '菲律宾': '菲律宾',
+                  '日本': '日本',
+                  '香港': '香港',
+                  '台湾': '台湾',
+                  '火凤凰台湾': '台湾',
+                  '火凤凰香港': '香港',
+                  '泰国': '泰国'}
         start: datetime = datetime.datetime.now()
         print('正在获取' + team + '每月（全部）缓存签收数据…………')
         Time_da = []
@@ -137,7 +143,29 @@ class SltemMonitoring(Settings):
                     datetime.datetime.now().strftime('-%d')))
         month_last = Time_da[6]
         print(month_last)
-        sql = '''SELECT 年月, 旬, 日期, 币种, 订单来源, a.订单编号 订单编号, 
+        if team == 'slgat_hfh':
+            sql = '''SELECT 年月, 旬, 日期, 币种, 订单来源, a.订单编号 订单编号, 
+                        IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', '', 出货时间) 出货时间,
+                        IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
+                        IF(上线时间='1990-01-01 00:00:00' or 上线时间='1899-12-30 00:00:00' or 上线时间='0000-00-00 00:00:00', '', 上线时间) 上线时间, 
+                        系统订单状态, 
+                        IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
+                        IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
+                        IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
+                        是否改派,物流方式,物流名称,运输方式,是否低价,产品id,产品名称,父级分类,二级分类,三级分类,下单时间,
+                        审核时间,仓储扫描时间,完结状态时间,价格区间,价格RMB
+                    FROM {0}_order_list a 
+                    LEFT JOIN (SELECT * FROM {1} WHERE id IN (SELECT MAX(id) FROM {1} GROUP BY 运单编号) ORDER BY id) b
+                        ON a.`运单编号` = b.`运单编号`
+                    LEFT JOIN {1}_logisitis_match c 
+                        ON b.物流状态 = c.签收表物流状态
+                    LEFT JOIN {1}_return d 
+                        ON a.订单编号 = d.订单编号
+                    WHERE a.日期 >= '{2}' AND a.币种 = '{3}'
+                        AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+                    ORDER BY a.`下单时间`;'''.format(match[team], 'slgat', month_last, match2[team])
+        else:
+            sql = '''SELECT 年月, 旬, 日期, 币种, 订单来源, a.订单编号 订单编号, 
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', '', 出货时间) 出货时间,
                         IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
                         IF(上线时间='1990-01-01 00:00:00' or 上线时间='1899-12-30 00:00:00' or 上线时间='0000-00-00 00:00:00', '', 上线时间) 上线时间, 
@@ -160,41 +188,6 @@ class SltemMonitoring(Settings):
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_sql('qsb_缓存_month', con=self.engine1, index=False, if_exists='replace')
         print('----已写入' + team + '每月（全部）缓存签收表中')
-        # print('正在获取' + team + '每月（全部）缓存成本…………'.format(team))
-        # yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d') + ' 23:59:59'
-        # sql = '''SELECT EXTRACT(YEAR_MONTH FROM a.rq) AS 年月,
-        #                     b.pname AS 团队,
-        #                     c.uname AS leader,
-        #                     d.ppname AS 品类,
-        #                     SUM(a.orders) AS 订单量,
-        #                     COUNT(DISTINCT a.product_id) AS 活跃产品数,
-        #                     SUM(a.yqs) AS 签收量,
-        #                     SUM(a.yjs + a.yth) AS 拒收量,
-        #                     SUM(a.salesRMB) AS 销售额,
-        #                     SUM(a.salesRMB_yqs) AS 签收额,
-        #                     SUM(a.salesRMB_yjs + a.salesRMB_yth) AS 拒收额,
-        #                     SUM(a.gps) AS 改派订单量,
-        #                     SUM(a.cgcost) AS 总采购额,
-        #                     SUM(a.cgcost_zf) AS 直发采购额,
-        #                     SUM(a.adcost) AS 广告成本,
-        #                     SUM(a.wlcost) AS 物流成本,
-        #                     SUM(a.qtcost) AS 手续费
-        #             FROM gk_order_day a
-        #                 LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
-        #                 LEFT JOIN dim_area c on c.id = a.area_id
-        #                 LEFT JOIN dim_cate d on d.id = a.third_cate_id
-        #                 LEFT JOIN gk_product e on e.id = a.product_id
-        #             WHERE a.rq >= '{0}'
-        #                 AND a.rq < '{1}'
-        #                 AND b.pcode = '{2}'
-        #                 AND c.uname = '王冰'
-        #                 AND a.beform <> 'mf'
-        #                 AND c.uid <> 10099  -- 过滤翼虎
-        #             GROUP BY b.pname, c.uname,EXTRACT(YEAR_MONTH FROM a.rq)
-        #             ORDER BY EXTRACT(YEAR_MONTH FROM a.rq) desc ;'''.format(month_last, yesterday, match2[team])
-        # df = pd.read_sql_query(sql=sql, con=self.engine2)
-        # df.to_sql('zg_cost_缓存_month', con=self.engine1, index=False, if_exists='replace')
-        # print('已导入' + team + '每月（全部）缓存成本表中+++')
         print('缓存耗时：', datetime.datetime.now() - start)
     def data_Monitoring(self, team):     # 获取各团队近两个月的签收表数据
         match3 = {'新加坡': 'slxmt',
@@ -203,10 +196,43 @@ class SltemMonitoring(Settings):
                   '日本': 'slrb',
                   '香港': 'slgat',
                   '台湾': 'slgat',
+                  '火凤凰台湾': 'slgat_hfh',
+                  '火凤凰香港': 'slgat_hfh',
                   '泰国': 'sltg'}
+        match2 = {'新加坡': '新加坡',
+                  '马来西亚': '马来西亚',
+                  '菲律宾': '菲律宾',
+                  '日本': '日本',
+                  '香港': '香港',
+                  '台湾': '台湾',
+                  '火凤凰台湾': '台湾',
+                  '火凤凰香港': '香港',
+                  '泰国': '泰国'}
         start: datetime = datetime.datetime.now()
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-        sql = '''SELECT 年月, 旬, 日期, 币种, 订单来源, a.订单编号 订单编号,
+        if team == 'slgat_hfh':
+            sql = '''SELECT 年月, 旬, 日期, 币种, 订单来源, a.订单编号 订单编号,
+                        IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', '', 出货时间) 出货时间,
+                        IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
+                        IF(上线时间='1990-01-01 00:00:00' or 上线时间='1899-12-30 00:00:00' or 上线时间='0000-00-00 00:00:00', '', 上线时间) 上线时间,
+                        系统订单状态,
+                        IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
+                        IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
+                        IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
+                        是否改派,物流方式,物流名称,运输方式,是否低价,产品id,产品名称,父级分类,二级分类,三级分类,下单时间,
+                        审核时间,仓储扫描时间,完结状态时间,价格区间,价格RMB
+                    FROM {0}_order_list a
+                    LEFT JOIN (SELECT * FROM {1} WHERE id IN (SELECT MAX(id) FROM {1} GROUP BY 运单编号) ORDER BY id) b
+                        ON a.`运单编号` = b.`运单编号`
+                    LEFT JOIN {1}_logisitis_match c
+                        ON b.物流状态 = c.签收表物流状态
+                    LEFT JOIN {1}_return d
+                        ON a.订单编号 = d.订单编号
+                    WHERE a.日期 >= '{2}' AND a.币种 = '{3}'
+                        AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+                    ORDER BY a.`下单时间`;'''.format(match3[team], 'slgat', month_last, match2[team])
+        else:
+            sql = '''SELECT 年月, 旬, 日期, 币种, 订单来源, a.订单编号 订单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', '', 出货时间) 出货时间,
                         IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
                         IF(上线时间='1990-01-01 00:00:00' or 上线时间='1899-12-30 00:00:00' or 上线时间='0000-00-00 00:00:00', '', 上线时间) 上线时间,
@@ -408,77 +434,6 @@ class SltemMonitoring(Settings):
         sql = 'INSERT IGNORE INTO zg_cost_sltem({}, 记录时间)  SELECT *, CURDATE() 记录时间  FROM zg_cost_缓存;'.format(columns)
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
         print('已导入成本总表中+++')
-        # print('正在查询 ' + team + ' 品类近两个月成本…………')
-        # sql = '''SELECT *
-        #         FROM (SELECT a.rq AS 年月,
-        #                     b.pname AS 团队,
-        #                     c.uname AS leader,
-        #                     d.ppname AS 品类,
-        #                     SUM(a.orders) AS 订单量,
-        #                     COUNT(DISTINCT a.product_id) AS 活跃产品数,
-        #                     SUM(a.yqs) AS 签收量,
-        #                     SUM(a.yjs + a.yth) AS 拒收量,
-        #                     SUM(a.salesRMB) AS 销售额,
-        #                     SUM(a.salesRMB_yqs) AS 签收额,
-        #                     SUM(a.salesRMB_yjs + a.salesRMB_yth) AS 拒收额,
-        #                     SUM(a.gps) AS 改派订单量,
-        #                     SUM(a.cgcost) AS 总采购额,
-        #                     SUM(a.cgcost_zf) AS 直发采购额,
-        #                     SUM(a.adcost) AS 广告成本,
-        #                     SUM(a.wlcost) AS 物流成本,
-        #                     SUM(a.qtcost) AS 手续费
-        #             FROM gk_order_day a
-        #                 LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
-        #                 LEFT JOIN dim_area c on c.id = a.area_id
-        #                 LEFT JOIN dim_cate d on d.id = a.third_cate_id
-        #                 LEFT JOIN gk_product e on e.id = a.product_id
-        #             WHERE a.rq >= '{0}'
-        #                 AND a.rq <= '{1}'
-        #                 AND b.pcode = '{2}'
-        #                 AND c.uname = '王冰'
-        #                 AND a.beform <> 'mf'
-        #                 AND c.uid <> 10099  -- 过滤翼虎
-        #             GROUP BY b.pname, c.uname, a.rq, a.cate_id
-        #             UNION ALL
-        #             SELECT '' AS 年月,
-        #                     b.pname AS 团队,
-        #                     c.uname AS leader,
-        #                     EXTRACT(YEAR_MONTH FROM a.rq) AS 品类,
-        #                     SUM(a.orders) AS 订单量,
-        #                     COUNT(DISTINCT a.product_id) AS 活跃产品数,
-        #                     SUM(a.yqs) AS 签收量,
-        #                     SUM(a.yjs + a.yth) AS 拒收量,
-        #                     SUM(a.salesRMB) AS 销售额,
-        #                     SUM(a.salesRMB_yqs) AS 签收额,
-        #                     SUM(a.salesRMB_yjs + a.salesRMB_yth) AS 拒收额,
-        #                     SUM(a.gps) AS 改派订单量,
-        #                     SUM(a.cgcost) AS 总采购额,
-        #                     SUM(a.cgcost_zf) AS 直发采购额,
-        #                     SUM(a.adcost) AS 广告成本,
-        #                     SUM(a.wlcost) AS 物流成本,
-        #                     SUM(a.qtcost) AS 手续费
-        #             FROM gk_order_day a
-        #                 LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
-        #                 LEFT JOIN dim_area c on c.id = a.area_id
-        #                 LEFT JOIN dim_cate d on d.id = a.third_cate_id
-        #                 LEFT JOIN gk_product e on e.id = a.product_id
-        #             WHERE a.rq >= '{0}'
-        #                 AND a.rq <= '{1}'
-        #                 AND b.pcode = '{2}'
-        #                 AND c.uname = '王冰'
-        #                 AND a.beform <> 'mf'
-        #                 AND c.uid <> 10099  -- 过滤翼虎
-        #             GROUP BY b.pname, c.uname,EXTRACT(YEAR_MONTH FROM a.rq)
-        #             ) sl
-        #             order by 年月;'''.format(last_month, yesterday, match[team])
-        # df = pd.read_sql_query(sql=sql, con=self.engine2)
-        # columns = list(df)
-        # columns = ', '.join(columns)  # 插入mysql的标题使用，否则无法导入更新
-        # print('正在缓存…………')
-        # df.to_sql('zg_cost_缓存', con=self.engine1, index=False, if_exists='replace')
-        # sql = 'INSERT IGNORE INTO zg_cost_sltem_copy({}, 记录时间)  SELECT *, CURDATE() 记录时间  FROM zg_cost_缓存;'.format(columns)
-        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
-        # print('已导入' + team + '成本两月表中+++')
         print('成本耗时：', datetime.datetime.now() - start)
 
     def sl_Monitoring(self, team):
@@ -488,9 +443,22 @@ class SltemMonitoring(Settings):
                   '日本': 'qsb_slrb',
                   '香港': 'qsb_slgat',
                   '台湾': 'qsb_slgat',
+                  '火凤凰香港': 'qsb_slgat_hfh',
+                  '火凤凰台湾': 'qsb_slgat_hfh',
                   '泰国': 'qsb_sltg'}
+        match3 = {'新加坡': '新加坡',
+                  '马来西亚': '马来西亚',
+                  '菲律宾': '菲律宾',
+                  '日本': '日本',
+                  '香港': '香港',
+                  '台湾': '台湾',
+                  '火凤凰台湾': '台湾',
+                  '火凤凰香港': '香港',
+                  '泰国': '泰国'}
         emailAdd = {'香港': 'giikinliujun@163.com',
                     '台湾': 'giikinliujun@163.com',
+                    '火凤凰香港': 'giikinliujun@163.com',
+                    '火凤凰台湾': 'giikinliujun@163.com',
                     '泰国': 'zhangjing@giikin.com',
                     '新加坡': 'zhangjing@giikin.com',
                     '马来西亚': 'zhangjing@giikin.com',
@@ -712,7 +680,7 @@ class SltemMonitoring(Settings):
                 				AND sl_zong_tuihuo.`二级分类` = sl_zong.`二级分类` AND sl_zong_tuihuo.`三级分类` = sl_zong.`三级分类` 
                 				AND sl_zong_tuihuo.`物流方式` = sl_zong.`物流方式`AND sl_zong_tuihuo.`旬` = sl_zong.`旬` 
                 		GROUP BY sl_zong.年月,sl_zong.父级分类,sl_zong.二级分类,sl_zong.三级分类,sl_zong.物流方式,sl_zong.旬
-                		with rollup) sl_gat;'''.format(match2[team], team, Time_day[11], Time_day[10], ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'), '币种,年月,父级分类,二级分类,三级分类,物流方式,旬')
+                		with rollup) sl_gat;'''.format(match2[team], match3[team], Time_day[11], Time_day[10], ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'), '币种,年月,父级分类,二级分类,三级分类,物流方式,旬')
         listT.append(sqlqsb2)
         show_name.append(' 月（天）签收率_…………')
         # 月签收率（整月）---查询
@@ -869,7 +837,7 @@ class SltemMonitoring(Settings):
                 				AND sl_zong_tuihuo.`二级分类` = sl_zong.`二级分类` AND sl_zong_tuihuo.`三级分类` = sl_zong.`三级分类` 
                 				AND sl_zong_tuihuo.`物流方式` = sl_zong.`物流方式`AND sl_zong_tuihuo.`旬` = sl_zong.`旬` 
                 		GROUP BY sl_zong.年月,sl_zong.父级分类,sl_zong.二级分类,sl_zong.三级分类,sl_zong.物流方式,sl_zong.旬
-                		with rollup) sl_gat;'''.format(match2[team], team, Time_day[11], Time_day[10], ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'), '币种,年月,父级分类,二级分类,三级分类,物流方式,旬')
+                		with rollup) sl_gat;'''.format(match2[team], match3[team], Time_day[11], Time_day[10], ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'), '币种,年月,父级分类,二级分类,三级分类,物流方式,旬')
         listT.append(sqlqsb3)
         show_name.append(' 月（月）签收率_…………')
         # 月签收率（旬）---查询
@@ -1044,7 +1012,7 @@ class SltemMonitoring(Settings):
     				AND sl_zong_tuihuo.`二级分类` = sl_zong.`二级分类` AND sl_zong_tuihuo.`三级分类` = sl_zong.`三级分类` 
     				AND sl_zong_tuihuo.`物流方式` = sl_zong.`物流方式`AND sl_zong_tuihuo.`旬` = sl_zong.`旬` 
     		    GROUP BY sl_zong.年月,sl_zong.旬,sl_zong.父级分类,sl_zong.二级分类,sl_zong.三级分类,sl_zong.物流方式
-    	    with rollup) sl_gat;'''.format(match2[team], team, Time_day[11], ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'))
+    	    with rollup) sl_gat;'''.format(match2[team], match3[team], Time_day[11], ('已审核', '已转采购', '已发货', '已收货', '已完成','已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'))
         listT.append(sqlqsb4)
         show_name.append(' 月（旬）签收率_…………')
         # 月签收率（各月）---查询
@@ -1233,7 +1201,7 @@ class SltemMonitoring(Settings):
     				AND sl_zong_tuihuo.`物流方式` = sl_zong.`物流方式`AND sl_zong_tuihuo.`旬` = sl_zong.`旬` 
     		GROUP BY sl_zong.年月,sl_zong.父级分类,sl_zong.二级分类,sl_zong.三级分类,sl_zong.物流方式,sl_zong.旬
     		with rollup) sl_gat 
-    		ORDER BY sl_gat.`年月` DESC;'''.format('qsb_缓存_month', team, ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'))
+    		ORDER BY sl_gat.`年月` DESC;'''.format('qsb_缓存_month', match3[team], ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'))
         listT.append(sqlqsb5)
         show_name.append(' 月（各月）签收率_…………')
 
@@ -1350,7 +1318,7 @@ class SltemMonitoring(Settings):
     								AND sl_cx_zf_js.`父级分类` = sl_zong.`父级分类` 
     								AND sl_cx_zf_js.`旬` = sl_zong.`旬` 											
     				GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-    				with rollup) sl_rb;'''.format(match2[team], team, Time_day[11], Time_day[10])
+    				with rollup) sl_rb;'''.format(match2[team], match3[team], Time_day[11], Time_day[10])
         listT.append(sqlWl2)
         show_name.append(' 月（天）物流…………')
         # 月物流（月）---查询
@@ -1466,179 +1434,9 @@ class SltemMonitoring(Settings):
                         			AND sl_cx_zf_js.`父级分类` = sl_zong.`父级分类` 
                         			AND sl_cx_zf_js.`旬` = sl_zong.`旬` 												
                         		GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-                        with rollup) sl_rb;'''.format(match2[team], team, Time_day[11], Time_day[10])
+                        with rollup) sl_rb;'''.format(match2[team], match3[team], Time_day[11], Time_day[10])
         listT.append(sqlWl3)
         show_name.append(' 月（各月）物流…………')
-        # # 成本（天）---查询 临时使用
-        # sqlcost20 = '''SELECT ct.团队,
-        #                     '' 新月,
-        #                     ct.`年月`,
-        #                     ct.品类,
-        #                     ct.销售额,
-        # 	                ct.销售额 / ct.订单量 AS 客单价,
-        # 	                ct.订单量,
-        # 	                ct.改派订单量,
-        # 	                ct.改派订单量 / ct.订单量 改派占比,
-        # 	                ct.销售额 / ct.广告成本 ROI,
-        # 	                ct.活跃产品数,
-        # 	                ct.订单量 / ct.活跃产品数 产能,
-        # 	                ct.总采购额 / ct.销售额 AS 采购占比,
-        # 	                ct.广告成本 / ct.销售额 AS 花费占比,
-        # 	                ct.物流成本 / ct.销售额 AS 运费占比,
-        # 	                ct.手续费 / ct.销售额 AS 手续费占比,
-        # 	                (ct.总采购额 + ct.广告成本 + ct.物流成本 + ct.手续费) / ct.销售额 AS 总成本占比,
-        # 	                ct.签收量 / (ct.签收量 + ct.拒收量) AS '签收/完成',
-        # 	                ct.签收量 / ct.订单量 AS '签收/总计',
-        # 	                (ct.签收量 + ct.拒收量) / ct.订单量 AS '完成占比'
-        # 	    FROM ( SELECT	EXTRACT(YEAR_MONTH FROM ct2.`年月`) 年月,
-        # 	                                团队,
-        # 	                                品类,
-        # 																	SUM(订单量) 订单量,
-        # 	                                SUM(活跃产品数) 活跃产品数,
-        # 	                                SUM(签收量) 签收量,
-        # 	                                SUM(拒收量) 拒收量,
-        # 	                                SUM(销售额) 销售额,
-        # 	                                SUM(签收额) 签收额,
-        # 	                                SUM(拒收额) 拒收额,
-        # 	                                SUM(改派订单量) 改派订单量,
-        # 	                                SUM(总采购额) 总采购额,
-        # 	                                SUM(直发采购额) 直发采购额,
-        # 	                                SUM(广告成本) 广告成本,
-        # 	                                SUM(物流成本) 物流成本,
-        # 	                                SUM(手续费) 手续费
-        # 			       FROM {0} ct2
-        # 			       WHERE ct2.`品类` <> '未知'
-        # 									AND ct2.`团队` = '{1}'
-        # 									AND ct2.`记录时间` in ('{2}','{3}')
-        # 									AND ct2.`年月` <> '0000-00-00'
-        #                     GROUP BY EXTRACT(YEAR_MONTH FROM ct2.`年月`)
-        # 		) ct
-        # 		order by ct.`年月` desc '''.format('zg_cost_sltem_copy', team, Time_day[0], Time_day[11])
-        # listT.append(sqlcost20)
-        # show_name.append('（天）成本…………')
-        # # 月成本（天）---查询
-        # sqlcost2 = '''SELECT ct.团队,
-        #                             EXTRACT(YEAR_MONTH FROM ct.记录时间) 新月,
-        #                             ct.品类 年月,
-        #                             ct.销售额,
-        # 			                ct.销售额 / ct.订单量 AS 客单价,
-        # 			                ct.订单量,
-        # 			                ct.改派订单量,
-        # 			                ct.改派订单量 / ct.订单量 改派占比,
-        # 			                ct.销售额 / ct.广告成本 ROI,
-        # 			                '' 活跃产品数,
-        # 			                '' 产能,
-        # 			                ct.总采购额 / ct.销售额 AS 采购占比,
-        # 			                ct.广告成本 / ct.销售额 AS 花费占比,
-        # 			                ct.物流成本 / ct.销售额 AS 运费占比,
-        # 			                ct.手续费 / ct.销售额 AS 手续费占比,
-        # 			                (ct.总采购额 + ct.广告成本 + ct.物流成本 + ct.手续费) / ct.销售额 AS 总成本占比,
-        # 			                ct.签收量 / (ct.签收量 + ct.拒收量) AS '签收/完成',
-        # 			                ct.签收量 / ct.订单量 AS '签收/总计',
-        # 			                (ct.签收量 + ct.拒收量) / ct.订单量 AS '完成占比'
-        # 			    FROM {0} ct
-        # 			    WHERE ct.`年月` = '0000-00-00' AND ct.`团队` = '{1}' AND (ct.`记录时间` = '{2}' or  ct.`记录时间` ='{3}')
-        #                 GROUP BY 品类,团队
-        #                 order by 品类 desc ;'''.format('zg_cost_sltem_copy', team, Time_day[0], Time_day[11])
-        # # listT.append(sqlcost2)
-        # # show_name.append(' 月（天）成本…………')
-        # # 月成本（月）---查询
-        # sqlcost3 = '''SELECT ct.团队,
-        #                     ct.新月,
-        #                     IFNULL(ct.品类,'合计') 品类,
-        #                     ct.销售额 / ct.订单量 AS 客单价,
-        #                     ct.订单量,
-        #                     ct.订单量 / ct.总订单量 AS 订单品类占比,
-        #                     ct.直发采购额/ct.销售额 '直发采购额/销售额',
-        #                     ct.广告成本 / ct.销售额 AS 花费占比,
-        #                     ct.物流成本 / ct.销售额 AS 运费占比,
-        #                     ct.手续费 / ct.销售额 AS 手续费占比,
-        #                     (ct.广告成本 + ct.物流成本 + ct.手续费  + ct.直发采购额) / ct.销售额 AS 总成本,
-        #                     ct.签收额 /(ct.签收额 + ct.拒收额) AS '金额签收/完成',
-        #                     ct.签收额 /ct.销售额 AS '金额签收/总计',
-        #                     (ct.签收额 + ct.拒收额) / ct.销售额 AS '金额完成占比',
-        #                     ct.签收额 /(ct.签收额 + ct.拒收额) - (ct.广告成本 + ct.物流成本 + ct.手续费  + ct.直发采购额) / ct.销售额  AS 利润率,
-        #                     (ct.签收额 /(ct.签收额 + ct.拒收额) -(ct.广告成本 + ct.物流成本 + ct.手续费  + ct.直发采购额) / ct.销售额) * (ct.销售额 / ct.订单量) AS 利润值
-        #         FROM  ( SELECT 团队,
-        #                         新月,
-        #                         品类,
-        #                         SUM(订量) 订单量,
-        #                         SUM(活跃产数) 活跃产品数,SUM(签量) 签收量,SUM(拒量) 拒收量,
-        #                         SUM(销额) 销售额,
-        #                         SUM(签额) 签收额,
-        #                         SUM(拒额) 拒收额,
-        #                         SUM(改派订量) 改派订单量,SUM(总采额) 总采购额,
-        #                         SUM(直发采额) 直发采购额,
-        #                         SUM(广告本) 广告成本,
-        #                         SUM(物流本) 物流成本,
-        #                         SUM(手费) 手续费,
-        #                         总订单量
-        #                 FROM( SELECT EXTRACT(YEAR_MONTH FROM ct1.`年月`) 新月,
-        # 	                                团队,
-        # 	                                品类,
-        # 	                                SUM(订单量) 订量,
-        # 	                                SUM(活跃产品数) 活跃产数,
-        # 	                                SUM(签收量) 签量,
-        # 	                                SUM(拒收量) 拒量,
-        # 	                                SUM(销售额) 销额,
-        # 	                                SUM(签收额) 签额,
-        # 	                                SUM(拒收额) 拒额,
-        # 	                                SUM(改派订单量) 改派订量,
-        # 	                                SUM(总采购额) 总采额,
-        # 	                                SUM(直发采购额) 直发采额,
-        # 	                                SUM(广告成本) 广告本,
-        # 	                                SUM(物流成本) 物流本,
-        # 	                                SUM(手续费) 手费
-        #                     FROM {0} ct1
-        #                     WHERE ct1.`记录时间` = CURDATE()
-        #                                 AND ct1.`团队` = '{1}'
-        #                                 AND ct1.`品类` <> '未知' AND ct1.`年月` <> '0000-00-00'
-        #                     GROUP BY 新月,团队,品类
-        #                     ) cs1
-        #                 LEFT JOIN
-        #                     (SELECT EXTRACT(YEAR_MONTH FROM ct2.`年月`) 新年月,
-        # 	                                团队 新团队,
-        # 	                                SUM(订单量) 总订单量
-        #                     FROM {0} ct2
-        #                     WHERE ct2.`记录时间` >= CURDATE()
-        #                                 AND ct2.`团队` = '{1}'
-        #                                 AND ct2.`品类` <> '未知' AND ct2.`年月` <> '0000-00-00'
-        #                     GROUP BY 新年月,新团队
-        #                     ORDER BY 新年月,新团队
-        #                     ) cs2
-        #                 ON cs1.`新月`=cs2.`新年月` AND cs1.`团队`=cs2.`新团队`
-        #                 GROUP BY cs1.新月,cs1.品类
-        #                 with rollup
-        #         ) ct
-        #         WHERE ct.新月<>'';'''.format('zg_cost_sltem_copy', team)
-        # listT.append(sqlcost3)
-        # show_name.append(' 月（月）成本…………')
-        # # 月成本（各月）---查询
-        # sqlcost4 = '''SELECT ct.团队,
-        #                     '' 新月,
-        #                     EXTRACT(YEAR_MONTH FROM ct.`年月`) 年月,
-        #                     ct.销售额,
-        # 	                ct.销售额 / ct.订单量 AS 客单价,
-        # 	                ct.订单量,
-        # 	                ct.改派订单量,
-        # 	                ct.改派订单量 / ct.订单量 改派占比,
-        # 	                ct.销售额 / ct.广告成本 ROI,
-        # 	                ct.活跃产品数,
-        # 	                ct.订单量 / ct.活跃产品数 产能,
-        # 	                ct.总采购额 / ct.销售额 AS 采购占比,
-        # 	                ct.广告成本 / ct.销售额 AS 花费占比,
-        # 	                ct.物流成本 / ct.销售额 AS 运费占比,
-        # 	                ct.手续费 / ct.销售额 AS 手续费占比,
-        # 	                (ct.总采购额 + ct.广告成本 + ct.物流成本 + ct.手续费) / ct.销售额 AS 总成本占比,
-        # 	                ct.签收量 / (ct.签收量 + ct.拒收量) AS '签收/完成',
-        # 	                ct.签收量 / ct.订单量 AS '签收/总计',
-        # 	                (ct.签收量 + ct.拒收量) / ct.订单量 AS '完成占比'
-        # 	    FROM {0} ct
-        #         WHERE ct.`品类` <> '未知' AND ct.`团队` = '{1}'
-        #         GROUP BY 年月,团队
-        #         order by 年月 desc ;'''.format('zg_cost_缓存_month', team)
-        # listT.append(sqlcost4)
-        # show_name.append(' 月（各月）成本…………')
 
         sqltime2 = '''SELECT sl_rb.`币种`,
     				sl_rb.`年月`,
@@ -1762,7 +1560,7 @@ class SltemMonitoring(Settings):
     								AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
     				GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.旬
     				with rollup
-    			) sl_rb;'''.format(match2[team], team, Time_day[11])    # 月时效（天）---查询
+    			) sl_rb;'''.format(match2[team], match3[team], Time_day[11])    # 月时效（天）---查询
         listT.append(sqltime2)
         show_name.append(' 月（天）时效…………')
         # 月时效（旬）---查询
@@ -1862,7 +1660,7 @@ class SltemMonitoring(Settings):
     								AND sl_cx_zf_wc.`旬` = sl_zong.`旬` 	
     				GROUP BY sl_zong.年月,sl_zong.旬,sl_zong.物流方式,sl_zong.父级分类
     				with rollup
-                ) sl_rb;'''.format(match2[team], team, Time_day[11])
+                ) sl_rb;'''.format(match2[team], match3[team], Time_day[11])
         listT.append(sqltime3)
         show_name.append(' 月（旬）时效…………')
         # 月时效(各月)---查询
@@ -1895,7 +1693,6 @@ class SltemMonitoring(Settings):
     						SUM(IFNULL(sl_cx_zf_wc.`直发出库-完成时`,0)) / SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成时效,
     						SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成单量,
     						SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效,
-								
 							SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成量,
     						SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
     			    FROM (SELECT  币种,
@@ -1983,7 +1780,7 @@ class SltemMonitoring(Settings):
     						AND sl_cx_zf_wc.`父级分类` = sl_zong.`父级分类` 
     						AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
     				GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-    				with rollup) sl_rb;'''.format('qsb_缓存_month', team)
+    				with rollup) sl_rb;'''.format('qsb_缓存_month', match3[team])
         listT.append(sqltime4)
         show_name.append(' 月(各月)时效…………')
         listTValue = []  # 查询sql的结果 存放池
@@ -2010,7 +1807,6 @@ class SltemMonitoring(Settings):
             listTValue.append(df)
         print('查询耗时：', datetime.datetime.now() - start)
         today = datetime.date.today().strftime('%Y.%m.%d')
-        # sheet_name = ['签率(天)_', '签率(月)_', '签率(旬)_', '签率(总)_', '物流(天)_', '物流(月)_', '成本(天)_', '成本(月)_', '成本(总)_', '时效(天)_', '时效(旬)_', '时效(总)_']  # 生成的工作表的表名
         sheet_name = ['签率(天)_', '签率(月)_', '签率(旬)_', '签率(总)_', '物流(天)_', '物流(月)_', '时效(天)_', '时效(旬)_',
                       '时效(总)_']  # 生成的工作表的表名
         file_Path = []  # 发送邮箱文件使用
@@ -2019,9 +1815,9 @@ class SltemMonitoring(Settings):
             filePath = 'F:\\查询\\日本监控\\{} {}监控表.xlsx'.format(today, team)
         elif team == '泰国':
             filePath = 'F:\\查询\\泰国监控\\{} {}监控表.xlsx'.format(today, team)
-        elif team == '新加坡' or team == '马来西亚' or team == '菲律宾':
+        elif team in ('新加坡', '马来西亚', '菲律宾'):
             filePath = 'F:\\查询\\新马监控\\{} {}监控表.xlsx'.format(today, team)
-        elif team == '香港' or team == '台湾':
+        elif team in ('香港', '台湾', '火凤凰香港', '火凤凰台湾'):
             filePath = 'F:\\查询\\港台监控\\{} {}监控表.xlsx'.format(today, team)
         if os.path.exists(filePath):  # 判断是否有需要的表格
             print("正在使用(上月)文件......")
@@ -2066,7 +1862,18 @@ class SltemMonitoring(Settings):
                   '日本': 'qsb_slrb',
                   '香港': 'qsb_slgat',
                   '台湾': 'qsb_slgat',
+                  '火凤凰香港': 'qsb_slgat_hfh',
+                  '火凤凰台湾': 'qsb_slgat_hfh',
                   '泰国': 'qsb_sltg'}
+        match3 = {'新加坡': '新加坡',
+                  '马来西亚': '马来西亚',
+                  '菲律宾': '菲律宾',
+                  '日本': '日本',
+                  '香港': '香港',
+                  '台湾': '台湾',
+                  '火凤凰台湾': '台湾',
+                  '火凤凰香港': '香港',
+                  '泰国': '泰国'}
         emailAdd = {'香港': 'giikinliujun@163.com',
                     '台湾': 'giikinliujun@163.com',
                     '泰国': 'zhangjing@giikin.com',
@@ -2284,7 +2091,7 @@ class SltemMonitoring(Settings):
             				AND sl_zong_tuihuo.`二级分类` = sl_zong.`二级分类` AND sl_zong_tuihuo.`三级分类` = sl_zong.`三级分类` 
             				AND sl_zong_tuihuo.`物流方式` = sl_zong.`物流方式`AND sl_zong_tuihuo.`旬` = sl_zong.`旬` 
             		GROUP BY sl_zong.年月,sl_zong.父级分类,sl_zong.二级分类,sl_zong.三级分类,sl_zong.物流方式,sl_zong.旬
-            		with rollup) sl_gat;'''.format(match2[team], team, Time_day[11], Time_day[10], ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'), '币种,年月,父级分类,二级分类,三级分类,物流方式,旬')
+            		with rollup) sl_gat;'''.format(match2[team], match3[team], Time_day[11], Time_day[10], ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'), '币种,年月,父级分类,二级分类,三级分类,物流方式,旬')
         listT.append(sqlqsb2)
         show_name.append(' 月（天）签收率_…………')
         # 月签收率（整月）---查询
@@ -2476,7 +2283,7 @@ class SltemMonitoring(Settings):
 				AND sl_zong_tuihuo.`二级分类` = sl_zong.`二级分类` AND sl_zong_tuihuo.`三级分类` = sl_zong.`三级分类` 
 				AND sl_zong_tuihuo.`物流方式` = sl_zong.`物流方式`AND sl_zong_tuihuo.`旬` = sl_zong.`旬` 
 		    GROUP BY sl_zong.年月,sl_zong.旬,sl_zong.父级分类,sl_zong.二级分类,sl_zong.三级分类,sl_zong.物流方式
-	    with rollup) sl_gat;'''.format(match2[team], team, Time_day[11], ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'), Time_day[10])
+	    with rollup) sl_gat;'''.format(match2[team], match3[team], Time_day[11], ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'), Time_day[10])
         listT.append(sqlqsb4)
         show_name.append(' 月（旬）签收率_…………')
         # 月签收率（各月）---查询
@@ -2665,7 +2472,7 @@ class SltemMonitoring(Settings):
 				AND sl_zong_tuihuo.`物流方式` = sl_zong.`物流方式`AND sl_zong_tuihuo.`旬` = sl_zong.`旬` 
 		GROUP BY sl_zong.年月,sl_zong.父级分类,sl_zong.二级分类,sl_zong.三级分类,sl_zong.物流方式,sl_zong.旬
 		with rollup) sl_gat 
-		ORDER BY sl_gat.`年月` DESC;'''.format('qsb_缓存_month', team, ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'))
+		ORDER BY sl_gat.`年月` DESC;'''.format('qsb_缓存_month', match3[team], ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'))
         listT.append(sqlqsb5)
         show_name.append(' 月（各月）签收率_…………')
 
@@ -2782,7 +2589,7 @@ class SltemMonitoring(Settings):
 						AND sl_cx_zf_js.`父级分类` = sl_zong.`父级分类` 
 						AND sl_cx_zf_js.`旬` = sl_zong.`旬` 											
 				GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-				with rollup) sl_rb;'''.format(match2[team], team, Time_day[11], Time_day[10])
+				with rollup) sl_rb;'''.format(match2[team], match3[team], Time_day[11], Time_day[10])
         listT.append(sqlWl2)
         show_name.append(' 月（天）物流…………')
         # 月物流（月）---查询
@@ -2898,7 +2705,7 @@ class SltemMonitoring(Settings):
                     			AND sl_cx_zf_js.`父级分类` = sl_zong.`父级分类` 
                     			AND sl_cx_zf_js.`旬` = sl_zong.`旬` 												
                     		GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-                    with rollup) sl_rb;'''.format(match2[team], team, Time_day[11], Time_day[10])
+                    with rollup) sl_rb;'''.format(match2[team], match3[team], Time_day[11], Time_day[10])
         listT.append(sqlWl3)
         show_name.append(' 月（各月）物流…………')
 
@@ -3028,7 +2835,7 @@ class SltemMonitoring(Settings):
 						AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
 				GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.旬
 				with rollup
-			) sl_rb;'''.format(match2[team], team, Time_day[11], Time_day[10])
+			) sl_rb;'''.format(match2[team], match3[team], Time_day[11], Time_day[10])
         listT.append(sqltime2)
         show_name.append(' 月（天）时效…………')
         # 月时效（旬）---查询
@@ -3130,7 +2937,7 @@ class SltemMonitoring(Settings):
 							AND sl_cx_zf_wc.`旬` = sl_zong.`旬` 	
 				GROUP BY sl_zong.年月,sl_zong.旬,sl_zong.物流方式,sl_zong.父级分类
 				with rollup
-            ) sl_rb;'''.format(match2[team], team, Time_day[11], Time_day[10])
+            ) sl_rb;'''.format(match2[team], match3[team], Time_day[11], Time_day[10])
         listT.append(sqltime3)
         show_name.append(' 月（旬）时效…………')
         # 月时效(各月)---查询
@@ -3250,7 +3057,7 @@ class SltemMonitoring(Settings):
 						AND sl_cx_zf_wc.`父级分类` = sl_zong.`父级分类` 
 						AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
 				GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-				with rollup) sl_rb;'''.format('qsb_缓存_month', team)
+				with rollup) sl_rb;'''.format('qsb_缓存_month', match3[team])
         listT.append(sqltime4)
         show_name.append(' 月(各月)时效…………')
         listTValue = []                                # 查询sql的结果 存放池
@@ -3281,9 +3088,9 @@ class SltemMonitoring(Settings):
             filePath = 'F:\\查询\\日本监控\\{} {}上月数据监控表.xlsx'.format(today, team)
         elif team == '泰国':
             filePath = 'F:\\查询\\泰国监控\\{} {}上月数据监控表.xlsx'.format(today, team)
-        elif team == '新加坡' or team == '马来西亚' or team == '菲律宾':
+        elif team in ('新加坡', '马来西亚', '菲律宾'):
             filePath = 'F:\\查询\\新马监控\\{} {}上月数据监控表.xlsx'.format(today, team)
-        elif team == '香港' or team == '台湾':
+        elif team in ('香港', '台湾', '火凤凰香港', '火凤凰台湾'):
             filePath = 'F:\\查询\\港台监控\\{} {}上月数据监控表.xlsx'.format(today, team)
         if os.path.exists(filePath):                  # 判断是否有需要的表格
             print("正在使用(上月)文件......")
@@ -3327,7 +3134,18 @@ class SltemMonitoring(Settings):
                   '日本': 'qsb_slrb_copy',
                   '香港': 'qsb_slgat_copy',
                   '台湾': 'qsb_slgat_copy',
+                  '火凤凰香港': 'qsb_slgat_hfh_copy',
+                  '火凤凰台湾': 'qsb_slgat_hfh_copy',
                   '泰国': 'qsb_sltg_copy'}
+        match3 = {'新加坡': '新加坡',
+                  '马来西亚': '马来西亚',
+                  '菲律宾': '菲律宾',
+                  '日本': '日本',
+                  '香港': '香港',
+                  '台湾': '台湾',
+                  '火凤凰台湾': '台湾',
+                  '火凤凰香港': '香港',
+                  '泰国': '泰国'}
         emailAdd = {'香港': 'giikinliujun@163.com',
                     '台湾': 'giikinliujun@163.com',
                     '泰国': 'zhangjing@giikin.com',
@@ -3523,7 +3341,7 @@ class SltemMonitoring(Settings):
                 				AND sl_zong_tuihuo.`二级分类` = sl_zong.`二级分类` AND sl_zong_tuihuo.`三级分类` = sl_zong.`三级分类` 
                 				AND sl_zong_tuihuo.`物流方式` = sl_zong.`物流方式`AND sl_zong_tuihuo.`旬` = sl_zong.`旬` 
                 		GROUP BY sl_zong.年月,sl_zong.父级分类,sl_zong.二级分类,sl_zong.三级分类,sl_zong.物流方式,sl_zong.旬
-                		with rollup) sl_gat;'''.format(match2[team], team, Time_one, Time_two, ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'), '币种,年月,父级分类,二级分类,三级分类,物流方式,旬')
+                		with rollup) sl_gat;'''.format(match2[team], match3[team], Time_one, Time_two, ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'), '币种,年月,父级分类,二级分类,三级分类,物流方式,旬')
         listT.append(sqlqsb2)
         show_name.append(' 月（天）签收率_…………')
         # 月签收率（整月）---查询
@@ -3680,7 +3498,7 @@ class SltemMonitoring(Settings):
                 				AND sl_zong_tuihuo.`二级分类` = sl_zong.`二级分类` AND sl_zong_tuihuo.`三级分类` = sl_zong.`三级分类` 
                 				AND sl_zong_tuihuo.`物流方式` = sl_zong.`物流方式`AND sl_zong_tuihuo.`旬` = sl_zong.`旬` 
                 		GROUP BY sl_zong.年月,sl_zong.父级分类,sl_zong.二级分类,sl_zong.三级分类,sl_zong.物流方式,sl_zong.旬
-                		with rollup) sl_gat;'''.format(match2[team], team, Time_one, Time_two, ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'), '币种,年月,父级分类,二级分类,三级分类,物流方式,旬')
+                		with rollup) sl_gat;'''.format(match2[team], match3[team], Time_one, Time_two, ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'), '币种,年月,父级分类,二级分类,三级分类,物流方式,旬')
         listT.append(sqlqsb3)
         show_name.append(' 月（月）签收率_…………')
         # 月签收率（旬）---查询
@@ -3855,7 +3673,7 @@ class SltemMonitoring(Settings):
     				AND sl_zong_tuihuo.`二级分类` = sl_zong.`二级分类` AND sl_zong_tuihuo.`三级分类` = sl_zong.`三级分类` 
     				AND sl_zong_tuihuo.`物流方式` = sl_zong.`物流方式`AND sl_zong_tuihuo.`旬` = sl_zong.`旬` 
     		    GROUP BY sl_zong.年月,sl_zong.旬,sl_zong.父级分类,sl_zong.二级分类,sl_zong.三级分类,sl_zong.物流方式
-    	    with rollup) sl_gat;'''.format(match2[team], team, Time_one, ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'))
+    	    with rollup) sl_gat;'''.format(match2[team], match3[team], Time_one, ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'))
         listT.append(sqlqsb4)
         show_name.append(' 月（旬）签收率_…………')
         # 月签收率（各月）---查询
@@ -4044,7 +3862,7 @@ class SltemMonitoring(Settings):
     				AND sl_zong_tuihuo.`物流方式` = sl_zong.`物流方式`AND sl_zong_tuihuo.`旬` = sl_zong.`旬` 
     		GROUP BY sl_zong.年月,sl_zong.父级分类,sl_zong.二级分类,sl_zong.三级分类,sl_zong.物流方式,sl_zong.旬
     		with rollup) sl_gat 
-    		ORDER BY sl_gat.`年月` DESC;'''.format('qsb_缓存_month', team, ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'))
+    		ORDER BY sl_gat.`年月` DESC;'''.format('qsb_缓存_month', match3[team], ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'))
         listT.append(sqlqsb5)
         show_name.append(' 月（各月）签收率_…………')
 
@@ -4161,7 +3979,7 @@ class SltemMonitoring(Settings):
     								AND sl_cx_zf_js.`父级分类` = sl_zong.`父级分类` 
     								AND sl_cx_zf_js.`旬` = sl_zong.`旬` 											
     				GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-    				with rollup) sl_rb;'''.format(match2[team], team, Time_one, Time_two)
+    				with rollup) sl_rb;'''.format(match2[team], match3[team], Time_one, Time_two)
         listT.append(sqlWl2)
         show_name.append(' 月（天）物流…………')
         # 月物流（月）---查询
@@ -4277,7 +4095,7 @@ class SltemMonitoring(Settings):
                         			AND sl_cx_zf_js.`父级分类` = sl_zong.`父级分类` 
                         			AND sl_cx_zf_js.`旬` = sl_zong.`旬` 												
                         		GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-                        with rollup) sl_rb;'''.format(match2[team], team, Time_one, Time_two)
+                        with rollup) sl_rb;'''.format(match2[team], match3[team], Time_one, Time_two)
         listT.append(sqlWl3)
         show_name.append(' 月（各月）物流…………')
 
@@ -4402,7 +4220,7 @@ class SltemMonitoring(Settings):
     								AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
     				GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.旬
     				with rollup
-    			) sl_rb;'''.format(match2[team], team, Time_one)
+    			) sl_rb;'''.format(match2[team], match3[team], Time_one)
         listT.append(sqltime2)
         show_name.append(' 月（天）时效…………')
         # 月时效（旬）---查询
@@ -4501,7 +4319,7 @@ class SltemMonitoring(Settings):
     								AND sl_cx_zf_wc.`旬` = sl_zong.`旬` 	
     				GROUP BY sl_zong.年月,sl_zong.旬,sl_zong.物流方式,sl_zong.父级分类
     				with rollup
-                ) sl_rb;'''.format(match2[team], team, Time_one)
+                ) sl_rb;'''.format(match2[team], match3[team], Time_one)
         listT.append(sqltime3)
         show_name.append(' 月（旬）时效…………')
         # 月时效(各月)---查询
@@ -4621,7 +4439,7 @@ class SltemMonitoring(Settings):
     						AND sl_cx_zf_wc.`父级分类` = sl_zong.`父级分类` 
     						AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
     				GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-    				with rollup) sl_rb;'''.format('qsb_缓存_month', team)
+    				with rollup) sl_rb;'''.format('qsb_缓存_month', match3[team])
         listT.append(sqltime4)
         show_name.append(' 月(各月)时效…………')
         listTValue = []  # 查询sql的结果 存放池
@@ -4692,7 +4510,18 @@ class SltemMonitoring(Settings):
                   '日本': 'qsb_slrb_copy',
                   '香港': 'qsb_slgat_copy',
                   '台湾': 'qsb_slgat_copy',
+                  '火凤凰香港': 'qsb_slgat_hfh_copy',
+                  '火凤凰台湾': 'qsb_slgat_hfh_copy',
                   '泰国': 'qsb_sltg_copy'}
+        match3 = {'新加坡': '新加坡',
+                  '马来西亚': '马来西亚',
+                  '菲律宾': '菲律宾',
+                  '日本': '日本',
+                  '香港': '香港',
+                  '台湾': '台湾',
+                  '火凤凰台湾': '台湾',
+                  '火凤凰香港': '香港',
+                  '泰国': '泰国'}
         emailAdd = {'香港': 'giikinliujun@163.com',
                     '台湾': 'giikinliujun@163.com',
                     '泰国': 'zhangjing@giikin.com',
@@ -4909,7 +4738,7 @@ class SltemMonitoring(Settings):
                 				AND sl_zong_tuihuo.`二级分类` = sl_zong.`二级分类` AND sl_zong_tuihuo.`三级分类` = sl_zong.`三级分类` 
                 				AND sl_zong_tuihuo.`物流方式` = sl_zong.`物流方式`AND sl_zong_tuihuo.`旬` = sl_zong.`旬` 
                 		GROUP BY sl_zong.年月,sl_zong.父级分类,sl_zong.二级分类,sl_zong.三级分类,sl_zong.物流方式,sl_zong.旬
-                		with rollup) sl_gat;'''.format(match2[team], team, Time_one, Time_two, ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'), '币种,年月,父级分类,二级分类,三级分类,物流方式,旬')
+                		with rollup) sl_gat;'''.format(match2[team], match3[team], Time_one, Time_two, ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'), '币种,年月,父级分类,二级分类,三级分类,物流方式,旬')
         listT.append(sqlqsb2)
         show_name.append(' 月（天）签收率_…………')
         # 月签收率（整月）---查询
@@ -5101,7 +4930,7 @@ class SltemMonitoring(Settings):
     				AND sl_zong_tuihuo.`二级分类` = sl_zong.`二级分类` AND sl_zong_tuihuo.`三级分类` = sl_zong.`三级分类` 
     				AND sl_zong_tuihuo.`物流方式` = sl_zong.`物流方式`AND sl_zong_tuihuo.`旬` = sl_zong.`旬` 
     		    GROUP BY sl_zong.年月,sl_zong.旬,sl_zong.父级分类,sl_zong.二级分类,sl_zong.三级分类,sl_zong.物流方式
-    	    with rollup) sl_gat;'''.format(match2[team], team, Time_one,('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'),Time_two)
+    	    with rollup) sl_gat;'''.format(match2[team], match3[team], Time_one,('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'),Time_two)
         listT.append(sqlqsb4)
         show_name.append(' 月（旬）签收率_…………')
         # 月签收率（各月）---查询
@@ -5290,7 +5119,7 @@ class SltemMonitoring(Settings):
     				AND sl_zong_tuihuo.`物流方式` = sl_zong.`物流方式`AND sl_zong_tuihuo.`旬` = sl_zong.`旬` 
     		GROUP BY sl_zong.年月,sl_zong.父级分类,sl_zong.二级分类,sl_zong.三级分类,sl_zong.物流方式,sl_zong.旬
     		with rollup) sl_gat 
-    		ORDER BY sl_gat.`年月` DESC;'''.format('qsb_缓存_month', team, ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'))
+    		ORDER BY sl_gat.`年月` DESC;'''.format('qsb_缓存_month', match3[team], ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'))
         listT.append(sqlqsb5)
         show_name.append(' 月（各月）签收率_…………')
 
@@ -5407,7 +5236,7 @@ class SltemMonitoring(Settings):
     						AND sl_cx_zf_js.`父级分类` = sl_zong.`父级分类` 
     						AND sl_cx_zf_js.`旬` = sl_zong.`旬` 											
     				GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-    				with rollup) sl_rb;'''.format(match2[team], team, Time_one, Time_two)
+    				with rollup) sl_rb;'''.format(match2[team], match3[team], Time_one, Time_two)
         listT.append(sqlWl2)
         show_name.append(' 月（天）物流…………')
         # 月物流（月）---查询
@@ -5523,7 +5352,7 @@ class SltemMonitoring(Settings):
                         			AND sl_cx_zf_js.`父级分类` = sl_zong.`父级分类` 
                         			AND sl_cx_zf_js.`旬` = sl_zong.`旬` 												
                         		GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-                        with rollup) sl_rb;'''.format(match2[team], team, Time_one, Time_two)
+                        with rollup) sl_rb;'''.format(match2[team], match3[team], Time_one, Time_two)
         listT.append(sqlWl3)
         show_name.append(' 月（各月）物流…………')
 
@@ -5653,7 +5482,7 @@ class SltemMonitoring(Settings):
     						AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
     				GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.旬
     				with rollup
-    			) sl_rb;'''.format(match2[team], team, Time_one, Time_two)
+    			) sl_rb;'''.format(match2[team], match3[team], Time_one, Time_two)
         listT.append(sqltime2)
         show_name.append(' 月（天）时效…………')
         # 月时效（旬）---查询
@@ -5755,7 +5584,7 @@ class SltemMonitoring(Settings):
     							AND sl_cx_zf_wc.`旬` = sl_zong.`旬` 	
     				GROUP BY sl_zong.年月,sl_zong.旬,sl_zong.物流方式,sl_zong.父级分类
     				with rollup
-                ) sl_rb;'''.format(match2[team], team, Time_one, Time_two)
+                ) sl_rb;'''.format(match2[team], match3[team], Time_one, Time_two)
         listT.append(sqltime3)
         show_name.append(' 月（旬）时效…………')
         # 月时效(各月)---查询
@@ -5875,7 +5704,7 @@ class SltemMonitoring(Settings):
     						AND sl_cx_zf_wc.`父级分类` = sl_zong.`父级分类` 
     						AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
     				GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-    				with rollup) sl_rb;'''.format('qsb_缓存_month', team)
+    				with rollup) sl_rb;'''.format('qsb_缓存_month', match3[team])
         listT.append(sqltime4)
         show_name.append(' 月(各月)时效…………')
         listTValue = []  # 查询sql的结果 存放池
@@ -5953,6 +5782,8 @@ class SltemMonitoring(Settings):
                   '日本': 'slrb',
                   '香港': 'slgat',
                   '台湾': 'slgat',
+                  '火凤凰台湾': 'slgat_hfh',
+                  '火凤凰香港': 'slgat_hfh',
                   '港台': 'slgat',
                   '泰国': 'sltg'}
         start = datetime.datetime.now()
@@ -5982,7 +5813,7 @@ class SltemMonitoring(Settings):
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                     columns = list(db.columns)  # 获取数据的标题名，转为列表
                     columns_value = ['团队', '区域', '电话号码', '运单编号', '物流状态', '物流状态代码', '货物类型', '付款方式', '价格',
-                                     '包裹重量', '包裹体积', '邮编', '签收表是否存在', '签收表订单编号', '签收表运单编号',
+                                     '包裹重量', '包裹体积', '邮编', '签收表是否存在', '签收表订单编号', '签收表运单编号', '省洲',
                                      '原运单号', '签收表物流状态', '添加时间', '成本价', '物流花费', '打包花费', '其它花费',
                                      '添加物流单号时间', '订单删除原因', '数量', 'Nan']
                     for column_val in columns_value:
@@ -6025,6 +5856,7 @@ if __name__ == '__main__':
     m = SltemMonitoring()
     start: datetime = datetime.datetime.now()
     match1 = {'slgat': '港台',
+              'slgat_hfh': '火凤凰港台',
               'sltg': '泰国',
               'slxmt': '新马',
               'slzb': '直播团队',
@@ -6039,20 +5871,21 @@ if __name__ == '__main__':
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # # # 测试监控运行（三）
     for team in ['台湾', '香港']:
+    # for team in ['火凤凰台湾', '火凤凰香港']:
     # for team in ['日本']:
-    # # # for team in ['台湾', '香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
+    # for team in ['台湾', '香港', '火凤凰台湾', '火凤凰香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
     # for team in ['日本', '菲律宾', '新加坡', '马来西亚']:
     #     m.order_Monitoring(team)    # 各月缓存
     #     m.data_Monitoring(team)     # 两月数据
-    #     m.costWaybill(team)       # 成本缓存 与 成本两月数据
+        # m.costWaybill(team)       # 成本缓存 与 成本两月数据
         m.sl_Monitoring(team)       # 输出数据
-    #     m.sl_Monitoring_two(team)  # 输出上月数据
+        # m.sl_Monitoring_two(team)  # 输出上月数据
 
     # 获取签收表内容（二）qsb_slgat
-    # startday = '2021.03.19'
-    # for team in ['日本', '新加坡', '马来西亚', '菲律宾', '泰国']:
+    # startday = '2021.04.20'
+    # for team in ['日本', '新加坡', '新马', '马来西亚', '菲律宾']:
     # for team in ['香港', '台湾', '港台']:
-    #     m.readForm(team, startday, '导入')
+        # m.readForm(team, startday, '导入')
 
     # # 获取监控表以上传的时间---监控运行（一）
     # for team in ['菲律宾', '新加坡', '马来西亚']:
@@ -6062,14 +5895,14 @@ if __name__ == '__main__':
 
 
 
-    # -----------------------------------------------单独监控运行（四）-----------------------------------------
-    # startday = '2021.03.19'    # 上传记录时间（qsb_slgat_copy）
-    # for team in ['香港', '台湾']:
+    # -----------------------------------------------单独上传监控运行（四）-----------------------------------------
+    # startday = '2021.03.20'    # 上传记录时间（qsb_slgat_copy）
+    # for team in ['香港', '台湾', '港台']:
     #     m.readForm(team, startday, '单独导入')
     #
-    today = '2021.04.19'        # 导表的显示时间
-    Time_one = '2021-04-19'     # 确定需查询的日期
-    Time_two = '2021-03-19'
-    for team in ['台湾', '香港']:
+    # today = '2021.04.20'        # 导表的显示时间
+    # Time_one = '2021-04-20'     # 确定需查询的日期
+    # Time_two = '2021-03-20'
+    # for team in ['台湾', '香港']:
     #     m.sl_MonitoringTHR(team, today, Time_one, Time_two)       # 输出数据
-        m.sl_MonitoringTHR_two(team, today, Time_one, Time_two)       # 上月输出数据
+    #     m.sl_MonitoringTHR_two(team, today, Time_one, Time_two)       # 上月输出数据

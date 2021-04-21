@@ -363,7 +363,7 @@ class MysqlControl(Settings):
                  'slrb': '"神龙家族-日本团队"',
                  'slrb_jl': '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        if team in ('sltg', 'slrb', 'slrb_jl', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slgat', 'slgat_hfh0', 'slxmt', 'slxmt_t', 'slxmt_hfh0'):
             yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
             mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
             begin = datetime.date(yy, mm, 1)
@@ -374,9 +374,9 @@ class MysqlControl(Settings):
             end = datetime.date(yy2, mm2, dd2)
             print(end)
         else:
-            begin = datetime.date(2021, 3, 20)
+            begin = datetime.date(2021, 4, 8)
             print(begin)
-            end = datetime.date(2021, 4, 9)
+            end = datetime.date(2021, 4, 20)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -473,10 +473,10 @@ class MysqlControl(Settings):
             month_last = '2021-04-11'
             month_yesterday = '2021-04-16'
             month_begin = '2020-01-01'
-        token = '83583b29fc24ec0529082ff7928246a6'        # 补充查询产品信息需要
+        token = '25f64a358bd9dfb8debdde8743d42db4'        # 补充查询产品信息需要
         # self.d.cateIdInfo(token, team)                  # 进入产品检索界面（参数一需要手动更换）
         if team == 'slgat':  # 港台查询函数导出
-            self.d.productIdInfo(token, '订单号', team)   # 产品id详情更新   （参数一需要手动更换）
+            # self.d.productIdInfo(token, '订单号', team)   # 产品id详情更新   （参数一需要手动更换）
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
@@ -619,14 +619,14 @@ class MysqlControl(Settings):
         filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
-        if team == 'sltg':
+        if team == 'slgat':
             print('---' + match[team] + ' 不发送邮件')
         else:
             self.e.send('{} {}签收表.xlsx'.format(today, match[team]), filePath,
                         emailAdd[team])
         # 导入签收率表中和输出物流时效（不包含全部的订单状态）
         print('正在打印' + match[team] + ' 物流时效…………')
-        if team == 'sltg0':
+        if team == 'slgat':
             print('---' + match[team] + ' 不打印文件')
         else:
             self.data_wl(team)
@@ -639,7 +639,7 @@ class MysqlControl(Settings):
         print('----已写入' + match[team] + '全部签收表中')
 
         # 商城订单的获取---暂时使用的
-        if team == 'slgat0':  # IG和UP订单
+        if team == 'slga0t':  # IG和UP订单
             emailAdd2 = {'slgat': 'service@upiinmall.com'}
             today = datetime.date.today().strftime('%Y.%m.%d')
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
