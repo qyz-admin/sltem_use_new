@@ -2100,7 +2100,7 @@ class QueryControl(Settings):
     def productIdInfo(self, tokenid, searchType, team):  # 进入查询界面，
         print('正在获取需要更新的产品id信息')
         start = datetime.datetime.now()
-        month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y-%m-%d')
+        month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
         sql = '''SELECT id,`订单编号`  FROM {0}_order_list sl 
     			WHERE sl.`日期`> '{1}' 
     				AND (sl.`产品名称` IS NULL or sl.`父级分类` IS NULL or  sl.`物流方式` IS NULL)

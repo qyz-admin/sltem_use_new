@@ -143,7 +143,7 @@ class SltemMonitoring(Settings):
                     datetime.datetime.now().strftime('-%d')))
         month_last = Time_da[6]
         print(month_last)
-        if team == 'slgat_hfh':
+        if match[team] == 'slgat_hfh':
             sql = '''SELECT 年月, 旬, 日期, 币种, 订单来源, a.订单编号 订单编号, 
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', '', 出货时间) 出货时间,
                         IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
@@ -208,9 +208,18 @@ class SltemMonitoring(Settings):
                   '火凤凰台湾': '台湾',
                   '火凤凰香港': '香港',
                   '泰国': '泰国'}
+        match1 = {'新加坡': '新马',
+                  '马来西亚': '新马',
+                  '菲律宾': '新马',
+                  '日本': '日本',
+                  '香港': '港台',
+                  '台湾': '港台',
+                  '火凤凰台湾': '港台火凤凰',
+                  '火凤凰香港': '港台火凤凰',
+                  '泰国': '泰国'}
         start: datetime = datetime.datetime.now()
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-        if team == 'slgat_hfh':
+        if match3[team] == 'slgat_hfh':
             sql = '''SELECT 年月, 旬, 日期, 币种, 订单来源, a.订单编号 订单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', '', 出货时间) 出货时间,
                         IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
@@ -256,7 +265,7 @@ class SltemMonitoring(Settings):
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         today = datetime.date.today().strftime('%Y.%m.%d')
         print('正在写入excel…………')
-        df.to_excel('F:\\查询\\订单数据\\{} {}监控数据源表.xlsx'.format(today, team),
+        df.to_excel('F:\\查询\\数据源库\\{0}\\{1} {2}监控数据源表.xlsx'.format(match1[team], today, team),
                     sheet_name=team, index=False)
         print('----已写入excel ')
         print('正在写入-数据源-缓存中…………')
@@ -5870,39 +5879,41 @@ if __name__ == '__main__':
 
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # # # 测试监控运行（三）
-    for team in ['台湾', '香港']:
+    # for team in ['台湾', '香港']:
     # for team in ['火凤凰台湾', '火凤凰香港']:
     # for team in ['日本']:
     # for team in ['台湾', '香港', '火凤凰台湾', '火凤凰香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
     # for team in ['日本', '菲律宾', '新加坡', '马来西亚']:
     #     m.order_Monitoring(team)    # 各月缓存
-    #     m.data_Monitoring(team)     # 两月数据
+        # m.data_Monitoring(team)     # 两月数据
         # m.costWaybill(team)       # 成本缓存 与 成本两月数据
-        m.sl_Monitoring(team)       # 输出数据
+        # m.sl_Monitoring(team)       # 输出数据
         # m.sl_Monitoring_two(team)  # 输出上月数据
 
     # 获取签收表内容（二）qsb_slgat
-    # startday = '2021.04.20'
-    # for team in ['日本', '新加坡', '新马', '马来西亚', '菲律宾']:
+    startday = '2021.03.23'
+    for team in ['新马', '新加坡', '马来西亚', '菲律宾']:
     # for team in ['香港', '台湾', '港台']:
-        # m.readForm(team, startday, '导入')
+    # for team in ['日本']:
+        m.readForm(team, startday, '导入')
 
     # # 获取监控表以上传的时间---监控运行（一）
     # for team in ['菲律宾', '新加坡', '马来西亚']:
     # for team in ['日本', '菲律宾', '新加坡', '马来西亚']:
+    # for team in ['火凤凰台湾', '火凤凰香港', '台湾', '香港']:
     # for team in ['日本']:
     #     m.check_time(team)
 
 
 
     # -----------------------------------------------单独上传监控运行（四）-----------------------------------------
-    # startday = '2021.03.20'    # 上传记录时间（qsb_slgat_copy）
+    # startday = '2021.03.23'    # 上传记录时间（qsb_slgat_copy）
     # for team in ['香港', '台湾', '港台']:
     #     m.readForm(team, startday, '单独导入')
-    #
-    # today = '2021.04.20'        # 导表的显示时间
-    # Time_one = '2021-04-20'     # 确定需查询的日期
-    # Time_two = '2021-03-20'
+
+    # today = '2021.04.23'        # 导表的显示时间
+    # Time_one = '2021-04-23'     # 确定需查询的日期
+    # Time_two = '2021-03-23'
     # for team in ['台湾', '香港']:
     #     m.sl_MonitoringTHR(team, today, Time_one, Time_two)       # 输出数据
     #     m.sl_MonitoringTHR_two(team, today, Time_one, Time_two)       # 上月输出数据

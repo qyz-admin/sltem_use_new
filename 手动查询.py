@@ -47,14 +47,14 @@ class orderControl(Settings):
                             # print(file)
                             if file is not None and len(file) > 0:
                                 print('++++正在写入临时表：......')
-                                file.to_sql('d1', con=self.engine1, index=False, if_exists='replace')
+                                # file.to_sql('d1', con=self.engine1, index=False, if_exists='replace')
                             else:
                                 print('----读取数据为空！！！')
                         except Exception as e:
                             print('xxxx读取失败：' + sht.name, str(Exception) + str(e))
                     wb.close()
                     app.quit()
-        print('获取耗时：', datetime.datetime.now() - start)
+        print('读表耗时：', datetime.datetime.now() - start)
 
     def creatReadSheet(self, team):  # 最近五天的全部订单信息
         match = {'slgat': '"神龙家族-港澳台"',
@@ -69,10 +69,11 @@ class orderControl(Settings):
         month_last = '2021-01-01'
         month_yesterday = '2021-04-20'
         print('正在获取需要查询的订单编号......')
-        sql = '''SELECT id, sl.`订单编号`  FROM d1;'''
+        sql = '''SELECT *  FROM d1;'''
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
-        ordersDict = ', '.join(ordersDict)
 
+        ordersDict = ordersDict[0].tolist()
+        print(ordersDict)
         print('正在获取订单详情......')
         sql = '''SELECT a.id,
                             a.month 年月,
@@ -128,23 +129,32 @@ class orderControl(Settings):
                             left join dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
                     WHERE  a.order_number IN ({0}) AND dim_area.name IN ({1})
                         AND a.rq = '{2}' AND a.rq <= '{3}';'''.format(ordersDict, match[team], month_last, month_yesterday)
-        df = pd.read_sql_query(sql=sql, con=self.engine2)
-        sql = 'SELECT * FROM dim_order_status;'
-        df1 = pd.read_sql_query(sql=sql, con=self.engine1)
-        print('+++合并订单状态中…………')
-        df = pd.merge(left=df, right=df1, left_on='系统订单状态id', right_on='id', how='left')
-        sql = 'SELECT * FROM dim_logistics_status;'
-        df1 = pd.read_sql_query(sql=sql, con=self.engine1)
-        print('+++合并物流状态中…………')
-        df = pd.merge(left=df, right=df1, left_on='系统物流状态id', right_on='id', how='left')
-        df = df.drop(labels=['id', 'id_y', '系统订单状态id', '系统物流状态id'], axis=1)
-        df.rename(columns={'id_x': 'id', 'name_x': '系统订单状态', 'name_y': '系统物流状态'}, inplace=True)
-        print('++++++正在写入数据库++++++')
-        try:
-            df.to_sql('d0_sl', con=self.engine1, index=False, if_exists='replace')
-            sql = 'REPLACE INTO d0_sl_list SELECT *, NOW() 记录时间 FROM d0_sl; '.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
-        except Exception as e:
-            print('插入失败：', str(Exception) + str(e))
-        print('写入完成…………')
+        # df = pd.read_sql_query(sql=sql, con=self.engine2)
+
+        # sql = 'SELECT * FROM dim_order_status;'
+        # df1 = pd.read_sql_query(sql=sql, con=self.engine1)
+        # print('+++合并订单状态中…………')
+        # df = pd.merge(left=df, right=df1, left_on='系统订单状态id', right_on='id', how='left')
+        # sql = 'SELECT * FROM dim_logistics_status;'
+        # df1 = pd.read_sql_query(sql=sql, con=self.engine1)
+        # print('+++合并物流状态中…………')
+        # df = pd.merge(left=df, right=df1, left_on='系统物流状态id', right_on='id', how='left')
+        # df = df.drop(labels=['id', 'id_y', '系统订单状态id', '系统物流状态id'], axis=1)
+        # df.rename(columns={'id_x': 'id', 'name_x': '系统订单状态', 'name_y': '系统物流状态'}, inplace=True)
+        # print('++++++正在写入数据库++++++')
+        # try:
+        #     df.to_sql('d0_sl', con=self.engine1, index=False, if_exists='replace')
+        #     sql = 'REPLACE INTO d0_sl_list SELECT *, NOW() 记录时间 FROM d0_sl; '.format(team)
+        #     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        # except Exception as e:
+        #     print('插入失败：', str(Exception) + str(e))
+        # print('写入完成…………')
         return '写入完成'
+
+if __name__ == '__main__':
+    o = orderControl()
+    start: datetime = datetime.datetime.now()
+    # o.readsheet()
+
+    team = 'slgat'
+    o.creatReadSheet(team)

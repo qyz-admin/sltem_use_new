@@ -9,7 +9,7 @@ from 单点更新 import QueryTwo
 import datetime
 
 start: datetime = datetime.datetime.now()
-team = 'slgat'
+team = 'slxmt_t'
 match = {'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙日本签收表',
          'slrb_jl': r'D:\Users\Administrator\Desktop\需要用到的文件\精灵日本签收表',
          'sltg': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙泰国签收表',
@@ -18,7 +18,8 @@ match = {'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙�
          'slxmt': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙新马签收表',
          'slxmt_t': r'D:\Users\Administrator\Desktop\需要用到的文件\神龙T新马菲签收表',
          'slxmt_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\火凤凰新马签收表'}
-'''    msyql 语法:      show processlist;
+'''    msyql 语法:      show processlist（查看当前进程）;  
+                        set global event_scheduler=0（关闭定时器）;
 备注：  港台 需整理的表：香港立邦>(明细再copy一份保存) ； 台湾龟山改派>(copy保存为xlsx格式);
 说明：  日本 需整理的表：1、吉客印神龙直发签收表=密码：‘JKTSL’>(明细再copy保存；改派明细不需要);2、直发签收表>(明细再copy保存；3、状态更新需要copy保存);
 '''

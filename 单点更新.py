@@ -98,7 +98,6 @@ class QueryTwo(Settings):
             for sht in wb.sheets:
                 try:
                     db = None
-                    # db = sht.used_range.value
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                     columns = list(db.columns)  # 获取数据的标题名，转为列表
                     columns_value = ['商品链接', '规格(中文)', '收货人', '拉黑率', '电话长度', '邮编长度', '配送地址', '地址翻译',
@@ -458,7 +457,7 @@ class QueryTwo(Settings):
             'Referer': 'http://gimp.giikin.com/front/orderToolsServiceQuery'}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
-        print('已成功发送请求++++++')
+        print('+++已成功发送请求......')
         print('正在处理json数据转化为dataframe…………')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
@@ -560,8 +559,8 @@ if __name__ == '__main__':
              'slxmt_t': '神龙-T新马',
              'slxmt_hfh': '火凤凰-新马'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
-    # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    for team in ['sltg']:
+    # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slrb_jl', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
+    for team in ['slxmt_hfh']:
         query = '导入'         # 导入；，更新--->>数据更新切换
         m.readFormHost(team, query)
     # 手动更新状态
@@ -572,17 +571,17 @@ if __name__ == '__main__':
 
 
     # -----------------------------------------------系统导入状态运行（二）-----------------------------------------
-    #   台湾token, 日本token, 新马token：  118ea851c8e5cdd0a5d200aee7b75b1a
+    #   台湾token, 日本token, 新马token：  2c333f20b9ccb0d1516237ea9f06b059
     #   泰国token： 83583b29fc24ec0529082ff7928246a6
 
-    # begin = datetime.date(2021, 4, 1)       # 若无法查询，切换代理和直连的网络
+    # begin = datetime.date(2021, 4, 6)       # 若无法查询，切换代理和直连的网络
     # print(begin)
-    # end = datetime.date(2021, 4, 19)
+    # end = datetime.date(2021, 4, 21)
     # print(end)
 
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 若无法查询，切换代理和直连的网络
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
-    begin = datetime.date(yy, 4, 1)
+    begin = datetime.date(yy, mm, 1)
     print(begin)
     yy2 = int(datetime.datetime.now().strftime('%Y'))
     mm2 = int(datetime.datetime.now().strftime('%m'))
@@ -590,9 +589,11 @@ if __name__ == '__main__':
     end = datetime.date(yy2, mm2, dd2)
     print(end)
 
+    print(datetime.datetime.now())
+    # for team in ['slrb_jl']:
     # for team in ['slrb', 'slrb_jl']:
     # for team in ['slgat', 'slgat_hfh']:
-    for team in ['slxmt_hfh', 'slxmt_t']:
+    for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
     # for team in ['slxmt_hfh']:
     # for team in ['sltg']:
         print('++++++正在获取 ' + match1[team] + ' 信息++++++')
@@ -602,7 +603,7 @@ if __name__ == '__main__':
             last_month = str(day)
             print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
             searchType = '订单号'      # 运单号，订单号   查询切换
-            tokenid = '118ea851c8e5cdd0a5d200aee7b75b1a'
+            tokenid = '8bfb68451f9a48a33226e29d88516906'
             m.orderInfo(tokenid, searchType, team, last_month)
     print('更新耗时：', datetime.datetime.now() - start)
 
