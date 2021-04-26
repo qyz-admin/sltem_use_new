@@ -2244,7 +2244,7 @@ class QueryControl(Settings):
         print('正在获取需要更新的产品id信息')
         start = datetime.datetime.now()
         month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y-%m-%d')
-        sql = '''SELECT id,`订单编号`, `产品id` , null 父级分类, null 二级分类, null 三级分类 FROM {0}_order_list sl 
+        sql = '''SELECT id,`订单编号`, `产品id` , `产品名称` ,null 父级分类, null 二级分类, null 三级分类 FROM {0}_order_list sl 
     			WHERE sl.`日期`> '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类` = '')
     				AND ( NOT sl.`系统订单状态` IN ('已删除','问题订单','支付失败','未支付'));'''.format(team, month_begin)
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -2308,21 +2308,23 @@ class QueryControl(Settings):
             df.to_sql('d1_cp', con=self.engine1, index=False, if_exists='replace')
             print('正在更新品类缓存中......')
             sql = '''update d1_cp_cate a, d1_cp b
-                            set a.`父级分类`= b.`cate_id`,
+                            set a.`产品名称`= b.`name`,
+                                a.`父级分类`= b.`cate_id`,
                                 a.`二级分类`= b.`second_cate_id`,
                                 a.`三级分类`= b.`third_cate_id`
                     where a.`产品id`=b.`id`;'''.format(team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
             print('正在更新总表中......')
             sql = '''update {0}_order_list a, d1_cp_cate b
-                            set a.`父级分类`= b.`父级分类`,
+                            set a.`产品名称`= b.`产品名称`,
+                                a.`父级分类`= b.`父级分类`,
                                 a.`二级分类`= b.`二级分类`,
                                 a.`三级分类`= b.`三级分类`
                     where a.`订单编号`=b.`订单编号`;'''.format(team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
-        print('更新成功…………')
+        print('+++更新成功…………')
 
 if __name__ == '__main__':
     m = QueryControl()
@@ -2348,9 +2350,10 @@ if __name__ == '__main__':
     # team = 'sltg_zqsb'
     # m.sl_tem_cost(team, match9[team])
 
-    team = 'slrb'  # 第一部分查询
-    token = '068bc932646d72fb0537bcd785b2ed79'
-    m.productIdquery(token, 'NJ210330085757094517', '订单号', team)
+    team = 'slgat'  # 第一部分查询
+    token = 'cb88b6d0110154d1709aa8dc72ec9a9a'
+    # m.productIdquery(token, 'NJ210330085757094517', '订单号', team)
+    m.cateIdInfo(token, team)
     # m.productIdInfo(token, '订单号', team)
 
     # team = 'slgat_hfh'  # 第二部分查询

@@ -88,7 +88,8 @@ class QueryTwo(Settings):
                   'slxmt_t': 'T新马',
                   'slxmt_hfh': '火凤凰新马',
                   'slrb': '日本',
-                  'slrb_jl': '日本'}
+                  'slrb_js': '金狮-日本',
+                  'slrb_jl': '精灵-日本'}
         print('---正在获取 ' + match2[team] + ' 签收表的详情++++++')
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
@@ -110,8 +111,8 @@ class QueryTwo(Settings):
                             db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
                     db['运单号'] = db['运单号'].str.strip()                     # 去掉运单号中的前后空字符串
                     db['物流渠道'] = db['物流渠道'].str.strip()
-                    db['站点ID'] = db['站点ID'].str.strip()
                     db['产品名称'] = db['产品名称'].str.split('#', expand=True)[1]
+                    db['站点ID'] = db['站点ID'].str.strip()
                     print(db.columns)
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
@@ -181,7 +182,7 @@ class QueryTwo(Settings):
                             LEFT JOIN dim_product ON  dim_product.id = h.产品id
                             LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                             LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`; '''.format(team)
-        elif team == 'slrb_jl':
+        elif team == 'slrb_jl' or team == 'slrb_js':
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
 			                    IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
 			                    DATE(h.下单时间) 日期,
@@ -559,8 +560,8 @@ if __name__ == '__main__':
              'slxmt_t': '神龙-T新马',
              'slxmt_hfh': '火凤凰-新马'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
-    # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slrb_jl', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    for team in ['slxmt_hfh']:
+    # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slrb_jl', 'slrb_js', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
+    for team in ['slrb_js']:
         query = '导入'         # 导入；，更新--->>数据更新切换
         m.readFormHost(team, query)
     # 手动更新状态
@@ -574,7 +575,7 @@ if __name__ == '__main__':
     #   台湾token, 日本token, 新马token：  2c333f20b9ccb0d1516237ea9f06b059
     #   泰国token： 83583b29fc24ec0529082ff7928246a6
 
-    # begin = datetime.date(2021, 4, 6)       # 若无法查询，切换代理和直连的网络
+    # begin = datetime.date(2021, 4, 13)       # 若无法查询，切换代理和直连的网络
     # print(begin)
     # end = datetime.date(2021, 4, 21)
     # print(end)
@@ -591,7 +592,7 @@ if __name__ == '__main__':
 
     print(datetime.datetime.now())
     # for team in ['slrb_jl']:
-    # for team in ['slrb', 'slrb_jl']:
+    # for team in ['slrb', 'slrb_jl', 'slrb_js']:
     # for team in ['slgat', 'slgat_hfh']:
     for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
     # for team in ['slxmt_hfh']:
@@ -603,7 +604,7 @@ if __name__ == '__main__':
             last_month = str(day)
             print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
             searchType = '订单号'      # 运单号，订单号   查询切换
-            tokenid = '8bfb68451f9a48a33226e29d88516906'
+            tokenid = '93da2bbc59940c03804d04d30b7e6ce4'
             m.orderInfo(tokenid, searchType, team, last_month)
     print('更新耗时：', datetime.datetime.now() - start)
 
