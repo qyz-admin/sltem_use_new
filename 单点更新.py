@@ -562,7 +562,7 @@ if __name__ == '__main__':
              'slxmt_hfh': '火凤凰-新马'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slrb_jl', 'slrb_js', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    for team in ['sltg']:
+    for team in ['slrb_js']:
         query = '导入'         # 导入；，更新--->>数据更新切换
         m.readFormHost(team, query)
     # 手动更新状态
@@ -576,27 +576,27 @@ if __name__ == '__main__':
     #   台湾token, 日本token, 新马token：  f5dc2a3134c17a2e970977232e1aae9b
     #   泰国token： 83583b29fc24ec0529082ff7928246a6
 
-    # begin = datetime.date(2021, 4, 27)       # 若无法查询，切换代理和直连的网络
-    # print(begin)
-    # end = datetime.date(2021, 4, 28)
-    # print(end)
-
-    yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 若无法查询，切换代理和直连的网络
-    mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
-    begin = datetime.date(yy, mm, 1)
+    begin = datetime.date(2021, 3, 22)       # 若无法查询，切换代理和直连的网络
     print(begin)
-    yy2 = int(datetime.datetime.now().strftime('%Y'))
-    mm2 = int(datetime.datetime.now().strftime('%m'))
-    dd2 = int(datetime.datetime.now().strftime('%d'))
-    end = datetime.date(yy2, mm2, dd2)
+    end = datetime.date(2021, 4, 29)
     print(end)
+
+    # yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 若无法查询，切换代理和直连的网络
+    # mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
+    # begin = datetime.date(yy, mm, 1)
+    # print(begin)
+    # yy2 = int(datetime.datetime.now().strftime('%Y'))
+    # mm2 = int(datetime.datetime.now().strftime('%m'))
+    # dd2 = int(datetime.datetime.now().strftime('%d'))
+    # end = datetime.date(yy2, mm2, dd2)
+    # print(end)
 
     print(datetime.datetime.now())
     # for team in ['slrb_js']:
-    # for team in ['slrb', 'slrb_jl', 'slrb_js']:
+    for team in ['slrb_jl', 'slrb_js']:
     # for team in ['slgat', 'slgat_hfh']:
-    for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
-    # for team in ['slxmt_hfh']:
+    # for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
+    # for team in ['slgat_hfh']:
     # for team in ['sltg']:
         print('++++++正在获取 ' + match1[team] + ' 信息++++++')
         for i in range((end - begin).days):  # 按天循环获取订单状态

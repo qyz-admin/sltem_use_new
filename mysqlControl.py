@@ -721,450 +721,246 @@ class MysqlControl(Settings):
             listT = []  # 查询sql的结果 存放池
             print('正在获取---' + tem2 + '---物流时效…………')
             # 总月
-            sql = '''SELECT 年月,币种,物流方式,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
-                    FROM (SELECT IFNULL(年月,'总计') AS 年月,
-								IFNULL(币种,'总计') AS 币种,
-                                IFNULL(物流方式,'总计') AS 物流方式,
-				                IFNULL(天数,'总计') AS 天数,
-				                SUM(总计) AS 总计 ,
-				                IFNULL(SUM(签收量),0) AS 签收量,
-				                IFNULL(SUM(完成量),0) AS 完成量,
-				                SUM(签收量) / SUM(完成量) AS '签收率完成',
-				                SUM(签收量) / SUM(总计) AS '签收率总计',
-				                '' AS 累计完成占比
-                        FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,IF(ISNULL(gat_z.下单出库时), 90, gat_z.下单出库时) AS 天数, 订单量 总计,签收量,完成量
-                            FROM (SELECT  年月,币种,物流方式,DATEDIFF(`仓储扫描时间`,`下单时间`) AS 下单出库时,COUNT(`订单编号`) AS 订单量
-                                FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                    AND  cx.`是否改派` = '直发'
-    			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                GROUP BY 年月,币种,物流方式,下单出库时
-                                ORDER BY 年月,币种,物流方式,下单出库时
-                                ) gat_z
-                            LEFT JOIN  
-                                (SELECT  年月,币种,物流方式,DATEDIFF(`仓储扫描时间`,`下单时间`) AS 下单出库时,COUNT(`订单编号`) AS 签收量
-                                FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                    AND  cx.`是否改派` = '直发'
-                                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                    AND  cx.`最终状态` = '已签收'
-                                GROUP BY 年月,币种,物流方式,下单出库时
-                                ORDER BY 年月,币种,物流方式,下单出库时
-                                ) gat_yqs
-                            ON gat_z.`年月` = gat_yqs.`年月` 
-                                AND gat_z.`币种` = gat_yqs.`币种` 
-    	                        AND gat_z.`物流方式` = gat_yqs.`物流方式`
-    	                        AND gat_z.`下单出库时` = gat_yqs.`下单出库时`
-                            LEFT JOIN 
-                                (SELECT  年月,币种,物流方式,DATEDIFF(`仓储扫描时间`,`下单时间`) AS 下单出库时,COUNT(`订单编号`) AS 完成量
-                                FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                    AND  cx.`是否改派` = '直发'
-    			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                    AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
-                                GROUP BY 年月,币种,物流方式,下单出库时
-                                ORDER BY 年月,币种,物流方式,下单出库时
-                                ) gat_wc
-                            ON gat_z.`年月` = gat_wc.`年月` 
-                                AND gat_z.`币种` = gat_wc.`币种` 
-    	                        AND gat_z.`物流方式` = gat_wc.`物流方式`
-    	                        AND gat_z.`下单出库时` = gat_wc.`下单出库时`
-                        )	sl
-                        GROUP BY 年月,币种,物流方式,sl.天数
-                        with rollup
-                    ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
+            sql = '''SELECT 年月,
+			                IFNULL(币种,'总计') as 币种,
+			                IFNULL(物流方式,'总计') as 物流方式,
+			                IF(下单出库时 = 90,null,IFNULL(下单出库时,'总计')) as 天数,
+			                SUM(订单量) as 总计,
+			                SUM(签收量) as 签收量,
+			                SUM(完成量) as 完成量,				  
+			                SUM(签收量) / SUM(完成量) AS '签收率完成',
+			                SUM(签收量) / SUM(订单量)  AS '签收率总计',
+			                null 累计完成占比
+                    FROM( SELECT  年月,
+					            币种,
+					            物流方式,
+					            IF(ISNULL(DATEDIFF(仓储扫描时间, 下单时间)), 90, DATEDIFF(仓储扫描时间, 下单时间))  AS 下单出库时,
+					            COUNT(订单编号) AS 订单量, 
+					            SUM(最终状态 = '已签收') as 签收量, 
+					            SUM(最终状态 in ('已签收','拒收','理赔','已退货')) as 完成量
+			            FROM  d1_{0} cx 
+			            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
+				            AND cx.`是否改派` = '直发' 
+				            AND cx.系统订单状态 IN ( '已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)' ) 
+				        GROUP BY 年月,币种,物流方式,下单出库时 
+				        ORDER BY 年月,币种,物流方式,下单出库时 
+		                ) sl
+		            GROUP BY 年月,币种,物流方式,下单出库时 
+			        with rollup
+			        HAVING (`币种` IS NOT null  AND `年月` IS NOT null);;'''.format(team, tem1, tem2)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             listT.append(df)
-            sql2 = '''SELECT 年月,币种,物流方式,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
-                    FROM (SELECT IFNULL(年月,'总计') AS 年月,
-                                IFNULL(币种,'总计') AS 币种,
-                                IFNULL(物流方式,'总计') AS 物流方式,
-				                IFNULL(天数,'总计') AS 天数,
-				                SUM(总计) AS 总计 ,
-				                IFNULL(SUM(签收量),0) AS 签收量,
-				                IFNULL(SUM(完成量),0) AS 完成量,
-				                SUM(签收量) / SUM(完成量) AS '签收率完成',
-				                SUM(签收量) / SUM(总计) AS '签收率总计',
-				                '' AS 累计完成占比
-                        FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,IF(ISNULL(gat_z.出库完成时), 90, gat_z.出库完成时) AS 天数, 订单量 总计,签收量,完成量
-                            FROM (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`) AS 出库完成时,COUNT(`订单编号`) AS 订单量
-                                FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                    AND  cx.`是否改派` = '直发'
-    			                          AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                GROUP BY 年月,币种,物流方式,出库完成时
-                                ORDER BY 年月,币种,物流方式,出库完成时
-                                ) gat_z
-                            LEFT JOIN  
-                                (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`) AS 出库完成时,COUNT(`订单编号`) AS 签收量
-                                FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}'
-                                    AND  cx.`是否改派` = '直发'
-                                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                    AND  cx.`最终状态` = '已签收'
-                                GROUP BY 年月,币种,物流方式,出库完成时
-                                ORDER BY 年月,币种,物流方式,出库完成时
-                                ) gat_yqs
-                            ON gat_z.`年月` = gat_yqs.`年月` 
-                                AND gat_z.`币种` = gat_yqs.`币种` 
-    	                        AND gat_z.`物流方式` = gat_yqs.`物流方式`
-    	                        AND gat_z.`出库完成时` = gat_yqs.`出库完成时`
-                            LEFT JOIN 
-                                (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`) AS 出库完成时,COUNT(`订单编号`) AS 完成量
-                                FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                    AND  cx.`是否改派` = '直发'
-    			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                    AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
-                                GROUP BY 年月,币种,物流方式,出库完成时
-                                ORDER BY 年月,币种,物流方式,出库完成时
-                                ) gat_wc
-                            ON gat_z.`年月` = gat_wc.`年月` 
-                                AND gat_z.`币种` = gat_wc.`币种` 
-    	                        AND gat_z.`物流方式` = gat_wc.`物流方式`
-    	                        AND gat_z.`出库完成时` = gat_wc.`出库完成时`
-                        )	sl
-                        GROUP BY 年月,币种,物流方式,sl.天数
-                        with rollup
-                    ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
+            sql2 = '''SELECT 年月,
+			                IFNULL(币种,'总计') as 币种,
+			                IFNULL(物流方式,'总计') as 物流方式,
+			                IF(出库完成时 = 90,null,IFNULL(出库完成时,'总计')) as 天数,
+			                SUM(订单量) as 总计,
+			                SUM(签收量) as 签收量,
+			                SUM(完成量) as 完成量,				  
+			                SUM(签收量) / SUM(完成量) AS '签收率完成',
+			                SUM(签收量) / SUM(订单量)  AS '签收率总计',
+			                null 累计完成占比
+                    FROM( SELECT  年月,
+					            币种,
+					            物流方式,
+					            IF(ISNULL(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)), 90, DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`))  AS 出库完成时,
+					            COUNT(订单编号) AS 订单量, 
+					            SUM(最终状态 = '已签收') as 签收量, 
+					            SUM(最终状态 in ('已签收','拒收','理赔','已退货')) as 完成量
+			                FROM  d1_{0} cx 
+			                WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}' 
+				                AND cx.`是否改派` = '直发' 
+				                AND cx.系统订单状态 IN ( '已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)' ) 
+				            GROUP BY 年月,币种,物流方式,出库完成时 
+				            ORDER BY 年月,币种,物流方式,出库完成时 
+		                ) sl
+		            GROUP BY 年月,币种,物流方式,出库完成时 
+			        with rollup
+			        HAVING (`币种` IS NOT null  AND `年月` IS NOT null);'''.format(team, tem1, tem2)
             df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
             listT.append(df2)
-            sql3 = '''SELECT 年月,币种,物流方式,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
-                    FROM (SELECT IFNULL(年月,'总计') AS 年月,
-								IFNULL(币种,'总计') AS 币种,
-                                IFNULL(物流方式,'总计') AS 物流方式,
-				                IFNULL(天数,'总计') AS 天数,
-				                SUM(总计) AS 总计 ,
-				                IFNULL(SUM(签收量),0) AS 签收量,
-				                IFNULL(SUM(完成量),0) AS 完成量,
-				                SUM(签收量) / SUM(完成量) AS '签收率完成',
-				                SUM(签收量) / SUM(总计) AS '签收率总计',
-				                '' AS 累计完成占比
-                        FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,IF(ISNULL(gat_z.下单完成时), 90, gat_z.下单完成时) AS 天数, 订单量 总计,签收量,完成量
-                            FROM (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 订单量
-                                FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                    AND  cx.`是否改派` = '直发'
-    			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                GROUP BY 年月,币种,物流方式,下单完成时
-                                ORDER BY 年月,币种,物流方式,下单完成时
-                                ) gat_z
-                            LEFT JOIN  
-                                (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 签收量
-                                FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}'
-                                    AND  cx.`是否改派` = '直发'
-                                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                    AND  cx.`最终状态` = '已签收'
-                                GROUP BY 年月,币种,物流方式,下单完成时
-                                ORDER BY 年月,币种,物流方式,下单完成时
-                                ) gat_yqs
-                            ON gat_z.`年月` = gat_yqs.`年月` 
-                                AND gat_z.`币种` = gat_yqs.`币种` 
-    	                        AND gat_z.`物流方式` = gat_yqs.`物流方式`
-    	                        AND gat_z.`下单完成时` = gat_yqs.`下单完成时`
-                            LEFT JOIN 
-                                (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 完成量
-                                FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                    AND  cx.`是否改派` = '直发'
-    			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                    AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
-                                GROUP BY 年月,币种,物流方式,下单完成时
-                                ORDER BY 年月,币种,物流方式,下单完成时
-                                ) gat_wc
-                            ON gat_z.`年月` = gat_wc.`年月` 
-                                AND gat_z.`币种` = gat_wc.`币种` 
-    	                        AND gat_z.`物流方式` = gat_wc.`物流方式`
-    	                        AND gat_z.`下单完成时` = gat_wc.`下单完成时`
-                        )	sl
-                        GROUP BY 年月,币种,物流方式,sl.天数
-                        with rollup
-                    ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
+            sql3 = '''SELECT 年月,
+			                IFNULL(币种,'总计') as 币种,
+			                IFNULL(物流方式,'总计') as 物流方式,
+			                IF(下单完成时 = 90,null,IFNULL(下单完成时,'总计')) as 天数,
+			                SUM(订单量) as 总计,
+			                SUM(签收量) as 签收量,
+			                SUM(完成量) as 完成量,				  
+			                SUM(签收量) / SUM(完成量) AS '签收率完成',
+			                SUM(签收量) / SUM(订单量)  AS '签收率总计',
+			                null 累计完成占比
+                    FROM( SELECT  年月,
+					            币种,
+					            物流方式,
+					            IF(ISNULL(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)), 90, DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`))  AS 下单完成时,
+					            COUNT(订单编号) AS 订单量, 
+					            SUM(最终状态 = '已签收') as 签收量, 
+					            SUM(最终状态 in ('已签收','拒收','理赔','已退货')) as 完成量
+			            FROM  d1_{0} cx 
+			            WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}' 
+				            AND cx.`是否改派` = '直发' 
+				            AND cx.系统订单状态 IN ( '已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)' ) 
+				        GROUP BY 年月,币种,物流方式,下单完成时 
+				        ORDER BY 年月,币种,物流方式,下单完成时 
+		            ) sl
+		            GROUP BY 年月,币种,物流方式,下单完成时 
+			        with rollup
+			        HAVING (`币种` IS NOT null  AND `年月` IS NOT null);'''.format(team, tem1, tem2)
             df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
             listT.append(df3)
-            sql4 = '''SELECT 年月,币种,物流方式,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
-                    FROM (SELECT IFNULL(年月,'总计') AS 年月,
-								IFNULL(币种,'总计') AS 币种,
-                                IFNULL(物流方式,'总计') AS 物流方式,
-				                IFNULL(天数,'总计') AS 天数,
-				                SUM(总计) AS 总计 ,
-				                IFNULL(SUM(签收量),0) AS 签收量,
-				                IFNULL(SUM(完成量),0) AS 完成量,
-				                SUM(签收量) / SUM(完成量) AS '签收率完成',
-				                SUM(签收量) / SUM(总计) AS '签收率总计',
-				                '' AS 累计完成占比
-                        FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,IF(ISNULL(gat_z.下单完成时), 90, gat_z.下单完成时) AS 天数, 订单量 总计,签收量,完成量
-                            FROM (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 订单量
-                                FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                    AND  cx.`是否改派` = '改派'
-    			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                GROUP BY 年月,币种,物流方式,下单完成时
-                                ORDER BY 年月,币种,物流方式,下单完成时
-                                ) gat_z
-                            LEFT JOIN  
-                                (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 签收量
-                                FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}'
-                                    AND  cx.`是否改派` = '改派'
-                                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                    AND  cx.`最终状态` = '已签收'
-                                GROUP BY 年月,币种,物流方式,下单完成时
-                                ORDER BY 年月,币种,物流方式,下单完成时
-                                ) gat_yqs
-                            ON gat_z.`年月` = gat_yqs.`年月` 
-                                AND gat_z.`币种` = gat_yqs.`币种` 
-    	                        AND gat_z.`物流方式` = gat_yqs.`物流方式`
-    	                        AND gat_z.`下单完成时` = gat_yqs.`下单完成时`
-                            LEFT JOIN 
-                                (SELECT  年月,币种,物流方式,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 完成量
-                                FROM  d1_{0} cx
-                                WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                    AND  cx.`是否改派` = '改派'
-    			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                    AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
-                                GROUP BY 年月,币种,物流方式,下单完成时
-                                ORDER BY 年月,币种,物流方式,下单完成时
-                                ) gat_wc
-                            ON gat_z.`年月` = gat_wc.`年月` 
-                                AND gat_z.`币种` = gat_wc.`币种` 
-    	                        AND gat_z.`物流方式` = gat_wc.`物流方式`
-    	                        AND gat_z.`下单完成时` = gat_wc.`下单完成时`
-                        )	sl
-                        GROUP BY 年月,币种,物流方式,sl.天数
-                        with rollup
-                    ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
+            sql4 = '''SELECT 年月,
+			                IFNULL(币种,'总计') as 币种,
+			                IFNULL(物流方式,'总计') as 物流方式,
+			                IF(下单完成时 = 90,null,IFNULL(下单完成时,'总计')) as 天数,
+			                SUM(订单量) as 总计,
+			                SUM(签收量) as 签收量,
+			                SUM(完成量) as 完成量,				  
+			                SUM(签收量) / SUM(完成量) AS '签收率完成',
+			                SUM(签收量) / SUM(订单量)  AS '签收率总计',
+			                null 累计完成占比
+                    FROM( SELECT  年月,
+					            币种,
+					            物流方式,
+					            IF(ISNULL(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)), 90, DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`))  AS 下单完成时,
+					            COUNT(订单编号) AS 订单量, 
+					            SUM(最终状态 = '已签收') as 签收量, 
+					            SUM(最终状态 in ('已签收','拒收','理赔','已退货')) as 完成量
+			            FROM  d1_{0} cx
+			            WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}' 
+				            AND cx.`是否改派` = '改派' 
+				            AND cx.系统订单状态 IN ( '已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)' ) 
+				        GROUP BY 年月,币种,物流方式,下单完成时 
+				        ORDER BY 年月,币种,物流方式,下单完成时 
+		            ) sl
+		            GROUP BY 年月,币种,物流方式,下单完成时 
+			        with rollup
+			        HAVING (`币种` IS NOT null  AND `年月` IS NOT null);'''.format(team, tem1, tem2)
             df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
             listT.append(df4)
             # 分旬
             print('正在获取---' + tem + '---物流分旬时效…………')
-            sql10 = '''SELECT 年月,币种,物流方式,旬,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
-                                FROM (SELECT IFNULL(年月,'总计') AS 年月,
-            								IFNULL(币种,'总计') AS 币种,
-                                            IFNULL(物流方式,'总计') AS 物流方式,
-                                            IFNULL(旬,'总计') AS 旬,
-            				                IFNULL(天数,'总计') AS 天数,
-            				                SUM(总计) AS 总计 ,
-            				                IFNULL(SUM(签收量),0) AS 签收量,
-            				                IFNULL(SUM(完成量),0) AS 完成量,
-            				                SUM(签收量) / SUM(完成量) AS '签收率完成',
-            				                SUM(签收量) / SUM(总计) AS '签收率总计',
-            				                '' AS 累计完成占比
-                                    FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,gat_z.旬,IF(ISNULL(gat_z.下单出库时), 90, gat_z.下单出库时) AS 天数, 订单量 总计,签收量,完成量
-                                        FROM (SELECT  年月,币种,物流方式,旬,DATEDIFF(`仓储扫描时间`,`下单时间`) AS 下单出库时,COUNT(`订单编号`) AS 订单量
-                                            FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                                AND  cx.`是否改派` = '直发'
-                			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                            GROUP BY 年月,币种,物流方式,旬,下单出库时
-                                            ORDER BY 年月,币种,物流方式,旬,下单出库时
-                                            ) gat_z
-                                        LEFT JOIN  
-                                            (SELECT  年月,币种,物流方式,旬,DATEDIFF(`仓储扫描时间`,`下单时间`) AS 下单出库时,COUNT(`订单编号`) AS 签收量
-                                            FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}'
-                                                AND  cx.`是否改派` = '直发'
-                                                AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                                AND  cx.`最终状态` = '已签收'
-                                            GROUP BY 年月,币种,物流方式,旬,下单出库时
-                                            ORDER BY 年月,币种,物流方式,旬,下单出库时
-                                            ) gat_yqs
-                                        ON gat_z.`年月` = gat_yqs.`年月` 
-                                            AND gat_z.`币种` = gat_yqs.`币种` 
-                	                        AND gat_z.`物流方式` = gat_yqs.`物流方式`
-                	                        AND gat_z.`旬` = gat_yqs.`旬`
-                	                        AND gat_z.`下单出库时` = gat_yqs.`下单出库时`
-                                        LEFT JOIN 
-                                            (SELECT  年月,币种,物流方式,旬,DATEDIFF(`仓储扫描时间`,`下单时间`) AS 下单出库时,COUNT(`订单编号`) AS 完成量
-                                            FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                                AND  cx.`是否改派` = '直发'
-                			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                                AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
-                                            GROUP BY 年月,币种,物流方式,旬,下单出库时
-                                            ORDER BY 年月,币种,物流方式,旬,下单出库时
-                                            ) gat_wc
-                                        ON gat_z.`年月` = gat_wc.`年月` 
-                                            AND gat_z.`币种` = gat_wc.`币种` 
-                	                        AND gat_z.`物流方式` = gat_wc.`物流方式`
-                	                        AND gat_z.`旬` = gat_wc.`旬`
-                	                        AND gat_z.`下单出库时` = gat_wc.`下单出库时`
-                                    )	sl
-                                    GROUP BY 年月,币种,物流方式,旬,sl.天数
-                                    with rollup
-                                ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
+            sql10 = '''SELECT 年月,
+			                IFNULL(币种,'总计') as 币种,
+			                IFNULL(物流方式,'总计') as 物流方式,
+			                IFNULL(旬,'总计') as 旬,
+			                IF(下单出库时 = 90,null,IFNULL(下单出库时,'总计')) as 天数,
+			                SUM(订单量) as 总计,
+			                SUM(签收量) as 签收量,
+			                SUM(完成量) as 完成量,				  
+			                SUM(签收量) / SUM(完成量) AS '签收率完成',
+			                SUM(签收量) / SUM(订单量)  AS '签收率总计',
+			                null 累计完成占比
+                    FROM( SELECT  年月,
+					            币种,
+					            物流方式,
+					            旬,
+					            IF(ISNULL(DATEDIFF(仓储扫描时间, 下单时间)), 90, DATEDIFF(仓储扫描时间, 下单时间))  AS 下单出库时,
+					            COUNT(订单编号) AS 订单量, 
+					            SUM(最终状态 = '已签收') as 签收量, 
+					            SUM(最终状态 in ('已签收','拒收','理赔','已退货')) as 完成量
+			            FROM  d1_{0} cx 
+			            WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}' 
+				            AND cx.`是否改派` = '直发' 
+				            AND cx.系统订单状态 IN ( '已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)' ) 
+				        GROUP BY 年月,币种,物流方式,旬,下单出库时 
+				        ORDER BY 年月,币种,物流方式,旬,下单出库时 
+		            ) sl
+		            GROUP BY 年月,币种,物流方式,旬,下单出库时 
+			        with rollup
+			        HAVING (`币种` IS NOT null  AND `年月` IS NOT null);'''.format(team, tem1, tem2)
             df10 = pd.read_sql_query(sql=sql10, con=self.engine1)
             listT.append(df10)
-            sql20 = '''SELECT 年月,币种,物流方式,旬,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
-                                FROM (SELECT IFNULL(年月,'总计') AS 年月,
-                                            IFNULL(币种,'总计') AS 币种,
-                                            IFNULL(物流方式,'总计') AS 物流方式,
-                                            IFNULL(旬,'总计') AS 旬,
-            				                IFNULL(天数,'总计') AS 天数,
-            				                SUM(总计) AS 总计 ,
-            				                IFNULL(SUM(签收量),0) AS 签收量,
-            				                IFNULL(SUM(完成量),0) AS 完成量,
-            				                SUM(签收量) / SUM(完成量) AS '签收率完成',
-            				                SUM(签收量) / SUM(总计) AS '签收率总计',
-            				                '' AS 累计完成占比
-                                    FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,gat_z.旬,IF(ISNULL(gat_z.出库完成时), 90, gat_z.出库完成时) AS 天数, 订单量 总计,签收量,完成量
-                                        FROM (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`) AS 出库完成时,COUNT(`订单编号`) AS 订单量
-                                            FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                                AND  cx.`是否改派` = '直发'
-                			                          AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                            GROUP BY 年月,币种,物流方式,旬,出库完成时
-                                            ORDER BY 年月,币种,物流方式,旬,出库完成时
-                                            ) gat_z
-                                        LEFT JOIN  
-                                            (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`) AS 出库完成时,COUNT(`订单编号`) AS 签收量
-                                            FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}'
-                                                AND  cx.`是否改派` = '直发'
-                                                AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                                AND  cx.`最终状态` = '已签收'
-                                            GROUP BY 年月,币种,物流方式,旬,出库完成时
-                                            ORDER BY 年月,币种,物流方式,旬,出库完成时
-                                            ) gat_yqs
-                                        ON gat_z.`年月` = gat_yqs.`年月` 
-                                            AND gat_z.`币种` = gat_yqs.`币种` 
-                	                        AND gat_z.`物流方式` = gat_yqs.`物流方式`
-                	                        AND gat_z.`旬` = gat_yqs.`旬`
-                	                        AND gat_z.`出库完成时` = gat_yqs.`出库完成时`
-                                        LEFT JOIN 
-                                            (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`) AS 出库完成时,COUNT(`订单编号`) AS 完成量
-                                            FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                                AND  cx.`是否改派` = '直发'
-                			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                                AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
-                                            GROUP BY 年月,币种,物流方式,旬,出库完成时
-                                            ORDER BY 年月,币种,物流方式,旬,出库完成时
-                                            ) gat_wc
-                                        ON gat_z.`年月` = gat_wc.`年月` 
-                                            AND gat_z.`币种` = gat_wc.`币种` 
-                	                        AND gat_z.`物流方式` = gat_wc.`物流方式`
-                	                        AND gat_z.`旬` = gat_wc.`旬`
-                	                        AND gat_z.`出库完成时` = gat_wc.`出库完成时`
-                                    )	sl
-                                    GROUP BY 年月,币种,物流方式,旬,sl.天数
-                                    with rollup
-                                ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
+            sql20 = '''SELECT 年月,
+			                IFNULL(币种,'总计') as 币种,
+			                IFNULL(物流方式,'总计') as 物流方式,
+			                IFNULL(旬,'总计') as 旬,
+			                IF(出库完成时 = 90,null,IFNULL(出库完成时,'总计')) as 天数,
+			                SUM(订单量) as 总计,
+			                SUM(签收量) as 签收量,
+			                SUM(完成量) as 完成量,				  
+			                SUM(签收量) / SUM(完成量) AS '签收率完成',
+			                SUM(签收量) / SUM(订单量)  AS '签收率总计',
+			                null 累计完成占比
+                    FROM( SELECT  年月,
+					            币种,
+					            物流方式,
+					            旬,
+					            IF(ISNULL(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)), 90, DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`))  AS 出库完成时,
+					            COUNT(订单编号) AS 订单量, 
+					            SUM(最终状态 = '已签收') as 签收量, 
+					            SUM(最终状态 in ('已签收','拒收','理赔','已退货')) as 完成量
+			            FROM  d1_{0} cx 
+			            WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}' 
+				            AND cx.`是否改派` = '直发' 
+				            AND cx.系统订单状态 IN ( '已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)' ) 
+				            GROUP BY 年月,币种,物流方式,旬,出库完成时 
+				        ORDER BY 年月,币种,物流方式,旬,出库完成时 
+		            ) sl
+		            GROUP BY 年月,币种,物流方式,旬,出库完成时 
+			        with rollup
+			        HAVING (`币种` IS NOT null  AND `年月` IS NOT null);'''.format(team, tem1, tem2)
             df20 = pd.read_sql_query(sql=sql20, con=self.engine1)
             listT.append(df20)
-            sql30 = '''SELECT 年月,币种,物流方式,旬,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
-                                FROM (SELECT IFNULL(年月,'总计') AS 年月,
-            								IFNULL(币种,'总计') AS 币种,
-                                            IFNULL(物流方式,'总计') AS 物流方式,
-                                            IFNULL(旬,'总计') AS 旬,
-            				                IFNULL(天数,'总计') AS 天数,
-            				                SUM(总计) AS 总计 ,
-            				                IFNULL(SUM(签收量),0) AS 签收量,
-            				                IFNULL(SUM(完成量),0) AS 完成量,
-            				                SUM(签收量) / SUM(完成量) AS '签收率完成',
-            				                SUM(签收量) / SUM(总计) AS '签收率总计',
-            				                '' AS 累计完成占比
-                                    FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,gat_z.旬,IF(ISNULL(gat_z.下单完成时), 90, gat_z.下单完成时) AS 天数, 订单量 总计,签收量,完成量
-                                        FROM (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 订单量
-                                            FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                                AND  cx.`是否改派` = '直发'
-                			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                            GROUP BY 年月,币种,物流方式,旬,下单完成时
-                                            ORDER BY 年月,币种,物流方式,旬,下单完成时
-                                            ) gat_z
-                                        LEFT JOIN  
-                                            (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 签收量
-                                            FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}'
-                                                AND  cx.`是否改派` = '直发'
-                                                AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                                AND  cx.`最终状态` = '已签收'
-                                            GROUP BY 年月,币种,物流方式,旬,下单完成时
-                                            ORDER BY 年月,币种,物流方式,旬,下单完成时
-                                            ) gat_yqs
-                                        ON gat_z.`年月` = gat_yqs.`年月` 
-                                            AND gat_z.`币种` = gat_yqs.`币种` 
-                	                        AND gat_z.`物流方式` = gat_yqs.`物流方式`
-                	                        AND gat_z.`旬` = gat_yqs.`旬`
-                	                        AND gat_z.`下单完成时` = gat_yqs.`下单完成时`
-                                        LEFT JOIN 
-                                            (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 完成量
-                                            FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                                AND  cx.`是否改派` = '直发'
-                			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                                AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
-                                            GROUP BY 年月,币种,物流方式,旬,下单完成时
-                                            ORDER BY 年月,币种,物流方式,旬,下单完成时
-                                            ) gat_wc
-                                        ON gat_z.`年月` = gat_wc.`年月` 
-                                            AND gat_z.`币种` = gat_wc.`币种` 
-                	                        AND gat_z.`物流方式` = gat_wc.`物流方式`
-                	                        AND gat_z.`旬` = gat_wc.`旬`
-                	                        AND gat_z.`下单完成时` = gat_wc.`下单完成时`
-                                    )	sl
-                                    GROUP BY 年月,币种,物流方式,旬,sl.天数
-                                    with rollup
-                                ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
+            sql30 = '''SELECT 年月,
+			                IFNULL(币种,'总计') as 币种,
+			                IFNULL(物流方式,'总计') as 物流方式,
+			                IFNULL(旬,'总计') as 旬,
+			                IF(下单完成时 = 90,null,IFNULL(下单完成时,'总计')) as 天数,
+			                SUM(订单量) as 总计,
+			                SUM(签收量) as 签收量,
+			                SUM(完成量) as 完成量,				  
+			                SUM(签收量) / SUM(完成量) AS '签收率完成',
+			                SUM(签收量) / SUM(订单量)  AS '签收率总计',
+			                null 累计完成占比
+                    FROM( SELECT  年月,
+					            币种,
+					            物流方式,
+					            旬,
+					            IF(ISNULL(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)), 90, DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`))  AS 下单完成时,
+					            COUNT(订单编号) AS 订单量, 
+					            SUM(最终状态 = '已签收') as 签收量, 
+					            SUM(最终状态 in ('已签收','拒收','理赔','已退货')) as 完成量
+			            FROM  d1_{0} cx 
+			            WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}' 
+				            AND cx.`是否改派` = '直发' 
+				            AND cx.系统订单状态 IN ( '已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)' ) 
+				        GROUP BY 年月,币种,物流方式,旬,下单完成时 
+				        ORDER BY 年月,币种,物流方式,旬,下单完成时 
+		            ) sl
+		            GROUP BY 年月,币种,物流方式,旬,下单完成时 
+			        with rollup
+			        HAVING (`币种` IS NOT null  AND `年月` IS NOT null);'''.format(team, tem1, tem2)
             df30 = pd.read_sql_query(sql=sql30, con=self.engine1)
             listT.append(df30)
-            sql40 = '''SELECT 年月,币种,物流方式,旬,IF(s.天数=90,NULL,s.天数) AS 天数,总计 ,签收量,完成量,签收率完成,签收率总计,累计完成占比
-                                FROM (SELECT IFNULL(年月,'总计') AS 年月,
-            								IFNULL(币种,'总计') AS 币种,
-                                            IFNULL(物流方式,'总计') AS 物流方式,
-                                            IFNULL(旬,'总计') AS 旬,
-            				                IFNULL(天数,'总计') AS 天数,
-            				                SUM(总计) AS 总计 ,
-            				                IFNULL(SUM(签收量),0) AS 签收量,
-            				                IFNULL(SUM(完成量),0) AS 完成量,
-            				                SUM(签收量) / SUM(完成量) AS '签收率完成',
-            				                SUM(签收量) / SUM(总计) AS '签收率总计',
-            				                '' AS 累计完成占比
-                                    FROM(SELECT gat_z.年月,gat_z.币种,gat_z.物流方式,gat_z.旬,IF(ISNULL(gat_z.下单完成时), 90, gat_z.下单完成时) AS 天数, 订单量 总计,签收量,完成量
-                                        FROM (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 订单量
-                                            FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                                AND  cx.`是否改派` = '改派'
-                			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                            GROUP BY 年月,币种,物流方式,旬,下单完成时
-                                            ORDER BY 年月,币种,物流方式,旬,下单完成时
-                                            ) gat_z
-                                        LEFT JOIN  
-                                            (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 签收量
-                                            FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}'
-                                                AND  cx.`是否改派` = '改派'
-                                                AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                                AND  cx.`最终状态` = '已签收'
-                                            GROUP BY 年月,币种,物流方式,旬,下单完成时
-                                            ORDER BY 年月,币种,物流方式,旬,下单完成时
-                                            ) gat_yqs
-                                        ON gat_z.`年月` = gat_yqs.`年月` 
-                                            AND gat_z.`币种` = gat_yqs.`币种` 
-                	                        AND gat_z.`物流方式` = gat_yqs.`物流方式`
-                	                        AND gat_z.`旬` = gat_yqs.`旬`
-                	                        AND gat_z.`下单完成时` = gat_yqs.`下单完成时`
-                                        LEFT JOIN 
-                                            (SELECT  年月,币种,物流方式,旬,DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`) AS 下单完成时,COUNT(`订单编号`) AS 完成量
-                                            FROM  d1_{0} cx
-                                            WHERE cx.`币种` = '{1}'	AND cx.`团队` = '{2}'
-                                                AND  cx.`是否改派` = '改派'
-                			                    AND  cx.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                                AND  cx.`最终状态` IN ('已签收','拒收','理赔','已退货')
-                                            GROUP BY 年月,币种,物流方式,旬,下单完成时
-                                            ORDER BY 年月,币种,物流方式,旬,下单完成时
-                                            ) gat_wc
-                                        ON gat_z.`年月` = gat_wc.`年月` 
-                                            AND gat_z.`币种` = gat_wc.`币种` 
-                	                        AND gat_z.`物流方式` = gat_wc.`物流方式`
-                	                        AND gat_z.`旬` = gat_wc.`旬`
-                	                        AND gat_z.`下单完成时` = gat_wc.`下单完成时`
-                                    )	sl
-                                    GROUP BY 年月,币种,物流方式,旬,sl.天数
-                                    with rollup
-                                ) s WHERE s.`币种` != '总计'  AND s.`年月` != '总计';'''.format(team, tem1, tem2)
+            sql40 = '''SELECT 年月,
+			                IFNULL(币种,'总计') as 币种,
+			                IFNULL(物流方式,'总计') as 物流方式,
+			                IFNULL(旬,'总计') as 旬,
+			                IF(下单完成时 = 90,null,IFNULL(下单完成时,'总计')) as 天数,
+			                SUM(订单量) as 总计,
+			                SUM(签收量) as 签收量,
+			                SUM(完成量) as 完成量,				  
+			                SUM(签收量) / SUM(完成量) AS '签收率完成',
+			                SUM(签收量) / SUM(订单量)  AS '签收率总计',
+			                null 累计完成占比
+                    FROM( SELECT  年月,
+					            币种,
+					            物流方式,
+					            旬,
+					            IF(ISNULL(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)), 90, DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`))  AS 下单完成时,
+					            COUNT(订单编号) AS 订单量, 
+					            SUM(最终状态 = '已签收') as 签收量, 
+					            SUM(最终状态 in ('已签收','拒收','理赔','已退货')) as 完成量
+			            FROM  d1_{0} cx 
+			            WHERE cx.`币种` = '{1}' AND cx.`团队` = '{2}' 
+				            AND cx.`是否改派` = '改派' 
+				            AND cx.系统订单状态 IN ( '已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)' ) 
+				        GROUP BY 年月,币种,物流方式,旬,下单完成时 
+				        ORDER BY 年月,币种,物流方式,旬,下单完成时 
+		            ) sl
+		            GROUP BY 年月,币种,物流方式,旬,下单完成时 
+			        with rollup
+			        HAVING (`币种` IS NOT null  AND `年月` IS NOT null);'''.format(team, tem1, tem2)
             df40 = pd.read_sql_query(sql=sql40, con=self.engine1)
             listT.append(df40)
             print('正在写入excel…………')
@@ -1380,8 +1176,7 @@ class MysqlControl(Settings):
                             LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                             LEFT JOIN dim_area c on c.id = a.area_id
                             LEFT JOIN dim_cate d on d.id = a.third_cate_id
-            --              LEFT JOIN gk_product e on e.id = a.product_id
-                          LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.product_id = a.product_id
+                          	LEFT JOIN gk_sale e ON e.id = a.sale_id
                         WHERE a.rq >= '{startDate}'
                             AND a.rq < '{endDate}'
                             AND b.pcode = '{team}'
@@ -1533,8 +1328,7 @@ class MysqlControl(Settings):
                             LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                             LEFT JOIN dim_area c on c.id = a.area_id
                             LEFT JOIN dim_cate d on d.id = a.third_cate_id
-            --              LEFT JOIN gk_product e on e.id = a.product_id
-                          LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.product_id = a.product_id
+                            LEFT JOIN gk_sale e ON e.id = a.sale_id
                         WHERE a.rq >= '{startDate}'
                             AND a.rq < '{endDate}'
                             AND b.pcode = '{team}'
