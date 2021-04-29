@@ -64,10 +64,8 @@ class ExcelControl():
                         print('----------不用导入(五项条件不足)：' + sht.name)
                 else:
                     print('----不用导入：' + sht.name)
-            # 关闭excel文件
-            wb.close()
-            # 退出excel app
-            app.quit()
+            wb.close()              # 关闭excel文件
+            app.quit()              # 退出excel app
     def date(para):
         delta = pd.Timedelta(str(para) + 'days')
         time = pd.to_datetime('1899-12-30') + delta
@@ -180,6 +178,9 @@ class ExcelControl():
                 df['运单号'] = df['运单号'].str.strip()  # 去掉运单号中的前后空字符串
             if '订单编号' not in df:
                 df.insert(0, '订单编号', '')
+            if '发表时间' in columns and '国内物流运单号（订单号）' in columns and '日期' in columns:  # 物流轨迹去掉多余的日期
+                df.drop(labels=['日期'], axis=1, inplace=True)
+            # print(columns)
         if team == 'sltg':
             if '订单号' not in df:
                 df.insert(0, '订单号', '')
@@ -252,12 +253,13 @@ class ExcelControl():
             # print(df.columns)
             if team == 'slrb':
                 try:
+                    # df['状态时间'] = df['状态时间'].str.strip()
                     df['状态时间'] = df['状态时间'].replace(to_replace=0, value=datetime.datetime(1990, 1, 1, 0, 0))
+                    df['状态时间'] = df['状态时间'].replace(to_replace=' ', value=datetime.datetime(1990, 1, 1, 0, 0))
                     df['状态时间'] = df['状态时间'].replace(to_replace='客人联系保管', value=(datetime.datetime.now() - datetime.timedelta(days=1)))
                     #df['上线时间'] = df['上线时间'].replace(to_replace=0, value=datetime.datetime(1990, 1, 1, 0, 0))
                     df['状态时间'] = df['状态时间'].fillna(value=datetime.datetime(1990, 1, 1, 0, 0))
                     df['物流状态'] = df['物流状态'].fillna(value='未上线')
-                    # df['状态时间'] = df['状态时间'].str.strip()
                     df['订单编号'] = df['订单编号'].str.replace('原内单号：', '')
                     df['订单编号'] = df['订单编号'].str.replace('原单:', '')
                     # df['出货时间'] = df['出货时间'].astype(str)

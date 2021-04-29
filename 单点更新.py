@@ -556,12 +556,13 @@ if __name__ == '__main__':
              'sltg': '神龙-泰国',
              'slrb': '神龙-日本',
              'slrb_jl': '精灵-日本',
+             'slrb_js': '金狮-日本',
              'slxmt': '神龙-新马',
              'slxmt_t': '神龙-T新马',
              'slxmt_hfh': '火凤凰-新马'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slrb_jl', 'slrb_js', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    for team in ['slrb_js']:
+    for team in ['sltg']:
         query = '导入'         # 导入；，更新--->>数据更新切换
         m.readFormHost(team, query)
     # 手动更新状态
@@ -572,12 +573,12 @@ if __name__ == '__main__':
 
 
     # -----------------------------------------------系统导入状态运行（二）-----------------------------------------
-    #   台湾token, 日本token, 新马token：  2c333f20b9ccb0d1516237ea9f06b059
+    #   台湾token, 日本token, 新马token：  f5dc2a3134c17a2e970977232e1aae9b
     #   泰国token： 83583b29fc24ec0529082ff7928246a6
 
-    # begin = datetime.date(2021, 4, 13)       # 若无法查询，切换代理和直连的网络
+    # begin = datetime.date(2021, 4, 27)       # 若无法查询，切换代理和直连的网络
     # print(begin)
-    # end = datetime.date(2021, 4, 21)
+    # end = datetime.date(2021, 4, 28)
     # print(end)
 
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 若无法查询，切换代理和直连的网络
@@ -591,7 +592,7 @@ if __name__ == '__main__':
     print(end)
 
     print(datetime.datetime.now())
-    # for team in ['slrb_jl']:
+    # for team in ['slrb_js']:
     # for team in ['slrb', 'slrb_jl', 'slrb_js']:
     # for team in ['slgat', 'slgat_hfh']:
     for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
@@ -604,7 +605,7 @@ if __name__ == '__main__':
             last_month = str(day)
             print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
             searchType = '订单号'      # 运单号，订单号   查询切换
-            tokenid = '93da2bbc59940c03804d04d30b7e6ce4'
+            tokenid = 'f5dc2a3134c17a2e970977232e1aae9b'
             m.orderInfo(tokenid, searchType, team, last_month)
     print('更新耗时：', datetime.datetime.now() - start)
 

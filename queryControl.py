@@ -2241,7 +2241,7 @@ class QueryControl(Settings):
 
     # 更新团队品类明细（新后台的第二部分）
     def cateIdInfo(self, tokenid, team):  # 进入产品检索界面，
-        print('正在获取需要更新的产品id信息')
+        print('正在获取需要更新的品类id信息')
         start = datetime.datetime.now()
         month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y-%m-%d')
         sql = '''SELECT id,`订单编号`, `产品id` , `产品名称` ,null 父级分类, null 二级分类, null 三级分类 FROM {0}_order_list sl 
@@ -2252,15 +2252,16 @@ class QueryControl(Settings):
         if ordersDict.empty:
             print('无需要更新的品类id信息！！！')
             return
-        orderId = list(ordersDict['产品id'])
+        orderId = list(ordersDict['产品id'].drop_duplicates())
+        # print(orderId)
         orderId = [str(i) for i in orderId]  # join函数就是字符串的函数,参数和插入的都要是字符串
         print('获取耗时：', datetime.datetime.now() - start)
         max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
         n = 0
         while n < max_count:        # 这里用到了一个while循环，穿越过来的
-            cateid = ', '.join(orderId[n:n + 90])
+            cateid = ', '.join(orderId[n:n + 1])
             print(cateid)
-            n = n + 90
+            n = n + 1
             self.cateIdquery(tokenid, cateid, team)
 
     def cateIdquery(self, tokenid, cateid, team):  # 进入产品检索界面，
@@ -2350,8 +2351,8 @@ if __name__ == '__main__':
     # team = 'sltg_zqsb'
     # m.sl_tem_cost(team, match9[team])
 
-    team = 'slgat'  # 第一部分查询
-    token = 'cb88b6d0110154d1709aa8dc72ec9a9a'
+    team = 'slrb_js'  # 第一部分查询
+    token = '93da2bbc59940c03804d04d30b7e6ce4'
     # m.productIdquery(token, 'NJ210330085757094517', '订单号', team)
     m.cateIdInfo(token, team)
     # m.productIdInfo(token, '订单号', team)
