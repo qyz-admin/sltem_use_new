@@ -474,8 +474,8 @@ class MysqlControl(Settings):
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
             print(month_begin)
         else:
-            month_last = '2021-04-01'
-            month_yesterday = '2021-04-30'
+            month_last = '2021-03-01'
+            month_yesterday = '2021-03-31'
             month_begin = '2020-01-01'
         token = 'f5dc2a3134c17a2e970977232e1aae9b'        # 补充查询产品信息需要
         if team == 'slgat':  # 港台查询函数导出
@@ -606,7 +606,7 @@ class MysqlControl(Settings):
                         LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} WHERE {0}.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
                         LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
                         LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
-                    WHERE a.日期 >= '{2}' AND a.日期 <= '{3}' 
+                    WHERE a.日期 >= '{2}' AND a.日期 <= '{3}'
                     AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
         print('正在获取---' + match[team] + ' ---全部导出数据内容…………')

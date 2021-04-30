@@ -331,21 +331,16 @@ class SltemMonitoring(Settings):
                             SUM(a.salesRMB_yqs) AS 签收额,
                             SUM(a.salesRMB_yjs) AS 拒收额,
                             SUM(a.gps) AS 改派订单量,
-                --          SUM(a.cgcost) AS 总采购额,
-                --          SUM(a.cgcost_zf) AS 直发采购额,
-                --          SUM(a.adcost) AS 广告成本,
                             null 总采购额,
                             null 直发采购额,
                             null 广告成本,
                             SUM(a.wlcost) AS 物流成本,
-                --          SUM(a.qtcost) AS 手续费
                             null 手续费
                     FROM gk_order_day a
                         LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                         LEFT JOIN dim_area c on c.id = a.area_id
                         LEFT JOIN dim_cate d on d.id = a.third_cate_id
-                --      LEFT JOIN gk_product e on e.id = a.product_id
-                        LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.product_id = a.product_id
+                        LEFT JOIN gk_sale e ON e.id = a.sale_id
                     WHERE a.rq >= '{0}'
                         AND a.rq < '{1}'
                         AND b.pcode = '{2}'
@@ -413,19 +408,15 @@ class SltemMonitoring(Settings):
                             SUM(a.salesRMB_yqs) AS 签收额,
                             SUM(a.salesRMB_yjs) AS 拒收额,
                             SUM(a.gps) AS 改派订单量,
-                --          SUM(a.cgcost_zf) AS 直发采购额,
-                --          SUM(a.adcost) AS 广告成本,
                             null 直发采购额,
                             null 广告成本,
                             SUM(a.wlcost) AS 物流成本,
-                --          SUM(a.qtcost) AS 手续费
                             null 手续费
                     FROM gk_order_day a
                         LEFT JOIN dim_currency_lang b ON a.currency_lang_id = b.id
                         LEFT JOIN dim_area c on c.id = a.area_id
                         LEFT JOIN dim_cate d on d.id = a.third_cate_id
-                --      LEFT JOIN gk_product e on e.id = a.product_id
-                        LEFT JOIN (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) e on e.product_id = a.product_id
+                        LEFT JOIN gk_sale e ON e.id = a.sale_id
                     WHERE a.rq >= '{0}'
                         AND a.rq < '{1}'
                         AND b.pcode = '{2}'
@@ -505,6 +496,8 @@ class SltemMonitoring(Settings):
         Time_day.sort()
         print(Time_day[11])
         print(Time_day[10])
+        Time_day[11] = '2021-04-29'
+        Time_day[10] = '2021-03-29'
         listT = []  # 查询sql 存放池
         show_name = []  # 打印进度需要
         # 月签收率（天）---查询
@@ -5949,11 +5942,11 @@ if __name__ == '__main__':
 
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    startday = '2021.03.28'
+    # startday = '2021.04.29'
     # for team in ['新马', '新加坡', '马来西亚', '菲律宾']:
-    for team in ['香港', '台湾', '港台']:
+    # for team in ['港台']:
     # for team in ['日本']:
-        m.readForm(team, startday, '导入')
+    #     m.readForm(team, startday, '导入')
 
     # # 获取监控表以上传的时间---监控运行（二）
     # for team in ['菲律宾', '新加坡', '马来西亚']:
@@ -5968,21 +5961,21 @@ if __name__ == '__main__':
     # for team in ['日本']:
     # for team in ['台湾', '香港', '火凤凰台湾', '火凤凰香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
     # for team in ['菲律宾', '新加坡', '马来西亚']:
-        m.order_Monitoring(team)    # 各月缓存
-        m.data_Monitoring(team)     # 两月数据
+    #     m.order_Monitoring(team)    # 各月缓存
+        # m.data_Monitoring(team)     # 两月数据
         # m.costWaybill(team)       # 成本缓存 与 成本两月数据
         m.sl_Monitoring(team)       # 输出数据
         # m.sl_Monitoring_two(team)  # 输出上月数据
 
 
     # -----------------------------------------------单独上传监控运行（四）-----------------------------------------
-    # startday = '2021.04.27'    # 上传记录时间（qsb_slgat_copy）
-    # for team in ['香港', '台湾']:
+    # startday = '2021.04.29'    # 上传记录时间（qsb_slgat_copy）
+    # for team in ['港台']:
     #     m.readForm(team, startday, '单独导入')
 
-    # today = '2021.04.27'        # 导表的显示时间
-    # Time_one = '2021-04-27'     # 确定需查询的日期
-    # Time_two = '2021-03-27'
-    # for team in ['台湾', '香港']:
+    today = '2021.04.29'        # 导表的显示时间
+    Time_one = '2021-04-29'     # 确定需查询的日期
+    Time_two = '2021-03-29'
+    for team in ['台湾', '香港']:
     #     m.sl_MonitoringTHR(team, today, Time_one, Time_two)       # 输出数据
-    #     m.sl_MonitoringTHR_two(team, today, Time_one, Time_two)       # 上月输出数据
+        m.sl_MonitoringTHR_two(team, today, Time_one, Time_two)       # 上月输出数据

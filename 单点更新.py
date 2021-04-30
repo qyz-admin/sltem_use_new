@@ -456,8 +456,8 @@ class QueryTwo(Settings):
         r_header = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36',
             'Referer': 'http://gimp.giikin.com/front/orderToolsServiceQuery'}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         print('正在处理json数据转化为dataframe…………')
         req = json.loads(req.text)  # json类型数据转换为dict字典
@@ -499,7 +499,7 @@ class QueryTwo(Settings):
         print('正在写入缓存中......')
         try:
             df = data[['orderNumber', 'currency', 'area', 'productId', 'quantity', 'shipInfo.shipPhone', 'wayBillNumber',
-                       'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'finishTime', 'transferTime',
+                       'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'logisticsUpdateTime', 'update_time', 'transferTime',
                        'deliveryTime', 'reassignmentTypeName', 'dpeStyle', 'amount']]
             print(df)
             print('正在更新临时表中......')
@@ -519,7 +519,7 @@ class QueryTwo(Settings):
             				    IF(h.`dpeStyle` = 'P 普通货', 'P', IF(h.`dpeStyle` = 'T 特殊货', 'T', h.`dpeStyle`)) 货物类型,
             				    h.transferTime 审核时间,
             				    h.deliveryTime 仓储扫描时间,
-            				    h.finishTime 完结状态时间
+            				    h.update_time 完结状态时间
                             FROM d1_cpy h
                                 LEFT JOIN dim_product ON  dim_product.id = h.productId
                                 LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -562,9 +562,9 @@ if __name__ == '__main__':
              'slxmt_hfh': '火凤凰-新马'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slrb_jl', 'slrb_js', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    for team in ['slrb_js']:
-        query = '导入'         # 导入；，更新--->>数据更新切换
-        m.readFormHost(team, query)
+    # for team in ['slrb_js']:
+    #     query = '导入'         # 导入；，更新--->>数据更新切换
+    #     m.readFormHost(team, query)
     # 手动更新状态
     # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
     # for team in ['slxmt']:
@@ -576,26 +576,26 @@ if __name__ == '__main__':
     #   台湾token, 日本token, 新马token：  f5dc2a3134c17a2e970977232e1aae9b
     #   泰国token： 83583b29fc24ec0529082ff7928246a6
 
-    begin = datetime.date(2021, 3, 22)       # 若无法查询，切换代理和直连的网络
-    print(begin)
-    end = datetime.date(2021, 4, 29)
-    print(end)
-
-    # yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 若无法查询，切换代理和直连的网络
-    # mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
-    # begin = datetime.date(yy, mm, 1)
+    # begin = datetime.date(2021, 3, 3)       # 若无法查询，切换代理和直连的网络
     # print(begin)
-    # yy2 = int(datetime.datetime.now().strftime('%Y'))
-    # mm2 = int(datetime.datetime.now().strftime('%m'))
-    # dd2 = int(datetime.datetime.now().strftime('%d'))
-    # end = datetime.date(yy2, mm2, dd2)
+    # end = datetime.date(2021, 4, 29)
     # print(end)
+
+    yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 若无法查询，切换代理和直连的网络
+    mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
+    begin = datetime.date(yy, mm, 1)
+    print(begin)
+    yy2 = int(datetime.datetime.now().strftime('%Y'))
+    mm2 = int(datetime.datetime.now().strftime('%m'))
+    dd2 = int(datetime.datetime.now().strftime('%d'))
+    end = datetime.date(yy2, mm2, dd2)
+    print(end)
 
     print(datetime.datetime.now())
     # for team in ['slrb_js']:
-    for team in ['slrb_jl', 'slrb_js']:
+    # for team in ['slrb_jl', 'slrb_js']:
     # for team in ['slgat', 'slgat_hfh']:
-    # for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
+    for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
     # for team in ['slgat_hfh']:
     # for team in ['sltg']:
         print('++++++正在获取 ' + match1[team] + ' 信息++++++')
