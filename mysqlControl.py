@@ -468,19 +468,19 @@ class MysqlControl(Settings):
                     'slrb': 'sunyaru@giikin.com',
                     'slrb_js': 'sunyaru@giikin.com',
                     'slrb_jl': 'sunyaru@giikin.com'}
-        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slgat', 'slgat_hfh0', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
             print(month_begin)
         else:
-            month_last = '2021-03-01'
-            month_yesterday = '2021-03-31'
+            month_last = '2021-04-01'
+            month_yesterday = '2021-04-30'
             month_begin = '2020-01-01'
-        token = 'f5dc2a3134c17a2e970977232e1aae9b'        # 补充查询产品信息需要
+        token = '27b8396abdf2e5e7569b07fd37ad716b'        # 补充查询产品信息需要
         if team == 'slgat':  # 港台查询函数导出
-            self.d.productIdInfo(token, '订单号', team)   # 产品id详情更新   （参数一需要手动更换）
-            self.d.cateIdInfo(token, team)  # 进入产品检索界面（参数一需要手动更换）
+            # self.d.productIdInfo(token, '订单号', team)   # 产品id详情更新   （参数一需要手动更换）
+            # self.d.cateIdInfo(token, team)  # 进入产品检索界面（参数一需要手动更换）
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
@@ -625,7 +625,7 @@ class MysqlControl(Settings):
         filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
-        if team in ('sltg', 'slrb_jl'):
+        if team in ('sltg', 'slrb_jl0', 'slgat0'):
             print('---' + match[team] + ' 不发送邮件')
         else:
             self.e.send('{} {}签收表.xlsx'.format(today, match[team]), filePath,
@@ -1549,9 +1549,7 @@ if __name__ == '__main__':
     match = {'SG': '新加坡',
              'MY': '马来西亚',
              'PH': '菲律宾',
-             'JP': '日本',
-             'HK': '香港',
-             'TW': '台湾'}
+             'JP': '日本'}
     # match = {'HK': '香港',
     #          'TW': '台湾'}
     for team in match.keys():  # 产品花费表200
