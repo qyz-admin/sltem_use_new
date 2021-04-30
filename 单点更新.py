@@ -562,7 +562,7 @@ if __name__ == '__main__':
              'slxmt_hfh': '火凤凰-新马'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slrb_jl', 'slrb_js', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    for team in ['slrb_js']:
+    for team in ['sltg']:
         query = '导入'         # 导入；，更新--->>数据更新切换
         m.readFormHost(team, query)
     # 手动更新状态
@@ -594,8 +594,8 @@ if __name__ == '__main__':
     print(datetime.datetime.now())
     # for team in ['slrb']:
     # for team in ['slrb','slrb_jl', 'slrb_js']:
-    for team in ['slgat', 'slgat_hfh']:
-    # for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
+    # for team in ['slgat', 'slgat_hfh']:
+    for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
     # for team in ['slgat_hfh']:
     # for team in ['sltg']:
         print('++++++正在获取 ' + match1[team] + ' 信息++++++')
@@ -605,7 +605,7 @@ if __name__ == '__main__':
             last_month = str(day)
             print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
             searchType = '订单号'      # 运单号，订单号   查询切换
-            tokenid = 'a6ac4b28b9c003dab397d92d7f92fad7'
+            tokenid = '27b8396abdf2e5e7569b07fd37ad716b'
             m.orderInfo(tokenid, searchType, team, last_month)
     print('更新耗时：', datetime.datetime.now() - start)
 

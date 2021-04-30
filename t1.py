@@ -9,7 +9,7 @@ from 单点更新 import QueryTwo
 import datetime
 
 start: datetime = datetime.datetime.now()
-team = 'slgat_hfh'
+team = 'slxmt_t'
 match = {'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
          'slrb_jl': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
          'slrb_js': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
@@ -58,7 +58,7 @@ print('导入耗时：', datetime.datetime.now() - start)
 print('------------更新部分：---------------------')
 # m.creatMyOrderSlTWO(team)   # 最近两个月的更新订单信息
 print('处理耗时：', datetime.datetime.now() - start)
-m.connectOrder(team)      # 最近两个月的订单信息导出
+# m.connectOrder(team)      # 最近两个月的订单信息导出
 print('输出耗时：', datetime.datetime.now() - start)
 
 
