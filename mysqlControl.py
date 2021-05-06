@@ -127,15 +127,17 @@ class MysqlControl(Settings):
     def creatMyOrderSl(self, team):  # 最近五天的全部订单信息
         match = {'slgat': '"神龙家族-港澳台"',
                  'slgat_hfh': '"火凤凰-港澳台"',
+                 'slgat_hs': '"红杉家族-港澳台", "红杉家族-港澳台2"',
                  'sltg': '"神龙家族-泰国"',
                  'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
                  'slxmt_t': '"神龙-T新马菲"',
                  'slxmt_hfh': '"火凤凰-新加坡", "火凤凰-马来西亚", "火凤凰-菲律宾"',
                  'slrb': '"神龙家族-日本团队"',
                  'slrb_js': '"金狮-日本"',
+                 'slrb_hs': '"红杉家族-日本", "红杉家族-日本666"',
                  'slrb_jl': '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"'}
         # 12-1月的
-        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js0', 'slrb_hs0', 'slgat', 'slgat_hfh', 'slgat_hs0', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             # 获取日期时间
             sql = 'SELECT 日期 FROM {0}_order_list WHERE id = (SELECT MAX(id) FROM {0}_order_list);'.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -155,7 +157,7 @@ class MysqlControl(Settings):
             # 11-12月的
             begin = datetime.date(2021, 4, 1)
             print(begin)
-            end = datetime.date(2021, 4, 26)
+            end = datetime.date(2021, 5, 6)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -218,7 +220,7 @@ class MysqlControl(Settings):
                             left join dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
                     WHERE  a.rq = '{0}' AND a.rq <= '{1}'
                         AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
-            elif team == 'slrb_jl':
+            elif team in ('slrb_jl', 'slrb_js', 'slrb_hs'):
                 sql = '''SELECT a.id,
                             a.month 年月,
                             a.month_mid 旬,
@@ -357,15 +359,17 @@ class MysqlControl(Settings):
     def creatMyOrderSlTWO(self, team):  # 最近两个月的更新订单信息
         match = {'slgat': '"神龙家族-港澳台"',
                  'slgat_hfh': '"火凤凰-港澳台"',
+                 'slgat_hs': '"红杉家族-港澳台", "红杉家族-港澳台2"',
                  'sltg': '"神龙家族-泰国"',
                  'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
                  'slxmt_t': '"神龙-T新马菲"',
                  'slxmt_hfh': '"火凤凰-新加坡", "火凤凰-马来西亚", "火凤凰-菲律宾"',
                  'slrb': '"神龙家族-日本团队"',
                  'slrb_js': '"金狮-日本"',
+                 'slrb_hs': '"红杉家族-日本", "红杉家族-日本666"',
                  'slrb_jl': '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slgat', 'slgat_hfh0', 'slxmt', 'slxmt_t', 'slxmt_hfh0'):
+        if team in ('sltg', 'slrb0', 'slrb_jl0', 'slrb_js0', 'slrb_hs0', 'slgat0', 'slgat_hfh0', 'slgat_hs0', 'slxmt0', 'slxmt_t0', 'slxmt_hfh0'):
             yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
             mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
             begin = datetime.date(yy, mm, 1)
@@ -376,9 +380,9 @@ class MysqlControl(Settings):
             end = datetime.date(yy2, mm2, dd2)
             print(end)
         else:
-            begin = datetime.date(2021, 4, 8)
+            begin = datetime.date(2021, 3, 1)
             print(begin)
-            end = datetime.date(2021, 4, 20)
+            end = datetime.date(2021, 4, 1)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -452,32 +456,36 @@ class MysqlControl(Settings):
     def connectOrder(self, team):
         match = {'slgat': '神龙-港台',
                  'slgat_hfh': '火凤凰-港台',
+                 'slgat_hs': '红杉-港台',
                  'sltg': '神龙-泰国',
                  'slrb': '神龙-日本',
                  'slrb_jl': '精灵-日本',
                  'slrb_js': '金狮-日本',
+                 'slrb_hs': '红杉-日本',
                  'slxmt': '神龙-新马',
                  'slxmt_t': '神龙-T新马',
                  'slxmt_hfh': '火凤凰-新马'}
         emailAdd = {'slgat': 'giikinliujun@163.com',
                     'slgat_hfh': 'giikinliujun@163.com',
+                    'slgat_hs': 'giikinliujun@163.com',
                     'sltg': 'zhangjing@giikin.com',
                     'slxmt': 'zhangjing@giikin.com',
                     'slxmt_t': 'zhangjing@giikin.com',
                     'slxmt_hfh': 'zhangjing@giikin.com',
                     'slrb': 'sunyaru@giikin.com',
                     'slrb_js': 'sunyaru@giikin.com',
+                    'slrb_hs': 'sunyaru@giikin.com',
                     'slrb_jl': 'sunyaru@giikin.com'}
-        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
             print(month_begin)
         else:
-            month_last = '2021-04-01'
-            month_yesterday = '2021-04-30'
+            month_last = '2021-03-01'
+            month_yesterday = '2021-05-06'
             month_begin = '2020-01-01'
-        token = '27b8396abdf2e5e7569b07fd37ad716b'        # 补充查询产品信息需要
+        token = '6e80eb95fb6aaefeed0d2fd5ba20fb4a'        # 补充查询产品信息需要
         if team == 'slgat':  # 港台查询函数导出
             self.d.productIdInfo(token, '订单号', team)   # 产品id详情更新   （参数一需要手动更换）
             self.d.cateIdInfo(token, team)  # 进入产品检索界面（参数一需要手动更换）
@@ -498,7 +506,7 @@ class MysqlControl(Settings):
                     WHERE a.日期 >= '{2}' AND a.日期 <= '{3}'
                         AND a.系统订单状态 IN ('已审核', '待发货', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)', '待发货转审核')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
-        elif team == 'slgat_hfh':  # 新马物流查询函数导出
+        elif team in ('slgat_hfh', 'slgat_hs'):  # 新马物流查询函数导出
             self.d.productIdInfo(token, '订单号', team)
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
@@ -569,7 +577,7 @@ class MysqlControl(Settings):
                     WHERE a.日期 >= '{2}' AND a.日期 <= '{3}'
                         AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
-        elif team == 'slrb_jl' or team == 'slrb_js':
+        elif team in ('slrb_jl', 'slrb_js', 'slrb_hs'):
             self.d.productIdInfo(token, '订单号', team)   # 产品id详情更新   （参数一需要手动更换）
             self.d.cateIdInfo(token, team)  # 进入产品检索界面（参数一需要手动更换）
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
@@ -625,7 +633,7 @@ class MysqlControl(Settings):
         filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
-        if team in ('sltg', 'slrb_jl0', 'slgat0'):
+        if team in ('sltg', 'slrb_jl', 'slgat0'):
             print('---' + match[team] + ' 不发送邮件')
         else:
             self.e.send('{} {}签收表.xlsx'.format(today, match[team]), filePath,
@@ -685,21 +693,25 @@ class MysqlControl(Settings):
     def data_wl(self, team):  # 获取各团队近两个月的物流数据
         match = {'slgat': ['台湾', '香港'],
                  'slgat_hfh': ['台湾', '香港'],
+                 'slgat_hs': ['台湾', '香港'],
                  'sltg': ['泰国'],
                  'slxmt': ['新加坡', '马来西亚', '菲律宾'],
                  'slxmt_t': ['新加坡', '马来西亚', '菲律宾'],
                  'slxmt_hfh': ['新加坡', '马来西亚', '菲律宾'],
                  'slrb': ['日本'],
                  'slrb_js': ['日本'],
+                 'slrb_hs': ['日本'],
                  'slrb_jl': ['日本', '韩国']}
         match1 = {'slgat': ['台湾|神龙家族-港澳台', '香港|神龙家族-港澳台'],
                   'slgat_hfh': ['台湾|火凤凰-港澳台', '香港|火凤凰-港澳台'],
+                  'slgat_hs': ['台湾|红杉-港澳台', '香港|红杉-港澳台'],
                   'sltg': ['泰国|神龙家族-泰国'],
                   'slxmt': ['新加坡|神龙家族-新加坡', '马来西亚|神龙家族-马来西亚', '菲律宾|神龙家族-菲律宾'],
                   'slxmt_t': ['新加坡|神龙-T新马菲', '马来西亚|神龙-T新马菲', '菲律宾|神龙-T新马菲'],
                   'slxmt_hfh': ['新加坡|火凤凰-新加坡', '马来西亚|火凤凰-马来西亚', '菲律宾|火凤凰-菲律宾'],
                   'slrb': ['日本|神龙家族-日本团队'],
                   'slrb_js': ['日本|金狮-日本'],
+                  'slrb_hs': ['日本|红杉-日本'],
                   'slrb_jl': ['日本|精灵家族-日本', '韩国|精灵家族-韩国', '品牌|精灵家族-品牌']}
         emailAdd = {'台湾': 'giikinliujun@163.com',
                     '香港': 'giikinliujun@163.com',
@@ -710,7 +722,7 @@ class MysqlControl(Settings):
                     '日本': 'sunyaru@giikin.com',
                     '韩国': 'sunyaru@giikin.com',
                     '品牌': 'sunyaru@giikin.com'}
-        if team in ('sltg', 'slrb', 'slrb_jl', 'slgat', 'slgat_hfh', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             month_last = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
         else:
             pass
@@ -965,8 +977,10 @@ class MysqlControl(Settings):
             listT.append(df40)
             print('正在写入excel…………')
             today = datetime.date.today().strftime('%Y.%m.%d')
-            if team == 'slgat_hfh' or team == 'slxmt_hfh':
+            if team in ('slgat_hfh', 'slxmt_hfh'):
                 file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰-{}物流时效.xlsx'.format(today, tem1)
+            elif team in ('slgat_hs', 'slrb_hs'):
+                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 红杉-{}物流时效.xlsx'.format(today, tem1)
             elif team == 'slxmt_t':
                 file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙T-{}物流时效.xlsx'.format(today, tem1)
             elif team == 'slrb_js':
@@ -1003,8 +1017,11 @@ class MysqlControl(Settings):
             app.quit()
             print('----已写入excel ')
             filePath.append(file_path)
-            if team == 'slgat_hfh' or team == 'slxmt_hfh':
+            if team in ('slgat_hfh', 'slxmt_hfh'):
                 self.e.send('{} 火凤凰-{}物流时效.xlsx'.format(today, tem1), filePath,
+                            emailAdd[tem1])
+            elif team in ('slgat_hs', 'slrb_hs'):
+                self.e.send('{} 红杉-{}物流时效.xlsx'.format(today, tem1), filePath,
                             emailAdd[tem1])
             elif team == 'slxmt_t':
                 self.e.send('{} 神龙T-{}物流时效.xlsx'.format(today, tem1), filePath,
@@ -1543,25 +1560,25 @@ if __name__ == '__main__':
     # 更新产品id的列表
     m.update_gk_product()
 
-    # for team in ['slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:  # 无运单号查询200
-    #     m.noWaybillNumber(team)
-    #
-    # match = {'SG': '新加坡',
-    #          'MY': '马来西亚',
-    #          'PH': '菲律宾',
-    #          'JP': '日本'}
-    # # match = {'HK': '香港',
-    # #          'TW': '台湾'}
-    # for team in match.keys():  # 产品花费表200
-    #     if team == 'JP':
-    #         m.orderCost(team)
-    #     elif team in ('HK', 'TW'):
-    #         m.orderCost(team)
-    #         m.orderCostHFH(team)
-    #     else:
-    #         m.orderCost(team)
-    #         m.orderCostHFH(team)
-    #         m.orderCostT(team)
+    for team in ['slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:  # 无运单号查询200
+        m.noWaybillNumber(team)
+
+    match = {'SG': '新加坡',
+             'MY': '马来西亚',
+             'PH': '菲律宾',
+             'JP': '日本'}
+    # match = {'HK': '香港',
+    #          'TW': '台湾'}
+    for team in match.keys():  # 产品花费表200
+        if team == 'JP':
+            m.orderCost(team)
+        elif team in ('HK', 'TW'):
+            m.orderCost(team)
+            m.orderCostHFH(team)
+        else:
+            m.orderCost(team)
+            m.orderCostHFH(team)
+            m.orderCostT(team)
 
 
     # sm = SltemMonitoring()  # 成本查询
@@ -1572,7 +1589,7 @@ if __name__ == '__main__':
     # team = 'sltg'
     # m.data_wl(team)
     # for team in ['slgat', 'slgat_hfh', 'slrb', 'slrb_jl', 'sltg', 'slxmt', 'slxmt_hfh']:
-    # for team in ['slrb_jl']:
+    # for team in ['slgat']:
     #     m.data_wl(team)
 
 
