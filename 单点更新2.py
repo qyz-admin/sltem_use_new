@@ -431,19 +431,20 @@ class QueryTwo(Settings):
         max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
         n = 0
         while n < max_count:        # 这里用到了一个while循环，穿越过来的
-            ord = ', '.join(orderId[n:n + 500])
+            ord = ', '.join(orderId[n:n + 9])
             # print(ord)
-            n = n + 500
+            n = n + 9
             self.orderInfoQuery(tokenid, ord, searchType, team)
         print('单日查询耗时：', datetime.datetime.now() - start)
 
     def orderInfoQuery(self, tokenid, orderId, searchType, team):  # 进入订单检索界面
         url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
+        url = r'http://gimp.giikin.com/service?service=gorder.order&action=getVerifyOrderList'
         data = {'phone': None,
                 'email': None,
                 'ip': None,
                 'page': 1,
-                'pageSize': 500,
+                'pageSize': 10,
                 '_token': tokenid}
         if searchType == '订单号':
             data.update({'orderPrefix': orderId,
@@ -461,13 +462,16 @@ class QueryTwo(Settings):
         req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         print('正在处理json数据转化为dataframe…………')
-        print(req)
+        print(551)
+        print(req.json())
+
         # req = json.loads(req)  # json类型数据转换为dict字典
         # print(req)
         # print(req['code'])
         # print(req['location'])
         # req = self.session.post(url=req['location'], headers=r_header, data=data)
         req = json.loads(req.text)  # json类型数据转换为dict字典
+        print(5500)
         print(req)
         ordersDict = []
         for result in req['data']['list']:
@@ -613,7 +617,7 @@ if __name__ == '__main__':
             last_month = str(day)
             print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
             searchType = '订单号'      # 运单号，订单号   查询切换
-            tokenid = '65a1c545a262290ae96ec2eaa1cd7c6c'
+            tokenid = '65945bd449485ddb4495498313224d7e'
             m.orderInfo(tokenid, searchType, team, last_month)
     print('更新耗时：', datetime.datetime.now() - start)
 
