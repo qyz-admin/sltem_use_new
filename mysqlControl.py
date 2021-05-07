@@ -137,7 +137,7 @@ class MysqlControl(Settings):
                  'slrb_hs': '"红杉家族-日本", "红杉家族-日本666"',
                  'slrb_jl': '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"'}
         # 12-1月的
-        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js0', 'slrb_hs0', 'slgat', 'slgat_hfh', 'slgat_hs0', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             # 获取日期时间
             sql = 'SELECT 日期 FROM {0}_order_list WHERE id = (SELECT MAX(id) FROM {0}_order_list);'.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -476,14 +476,14 @@ class MysqlControl(Settings):
                     'slrb_js': 'sunyaru@giikin.com',
                     'slrb_hs': 'sunyaru@giikin.com',
                     'slrb_jl': 'sunyaru@giikin.com'}
-        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt0', 'slxmt_t0', 'slxmt_hfh0'):
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
             print(month_begin)
         else:
-            month_last = '2021-03-01'
-            month_yesterday = '2021-05-06'
+            month_last = '2021-04-01'
+            month_yesterday = '2021-04-30'
             month_begin = '2020-01-01'
         token = '6e80eb95fb6aaefeed0d2fd5ba20fb4a'        # 补充查询产品信息需要
         if team == 'slgat':  # 港台查询函数导出

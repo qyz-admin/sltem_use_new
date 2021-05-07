@@ -501,13 +501,13 @@ class SltemMonitoring(Settings):
         listT = []  # 查询sql 存放池
         show_name = []  # 打印进度需要
         # 月签收率（天）---查询
-        sqlqsb2 = '''SELECT IFNULL(sl.币种,'合计') 币种,
-				            IFNULL(sl.年月,'合计') 年月,
-				            IFNULL(sl.父级分类,'合计') 父级分类,
-				            IFNULL(sl.二级分类,'合计') 二级分类,
-				            IFNULL(sl.三级分类,'合计') 三级分类,
-				            IFNULL(sl.物流方式,'合计') 物流方式,
-				            IFNULL(sl.旬,'合计') 旬,
+        sqlqsb2 = '''SELECT 币种,
+				            年月,
+				            父级分类,
+				            二级分类,
+				            三级分类,
+				            物流方式,
+				            旬,
 				            总订单量, 
 				            签收量 / 完成量 AS '总签收/完成',
 				            签收量 / 总订单量 AS '总签收/总计',
@@ -521,13 +521,13 @@ class SltemMonitoring(Settings):
 				            改派签收量 / 改派完成量 AS '改派签收/完成',
 				            改派签收量 / 改派量 AS '改派签收/总计',
 				            改派完成量 / 改派量 AS '改派完成占比'
-	            FROM( SELECT 币种,
-				            年月,
-				            父级分类,
-				            二级分类,
-				            三级分类,
-				            物流方式,
-				            旬,
+	            FROM( SELECT IFNULL(币种,'合计') 币种,
+				            IFNULL(年月,'合计') 年月,
+				            IFNULL(父级分类,'合计') 父级分类,
+				            IFNULL(二级分类,'合计') 二级分类,
+				            IFNULL(三级分类,'合计') 三级分类,
+				            IFNULL(物流方式,'合计') 物流方式,
+				            IFNULL(旬,'合计') 旬,
 				            COUNT(`订单编号`) 总订单量, 
 				            SUM(IF(`是否改派` = '直发',1,0)) as 直发量,
 				            SUM(IF(`是否改派` = '直发' AND `最终状态` = '已签收',1,0)) as 直发签收量,
@@ -549,13 +549,13 @@ class SltemMonitoring(Settings):
         listT.append(sqlqsb2)
         show_name.append(' 月（天）签收率_…………')
         # 月签收率（整月）---查询
-        sqlqsb3 = '''SELECT IFNULL(sl.币种,'合计') 币种,
-				                IFNULL(sl.年月,'合计') 年月,
-				                IFNULL(sl.父级分类,'合计') 父级分类,
-				                IFNULL(sl.二级分类,'合计') 二级分类,
-				                IFNULL(sl.三级分类,'合计') 三级分类,
-				                IFNULL(sl.物流方式,'合计') 物流方式,
-				                IFNULL(sl.旬,'合计') 旬,
+        sqlqsb3 = '''SELECT 币种,
+				                年月,
+				                父级分类,
+				                二级分类,
+				                三级分类,
+				                物流方式,
+				                旬,
 				                总订单量, 
 				                签收量 / 完成量 AS '总签收/完成',
 				                签收量 / 总订单量 AS '总签收/总计',
@@ -569,13 +569,13 @@ class SltemMonitoring(Settings):
 				                改派签收量 / 改派完成量 AS '改派签收/完成',
 				                改派签收量 / 改派量 AS '改派签收/总计',
 				                改派完成量 / 改派量 AS '改派完成占比'
-	                FROM( SELECT 币种,
-				                年月,
-				                父级分类,
-				                二级分类,
-				                三级分类,
-				                物流方式,
-				                旬,
+	                FROM( SELECT IFNULL(币种,'合计') 币种,
+				                IFNULL(年月,'合计') 年月,
+				                IFNULL(父级分类,'合计') 父级分类,
+				                IFNULL(二级分类,'合计') 二级分类,
+				                IFNULL(三级分类,'合计') 三级分类,
+				                IFNULL(物流方式,'合计') 物流方式,
+				                IFNULL(旬,'合计') 旬,
 				                COUNT(`订单编号`) 总订单量, 
 				                SUM(IF(`是否改派` = '直发',1,0)) as 直发量,
 				                SUM(IF(`是否改派` = '直发' AND `最终状态` = '已签收',1,0)) as 直发签收量,
@@ -597,13 +597,13 @@ class SltemMonitoring(Settings):
         listT.append(sqlqsb3)
         show_name.append(' 月（月）签收率_…………')
         # 月签收率（旬）---查询
-        sqlqsb4 = '''SELECT IFNULL(sl.年月,'合计') 年月,
-				            IFNULL(sl.旬,'合计') 旬,
-				            IFNULL(sl.币种,'合计') 币种,
-				            IFNULL(sl.父级分类,'合计') 父级分类,
-				            IFNULL(sl.二级分类,'合计') 二级分类,
-				            IFNULL(sl.三级分类,'合计') 三级分类,
-				            IFNULL(sl.物流方式,'合计') 物流方式,
+        sqlqsb4 = '''SELECT 年月,
+				            旬,
+				            币种,
+				            父级分类,
+				            二级分类,
+				            三级分类,
+				            物流方式,
 				            总订单量, 
 				            签收量 / 完成量 AS '总签收/完成',
 				            签收量 / 总订单量 AS '总签收/总计',
@@ -617,13 +617,13 @@ class SltemMonitoring(Settings):
 				            改派签收量 / 改派完成量 AS '改派签收/完成',
 				            改派签收量 / 改派量 AS '改派签收/总计',
 				            改派完成量 / 改派量 AS '改派完成占比'
-	            FROM( SELECT 年月,
-				            旬,
-				            币种,
-				            父级分类,
-				            二级分类,
-				            三级分类,
-				            物流方式,
+	            FROM( SELECT IFNULL(年月,'合计') 年月,
+				            IFNULL(旬,'合计') 旬,
+				            IFNULL(币种,'合计') 币种,
+				            IFNULL(父级分类,'合计') 父级分类,
+				            IFNULL(二级分类,'合计') 二级分类,
+				            IFNULL(三级分类,'合计') 三级分类,
+				            IFNULL(物流方式,'合计') 物流方式,
 				            COUNT(`订单编号`) 总订单量, 
 				            SUM(IF(`是否改派` = '直发',1,0)) as 直发量,
 				            SUM(IF(`是否改派` = '直发' AND `最终状态` = '已签收',1,0)) as 直发签收量,
@@ -834,11 +834,11 @@ class SltemMonitoring(Settings):
         show_name.append(' 月（各月）签收率_…………')
 
         # 月物流（天）---查询
-        sqlWl2 = '''SELECT IFNULL(sl.币种,'合计') 币种,
-				            IFNULL(sl.年月,'合计') 年月,
-				            IFNULL(sl.物流方式,'合计') 物流方式,
-				            IFNULL(sl.父级分类,'合计') 父级分类,
-				            IFNULL(sl.旬,'合计') 旬,
+        sqlWl2 = '''SELECT 币种,
+				            年月,
+				            物流方式,
+				            父级分类,
+				            旬,
 				            总订单量 总订单, 
     		                null '总签收/完成',
     		                null '总签收/总计',
@@ -852,11 +852,11 @@ class SltemMonitoring(Settings):
     		                null '改派签收/完成',
     		                null '改派签收/总计',
     		                null '改派完成占比'
-	            FROM( SELECT 币种,
-				            年月,
-				            物流方式,
-				            父级分类,
-				            旬,
+	            FROM( SELECT IFNULL(币种,'合计') 币种,
+				            IFNULL(年月,'合计') 年月,
+				            IFNULL(物流方式,'合计') 物流方式,
+				            IFNULL(父级分类,'合计') 父级分类,
+				            IFNULL(旬,'合计') 旬,
 				            null 总订单量, 
 				            COUNT(`订单编号`) as 直发量,
 				            SUM(IF(`最终状态` = '已签收',1,0)) as 直发签收量,
@@ -873,11 +873,11 @@ class SltemMonitoring(Settings):
         listT.append(sqlWl2)
         show_name.append(' 月（天）物流…………')
         # 月物流（月）---查询
-        sqlWl3 = '''SELECT IFNULL(sl.币种,'合计') 币种,
-				            IFNULL(sl.年月,'合计') 年月,
-				            IFNULL(sl.物流方式,'合计') 物流方式,
-				            IFNULL(sl.父级分类,'合计') 父级分类,
-				            IFNULL(sl.旬,'合计') 旬,
+        sqlWl3 = '''SELECT 币种,
+				            年月,
+				            物流方式,
+				            父级分类,
+				            旬,
 				            总订单量 总订单, 
     		                null '总签收/完成',
     		                null '总签收/总计',
@@ -891,11 +891,11 @@ class SltemMonitoring(Settings):
     		                null '改派签收/完成',
     		                null '改派签收/总计',
     		                null '改派完成占比'
-	            FROM( SELECT 币种,
-				            年月,
-				            物流方式,
-				            父级分类,
-				            旬,
+	            FROM( SELECT IFNULL(币种,'合计') 币种,
+				            IFNULL(年月,'合计') 年月,
+				            IFNULL(物流方式,'合计') 物流方式,
+				            IFNULL(父级分类,'合计') 父级分类,
+				            IFNULL(旬,'合计') 旬,
 				            null 总订单量, 
 				            COUNT(`订单编号`) as 直发量,
 				            SUM(IF(`最终状态` = '已签收',1,0)) as 直发签收量,
@@ -1366,6 +1366,8 @@ class SltemMonitoring(Settings):
                   '泰国': '泰国'}
         emailAdd = {'香港': 'giikinliujun@163.com',
                     '台湾': 'giikinliujun@163.com',
+                    '火凤凰香港': 'giikinliujun@163.com',
+                    '火凤凰台湾': 'giikinliujun@163.com',
                     '泰国': 'zhangjing@giikin.com',
                     '新加坡': 'zhangjing@giikin.com',
                     '马来西亚': 'zhangjing@giikin.com',
@@ -5328,7 +5330,7 @@ class SltemMonitoring(Settings):
                   '台湾': 'slgat',
                   '火凤凰台湾': 'slgat_hfh',
                   '火凤凰香港': 'slgat_hfh',
-                  '火凤凰港台': 'slgat_hfh',
+                  '火凤凰-港台': 'slgat_hfh',
                   '港台': 'slgat',
                   '泰国': 'sltg'}
         start = datetime.datetime.now()
@@ -5415,10 +5417,11 @@ if __name__ == '__main__':
 
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    # startday = '2021.05.06'
+    # startday = '2021.04.06'
     # for team in ['新马', '新加坡', '马来西亚', '菲律宾']:
     # for team in ['台湾', '香港']:
-    # for team in ['火凤凰港台']:
+    # for team in ['火凤凰-港台', '火凤凰台湾', '火凤凰香港']:
+    # for team in ['火凤凰-港台']:
     # for team in ['日本']:
     #     m.readForm(team, startday, '导入')
 
@@ -5432,14 +5435,15 @@ if __name__ == '__main__':
     # # # 测试监控运行（三）
     # for team in ['台湾', '香港']:
     # for team in ['火凤凰台湾', '火凤凰香港']:
-    for team in ['日本']:
+    for team in ['火凤凰香港']:
+    # for team in ['日本']:
     # for team in ['台湾', '香港', '火凤凰台湾', '火凤凰香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
     # for team in ['菲律宾', '新加坡', '马来西亚']:
         m.order_Monitoring(team)    # 各月缓存
         m.data_Monitoring(team)     # 两月数据
         # m.costWaybill(team)       # 成本缓存 与 成本两月数据
         m.sl_Monitoring(team)       # 输出数据
-        # m.sl_Monitoring_two(team)  # 输出上月数据
+        m.sl_Monitoring_two(team)  # 输出上月数据
 
 
     # -----------------------------------------------单独上传监控运行（四）-----------------------------------------
@@ -5451,5 +5455,5 @@ if __name__ == '__main__':
     # Time_one = '2021-04-30'     # 确定需查询的日期
     # Time_two = '2021-03-30'
     # for team in ['台湾', '香港']:
-    # #     m.sl_MonitoringTHR(team, today, Time_one, Time_two)       # 输出数据
+    #     m.sl_MonitoringTHR(team, today, Time_one, Time_two)       # 输出数据
     #     m.sl_MonitoringTHR_two(team, today, Time_one, Time_two)       # 上月输出数据
