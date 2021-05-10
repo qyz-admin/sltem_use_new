@@ -439,12 +439,13 @@ class QueryTwo(Settings):
 
     def orderInfoQuery(self, tokenid, orderId, searchType, team):  # 进入订单检索界面
         url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
-        url = r'http://gimp.giikin.com/service?service=gorder.order&action=getVerifyOrderList'
+        url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getQueryOrder&_user=1343&'
         data = {'phone': None,
                 'email': None,
                 'ip': None,
                 'page': 1,
                 'pageSize': 10,
+                # '_ticker ': tickerid,
                 '_token': tokenid}
         if searchType == '订单号':
             data.update({'orderPrefix': orderId,
@@ -462,102 +463,110 @@ class QueryTwo(Settings):
         req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         print('正在处理json数据转化为dataframe…………')
+        print(req)
         print(551)
-        print(req.json())
-
         # req = json.loads(req)  # json类型数据转换为dict字典
         # print(req)
         # print(req['code'])
-        # print(req['location'])
         # req = self.session.post(url=req['location'], headers=r_header, data=data)
         req = json.loads(req.text)  # json类型数据转换为dict字典
+        print(req['location'])
+        print(550)
+        print(req['location'].split('_ticker=')[1])
+        data.update({'_ticker ': req['location'].split('_ticker=')[1]})
+        url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getQueryOrder&_user=1343&'
+        req = self.session.post(url=url, headers=r_header, data=data)
         print(5500)
         print(req)
-        ordersDict = []
-        for result in req['data']['list']:
-            # print(result)
-            try:
-                # 添加新的字典键-值对，为下面的重新赋值用
-                result['productId'] = 0
-                # result['saleName'] = 0
-                result['saleProduct'] = 0
-                result['spec'] = 0
-                result['link'] = 0
-                # result['saleName'] = result['specs'][0]['saleName']
-                result['saleProduct'] = result['specs'][0]['saleProduct']
-                result['spec'] = result['specs'][0]['spec']
-                result['link'] = result['specs'][0]['link']
-                result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
-            except Exception as e:
-                print('转化失败：', str(Exception) + str(e) + str(result['orderNumber']))
-            quest = ''
-            for re in result['questionReason']:
-                quest = quest + ';' + re
-            result['questionReason'] = quest
-            delr = ''
-            for re in result['delReason']:
-                delr = delr + ';' + re
-            result['delReason'] = delr
-            auto = ''
-            for re in result['autoVerify']:
-                auto = auto + ';' + re
-            result['autoVerify'] = auto
-            self.q.put(result)
-        # print(len(req['data']['list']))
-        for i in range(len(req['data']['list'])):
-            ordersDict.append(self.q.get())
-        data = pd.json_normalize(ordersDict)
-        print('正在写入缓存中......')
-        try:
-            df = data[['orderNumber', 'currency', 'area', 'productId', 'quantity', 'shipInfo.shipPhone', 'wayBillNumber',
-                       'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'logisticsUpdateTime', 'finishTime', 'transferTime',
-                       'deliveryTime', 'reassignmentTypeName', 'dpeStyle', 'amount']]
-            print(df)
-            print('正在更新临时表中......')
-            # df.to_sql('d1_cp_{0}', con=self.engine1, index=False, if_exists='replace').format(team)
-            df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
-            sql = '''SELECT DATE(h.addTime) 日期,
-            				    IF(h.`currency` = '日币', '日本', IF(h.`currency` = '泰铢', '泰国', IF(h.`currency` = '港币', '香港', IF(h.`currency` = '台币', '台湾', IF(h.`currency` = '韩元', '韩国', h.`currency`))))) 币种,
-            				    h.orderNumber 订单编号,
-            				    h.quantity 数量,
-            				    h.`shipInfo.shipPhone` 电话号码,
-            				    h.wayBillNumber 运单编号,
-            				    h.orderStatus 系统订单状态,
-            				    IF(h.`logisticsStatus` in ('发货中'), '在途', h.`logisticsStatus`) 系统物流状态,
-            				    IF(h.`reassignmentTypeName` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
-            				    TRIM(h.logisticsName) 物流方式,
-            				    dim_trans_way.simple_name 物流名称,
-            				    IF(h.`dpeStyle` = 'P 普通货', 'P', IF(h.`dpeStyle` = 'T 特殊货', 'T', h.`dpeStyle`)) 货物类型,
-            				    h.transferTime 审核时间,
-            				    h.deliveryTime 仓储扫描时间,
-            				    h.finishTime 完结状态时间
-                            FROM d1_cpy h
-                                LEFT JOIN dim_product ON  dim_product.id = h.productId
-                                LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
-                                LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = TRIM(h.logisticsName);'''.format(team)
-            df = pd.read_sql_query(sql=sql, con=self.engine1)
-            # df.to_sql('d1_cp_copy_{0}', con=self.engine1, index=False, if_exists='replace').format(team)
-            df.to_sql('d1_cpy_cp', con=self.engine1, index=False, if_exists='replace')
-            print('正在更新表总表中......')
-            sql = '''update {0}_order_list a, d1_cpy_cp b
-                            set a.`币种`= b.`币种`,
-                                a.`数量`= b.`数量`,
-                                a.`电话号码`= b.`电话号码` ,
-                                a.`运单编号`= IF(b.`运单编号` = '', NULL, b.`运单编号`),
-                                a.`系统订单状态`= IF(b.`系统订单状态` = '', NULL, b.`系统订单状态`),
-                                a.`系统物流状态`= IF(b.`系统物流状态` = '', NULL, b.`系统物流状态`),
-                                a.`是否改派`= b.`是否改派`,
-                                a.`物流方式`= IF(b.`物流方式` = '',NULL, b.`物流方式`),
-                                a.`物流名称`= b.`物流名称`,
-                                a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),
-                                a.`审核时间`= b.`审核时间`,
-                                a.`仓储扫描时间`= b.`仓储扫描时间`,
-                                a.`完结状态时间`= b.`完结状态时间`
-                    where a.`订单编号`=b.`订单编号`;'''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
-        except Exception as e:
-            print('更新失败：', str(Exception) + str(e))
-        print('++++++本批次更新成功+++++++')
+        print(req.url)
+        print(req.cookies)
+        print(req.text)
+        print(req.status_code)
+        # ordersDict = []
+        # for result in req['data']['list']:
+        #     # print(result)
+        #     try:
+        #         # 添加新的字典键-值对，为下面的重新赋值用
+        #         result['productId'] = 0
+        #         # result['saleName'] = 0
+        #         result['saleProduct'] = 0
+        #         result['spec'] = 0
+        #         result['link'] = 0
+        #         # result['saleName'] = result['specs'][0]['saleName']
+        #         result['saleProduct'] = result['specs'][0]['saleProduct']
+        #         result['spec'] = result['specs'][0]['spec']
+        #         result['link'] = result['specs'][0]['link']
+        #         result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+        #     except Exception as e:
+        #         print('转化失败：', str(Exception) + str(e) + str(result['orderNumber']))
+        #     quest = ''
+        #     for re in result['questionReason']:
+        #         quest = quest + ';' + re
+        #     result['questionReason'] = quest
+        #     delr = ''
+        #     for re in result['delReason']:
+        #         delr = delr + ';' + re
+        #     result['delReason'] = delr
+        #     auto = ''
+        #     for re in result['autoVerify']:
+        #         auto = auto + ';' + re
+        #     result['autoVerify'] = auto
+        #     self.q.put(result)
+        # # print(len(req['data']['list']))
+        # for i in range(len(req['data']['list'])):
+        #     ordersDict.append(self.q.get())
+        # data = pd.json_normalize(ordersDict)
+        # print('正在写入缓存中......')
+        # try:
+        #     df = data[['orderNumber', 'currency', 'area', 'productId', 'quantity', 'shipInfo.shipPhone', 'wayBillNumber',
+        #                'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'logisticsUpdateTime', 'finishTime', 'transferTime',
+        #                'deliveryTime', 'reassignmentTypeName', 'dpeStyle', 'amount']]
+        #     print(df)
+        #     print('正在更新临时表中......')
+        #     # df.to_sql('d1_cp_{0}', con=self.engine1, index=False, if_exists='replace').format(team)
+        #     df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
+        #     sql = '''SELECT DATE(h.addTime) 日期,
+        #     				    IF(h.`currency` = '日币', '日本', IF(h.`currency` = '泰铢', '泰国', IF(h.`currency` = '港币', '香港', IF(h.`currency` = '台币', '台湾', IF(h.`currency` = '韩元', '韩国', h.`currency`))))) 币种,
+        #     				    h.orderNumber 订单编号,
+        #     				    h.quantity 数量,
+        #     				    h.`shipInfo.shipPhone` 电话号码,
+        #     				    h.wayBillNumber 运单编号,
+        #     				    h.orderStatus 系统订单状态,
+        #     				    IF(h.`logisticsStatus` in ('发货中'), '在途', h.`logisticsStatus`) 系统物流状态,
+        #     				    IF(h.`reassignmentTypeName` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
+        #     				    TRIM(h.logisticsName) 物流方式,
+        #     				    dim_trans_way.simple_name 物流名称,
+        #     				    IF(h.`dpeStyle` = 'P 普通货', 'P', IF(h.`dpeStyle` = 'T 特殊货', 'T', h.`dpeStyle`)) 货物类型,
+        #     				    h.transferTime 审核时间,
+        #     				    h.deliveryTime 仓储扫描时间,
+        #     				    h.finishTime 完结状态时间
+        #                     FROM d1_cpy h
+        #                         LEFT JOIN dim_product ON  dim_product.id = h.productId
+        #                         LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
+        #                         LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = TRIM(h.logisticsName);'''.format(team)
+        #     df = pd.read_sql_query(sql=sql, con=self.engine1)
+        #     # df.to_sql('d1_cp_copy_{0}', con=self.engine1, index=False, if_exists='replace').format(team)
+        #     df.to_sql('d1_cpy_cp', con=self.engine1, index=False, if_exists='replace')
+        #     print('正在更新表总表中......')
+        #     sql = '''update {0}_order_list a, d1_cpy_cp b
+        #                     set a.`币种`= b.`币种`,
+        #                         a.`数量`= b.`数量`,
+        #                         a.`电话号码`= b.`电话号码` ,
+        #                         a.`运单编号`= IF(b.`运单编号` = '', NULL, b.`运单编号`),
+        #                         a.`系统订单状态`= IF(b.`系统订单状态` = '', NULL, b.`系统订单状态`),
+        #                         a.`系统物流状态`= IF(b.`系统物流状态` = '', NULL, b.`系统物流状态`),
+        #                         a.`是否改派`= b.`是否改派`,
+        #                         a.`物流方式`= IF(b.`物流方式` = '',NULL, b.`物流方式`),
+        #                         a.`物流名称`= b.`物流名称`,
+        #                         a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),
+        #                         a.`审核时间`= b.`审核时间`,
+        #                         a.`仓储扫描时间`= b.`仓储扫描时间`,
+        #                         a.`完结状态时间`= b.`完结状态时间`
+        #             where a.`订单编号`=b.`订单编号`;'''.format(team)
+        #     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        # except Exception as e:
+        #     print('更新失败：', str(Exception) + str(e))
+        # print('++++++本批次更新成功+++++++')
 
 if __name__ == '__main__':
     m = QueryTwo()
@@ -574,9 +583,9 @@ if __name__ == '__main__':
              'slxmt_hfh': '火凤凰-新马'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slrb_jl', 'slrb_js', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    for team in ['sltg']:
-        query = '导入'         # 导入；，更新--->>数据更新切换
-        m.readFormHost(team, query)
+    # for team in ['sltg']:
+    #     query = '导入'         # 导入；，更新--->>数据更新切换
+    #     m.readFormHost(team, query)
     # 手动更新状态
     # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
     # for team in ['slxmt']:
@@ -588,46 +597,48 @@ if __name__ == '__main__':
     #   台湾token, 日本token, 新马token：  f5dc2a3134c17a2e970977232e1aae9b
     #   泰国token： 83583b29fc24ec0529082ff7928246a6
 
-    begin = datetime.date(2021, 4, 1)       # 若无法查询，切换代理和直连的网络
-    print(begin)
-    end = datetime.date(2021, 4, 2)
-    print(end)
-    
-    # yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 若无法查询，切换代理和直连的网络
-    # mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
-    # begin = datetime.date(yy, mm, 1)
+    # begin = datetime.date(2021, 4, 1)       # 若无法查询，切换代理和直连的网络
     # print(begin)
-    # yy2 = int(datetime.datetime.now().strftime('%Y'))
-    # mm2 = int(datetime.datetime.now().strftime('%m'))
-    # dd2 = int(datetime.datetime.now().strftime('%d'))
-    # end = datetime.date(yy2, mm2, dd2)
+    # end = datetime.date(2021, 4, 2)
     # print(end)
     #
-    print(datetime.datetime.now())
-    for team in ['slgat_hfh']:
-    # for team in ['slrb_jl', 'slrb_js']:
-    # for team in ['slgat', 'slgat_hfh', 'slgat_hs']:
-    # for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
-    # for team in ['slxmt_hfh']:
-    # for team in ['sltg']:
-        print('++++++正在获取 ' + match1[team] + ' 信息++++++')
-        for i in range((end - begin).days):  # 按天循环获取订单状态
-            day = begin + datetime.timedelta(days=i)
-            yesterday = str(day) + ' 23:59:59'
-            last_month = str(day)
-            print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
-            searchType = '订单号'      # 运单号，订单号   查询切换
-            tokenid = '65945bd449485ddb4495498313224d7e'
-            m.orderInfo(tokenid, searchType, team, last_month)
-    print('更新耗时：', datetime.datetime.now() - start)
+    # # yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 若无法查询，切换代理和直连的网络
+    # # mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
+    # # begin = datetime.date(yy, mm, 1)
+    # # print(begin)
+    # # yy2 = int(datetime.datetime.now().strftime('%Y'))
+    # # mm2 = int(datetime.datetime.now().strftime('%m'))
+    # # dd2 = int(datetime.datetime.now().strftime('%d'))
+    # # end = datetime.date(yy2, mm2, dd2)
+    # # print(end)
+    # #
+    # print(datetime.datetime.now())
+    # for team in ['slgat_hfh']:
+    # # for team in ['slrb_jl', 'slrb_js']:
+    # # for team in ['slgat', 'slgat_hfh', 'slgat_hs']:
+    # # for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
+    # # for team in ['slxmt_hfh']:
+    # # for team in ['sltg']:
+    #     print('++++++正在获取 ' + match1[team] + ' 信息++++++')
+    #     for i in range((end - begin).days):  # 按天循环获取订单状态
+    #         day = begin + datetime.timedelta(days=i)
+    #         yesterday = str(day) + ' 23:59:59'
+    #         last_month = str(day)
+    #         print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
+    #         searchType = '订单号'      # 运单号，订单号   查询切换
+    #         tokenid = '7a51304877dbe4ceaf8574a9a6707291'
+    #         m.orderInfo(tokenid, searchType, team, last_month)
+    # print('更新耗时：', datetime.datetime.now() - start)
 
 
 
     # -----------------------------------------------单个查询测试使用（三）-----------------------------------------
-    # team = 'slgat'              # ['slgat', 'slgat_hfh', 'slrb', 'sltg', 'slxmt', 'slxmt_hfh']
-    # searchType = '订单号'      # 运单号，订单号   查询切换
-    # tokenid = '83583b29fc24ec0529082ff7928246a6'
-    # m.orderInfoQuery(tokenid, 'NR103021446315734', searchType, team)
+    team = 'slgat'              # ['slgat', 'slgat_hfh', 'slrb', 'sltg', 'slxmt', 'slxmt_hfh']
+    searchType = '订单号'      # 运单号，订单号   查询切换
+    tokenid = '809744b190a664962d52345527328f3c'
+    # tickerid = '255755c8118a841aba0f9643b49363d3'
+    # m.orderInfoQuery(tokenid, tickerid, 'NR103021446315734', searchType, team)
+    m.orderInfoQuery(tokenid, 'NR103021446315734', searchType, team)
 
     # last_month = '2021-03-18'
     # m.orderInfo(tokenid, searchType, team, last_month)

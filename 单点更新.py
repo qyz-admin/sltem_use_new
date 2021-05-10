@@ -454,21 +454,29 @@ class QueryTwo(Settings):
         proxy = '39.105.167.0:40005'    # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
-        r_header = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36',
-            'Referer': 'http://gimp.giikin.com/front/orderToolsServiceQuery'}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        r_header = {'Accept': 'application/json, text/plain, */*',
+                    'Accept-Encoding': 'gzip, deflate',
+                    'Accept-Language': 'zh-CN,zh;q=0.9',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Host': 'gimp.giikin.com',
+                    'Origin': 'http://gimp.giikin.com',
+                    'Referer': 'http://gimp.giikin.com/front/orderToolsServiceQuery',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36'}
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         print('正在处理json数据转化为dataframe…………')
-        print(req)
-        # req = json.loads(req)  # json类型数据转换为dict字典
-        # print(req)
-        # print(req['code'])
-        # print(req['location'])
-        # req = self.session.post(url=req['location'], headers=r_header, data=data)
+
+        print(req.text)
         req = json.loads(req.text)  # json类型数据转换为dict字典
-        print(req)
+        print(req['location'])
+        print((req['location']).split())
+        req = self.session.get(url=req['location'] + '&_token=' + tokenid)
+        # print(req.text)
+        print(req.url)
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+
         ordersDict = []
         for result in req['data']['list']:
             # print(result)
@@ -613,7 +621,7 @@ if __name__ == '__main__':
             last_month = str(day)
             print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
             searchType = '订单号'      # 运单号，订单号   查询切换
-            tokenid = '65a1c545a262290ae96ec2eaa1cd7c6c'
+            tokenid = '7a51304877dbe4ceaf8574a9a6707291'
             m.orderInfo(tokenid, searchType, team, last_month)
     print('更新耗时：', datetime.datetime.now() - start)
 
@@ -623,7 +631,7 @@ if __name__ == '__main__':
     # team = 'slgat'              # ['slgat', 'slgat_hfh', 'slrb', 'sltg', 'slxmt', 'slxmt_hfh']
     # searchType = '订单号'      # 运单号，订单号   查询切换
     # tokenid = '83583b29fc24ec0529082ff7928246a6'
-    # m.orderInfoQuery(tokenid, 'NR103021446315734', searchType, team)
+    # m.orderInfoQuery(tokenid, 'NR103021446315734',        print(req) searchType, team)
 
     # last_month = '2021-03-18'
     # m.orderInfo(tokenid, searchType, team, last_month)
