@@ -442,8 +442,10 @@ class QueryTwo(Settings):
         data = {'phone': None,
                 'email': None,
                 'ip': None,
+                '_user': '1343',
                 'page': 1,
                 'pageSize': 500,
+                '_ticker': '95d8170414279f905fe41a78161feca1',
                 '_token': tokenid}
         if searchType == '订单号':
             data.update({'orderPrefix': orderId,
@@ -462,16 +464,22 @@ class QueryTwo(Settings):
                     'Origin': 'http://gimp.giikin.com',
                     'Referer': 'http://gimp.giikin.com/front/orderToolsServiceQuery',
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36'}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         print('正在处理json数据转化为dataframe…………')
 
         print(req.text)
+        print(11)
+        print(req.url)
         req = json.loads(req.text)  # json类型数据转换为dict字典
+        print(12)
         print(req['location'])
         print((req['location']).split())
-        req = self.session.get(url=req['location'] + '&_token=' + tokenid)
+        uu = req['location']
+        print(13)
+        print(uu)
+        req = self.session.get(url=uu + '&_token=' + tokenid)
         # print(req.text)
         print(req.url)
         req = json.loads(req.text)  # json类型数据转换为dict字典
@@ -578,9 +586,9 @@ if __name__ == '__main__':
              'slxmt_hfh': '火凤凰-新马'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slrb_jl', 'slrb_js', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    for team in ['sltg']:
-        query = '导入'         # 导入；，更新--->>数据更新切换
-        m.readFormHost(team, query)
+    # for team in ['sltg']:
+    #     query = '导入'         # 导入；，更新--->>数据更新切换
+    #     m.readFormHost(team, query)
     # 手动更新状态
     # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
     # for team in ['slxmt']:
@@ -621,7 +629,7 @@ if __name__ == '__main__':
             last_month = str(day)
             print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
             searchType = '订单号'      # 运单号，订单号   查询切换
-            tokenid = '7a51304877dbe4ceaf8574a9a6707291'
+            tokenid = '4ef1dfa20968867e1938b6bc99ff1335'
             m.orderInfo(tokenid, searchType, team, last_month)
     print('更新耗时：', datetime.datetime.now() - start)
 

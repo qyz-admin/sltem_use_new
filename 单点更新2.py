@@ -635,7 +635,7 @@ if __name__ == '__main__':
     # -----------------------------------------------单个查询测试使用（三）-----------------------------------------
     team = 'slgat'              # ['slgat', 'slgat_hfh', 'slrb', 'sltg', 'slxmt', 'slxmt_hfh']
     searchType = '订单号'      # 运单号，订单号   查询切换
-    tokenid = '809744b190a664962d52345527328f3c'
+    tokenid = 'c363a3284c2a8a0e6e07c5cb6b22223f'
     # tickerid = '255755c8118a841aba0f9643b49363d3'
     # m.orderInfoQuery(tokenid, tickerid, 'NR103021446315734', searchType, team)
     m.orderInfoQuery(tokenid, 'NR103021446315734', searchType, team)

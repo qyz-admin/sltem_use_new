@@ -381,9 +381,9 @@ class MysqlControl(Settings):
             end = datetime.date(yy2, mm2, dd2)
             print(end)
         else:
-            begin = datetime.date(2021, 3, 1)
+            begin = datetime.date(2021, 4, 1)
             print(begin)
-            end = datetime.date(2021, 5, 8)
+            end = datetime.date(2021, 5, 10)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -483,8 +483,8 @@ class MysqlControl(Settings):
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
             print(month_begin)
         else:
-            month_last = '2021-03-01'
-            month_yesterday = '2021-05-08'
+            month_last = '2021-04-01'
+            month_yesterday = '2021-04-30'
             month_begin = '2020-01-01'
         token = 'fc246aa95068f486c7d11368d12e0dbb'        # 补充查询产品信息需要
         if team == 'slgat':  # 港台查询函数导出
@@ -634,7 +634,7 @@ class MysqlControl(Settings):
         filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
-        if team in ('sltg', 'slrb_jl', 'slgat0'):
+        if team in ('sltg', 'slrb_jl0', 'slgat0'):
             print('---' + match[team] + ' 不发送邮件')
         else:
             self.e.send('{} {}签收表.xlsx'.format(today, match[team]), filePath,
@@ -1590,7 +1590,7 @@ if __name__ == '__main__':
     # team = 'sltg'
     # m.data_wl(team)
     # for team in ['slgat', 'slgat_hfh', 'slrb', 'slrb_jl', 'sltg', 'slxmt', 'slxmt_hfh']:
-    # for team in ['slgat']:
+    # for team in ['slrb_jl']:
     #     m.data_wl(team)
 
 

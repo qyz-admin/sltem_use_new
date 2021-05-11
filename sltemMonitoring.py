@@ -5190,6 +5190,7 @@ class SltemMonitoring(Settings):
                   '火凤凰台湾': 'slgat_hfh',
                   '火凤凰香港': 'slgat_hfh',
                   '火凤凰-港台': 'slgat_hfh',
+                  '神龙-港台': 'slgat',
                   '港台': 'slgat',
                   '泰国': 'sltg'}
         start = datetime.datetime.now()
@@ -5276,13 +5277,13 @@ if __name__ == '__main__':
 
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    # startday = '2021.04.08'
+    startday = '2021.04.10'
     # for team in ['新马', '新加坡', '马来西亚', '菲律宾']:
     # for team in ['台湾', '香港', '日本']:
-    # for team in ['火凤凰-港台', '火凤凰台湾', '火凤凰香港']:
+    # for team in ['神龙-港台', '火凤凰-港台', '火凤凰台湾', '火凤凰香港']:
     # for team in ['火凤凰-港台']:
-    # for team in ['日本']:
-    #     m.readForm(team, startday, '导入')
+    for team in ['日本']:
+        m.readForm(team, startday, '导入')
 
     # # 获取监控表以上传的时间---监控运行（二）
     # for team in ['菲律宾', '新加坡', '马来西亚']:
@@ -5292,10 +5293,10 @@ if __name__ == '__main__':
     #     m.check_time(team)
 
     # # # 测试监控运行（三）
-    for team in ['台湾', '香港', '火凤凰台湾', '火凤凰香港']:
+    # for team in ['台湾', '香港', '火凤凰台湾', '火凤凰香港']:
     # for team in ['火凤凰台湾', '火凤凰香港']:
     # for team in ['火凤凰香港']:
-    # for team in ['日本']:
+    for team in ['日本']:
     # for team in ['台湾', '香港', '火凤凰台湾', '火凤凰香港', '日本', '菲律宾', '新加坡', '马来西亚', '泰国']:
     # for team in ['菲律宾', '新加坡', '马来西亚']:
         m.order_Monitoring(team)    # 各月缓存
