@@ -178,7 +178,8 @@ class QueryTwo(Settings):
             				        h.转采购时间 添加物流单号时间,
             				        null 订单删除原因,
             				        h.订单状态 系统订单状态,
-            				        IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态
+            				        IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
+            				        h.上线时间 上线时间
                             FROM d1_host h 
                             LEFT JOIN dim_product ON  dim_product.id = h.产品id
                             LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -227,7 +228,8 @@ class QueryTwo(Settings):
 				                IF(h.运营团队 = '精灵家族-品牌',IF(h.站点ID=1000000269,'饰品','内衣'),h.站点ID) 站点ID,
 				                null 订单删除原因,
 				                h.订单状态 系统订单状态,
-				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态
+				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
+            				    h.上线时间 上线时间
                     FROM d1_host h 
                     LEFT JOIN dim_product ON  dim_product.id = h.产品id
                     LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -275,7 +277,8 @@ class QueryTwo(Settings):
         				                h.转采购时间 添加物流单号时间,
         				                null 订单删除原因,
         				                h.订单状态 系统订单状态,
-        				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态
+        				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
+            				            h.上线时间 上线时间 
                             FROM d1_host h 
                             LEFT JOIN dim_product ON  dim_product.id = h.产品id
                             LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -322,7 +325,8 @@ class QueryTwo(Settings):
 				                h.转采购时间 添加物流单号时间,
 				                null 订单删除原因,
 				                h.订单状态 系统订单状态,
-				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态
+				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
+            				    h.上线时间 上线时间
                     FROM d1_host h 
                     LEFT JOIN dim_product ON  dim_product.id = h.产品id
                     LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -370,7 +374,8 @@ class QueryTwo(Settings):
                             null 订单删除原因,
                             h.省洲 省洲,
                             h.订单状态 系统订单状态,
-                            IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态
+                            IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
+            				h.上线时间 上线时间
                         FROM d1_host h 
                             LEFT JOIN dim_product ON  dim_product.id = h.产品id
                             LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -393,7 +398,7 @@ class QueryTwo(Settings):
                 print('正在更新临时表中......')
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
                 df.to_sql('d1_host_cp', con=self.engine1, index=False, if_exists='replace')
-                print('正在更新表总表中......')
+                print('正在更新总表中......')
                 sql = '''update {0}_order_list a, d1_host_cp b
                                     set a.`币种`=b.`币种`,
                                         a.`数量`=b.`数量`,
@@ -407,6 +412,7 @@ class QueryTwo(Settings):
             		                    a.`货物类型`= b.`货物类型`,
             		                    a.`审核时间`= b.`审核时间`,
             		                    a.`仓储扫描时间`= b.`仓储扫描时间`,
+            		                    a.`上线时间`= b.`上线时间`,
             		                    a.`完结状态时间`= b.`完结状态时间`
             		                where a.`订单编号`= b.`订单编号`;'''.format(team)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
@@ -522,7 +528,7 @@ class QueryTwo(Settings):
         print('正在写入缓存中......')
         try:
             df = data[['orderNumber', 'currency', 'area', 'productId', 'quantity', 'shipInfo.shipPhone', 'wayBillNumber',
-                       'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'logisticsUpdateTime', 'finishTime', 'transferTime',
+                       'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'logisticsUpdateTime', 'onlineTime', 'finishTime', 'transferTime',
                        'deliveryTime', 'reassignmentTypeName', 'dpeStyle', 'amount']]
             print(df)
             print('正在更新临时表中......')
@@ -541,6 +547,7 @@ class QueryTwo(Settings):
             				    dim_trans_way.simple_name 物流名称,
             				    IF(h.`dpeStyle` = 'P 普通货', 'P', IF(h.`dpeStyle` = 'T 特殊货', 'T', h.`dpeStyle`)) 货物类型,
             				    h.transferTime 审核时间,
+            				    h.onlineTime 上线时间,
             				    h.deliveryTime 仓储扫描时间,
             				    h.finishTime 完结状态时间
                             FROM d1_cpy h
@@ -563,6 +570,7 @@ class QueryTwo(Settings):
                                 a.`物流名称`= b.`物流名称`,
                                 a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),
                                 a.`审核时间`= b.`审核时间`,
+                                a.`上线时间`= b.`上线时间`,
                                 a.`仓储扫描时间`= b.`仓储扫描时间`,
                                 a.`完结状态时间`= b.`完结状态时间`
                     where a.`订单编号`=b.`订单编号`;'''.format(team)
@@ -585,15 +593,15 @@ if __name__ == '__main__':
              'slxmt_t': '神龙-T新马',
              'slxmt_hfh': '火凤凰-新马'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
-    # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slrb_jl', 'slrb_js', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
+    # for team in ['sltg', 'slgat', 'slgat_hfh', 'slgat_hs', slrb', 'slrb_jl', 'slrb_js', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
     # for team in ['sltg']:
     #     query = '导入'         # 导入；，更新--->>数据更新切换
     #     m.readFormHost(team, query)
     # 手动更新状态
     # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    # for team in ['slxmt']:
-    #     query = '更新'         # 导入；，更新--->>数据更新切换
-    #     m.readFormHost(team, query)
+    for team in ['slgat_hfh']:
+        query = '更新'         # 导入；，更新--->>数据更新切换
+        m.readFormHost(team, query)
 
 
     # -----------------------------------------------系统导入状态运行（二）-----------------------------------------
@@ -615,23 +623,23 @@ if __name__ == '__main__':
     # end = datetime.date(yy2, mm2, dd2)
     # print(end)
     #
-    print(datetime.datetime.now())
-    for team in ['slgat_hfh']:
-    # for team in ['slrb_jl', 'slrb_js']:
-    # for team in ['slgat', 'slgat_hfh', 'slgat_hs']:
-    # for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
-    # for team in ['slxmt_hfh']:
-    # for team in ['sltg']:
-        print('++++++正在获取 ' + match1[team] + ' 信息++++++')
-        for i in range((end - begin).days):  # 按天循环获取订单状态
-            day = begin + datetime.timedelta(days=i)
-            yesterday = str(day) + ' 23:59:59'
-            last_month = str(day)
-            print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
-            searchType = '订单号'      # 运单号，订单号   查询切换
-            tokenid = '4ef1dfa20968867e1938b6bc99ff1335'
-            m.orderInfo(tokenid, searchType, team, last_month)
-    print('更新耗时：', datetime.datetime.now() - start)
+    # print(datetime.datetime.now())
+    # for team in ['slgat_hfh']:
+    # # for team in ['slrb_jl', 'slrb_js']:
+    # # for team in ['slgat', 'slgat_hfh', 'slgat_hs']:
+    # # for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
+    # # for team in ['slxmt_hfh']:
+    # # for team in ['sltg']:
+    #     print('++++++正在获取 ' + match1[team] + ' 信息++++++')
+    #     for i in range((end - begin).days):  # 按天循环获取订单状态
+    #         day = begin + datetime.timedelta(days=i)
+    #         yesterday = str(day) + ' 23:59:59'
+    #         last_month = str(day)
+    #         print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
+    #         searchType = '订单号'      # 运单号，订单号   查询切换
+    #         tokenid = 'ee9286447f77b4c6e30f60fdf6f0026d'
+    #         m.orderInfo(tokenid, searchType, team, last_month)
+    # print('更新耗时：', datetime.datetime.now() - start)
 
 
 

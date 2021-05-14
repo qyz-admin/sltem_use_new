@@ -116,9 +116,9 @@ class ExcelControl():
                           '航班时间': [False, ['航班起飞时间', '''国内清关时间
 （或航班起飞时间）''', '起飞时间'], ['航班起飞时间']],
                           '清关时间': [False, ['''泰国清关时间
-（可用到泰国时间代替）''', '清关时间'], ['泰国清关时间']],
+（可用到泰国时间代替）'''], ['泰国清关时间']],
                           '上线时间': [False, ['''上线时间
-（即货交地派时间）''', '上线时间', '新竹上线时间'], ['货交地派时间']],
+（即货交地派时间）''', '上线时间', '新竹上线时间', '清关时间'], ['货交地派时间']],
                           '原运单号': [False, ['原单号', '原單號', '原始顺丰订单号'], []]},
                 'slxmt': {'出货时间': [True, ['出货时间', 'Inbound Datetime'], []],
                         '订单编号': [True, ['订单号', '订单编号', 'Shipper Order Number', 'Shipper Reference Number'], []],
@@ -142,8 +142,8 @@ class ExcelControl():
         if team == 'slgat':
             if '运单号' in columns and '查件单号' in columns and '订单编号' in columns and '换单号' in columns:
                 df.drop(labels=['查件单号'], axis=1, inplace=True)     # 速派7-11的去掉多余的查件单号
-            if '运单编号' in columns and '客户单号' in columns and '转单号' in columns:
-                df.drop(labels=['转单号'], axis=1, inplace=True)     # 顺航的去掉多余的转单号
+                if '运单编号' in columns and '客户单号' in columns and '转单号' in columns:
+                    df.drop(labels=['转单号'], axis=1, inplace=True)     # 顺航的去掉多余的转单号
             if '运单编号' in columns and '件号' in columns and '转单号' in columns:
                 df.drop(labels=['运单编号'], axis=1, inplace=True)   # 立邦的去掉多余的运单编号
             if '新单号' in columns and '承运单号' in columns:
