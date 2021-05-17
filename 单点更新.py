@@ -598,8 +598,8 @@ if __name__ == '__main__':
     #     query = '导入'         # 导入；，更新--->>数据更新切换
     #     m.readFormHost(team, query)
     # 手动更新状态
-    # for team in ['sltg', 'slgat', 'slgat_hfh', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    for team in ['slgat_hfh']:
+    # for team in ['sltg', 'slgat', 'slgat_hfh',  'slgat_hs', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
+    for team in ['slgat_hs']:
         query = '更新'         # 导入；，更新--->>数据更新切换
         m.readFormHost(team, query)
 
@@ -637,7 +637,7 @@ if __name__ == '__main__':
     #         last_month = str(day)
     #         print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
     #         searchType = '订单号'      # 运单号，订单号   查询切换
-    #         tokenid = 'ee9286447f77b4c6e30f60fdf6f0026d'
+    #         tokenid = '56548ab8331e0608d2e0182d572a4307'
     #         m.orderInfo(tokenid, searchType, team, last_month)
     # print('更新耗时：', datetime.datetime.now() - start)
 

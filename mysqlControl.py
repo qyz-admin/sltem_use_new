@@ -83,17 +83,17 @@ class MysqlControl(Settings):
 
     def update_gk_product(self):        # 更新产品id的列表
         (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1))
-        yy = int((datetime.datetime.now() - datetime.timedelta(days=15)).strftime('%Y'))
-        mm = int((datetime.datetime.now() - datetime.timedelta(days=15)).strftime('%m'))
-        dd = int((datetime.datetime.now() - datetime.timedelta(days=15)).strftime('%d'))
+        yy = int((datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y'))
+        mm = int((datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%m'))
+        dd = int((datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%d'))
         begin = datetime.date(yy, mm, dd)
-        # begin = datetime.date(2021, 4, 1)
+        begin = datetime.date(2017, 9, 25)
         print(begin)
         yy2 = int(datetime.datetime.now().strftime('%Y'))
         mm2 = int(datetime.datetime.now().strftime('%m'))
         dd2 = int(datetime.datetime.now().strftime('%d'))
         end = datetime.date(yy2, mm2, dd2)
-        # end = datetime.date(2021, 5, 7)
+        end = datetime.date(2021, 5, 17)
         print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -109,9 +109,10 @@ class MysqlControl(Settings):
 				            null selector,
 				            null buyer_id,
 				            price,
-				            gs.`status`
+				            gs.`status`,
+				            id sale_id
 		            FROM gk_sale gs
-		            WHERE gs.rq >= '{0}';'''.format(month_last)
+		            WHERE gs.rq = '{0}';'''.format(month_last)
             print('正在获取 ' + month_last + ' 号以后的产品详情…………')
             df = pd.read_sql_query(sql=sql, con=self.engine2)
             print('正在写入产品缓存中…………')
@@ -137,7 +138,7 @@ class MysqlControl(Settings):
                  'slrb_hs': '"红杉家族-日本", "红杉家族-日本666"',
                  'slrb_jl': '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"'}
         # 12-1月的
-        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat0', 'slgat_hfh0', 'slgat_hs0', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             # 获取日期时间
             # sql = 'SELECT 日期 FROM {0}_order_list WHERE id = (SELECT MAX(id) FROM {0}_order_list);'.format(team)
             sql = 'SELECT MAX(`日期`) 日期 FROM {0}_order_list;'.format(team)
@@ -156,9 +157,9 @@ class MysqlControl(Settings):
             print(end)
         else:
             # 11-12月的
-            begin = datetime.date(2021, 4, 1)
+            begin = datetime.date(2021, 5, 13)
             print(begin)
-            end = datetime.date(2021, 5, 7)
+            end = datetime.date(2021, 5, 17)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -186,6 +187,7 @@ class MysqlControl(Settings):
                             dim_trans_way.remark 运输方式,
                             a.logistics_type 货物类型,
                             IF(a.low_price=0,'否','是') 是否低价,
+                            gk_sale.id 商品id,
                             a.product_id 产品id,
              		        gk_sale.product_name 产品名称,
                             dim_cate.ppname 父级分类,
@@ -215,7 +217,6 @@ class MysqlControl(Settings):
                             left join dim_area ON dim_area.id = a.area_id
                             left join dim_payment ON dim_payment.id = a.payment_id
 	                        LEFT JOIN gk_sale ON gk_sale.id = a.sale_id
-             		--		left join (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) gs ON gs.product_id = a.product_id
                             left join dim_trans_way ON dim_trans_way.id = a.logistics_id
                             left join dim_cate ON dim_cate.id = a.third_cate_id
                             left join intervals ON intervals.id = a.intervals
@@ -243,6 +244,7 @@ class MysqlControl(Settings):
                             dim_trans_way.remark 运输方式,
                             a.logistics_type 货物类型,
                             IF(a.low_price=0,'否','是') 是否低价,
+                            gk_sale.id 商品id,
                             a.product_id 产品id,
              		        gk_sale.product_name 产品名称,
             --              e.`name` 产品名称,
@@ -273,7 +275,6 @@ class MysqlControl(Settings):
                             left join dim_area ON dim_area.id = a.area_id
                             left join dim_payment ON dim_payment.id = a.payment_id
 	                        LEFT JOIN gk_sale ON gk_sale.id = a.sale_id
-             		--		left join (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) gs ON gs.product_id = a.product_id
                             left join dim_trans_way ON dim_trans_way.id = a.logistics_id
                             left join dim_cate ON dim_cate.id = a.third_cate_id
                             left join intervals ON intervals.id = a.intervals
@@ -301,9 +302,9 @@ class MysqlControl(Settings):
                             dim_trans_way.remark 运输方式,
                             a.logistics_type 货物类型,
                             IF(a.low_price=0,'否','是') 是否低价,
+                            gk_sale.id 商品id,
                             a.product_id 产品id,
              		        gk_sale.product_name 产品名称,
-            --              e.`name` 产品名称,
                             dim_cate.ppname 父级分类,
                             dim_cate.pname 二级分类,
                             dim_cate.name 三级分类,
@@ -330,7 +331,6 @@ class MysqlControl(Settings):
                             left join dim_area ON dim_area.id = a.area_id
                             left join dim_payment ON dim_payment.id = a.payment_id
 	                        LEFT JOIN gk_sale ON gk_sale.id = a.sale_id
-             		--		left join (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) gs ON gs.product_id = a.product_id
                             left join dim_trans_way ON dim_trans_way.id = a.logistics_id
                             left join dim_cate ON dim_cate.id = a.third_cate_id
                             left join intervals ON intervals.id = a.intervals
@@ -486,20 +486,50 @@ class MysqlControl(Settings):
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
             print(month_begin)
         else:
-            month_last = '2021-03-01'
-            month_yesterday = '2021-05-11'
-            month_begin = '2020-01-01'
+            month_last = '2021-05-15'
+            month_yesterday = '2021-05-17'
+            month_begin = '2020-02-01'
+        print('正在检查产品id、父级分类为空的信息---')
+        sql = '''SELECT id,`订单编号`,`商品id` FROM {0}_order_list sl
+            			WHERE sl.`日期`> '{1}'
+            				AND (sl.`产品名称` IS NULL or sl.`父级分类` IS NULL or sl.`产品id` IS NULL or  sl.`产品名称` = '' or sl.`父级分类` = '' or  sl.`产品id` = '')
+            				AND ( NOT sl.`系统订单状态` IN ('已删除','问题订单','支付失败','未支付'));'''.format(team, month_begin)
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        print(df)
+        df.to_sql('d1_cp', con=self.engine1, index=False, if_exists='replace')
+        sql = '''SELECT 订单编号,
+            			商品id,
+            			dp.`id` productId,
+            			dp.`name` productName,
+            			dc.ppname cate,
+            			dc.pname second_cate,
+            			dc.`name` third_cate
+            	FROM d1_cp
+            	LEFT JOIN dim_product dp ON  dp.sale_id = d1_cp.商品id
+            	LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
+        print('正在更新产品详情…………')
+        sql = '''update {0}_order_list a, tem_product_id b
+            		    set a.`产品id`= b.`productId`,
+            		        a.`产品名称`= IF(b.`productName` = '',NULL, b.`productName`),
+            				a.`父级分类`= IF(b.`cate` = '',NULL, b.`cate`),
+            				a.`二级分类`= IF(b.`second_cate` = '',NULL, b.`second_cate`),
+            				a.`三级分类`= IF(b.`third_cate` = '',NULL, b.`third_cate`)
+            			where a.`订单编号`= b.`订单编号`;'''.format(team)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        print('更新完成+++')
         token = 'fc246aa95068f486c7d11368d12e0dbb'        # 补充查询产品信息需要
         if team == 'slgat':  # 港台查询函数导出
             # self.d.productIdInfo(token, '订单号', team)   # 产品id详情更新   （参数一需要手动更换）
             # self.d.cateIdInfo(token, team)  # 进入产品检索界面（参数一需要手动更换）
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
-                        IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, 
+                        IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态,
                         c.`物流状态代码` 物流状态代码,
                         IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
-                        IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '', IF(ISNULL(b.上线时间), a.上线时间, b.上线时间)) 上线时间, 
-                        系统订单状态, 
+                        IF(ISNULL(a.上线时间), IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '',b.上线时间), a.上线时间) 上线时间,
+                        系统订单状态,
                         IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
                         IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
                         IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
@@ -521,7 +551,7 @@ class MysqlControl(Settings):
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
                         IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
-                        IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '', IF(ISNULL(b.上线时间), a.上线时间, b.上线时间)) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
+                        IF(ISNULL(a.上线时间), IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '',b.上线时间), a.上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
                         IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
                         IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
                         IF(是否改派='二次改派', '改派', 是否改派) 是否改派,
@@ -538,10 +568,10 @@ class MysqlControl(Settings):
                     ORDER BY a.`下单时间`;'''.format(team, 'slgat', month_begin, month_last, month_yesterday)
         elif team == 'slxmt':  # 新马物流查询函数导出
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-                        IF(ISNULL(b.出货时间) or b.出货时间='1899-12-29 00:00:00' or b.出货时间='0000-00-00 00:00:00' or b.状态时间='1990-01-01 00:00:00', g.出货时间, b.出货时间) 出货时间, 
+                        IF(ISNULL(b.出货时间) or b.出货时间='1899-12-29 00:00:00' or b.出货时间='0000-00-00 00:00:00' or b.状态时间='1990-01-01 00:00:00', g.出货时间, b.出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
-                        IF(b.状态时间='1990-01-01 00:00:00' or b.状态时间='1899-12-30 00:00:00' or b.状态时间='0000-00-00 00:00:00', '', b.状态时间) 状态时间, 
-                        IF(ISNULL(b.上线时间), a.上线时间, b.上线时间) 上线时间, 系统订单状态, 
+                        IF(b.状态时间='1990-01-01 00:00:00' or b.状态时间='1899-12-30 00:00:00' or b.状态时间='0000-00-00 00:00:00', '', b.状态时间) 状态时间,
+                        IF(ISNULL(b.上线时间), a.上线时间, b.上线时间) 上线时间, 系统订单状态,
                         IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态, IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
                         IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
                         是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
@@ -558,9 +588,9 @@ class MysqlControl(Settings):
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
         elif team == 'slxmt_hfh' or team == 'slxmt_t':
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-                        IF(ISNULL(b.出货时间) or b.出货时间='1899-12-29 00:00:00' or b.出货时间='0000-00-00 00:00:00' or b.状态时间='1990-01-01 00:00:00', g.出货时间, b.出货时间) 出货时间, 
+                        IF(ISNULL(b.出货时间) or b.出货时间='1899-12-29 00:00:00' or b.出货时间='0000-00-00 00:00:00' or b.状态时间='1990-01-01 00:00:00', g.出货时间, b.出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
-                        IF(b.状态时间='1990-01-01 00:00:00' or b.状态时间='1899-12-30 00:00:00' or b.状态时间='0000-00-00 00:00:00', '', b.状态时间) 状态时间, 
+                        IF(b.状态时间='1990-01-01 00:00:00' or b.状态时间='1899-12-30 00:00:00' or b.状态时间='0000-00-00 00:00:00', '', b.状态时间) 状态时间,
                         IF(ISNULL(b.上线时间), a.上线时间, b.上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态, IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
                         IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
                         是否改派,物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
@@ -580,7 +610,7 @@ class MysqlControl(Settings):
                             IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', null, 出货时间) 出货时间,
                             IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
                             IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
-                            IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '', IF(ISNULL(b.上线时间), a.上线时间, b.上线时间)) 上线时间, 系统订单状态, 
+                            IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '', IF(ISNULL(b.上线时间), a.上线时间, b.上线时间)) 上线时间, 系统订单状态,
                             IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
                             IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
                             IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
@@ -602,7 +632,7 @@ class MysqlControl(Settings):
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', null, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
                         IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
-                        IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '', IF(ISNULL(b.上线时间), a.上线时间, b.上线时间)) 上线时间, 系统订单状态, 
+                        IF(ISNULL(a.上线时间), IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '',b.上线时间), a.上线时间) 上线时间, 系统订单状态,
                         IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
                         IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
                         IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
@@ -624,7 +654,7 @@ class MysqlControl(Settings):
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', null, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
                         IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
-                        IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '', IF(ISNULL(b.上线时间), a.上线时间, b.上线时间)) 上线时间, 系统订单状态, 
+                        IF(ISNULL(a.上线时间), IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '',b.上线时间), a.上线时间) 上线时间, 系统订单状态,
                         IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
                         IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
                         IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
@@ -655,14 +685,14 @@ class MysqlControl(Settings):
         filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
-        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat0'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat0', 'slgat_hs0'):
             print('---' + match[team] + ' 不发送邮件')
         else:
             self.e.send('{} {}签收表.xlsx'.format(today, match[team]), filePath,
                         emailAdd[team])
         # 导入签收率表中和输出物流时效（不包含全部的订单状态）
         print('正在打印' + match[team] + ' 物流时效…………')
-        if team == 'sltg0':
+        if team in ('sltg0', 'slgat_hs0'):
             print('---' + match[team] + ' 不打印文件')
         else:
             self.data_wl(team)
@@ -783,7 +813,7 @@ class MysqlControl(Settings):
 		                ) sl
 		            GROUP BY 年月,币种,物流方式,下单出库时 
 			        with rollup
-			        HAVING (`币种` IS NOT null  AND `年月` IS NOT null);;'''.format(team, tem1, tem2)
+			        HAVING (`币种` IS NOT null  AND `年月` IS NOT null);'''.format(team, tem1, tem2)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             listT.append(df)
             sql2 = '''SELECT 年月,
@@ -1056,7 +1086,7 @@ class MysqlControl(Settings):
             elif team == 'slrb_jl0':
                 self.e.send('{} 精灵-{}物流时效.xlsx'.format(today, tem1), filePath,
                             emailAdd[tem1])
-            elif team in ('sltg'):
+            elif team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs'):
                 print('---' + tem1 + ' 不发送邮件')
             else:
                 self.e.send('{} 神龙-{}物流时效.xlsx'.format(today, tem1), filePath,

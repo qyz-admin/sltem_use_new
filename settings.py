@@ -41,7 +41,7 @@ class Settings():
                    'password': 'wo.1683485'}}
         self.email = {'smtp': 'smtp.163.com',
                       'email': 'qyz1404039293@163.com',      # 密码： qyz04163510
-                      'password': 'VTOYQJKMQOCSFSGE'}
+                      'password': 'UIYCFUQSGJZMYNDY'}
         #  https://blog.csdn.net/weixin_36931308/article/details/103767758 （危机处理需要）
         #  LECOGDYYBJUJJBST
 
