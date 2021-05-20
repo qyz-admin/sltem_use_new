@@ -87,18 +87,18 @@ class MysqlControl(Settings):
         mm = int((datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%m'))
         dd = int((datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%d'))
         begin = datetime.date(yy, mm, dd)
-        begin = datetime.date(2017, 9, 25)
+        # begin = datetime.date(2017, 9, 25)
         print(begin)
         yy2 = int(datetime.datetime.now().strftime('%Y'))
         mm2 = int(datetime.datetime.now().strftime('%m'))
         dd2 = int(datetime.datetime.now().strftime('%d'))
         end = datetime.date(yy2, mm2, dd2)
-        end = datetime.date(2021, 5, 17)
+        # end = datetime.date(2021, 5, 17)
         print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
             month_last = str(day)
-            # sql = '''SELECT * FROM  gk_product WHERE gk_product.rq >= '{0}';'''.format(month_last)
+            sql = '''SELECT * FROM  gk_product WHERE gk_product.rq >= '{0}';'''.format(month_last)
             sql = '''SELECT product_id,
 				            rq,
 				            product_name,
@@ -123,7 +123,33 @@ class MysqlControl(Settings):
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
             except Exception as e:
                 print('插入失败：', str(Exception) + str(e))
-            print('更新完成…………')
+            print('港澳台产品信息更新完成…………')
+
+            sql = '''SELECT product_id,
+            				            rq,
+            				            product_name,
+            				            cate_id,
+            				            second_cate_id,
+            				            third_cate_id,
+            				            null seller_id,
+            				            null selector,
+            				            null buyer_id,
+            				            price,
+            				            gs.`status`,
+            				            id sale_id
+            		            FROM gk_sale gs
+            		            WHERE gs.rq = '{0}';'''.format(month_last)
+            print('正在获取 ' + month_last + ' 号以后的产品详情…………')
+            df = pd.read_sql_query(sql=sql, con=self.engine20)
+            print('正在写入产品缓存中…………')
+            df.to_sql('tem_product', con=self.engine1, index=False, if_exists='replace')
+            try:
+                print('正在更新中…………')
+                sql = 'REPLACE INTO dim_product SELECT *, NOW() 更新时间 FROM tem_product; '
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            except Exception as e:
+                print('插入失败：', str(Exception) + str(e))
+            print('日本产品信息更新完成…………')
 
     def creatMyOrderSl(self, team):  # 最近五天的全部订单信息
         match = {'slgat': '"神龙家族-港澳台"',
@@ -138,7 +164,7 @@ class MysqlControl(Settings):
                  'slrb_hs': '"红杉家族-日本", "红杉家族-日本666"',
                  'slrb_jl': '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"'}
         # 12-1月的
-        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat0', 'slgat_hfh0', 'slgat_hs0', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             # 获取日期时间
             # sql = 'SELECT 日期 FROM {0}_order_list WHERE id = (SELECT MAX(id) FROM {0}_order_list);'.format(team)
             sql = 'SELECT MAX(`日期`) 日期 FROM {0}_order_list;'.format(team)
@@ -157,9 +183,9 @@ class MysqlControl(Settings):
             print(end)
         else:
             # 11-12月的
-            begin = datetime.date(2021, 5, 13)
+            begin = datetime.date(2021, 4, 1)
             print(begin)
-            end = datetime.date(2021, 5, 17)
+            end = datetime.date(2021, 5, 18)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -187,7 +213,7 @@ class MysqlControl(Settings):
                             dim_trans_way.remark 运输方式,
                             a.logistics_type 货物类型,
                             IF(a.low_price=0,'否','是') 是否低价,
-                            gk_sale.id 商品id,
+                            a.sale_id 商品id,
                             a.product_id 产品id,
              		        gk_sale.product_name 产品名称,
                             dim_cate.ppname 父级分类,
@@ -223,6 +249,8 @@ class MysqlControl(Settings):
                             left join dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
                     WHERE  a.rq = '{0}' AND a.rq <= '{1}'
                         AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
+                print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
+                df = pd.read_sql_query(sql=sql, con=self.engine2)
             elif team in ('slrb_jl', 'slrb_js', 'slrb_hs'):
                 sql = '''SELECT a.id,
                             a.month 年月,
@@ -244,7 +272,7 @@ class MysqlControl(Settings):
                             dim_trans_way.remark 运输方式,
                             a.logistics_type 货物类型,
                             IF(a.low_price=0,'否','是') 是否低价,
-                            gk_sale.id 商品id,
+                            a.sale_id 商品id,
                             a.product_id 产品id,
              		        gk_sale.product_name 产品名称,
             --              e.`name` 产品名称,
@@ -260,7 +288,8 @@ class MysqlControl(Settings):
                             a.finish_status 完结状态,
                             a.endtime 完结状态时间,
                             a.salesRMB 价格RMB,
-                            intervals.intervals 价格区间,
+                        --  intervals.intervals 价格区间,
+                            null 价格区间,
                             null 成本价,
                             a.logistics_cost 物流花费,
                             null 打包花费,
@@ -277,10 +306,70 @@ class MysqlControl(Settings):
 	                        LEFT JOIN gk_sale ON gk_sale.id = a.sale_id
                             left join dim_trans_way ON dim_trans_way.id = a.logistics_id
                             left join dim_cate ON dim_cate.id = a.third_cate_id
-                            left join intervals ON intervals.id = a.intervals
+                    --      left join intervals ON intervals.id = a.intervals
                             left join dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
                     WHERE  a.rq = '{0}' AND a.rq <= '{1}'
                         AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
+                print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
+                df = pd.read_sql_query(sql=sql, con=self.engine2)
+            elif team in ('slrb'):
+                sql = '''SELECT a.id,
+                            a.month 年月,
+                            a.month_mid 旬,
+                            a.rq 日期,
+                            dim_area.name 团队,
+                            a.region_code 区域,
+                            dim_currency_lang.pname 币种,
+                            a.beform 订单来源,
+                            a.order_number 订单编号,
+                            a.qty 数量,
+                            a.ship_phone 电话号码,
+                            UPPER(a.waybill_number) 运单编号,
+                            a.order_status 系统订单状态id,
+                            a.logistics_status 系统物流状态id,
+                            IF(a.second=0,'直发','改派') 是否改派,
+                            dim_trans_way.all_name 物流方式,
+                            dim_trans_way.simple_name 物流名称,
+                            dim_trans_way.remark 运输方式,
+                            a.logistics_type 货物类型,
+                            IF(a.low_price=0,'否','是') 是否低价,
+                            a.sale_id 商品id,
+                            a.product_id 产品id,
+             		        gk_sale.product_name 产品名称,
+                            dim_cate.ppname 父级分类,
+                            dim_cate.pname 二级分类,
+                            dim_cate.name 三级分类,
+                            dim_payment.pay_name 付款方式,
+                            a.amount 价格,
+                            a.addtime 下单时间,
+                            a.verity_time 审核时间,
+                            a.delivery_time 仓储扫描时间,
+                            null 上线时间,
+                            a.finish_status 完结状态,
+                            a.endtime 完结状态时间,
+                            a.salesRMB 价格RMB,
+                            null 价格区间,
+                            null 成本价,
+                            a.logistics_cost 物流花费,
+                            null 打包花费,
+                            a.other_fee 其它花费,
+                            a.weight 包裹重量,
+                            a.volume 包裹体积,
+                            a.ship_zip 邮编,
+                            a.turn_purchase_time 添加物流单号时间,
+                            a.del_reason 订单删除原因
+                    FROM gk_order a
+                            left join dim_area ON dim_area.id = a.area_id
+                            left join dim_payment ON dim_payment.id = a.payment_id
+	                        LEFT JOIN gk_sale ON gk_sale.id = a.sale_id
+                            left join dim_trans_way ON dim_trans_way.id = a.logistics_id
+                            left join dim_cate ON dim_cate.id = a.third_cate_id
+                    --      left join intervals ON intervals.id = a.intervals
+                            left join dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
+                    WHERE  a.rq = '{0}' AND a.rq <= '{1}'
+                        AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
+                print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
+                df = pd.read_sql_query(sql=sql, con=self.engine20)
             else:
                 sql = '''SELECT a.id,
                             a.month 年月,
@@ -302,7 +391,7 @@ class MysqlControl(Settings):
                             dim_trans_way.remark 运输方式,
                             a.logistics_type 货物类型,
                             IF(a.low_price=0,'否','是') 是否低价,
-                            gk_sale.id 商品id,
+                            a.sale_id 商品id,
                             a.product_id 产品id,
              		        gk_sale.product_name 产品名称,
                             dim_cate.ppname 父级分类,
@@ -337,8 +426,8 @@ class MysqlControl(Settings):
                             left join dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
                     WHERE  a.rq = '{0}' AND a.rq <= '{1}'
                         AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
-            print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
-            df = pd.read_sql_query(sql=sql, con=self.engine2)
+                print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
+                df = pd.read_sql_query(sql=sql, con=self.engine2)
             sql = 'SELECT * FROM dim_order_status;'
             df1 = pd.read_sql_query(sql=sql, con=self.engine1)
             print('+++合并订单状态中…………')
@@ -373,7 +462,7 @@ class MysqlControl(Settings):
                  'slrb_hs': '"红杉家族-日本", "红杉家族-日本666"',
                  'slrb_jl': '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt0', 'slxmt_t0', 'slxmt_hfh0'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
             mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
             begin = datetime.date(yy, mm, 1)
@@ -416,12 +505,15 @@ class MysqlControl(Settings):
              		--	    left join (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) gs ON gs.product_id = a.product_id
                             left join dim_trans_way on dim_trans_way.id = a.logistics_id
                             left join dim_cate on dim_cate.id = a.third_cate_id
-                            left join intervals on intervals.id = a.intervals
+                    --      left join intervals on intervals.id = a.intervals
                             left join dim_currency_lang on dim_currency_lang.id = a.currency_lang_id
                     WHERE a.rq = '{0}' AND a.rq <= '{1}'
                         AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
             print('正在更新 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单信息…………')
-            df = pd.read_sql_query(sql=sql, con=self.engine2)
+            if team in ('slrb', 'slrb_jl', 'slrb_js', 'slrb_hs'):
+                df = pd.read_sql_query(sql=sql, con=self.engine20)
+            else:
+                df = pd.read_sql_query(sql=sql, con=self.engine2)
             sql = 'SELECT * FROM dim_order_status;'
             df1 = pd.read_sql_query(sql=sql, con=self.engine1)
             print('++++更新订单状态中…………')
@@ -480,47 +572,46 @@ class MysqlControl(Settings):
                     'slrb_js': 'sunyaru@giikin.com',
                     'slrb_hs': 'sunyaru@giikin.com',
                     'slrb_jl': 'sunyaru@giikin.com'}
-        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt0', 'slxmt_t0', 'slxmt_hfh0'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
             month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
             print(month_begin)
         else:
-            month_last = '2021-05-15'
-            month_yesterday = '2021-05-17'
-            month_begin = '2020-02-01'
-        print('正在检查产品id、父级分类为空的信息---')
-        sql = '''SELECT id,`订单编号`,`商品id` FROM {0}_order_list sl
-            			WHERE sl.`日期`> '{1}'
-            				AND (sl.`产品名称` IS NULL or sl.`父级分类` IS NULL or sl.`产品id` IS NULL or  sl.`产品名称` = '' or sl.`父级分类` = '' or  sl.`产品id` = '')
-            				AND ( NOT sl.`系统订单状态` IN ('已删除','问题订单','支付失败','未支付'));'''.format(team, month_begin)
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        print(df)
-        df.to_sql('d1_cp', con=self.engine1, index=False, if_exists='replace')
-        sql = '''SELECT 订单编号,
-            			商品id,
-            			dp.`id` productId,
-            			dp.`name` productName,
-            			dc.ppname cate,
-            			dc.pname second_cate,
-            			dc.`name` third_cate
-            	FROM d1_cp
-            	LEFT JOIN dim_product dp ON  dp.sale_id = d1_cp.商品id
-            	LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
-        print('正在更新产品详情…………')
-        sql = '''update {0}_order_list a, tem_product_id b
-            		    set a.`产品id`= b.`productId`,
-            		        a.`产品名称`= IF(b.`productName` = '',NULL, b.`productName`),
-            				a.`父级分类`= IF(b.`cate` = '',NULL, b.`cate`),
-            				a.`二级分类`= IF(b.`second_cate` = '',NULL, b.`second_cate`),
-            				a.`三级分类`= IF(b.`third_cate` = '',NULL, b.`third_cate`)
-            			where a.`订单编号`= b.`订单编号`;'''.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
-        print('更新完成+++')
+            month_last = '2021-03-01'
+            month_yesterday = '2021-04-18'
+            month_begin = '2020-01-01'
         token = 'fc246aa95068f486c7d11368d12e0dbb'        # 补充查询产品信息需要
         if team == 'slgat':  # 港台查询函数导出
+            print('正在检查产品id、父级分类为空的信息---')
+            sql = '''SELECT id,日期,`订单编号`,`商品id` FROM {0}_order_list sl
+                			WHERE sl.`日期`> '{1}' AND sl.`父级分类` IS NULL
+                				AND ( NOT sl.`系统订单状态` IN ('已删除','问题订单','支付失败','未支付'));'''.format(team, month_begin)
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            print(df)
+            df.to_sql('d1_cp', con=self.engine1, index=False, if_exists='replace')
+            sql = '''SELECT 订单编号,
+                			商品id,
+                			dp.`id` productId,
+                			dp.`name` productName,
+                			dc.ppname cate,
+                			dc.pname second_cate,
+                			dc.`name` third_cate
+                	FROM d1_cp
+                	LEFT JOIN dim_product dp ON  dp.sale_id = d1_cp.商品id
+                	LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
+            print('正在更新产品详情…………')
+            sql = '''update {0}_order_list a, tem_product_id b
+                		    set a.`产品id`= b.`productId`,
+                		        a.`产品名称`= IF(b.`productName` = '',NULL, b.`productName`),
+                				a.`父级分类`= IF(b.`cate` = '',NULL, b.`cate`),
+                				a.`二级分类`= IF(b.`second_cate` = '',NULL, b.`second_cate`),
+                				a.`三级分类`= IF(b.`third_cate` = '',NULL, b.`third_cate`)
+                			where a.`订单编号`= b.`订单编号`;'''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            print('更新完成+++')
             # self.d.productIdInfo(token, '订单号', team)   # 产品id详情更新   （参数一需要手动更换）
             # self.d.cateIdInfo(token, team)  # 进入产品检索界面（参数一需要手动更换）
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
@@ -546,6 +637,35 @@ class MysqlControl(Settings):
                         AND a.系统订单状态 IN ('已审核', '待发货', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)', '待发货转审核')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
         elif team in ('slgat_hfh', 'slgat_hs'):  # 新马物流查询函数导出
+            print('正在检查产品id、父级分类为空的信息---')
+            sql = '''SELECT id,日期,`订单编号`,`商品id` FROM {0}_order_list sl
+                			WHERE sl.`日期`> '{1}' AND sl.`父级分类` IS NULL
+                				AND ( NOT sl.`系统订单状态` IN ('已删除','问题订单','支付失败','未支付'));'''.format(team, month_begin)
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            print(df)
+            df.to_sql('d1_cp', con=self.engine1, index=False, if_exists='replace')
+            sql = '''SELECT 订单编号,
+                			商品id,
+                			dp.`id` productId,
+                			dp.`name` productName,
+                			dc.ppname cate,
+                			dc.pname second_cate,
+                			dc.`name` third_cate
+                	FROM d1_cp
+                	LEFT JOIN dim_product dp ON  dp.sale_id = d1_cp.商品id
+                	LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
+            print('正在更新产品详情…………')
+            sql = '''update {0}_order_list a, tem_product_id b
+                		    set a.`产品id`= b.`productId`,
+                		        a.`产品名称`= IF(b.`productName` = '',NULL, b.`productName`),
+                				a.`父级分类`= IF(b.`cate` = '',NULL, b.`cate`),
+                				a.`二级分类`= IF(b.`second_cate` = '',NULL, b.`second_cate`),
+                				a.`三级分类`= IF(b.`third_cate` = '',NULL, b.`third_cate`)
+                			where a.`订单编号`= b.`订单编号`;'''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            print('更新完成+++')
             # self.d.productIdInfo(token, '订单号', team)
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
@@ -626,8 +746,6 @@ class MysqlControl(Settings):
                         AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
         elif team in ('slrb_jl', 'slrb_js', 'slrb_hs'):
-            # self.d.productIdInfo(token, '订单号', team)   # 产品id详情更新   （参数一需要手动更换）
-            # self.d.cateIdInfo(token, team)  # 进入产品检索界面（参数一需要手动更换）
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', null, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
@@ -648,8 +766,6 @@ class MysqlControl(Settings):
                         AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                     ORDER BY a.`下单时间`;'''.format(team, 'slrb', month_begin, month_last, month_yesterday)
         else:
-            # self.d.productIdInfo(token, '订单号', team)
-            # self.d.cateIdInfo(token, team)  # 进入产品检索界面（参数一需要手动更换）
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', null, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
@@ -685,14 +801,14 @@ class MysqlControl(Settings):
         filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}签收表.xlsx'.format(today, match[team])]
         print('输出文件成功…………')
         # 文件太大无法发送的
-        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat0', 'slgat_hs0'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat', 'slgat_hfh', 'slgat_hs'):
             print('---' + match[team] + ' 不发送邮件')
         else:
             self.e.send('{} {}签收表.xlsx'.format(today, match[team]), filePath,
                         emailAdd[team])
         # 导入签收率表中和输出物流时效（不包含全部的订单状态）
         print('正在打印' + match[team] + ' 物流时效…………')
-        if team in ('sltg0', 'slgat_hs0'):
+        if team in ('sltg0'):
             print('---' + match[team] + ' 不打印文件')
         else:
             self.data_wl(team)
@@ -706,7 +822,7 @@ class MysqlControl(Settings):
 
         # 商城订单的获取---暂时使用的
         if team == 'slgat':  # IG和UP订单
-            emailAdd2 = {'slgat': 'service@upiinmall.com'}
+            emailAdd2 = {'slgat': 'service@igeehome.com'}
             today = datetime.date.today().strftime('%Y.%m.%d')
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
@@ -1091,6 +1207,903 @@ class MysqlControl(Settings):
             else:
                 self.e.send('{} 神龙-{}物流时效.xlsx'.format(today, tem1), filePath,
                             emailAdd[tem1])
+
+    def qsb_wl(self, team):  # 获取各团队近两个月的物流数据
+        match1 = {'slgat': ['港台|神龙家族-港澳台'],
+                  'slgat_hfh': ['台湾|火凤凰-港澳台', '香港|火凤凰-港澳台'],
+                  'slgat_hs': ['台湾|红杉-港澳台', '香港|红杉-港澳台'],
+                  'sltg': ['泰国|神龙家族-泰国'],
+                  'slxmt': ['新加坡|神龙家族-新加坡', '马来西亚|神龙家族-马来西亚', '菲律宾|神龙家族-菲律宾'],
+                  'slxmt_t': ['新加坡|神龙-T新马菲', '马来西亚|神龙-T新马菲', '菲律宾|神龙-T新马菲'],
+                  'slxmt_hfh': ['新加坡|火凤凰-新加坡', '马来西亚|火凤凰-马来西亚', '菲律宾|火凤凰-菲律宾'],
+                  'slrb': ['日本|神龙家族-日本团队'],
+                  'slrb_js': ['日本|金狮-日本'],
+                  'slrb_hs': ['日本|红杉-日本'],
+                  'slrb_jl': ['日本|精灵家族-日本', '韩国|精灵家族-韩国', '品牌|精灵家族-品牌']}
+        emailAdd = {'台湾': 'giikinliujun@163.com',
+                    '香港': 'giikinliujun@163.com',
+                    '新加坡': 'zhangjing@giikin.com',
+                    '马来西亚': 'zhangjing@giikin.com',
+                    '菲律宾': 'zhangjing@giikin.com',
+                    '泰国': 'zhangjing@giikin.com',
+                    '日本': 'sunyaru@giikin.com',
+                    '韩国': 'sunyaru@giikin.com',
+                    '品牌': 'sunyaru@giikin.com'}
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+            month_last = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
+        else:
+            pass
+        for tem in match1[team]:
+            tem1 = tem.split('|')[0]
+            tem2 = tem.split('|')[1]
+            filePath = []
+            listT = []  # 查询sql的结果 存放池
+            print('正在获取---' + tem2 + '---物流时效…………')
+            # 物流
+            sql = '''SELECT cx.年月,
+                            cx.币种,
+                            IFNULL(cx.是否改派,'总计') as 是否改派,
+                            IFNULL(cx.物流方式,'总计') as 物流方式,
+                            SUM(IF(最终状态 = "已签收",1,0)) as 签收,
+                            SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+                            count(订单编号) as 总订单,
+                            SUM(IF(最终状态 = "已签收",1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) as 完成签收,
+                            SUM(IF(最终状态 = "已签收",1,0)) /  count(订单编号) as 总计签收,
+                            SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / count(订单编号) as 完成占比,
+                            count(订单编号) /总订单2 单量占比,
+                            SUM(IF(最终状态 = "已签收",`价格RMB`,0)) /  SUM(价格RMB) as '总计签收（金额）'
+                    FROM d1_slgat_cp cx
+                    LEFT JOIN  (SELECT 年月,
+                                         币种,
+                                        count(订单编号) as 总订单2 , 
+						                SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2, 
+						                SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 
+		                        FROM d1_slgat_cp da 
+		                        GROUP BY da.年月,da.币种
+		                        ) cx2  ON cx.年月 = cx2.年月 AND cx.币种 = cx2.币种
+                    WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' 
+                    GROUP BY cx.年月,cx.币种,cx.是否改派,cx.物流方式
+                    with rollup
+                    HAVING (cx.`年月` IS NOT null  AND cx.`币种` IS NOT null);'''.format(team, tem1, tem2)
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            listT.append(df)
+            # 品类
+            sql2 = '''SELECT cx.年月,
+                            cx.币种,
+                            IFNULL(cx.是否改派,'总计') as 是否改派,
+                            IFNULL(cx.父级分类,'总计') as 父级分类,
+                            SUM(IF(最终状态 = "已签收",1,0)) as 签收,
+                            SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+                            count(订单编号) as 总订单,
+                            SUM(IF(最终状态 = "已签收",1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) as 完成签收,
+                            SUM(IF(最终状态 = "已签收",1,0)) /  count(订单编号) as 总计签收,
+                            SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / count(订单编号) as 完成占比,
+                            count(订单编号) /总订单2 单量占比,
+                            SUM(IF(最终状态 = "已签收",`价格RMB`,0)) /  SUM(价格RMB) as '总计签收（金额）'
+                    FROM d1_slgat_cp cx
+                    LEFT JOIN  (SELECT 年月,
+                                         币种,
+                                        count(订单编号) as 总订单2 , 
+						                SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2, 
+						                SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 
+		                        FROM d1_slgat_cp da 
+		                        GROUP BY da.年月,da.币种
+		                        ) cx2  ON cx.年月 = cx2.年月 AND cx.币种 = cx2.币种
+                    WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' 
+                    GROUP BY cx.年月,cx.币种,cx.是否改派,cx.父级分类
+                    with rollup
+                    HAVING (cx.`年月` IS NOT null  AND cx.`币种` IS NOT null);'''.format(team, tem1, tem2)
+            df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
+            listT.append(df2)
+            # 产品签收率
+            sql3 = '''SELECT cx.年月, 
+                            币种, 
+                            IFNULL(`产品id`,'总计') as 产品id,
+                            `产品名称`, 
+                            SUM(IF(最终状态 = "已签收",1,0)) as 签收,
+                            SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+                            count(订单编号) as 总订单,
+                            SUM(IF(最终状态 = "已签收",1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) as 完成签收,
+                            SUM(IF(最终状态 = "已签收",1,0)) /  count(订单编号) as 总计签收,
+                            SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / count(订单编号) as 完成占比,
+                            count(订单编号) /总订单2 单量占比,
+                            SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) as 直发签收,
+                            SUM(IF(最终状态 = "拒收" AND 是否改派 = '直发',1,0)) as 直发拒收,
+                            SUM(IF(是否改派 = '直发',1,0)) as 直发总订单,
+                            IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+                            IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+                            IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+                            IFNULL(SUM(IF(是否改派 = '直发',1,0))  / 直发总订单2,0) as 直发单量占比,
+                            SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) as 改派签收,
+                            SUM(IF(最终状态 = "拒收" AND 是否改派 = '改派',1,0)) as 改派拒收,
+                            SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+                            IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+                            IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+                            IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+                            IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+                    FROM d1_slgat_cp cx
+                    LEFT JOIN  (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_cp da GROUP BY da.年月) cx2  ON cx.年月 = cx2.年月 
+                    WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' 
+                    GROUP BY cx.年月,币种,`产品id`
+	                with rollup
+	                HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	                ORDER BY cx.年月;'''.format(team, tem1, tem2)
+            df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
+            listT.append(df3)
+            # 产品明细签收率-台湾
+            sql4 = '''SELECT s1.*, s2.*, s3.*, s4.*, s5.*
+	                FROM ( SELECT cx.物流方式 '台湾-速派-新竹',
+                                cx. 年月, 
+                                币种, 
+                                IFNULL(`产品id`,'总计') as 产品id,
+                                `产品名称`, 
+                                SUM(IF(是否改派 = '直发',1,0)) as 直发总订单,
+                                IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+                                IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+                                IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+                                IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+                                SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+                                IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+                                IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+                                IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+                                IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+                        FROM d1_slgat_cp cx
+                        LEFT JOIN  
+                            (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_cp da GROUP BY da.年月) cx2 ON cx.年月 = cx2.年月 
+                        WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('台湾-速派-新竹','速派') 
+                        GROUP BY cx.年月,币种,`产品id`
+	                    with rollup
+	                    HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	                    ) s1
+	                LEFT JOIN ( SELECT cx.物流方式 '台湾-速派-711超商',
+                                        cx.年月, 
+                                        币种, 
+                                        IFNULL(`产品id`,'总计') as 产品id,
+                                        `产品名称`, 
+                                        SUM(IF(是否改派 = '直发',1,0)) as 直发总订单,
+                                        IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+                                        IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+                                        IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+                                        IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+                                        SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+                                        IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+                                        IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+                                        IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+                                        IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+                                FROM d1_slgat_cp cx
+                    LEFT JOIN  (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_cp da GROUP BY da.年月) cx2 ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('台湾-速派-711超商','速派') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s2
+	ON s1.`年月` = s2.`年月` AND s1.`币种` = s2.`币种` AND s1.`产品id` = s2.`产品id`
+		LEFT JOIN (
+	SELECT cx.物流方式 '台湾-森鸿-新竹-自发头程',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as 直发总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+  FROM d1_slgat_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('台湾-森鸿-新竹-自发头程','森鸿') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s3
+	ON s1.`年月` = s3.`年月` AND s1.`币种` = s3.`币种` AND s1.`产品id` = s3.`产品id`
+			LEFT JOIN (
+	SELECT cx.物流方式 '台湾-易速配-新竹',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as 直发总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+  FROM d1_slgat_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('台湾-易速配-新竹','龟山') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s4
+	ON s1.`年月` = s4.`年月` AND s1.`币种` = s4.`币种` AND s1.`产品id` = s4.`产品id`
+			LEFT JOIN (
+	SELECT cx.物流方式 '台湾-天马-新竹',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as 直发总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+  FROM d1_slgat_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('台湾-天马-新竹','天马') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s5
+	ON s1.`年月` = s5.`年月` AND s1.`币种` = s5.`币种` AND s1.`产品id` = s5.`产品id`
+			LEFT JOIN (SELECT cx.物流方式 '台湾-天马-新竹',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as 直发总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+  FROM d1_slgat_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('台湾-易速配-龟山','龟山') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s6
+	ON s1.`年月` = s6.`年月` AND s1.`币种` = s6.`币种` AND s1.`产品id` = s6.`产品id`;'''.format(team, tem1, tem2)
+            df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
+            listT.append(df4)
+            # 产品明细签收率-香港
+            sql5 = '''SELECT s1.*, s2.*, s3.*, s4.*
+	FROM (
+	SELECT cx.物流方式 '香港-森鸿-SH渠道',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as '直发总订单',
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+
+  FROM d1_slgat_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('香港-森鸿-SH渠道') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s1
+	LEFT JOIN (
+	SELECT cx.物流方式 '香港-易速配-顺丰',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as '直发总订单',
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+      
+  FROM d1_slgat_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('香港-易速配-顺丰') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s2
+	ON s1.`年月` = s2.`年月` AND s1.`币种` = s2.`币种` AND s1.`产品id` = s2.`产品id`
+	
+			LEFT JOIN (
+	SELECT cx.物流方式 '香港-森鸿-顺丰渠道',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as '直发总订单',
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+      
+  FROM d1_slgat_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('香港-森鸿-顺丰渠道') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s3
+	ON s1.`年月` = s3.`年月` AND s1.`币种` = s3.`币种` AND s1.`产品id` = s3.`产品id`
+	
+			LEFT JOIN (
+	SELECT cx.物流方式 '香港-立邦-顺丰',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as '直发总订单',
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+      
+  FROM d1_slgat_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('香港-立邦-顺丰') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s4
+	ON s1.`年月` = s4.`年月` AND s1.`币种` = s4.`币种` AND s1.`产品id` = s4.`产品id`;'''.format(team, tem1, tem2)
+            df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
+            listT.append(df5)
+            print('正在写入excel…………')
+            today = datetime.date.today().strftime('%Y.%m.%d')
+            file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙-{}签收率99.xlsx'.format(today, tem1)
+            sheet_name = ['物流签收率', '品类签收率', '产品签收率', '产品明细签收率', '产品明细签收率2']
+            df0 = pd.DataFrame([])                       # 创建空的dataframe数据框
+            df0.to_excel(file_path, index=False)         # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+            book = load_workbook(file_path)              # 可以向不同的sheet写入数据（对现有工作表的追加）
+            writer.book = book                           # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            columns_value = ['完成签收', '总计签收', '完成占比', '单量占比', '直发完成签收', '直发总计签收', '直发完成占比', '直发单量占比', '直发完成签收(1)', '直发总计签收(1)', '直发完成占比(1)', '直发单量占比(1)'
+                             , '直发完成签收(2)', '直发总计签收(2)', '直发完成占比(2)', '直发单量占比(2)', '直发完成占比(3)', '直发单量占比(3)', '直发完成签收(3)', '直发总计签收(3)'
+                             , '直发完成签收(4)', '直发总计签收(4)', '直发完成占比(4)', '直发单量占比(4)', '直发完成占比(5)', '直发单量占比(5)', '直发完成签收(5)', '直发总计签收(5)'
+                            ,'改派完成签收', '改派总计签收', '改派完成占比', '改派单量占比','改派完成签收(1)', '改派总计签收(1)', '改派完成占比(1)', '改派单量占比(1)'
+                            ,'改派完成签收(2)', '改派总计签收(2)', '改派完成占比(2)', '改派单量占比(2)','改派完成签收(3)', '改派总计签收(3)', '改派完成占比(3)', '改派单量占比(3)'
+                            ,'改派完成签收(4)', '改派总计签收(4)', '改派完成占比(4)', '改派单量占比(4)','改派完成签收(5)', '改派总计签收(5)', '改派完成占比(5)', '改派单量占比(5)'
+                            , '总计签收（金额）']
+            for i in range(len(listT)):
+                columns = list(listT[i].columns)  # 获取数据的标题名，转为列表
+                # for column_val in columns_value:
+                #     if column_val in columns:
+                #         try:
+                #             listT[i][column_val] = listT[i][column_val].fillna(value=0)
+                #             listT[i][column_val] = listT[i][column_val].apply(lambda x: format(x, '.2%'))
+                #         except Exception as e:
+                #             print('修改失败：', str(Exception) + str(e) + df[column_val])
+                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+            if 'Sheet1' in book.sheetnames:              # 删除新建文档时的第一个工作表
+                del book['Sheet1']
+            writer.save()
+            writer.close()
+            # print('正在运行宏…………')
+            # app = xl.App(visible=False, add_book=False)  # 运行宏调整
+            # app.display_alerts = False
+            # wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            # wbsht1 = app.books.open(file_path)
+            # wbsht.macro('sltem物流时效')()
+            # wbsht1.save()
+            # wbsht1.close()
+            # wbsht.close()
+            # app.quit()
+            print('----已写入excel ')
+            filePath.append(file_path)
+            # self.e.send('{} 神龙-{}物流时效.xlsx'.format(today, tem1), filePath,
+            #                 emailAdd[tem1])
+    def qsb_wl2(self, team):  # 获取各团队近两个月的物流数据
+        match1 = {'slgat': ['港台|神龙家族-港澳台'],
+                  'slgat_hfh': ['台湾|火凤凰-港澳台', '香港|火凤凰-港澳台'],
+                  'slgat_hs': ['台湾|红杉-港澳台', '香港|红杉-港澳台'],
+                  'sltg': ['泰国|神龙家族-泰国'],
+                  'slxmt': ['新加坡|神龙家族-新加坡', '马来西亚|神龙家族-马来西亚', '菲律宾|神龙家族-菲律宾'],
+                  'slxmt_t': ['新加坡|神龙-T新马菲', '马来西亚|神龙-T新马菲', '菲律宾|神龙-T新马菲'],
+                  'slxmt_hfh': ['新加坡|火凤凰-新加坡', '马来西亚|火凤凰-马来西亚', '菲律宾|火凤凰-菲律宾'],
+                  'slrb': ['日本|神龙家族-日本团队'],
+                  'slrb_js': ['日本|金狮-日本'],
+                  'slrb_hs': ['日本|红杉-日本'],
+                  'slrb_jl': ['日本|精灵家族-日本', '韩国|精灵家族-韩国', '品牌|精灵家族-品牌']}
+        emailAdd = {'台湾': 'giikinliujun@163.com',
+                    '香港': 'giikinliujun@163.com',
+                    '新加坡': 'zhangjing@giikin.com',
+                    '马来西亚': 'zhangjing@giikin.com',
+                    '菲律宾': 'zhangjing@giikin.com',
+                    '泰国': 'zhangjing@giikin.com',
+                    '日本': 'sunyaru@giikin.com',
+                    '韩国': 'sunyaru@giikin.com',
+                    '品牌': 'sunyaru@giikin.com'}
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+            month_last = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
+        else:
+            pass
+        for tem in match1[team]:
+            tem1 = tem.split('|')[0]
+            tem2 = tem.split('|')[1]
+            filePath = []
+            listT = []  # 查询sql的结果 存放池
+            print('正在获取---' + tem2 + '---物流时效…………')
+            # 物流
+            sql = '''SELECT cx.年月,
+                            cx.币种,
+                            IFNULL(cx.是否改派,'总计') as 是否改派,
+                            IFNULL(cx.物流方式,'总计') as 物流方式,
+                            SUM(IF(最终状态 = "已签收",1,0)) as 签收,
+                            SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+                            count(订单编号) as 总订单,
+                            SUM(IF(最终状态 = "已签收",1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) as 完成签收,
+                            SUM(IF(最终状态 = "已签收",1,0)) /  count(订单编号) as 总计签收,
+                            SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / count(订单编号) as 完成占比,
+                            count(订单编号) /总订单2 单量占比,
+                            SUM(IF(最终状态 = "已签收",`价格RMB`,0)) /  SUM(价格RMB) as '总计签收（金额）'
+                    FROM d1_slgat_hfh_cp cx
+                    LEFT JOIN  (SELECT 年月,
+                                         币种,
+                                        count(订单编号) as 总订单2 , 
+						                SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2, 
+						                SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 
+		                        FROM d1_slgat_hfh_cp da 
+		                        GROUP BY da.年月,da.币种
+		                        ) cx2  ON cx.年月 = cx2.年月 AND cx.币种 = cx2.币种
+                    WHERE cx.`日期` >= '2021-03-01' AND  cx.`日期` <= '2021-04-30' 
+                    GROUP BY cx.年月,cx.币种,cx.是否改派,cx.物流方式
+                    with rollup
+                    HAVING (cx.`年月` IS NOT null  AND cx.`币种` IS NOT null);'''.format(team, tem1, tem2)
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            listT.append(df)
+            # 品类
+            sql2 = '''SELECT cx.年月,
+                            cx.币种,
+                            IFNULL(cx.是否改派,'总计') as 是否改派,
+                            IFNULL(cx.父级分类,'总计') as 父级分类,
+                            SUM(IF(最终状态 = "已签收",1,0)) as 签收,
+                            SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+                            count(订单编号) as 总订单,
+                            SUM(IF(最终状态 = "已签收",1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) as 完成签收,
+                            SUM(IF(最终状态 = "已签收",1,0)) /  count(订单编号) as 总计签收,
+                            SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / count(订单编号) as 完成占比,
+                            count(订单编号) /总订单2 单量占比,
+                            SUM(IF(最终状态 = "已签收",`价格RMB`,0)) /  SUM(价格RMB) as '总计签收（金额）'
+                    FROM d1_slgat_hfh_cp cx
+                    LEFT JOIN  (SELECT 年月,
+                                         币种,
+                                        count(订单编号) as 总订单2 , 
+						                SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2, 
+						                SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 
+		                        FROM d1_slgat_hfh_cp da 
+		                        GROUP BY da.年月,da.币种
+		                        ) cx2  ON cx.年月 = cx2.年月 AND cx.币种 = cx2.币种
+                    WHERE cx.`日期` >= '2021-03-01' AND  cx.`日期` <= '2021-04-30'  
+                    GROUP BY cx.年月,cx.币种,cx.是否改派,cx.父级分类
+                    with rollup
+                    HAVING (cx.`年月` IS NOT null  AND cx.`币种` IS NOT null);'''.format(team, tem1, tem2)
+            df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
+            listT.append(df2)
+            # 产品签收率
+            sql3 = '''SELECT cx.年月, 
+                            币种, 
+                            IFNULL(`产品id`,'总计') as 产品id,
+                            `产品名称`, 
+                            SUM(IF(最终状态 = "已签收",1,0)) as 签收,
+                            SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+                            count(订单编号) as 总订单,
+                            SUM(IF(最终状态 = "已签收",1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) as 完成签收,
+                            SUM(IF(最终状态 = "已签收",1,0)) /  count(订单编号) as 总计签收,
+                            SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / count(订单编号) as 完成占比,
+                            count(订单编号) /总订单2 单量占比,
+                            SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) as 直发签收,
+                            SUM(IF(最终状态 = "拒收" AND 是否改派 = '直发',1,0)) as 直发拒收,
+                            SUM(IF(是否改派 = '直发',1,0)) as 直发总订单,
+                            IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+                            IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+                            IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+                            IFNULL(SUM(IF(是否改派 = '直发',1,0))  / 直发总订单2,0) as 直发单量占比,
+                            SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) as 改派签收,
+                            SUM(IF(最终状态 = "拒收" AND 是否改派 = '改派',1,0)) as 改派拒收,
+                            SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+                            IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+                            IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+                            IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+                            IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+                    FROM d1_slgat_hfh_cp cx
+                    LEFT JOIN  (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_hfh_cp da GROUP BY da.年月) cx2  ON cx.年月 = cx2.年月 
+                    WHERE cx.`日期` >= '2021-03-01' AND  cx.`日期` <= '2021-04-30' 
+                    GROUP BY cx.年月,币种,`产品id`
+	                with rollup
+	                HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	                ORDER BY cx.年月;'''.format(team, tem1, tem2)
+            df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
+            listT.append(df3)
+            # 产品明细签收率-1
+            sql4 = '''SELECT s1.*, s2.*, s3.*, s4.*, s5.*
+	FROM (
+	SELECT cx.物流方式 '台湾-速派-新竹',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as 直发总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+      
+  FROM d1_slgat_hfh_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_hfh_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('台湾-速派-新竹','速派') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s1
+	LEFT JOIN (
+	SELECT cx.物流方式 '台湾-速派-711超商',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as 直发总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+      
+  FROM d1_slgat_hfh_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_hfh_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('台湾-速派-711超商','速派') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s2
+	ON s1.`年月` = s2.`年月` AND s1.`币种` = s2.`币种` AND s1.`产品id` = s2.`产品id`
+	
+		LEFT JOIN (
+	SELECT cx.物流方式 '台湾-森鸿-新竹-自发头程',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as 直发总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+      
+  FROM d1_slgat_hfh_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_hfh_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('台湾-森鸿-新竹-自发头程','森鸿') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s3
+	ON s1.`年月` = s3.`年月` AND s1.`币种` = s3.`币种` AND s1.`产品id` = s3.`产品id`
+	
+			LEFT JOIN (
+	SELECT cx.物流方式 '台湾-易速配-新竹',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as 直发总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+      
+  FROM d1_slgat_hfh_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_hfh_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('台湾-易速配-新竹','龟山') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s4
+	ON s1.`年月` = s4.`年月` AND s1.`币种` = s4.`币种` AND s1.`产品id` = s4.`产品id`
+	
+			LEFT JOIN (
+	SELECT cx.物流方式 '台湾-天马-新竹',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as 直发总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+      
+  FROM d1_slgat_hfh_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_hfh_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('台湾-天马-新竹','天马') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s5
+	ON s1.`年月` = s5.`年月` AND s1.`币种` = s5.`币种` AND s1.`产品id` = s5.`产品id`
+	
+			LEFT JOIN (
+	SELECT cx.物流方式 '台湾-天马-新竹',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as 直发总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+      
+  FROM d1_slgat_hfh_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_hfh_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('台湾-易速配-龟山','龟山') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s6
+	ON s1.`年月` = s6.`年月` AND s1.`币种` = s6.`币种` AND s1.`产品id` = s6.`产品id`;'''.format(team, tem1, tem2)
+            df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
+            listT.append(df4)
+            # 产品明细签收率-2
+            sql5 = '''SELECT s1.*, s2.*, s3.*, s4.*
+	FROM (
+	SELECT cx.物流方式 '香港-森鸿-SH渠道',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as '直发总订单',
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+
+  FROM d1_slgat_hfh_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_hfh_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('香港-森鸿-SH渠道') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s1
+	LEFT JOIN (
+	SELECT cx.物流方式 '香港-易速配-顺丰',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as '直发总订单',
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+      
+  FROM d1_slgat_hfh_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_hfh_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('香港-易速配-顺丰') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s2
+	ON s1.`年月` = s2.`年月` AND s1.`币种` = s2.`币种` AND s1.`产品id` = s2.`产品id`
+	
+			LEFT JOIN (
+	SELECT cx.物流方式 '香港-森鸿-顺丰渠道',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as '直发总订单',
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+      
+  FROM d1_slgat_hfh_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_hfh_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('香港-森鸿-顺丰渠道') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s3
+	ON s1.`年月` = s3.`年月` AND s1.`币种` = s3.`币种` AND s1.`产品id` = s3.`产品id`
+	
+			LEFT JOIN (
+	SELECT cx.物流方式 '香港-立邦-顺丰',
+      cx.年月, 
+      币种, 
+			IFNULL(`产品id`,'总计') as 产品id,
+      `产品名称`, 
+      SUM(IF(是否改派 = '直发',1,0)) as '直发总订单',
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+			IFNULL(SUM(IF(是否改派 = '直发',1,0))  /直发总订单2,0) 直发单量占比,
+      
+      SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+			IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+			IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+			IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+      
+  FROM d1_slgat_hfh_cp cx
+  LEFT JOIN  
+          (SELECT 年月,count(订单编号) as 总订单2 , SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 FROM d1_slgat_hfh_cp da GROUP BY da.年月) cx2 
+        ON cx.年月 = cx2.年月 
+  WHERE cx.`日期` >= '2021-04-01' AND  cx.`日期` <= '2021-05-31' AND cx.物流方式 in ('香港-立邦-顺丰') 
+  GROUP BY cx.年月,币种,`产品id`
+	with rollup
+	HAVING (cx.`年月` IS NOT null  AND `币种` IS NOT null)
+	) s4
+	ON s1.`年月` = s4.`年月` AND s1.`币种` = s4.`币种` AND s1.`产品id` = s4.`产品id`;'''.format(team, tem1, tem2)
+            df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
+            listT.append(df5)
+            print('正在写入excel…………')
+            today = datetime.date.today().strftime('%Y.%m.%d')
+            file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙-{}签收率992.xlsx'.format(today, tem1)
+            sheet_name = ['物流签收率', '品类签收率', '产品签收率', '产品明细签收率', '产品明细签收率2']
+            df0 = pd.DataFrame([])                       # 创建空的dataframe数据框
+            df0.to_excel(file_path, index=False)         # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+            book = load_workbook(file_path)              # 可以向不同的sheet写入数据（对现有工作表的追加）
+            writer.book = book                           # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            columns_value = ['完成签收', '总计签收', '完成占比', '单量占比', '直发完成签收', '直发总计签收', '直发完成占比', '直发单量占比', '直发完成签收(1)', '直发总计签收(1)', '直发完成占比(1)', '直发单量占比(1)'
+                             , '直发完成签收(2)', '直发总计签收(2)', '直发完成占比(2)', '直发单量占比(2)', '直发完成占比(3)', '直发单量占比(3)', '直发完成签收(3)', '直发总计签收(3)'
+                             , '直发完成签收(4)', '直发总计签收(4)', '直发完成占比(4)', '直发单量占比(4)', '直发完成占比(5)', '直发单量占比(5)', '直发完成签收(5)', '直发总计签收(5)'
+                            ,'改派完成签收', '改派总计签收', '改派完成占比', '改派单量占比','改派完成签收(1)', '改派总计签收(1)', '改派完成占比(1)', '改派单量占比(1)'
+                            ,'改派完成签收(2)', '改派总计签收(2)', '改派完成占比(2)', '改派单量占比(2)','改派完成签收(3)', '改派总计签收(3)', '改派完成占比(3)', '改派单量占比(3)'
+                            ,'改派完成签收(4)', '改派总计签收(4)', '改派完成占比(4)', '改派单量占比(4)','改派完成签收(5)', '改派总计签收(5)', '改派完成占比(5)', '改派单量占比(5)'
+                            , '总计签收（金额）']
+            for i in range(len(listT)):
+                columns = list(listT[i].columns)  # 获取数据的标题名，转为列表
+                # for column_val in columns_value:
+                #     if column_val in columns:
+                #         try:
+                #             listT[i][column_val] = listT[i][column_val].fillna(value=0)
+                #             listT[i][column_val] = listT[i][column_val].apply(lambda x: format(x, '.2%'))
+                #         except Exception as e:
+                #             print('修改失败：', str(Exception) + str(e) + df[column_val])
+                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+            if 'Sheet1' in book.sheetnames:              # 删除新建文档时的第一个工作表
+                del book['Sheet1']
+            writer.save()
+            writer.close()
+            # print('正在运行宏…………')
+            # app = xl.App(visible=False, add_book=False)  # 运行宏调整
+            # app.display_alerts = False
+            # wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            # wbsht1 = app.books.open(file_path)
+            # wbsht.macro('sltem物流时效')()
+            # wbsht1.save()
+            # wbsht1.close()
+            # wbsht.close()
+            # app.quit()
+            print('----已写入excel ')
+            filePath.append(file_path)
+            # self.e.send('{} 神龙-{}物流时效.xlsx'.format(today, tem1), filePath,
+            #                 emailAdd[tem1])
 
     # 无运单号查询
     def noWaybillNumber(self, team):
@@ -1646,5 +2659,7 @@ if __name__ == '__main__':
     # for team in ['slrb_jl']:
     #     m.data_wl(team)
 
+    # m.qsb_wl('slgat')
+    # m.qsb_wl2('slgat')
 
 

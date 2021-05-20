@@ -300,6 +300,10 @@ class ExcelControl():
             print(filePath)
             if dir[:2] != '~$':
                 df = pd.read_excel(filePath)
+                columns = list(df.columns)  # 获取数据的标题名，转为列表
+                for column_val in columns:
+                    if '订单编号' not in columns:
+                        df.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
                 df.columns = ['订单编号']
                 self.sql.writeSqlReplace(df)
                 sql = 'INSERT IGNORE INTO {}_return (订单编号，添加时间) SELECT 订单编号, NOW() 添加时间 FROM tem; '.format(team)

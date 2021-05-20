@@ -260,7 +260,7 @@ class SltemMonitoring(Settings):
                         ON a.订单编号 = d.订单编号
                     WHERE a.日期 >= '{1}' AND a.币种 = '{2}'
                         AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                    ORDER BY a.`下单时间`;'''.format(match3[team], month_last, team)
+                    ORDER BY a.`下单时间`;'''.format(match3[team], month_last, match2[team])
         print('正在获取---' + team + '---最近两个月监控数据…………')
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         today = datetime.date.today().strftime('%Y.%m.%d')
@@ -270,14 +270,14 @@ class SltemMonitoring(Settings):
         print('----已写入excel ')
         print('正在写入-数据源-缓存中…………')
         df.to_sql('qsb_缓存', con=self.engine1, index=False, if_exists='replace')
-        print('正在写入 ' + team + ' 监控数据表中…………')
-        columns = list(df.columns)
-        columns = ', '.join(columns)
-        sql = '''INSERT IGNORE INTO qsb_{}({}, 记录时间) SELECT *, CURDATE() 记录时间 FROM qsb_缓存; '''.format(match3[team], columns)
-        try:
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=2000)
-        except Exception as e:
-            print('插入失败：', str(Exception) + str(e))
+        # print('正在写入 ' + team + ' 监控数据表中…………')
+        # columns = list(df.columns)
+        # columns = ', '.join(columns)
+        # sql = '''INSERT IGNORE INTO qsb_{}({}, 记录时间) SELECT *, CURDATE() 记录时间 FROM qsb_缓存; '''.format(match3[team], columns)
+        # try:
+        #     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=2000)
+        # except Exception as e:
+        #     print('插入失败：', str(Exception) + str(e))
         print('----已写入' + team + '近两月监控-签收表中')
         print('获取耗时：', datetime.datetime.now() - start)
     def costWaybill(self, team):        # 获取各团队近两个月的成本数据内容
@@ -5277,10 +5277,10 @@ if __name__ == '__main__':
 
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    startday = '2021.04.17'
+    startday = '2021.04.19'
     for team in ['神龙-港台', '台湾', '香港', '火凤凰-港台', '火凤凰台湾', '火凤凰香港']:
         m.readForm(team, startday, '导入')
-    startday = '2021.05.17'
+    startday = '2021.05.19'
     for team in ['神龙-港台', '台湾', '香港', '火凤凰-港台', '火凤凰台湾', '火凤凰香港']:
         m.readForm(team, startday, '导入')
 
@@ -5289,11 +5289,11 @@ if __name__ == '__main__':
     #     m.check_time(team)
 
     # # # 测试监控运行（三）
-    for team in ['神龙台湾', '神龙香港', '火凤凰台湾', '火凤凰香港']:
+    for team in ['神龙香港', '火凤凰台湾', '火凤凰香港']:
     # for team in ['火凤凰台湾', '火凤凰香港']:
-    # for team in ['神龙台湾', '神龙香港']:
-        m.order_Monitoring(team)    # 各月缓存
-    #     m.data_Monitoring(team)     # 两月数据
+    # for team in ['神龙台湾']:
+    #     m.order_Monitoring(team)    # 各月缓存
+        m.data_Monitoring(team)     # 两月数据
         # m.costWaybill(team)       # 成本缓存 与 成本两月数据
         m.sl_Monitoring(team)       # 输出数据
         # m.sl_Monitoring_two(team)  # 输出上月数据

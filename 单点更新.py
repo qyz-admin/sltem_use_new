@@ -181,7 +181,7 @@ class QueryTwo(Settings):
             				        IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
             				        h.上线时间 上线时间
                             FROM d1_host h 
-                            LEFT JOIN dim_product ON  dim_product.id = h.产品id
+                            LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
                             LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                             LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`; '''.format(team)
         elif team == 'slrb_jl' or team == 'slrb_js':
@@ -231,7 +231,7 @@ class QueryTwo(Settings):
 				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
             				    h.上线时间 上线时间
                     FROM d1_host h 
-                    LEFT JOIN dim_product ON  dim_product.id = h.产品id
+                    LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
                     LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                     LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
         elif team == 'slrb':
@@ -280,7 +280,7 @@ class QueryTwo(Settings):
         				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
             				            h.上线时间 上线时间 
                             FROM d1_host h 
-                            LEFT JOIN dim_product ON  dim_product.id = h.产品id
+                            LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
                             LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                             LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
         elif team == 'sltg':
@@ -328,7 +328,7 @@ class QueryTwo(Settings):
 				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
             				    h.上线时间 上线时间
                     FROM d1_host h 
-                    LEFT JOIN dim_product ON  dim_product.id = h.产品id
+                    LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
                     LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                     LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
         elif team in ('slxmt', 'slxmt_t', 'slxmt_hfh'):
@@ -377,7 +377,7 @@ class QueryTwo(Settings):
                             IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
             				h.上线时间 上线时间
                         FROM d1_host h 
-                            LEFT JOIN dim_product ON  dim_product.id = h.产品id
+                            LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
                             LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                             LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
         if query == '导入':
@@ -599,7 +599,7 @@ if __name__ == '__main__':
     #     m.readFormHost(team, query)
     # 手动更新状态
     # for team in ['sltg', 'slgat', 'slgat_hfh',  'slgat_hs', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    for team in ['slgat_hs']:
+    for team in ['slgat']:
         query = '更新'         # 导入；，更新--->>数据更新切换
         m.readFormHost(team, query)
 
