@@ -102,6 +102,17 @@ class ExcelControl():
                          '上线时间': [False, ['''上线时间
 （即货交地派时间）''', '上线时间'], ['货交地派时间'], 'Inbound Date'],
                          '原运单号': [False, ['原包裹运单号(可含多个)', '原运单号'], []]},
+                'slsc': {'出货时间': [True, ['提货日期', '录单时间', '提交时间', '出货日期', '安排日期'], []],
+                         '订单编号': [True, ['订单号', '原单号'], []],
+                         '运单编号': [True, ['系统单号', '转单号', '运单编号', 'BJT转单号', '渠道转单号', '新单号'], []],
+                         '物流状态': [True, ['物流状态', '状态', '订单状态'], []],
+                         '状态时间': [True, ['状态时间', '日期',  '签收时间', '轨迹日期'], []],
+                         '问题明细': [False, ['问题件明细'], []],
+                         '航班时间': [False, ['航班起飞时间'], ['航班起飞时间']],
+                         '清关时间': [False, ['清关时间', '日本清关时间'], []],
+                         '上线时间': [False, ['''上线时间
+（即货交地派时间）''', '出库时间'], ['货交地派时间'], 'Inbound Date'],
+                         '原运单号': [False, ['原包裹运单号(可含多个)', '原运单号', '原运单编号'], []]},
                 'slgat': {'出货时间': [True, ['出货日期', '出货时间', '核重时间', '出库日期', '重出日期', '安排日期',
                                           '收件日期', '业务日期', '出库时间', '发货日期', '下单时间'], []],
                           '订单编号': [True, ['订单编号', '订单号', '订单号码', '客户单号', '内部单号', '原始订单号',
@@ -120,6 +131,24 @@ class ExcelControl():
                           '上线时间': [False, ['''上线时间
 （即货交地派时间）''', '上线时间', '新竹上线时间', '清关时间'], ['货交地派时间']],
                           '原运单号': [False, ['原单号', '原單號', '原始顺丰订单号'], []]},
+                'gat': {'出货时间': [True, ['出货日期', '出货时间', '核重时间', '出库日期', '重出日期', '安排日期',
+                                        '收件日期', '业务日期', '出库时间', '发货日期', '下单时间'], []],
+                        '订单编号': [True, ['订单编号', '订单号', '订单号码', '客户单号', '内部单号', '原始订单号',
+                                        '件號', '件号'], []],
+                        '运单编号': [True, ['运单号', '新单号', '提单号', '查件单号', '重出單號', '重出单号', '重出新單號',
+                                        '重出新单号', '承运单号', '运单编号', '转单号码', 'SF转单号', '转单号', '转单'], []],
+                        '物流状态': [True, ['物流状态', '状态', '运单最新状态', '貨態', '货态', '货态内容',
+                                        '新单号货态'], []],
+                        '状态时间': [True, ['最新状态时间', '最新货态日期', '末条时间', '运单最新状态时间', '状态时间',
+                                        '最终状态时间', '最终货态时间', '新货态日期', '最新状态', '签收时间',
+                                        '时间'], []],
+                        '航班时间': [False, ['航班起飞时间', '''国内清关时间
+（或航班起飞时间）''', '起飞时间'], ['航班起飞时间']],
+                        '清关时间': [False, ['''泰国清关时间
+（可用到泰国时间代替）'''], ['泰国清关时间']],
+                        '上线时间': [False, ['''上线时间
+（即货交地派时间）''', '上线时间', '新竹上线时间', '清关时间'], ['货交地派时间']],
+                        '原运单号': [False, ['原单号', '原單號', '原始顺丰订单号'], []]},
                 'slxmt': {'出货时间': [True, ['出货时间', 'Inbound Datetime'], []],
                         '订单编号': [True, ['订单号', '订单编号', 'Shipper Order Number', 'Shipper Reference Number'], []],
                         '运单编号': [True, ['转单号', '运单号', '运单编号', 'Tracking ID', 'Tracking Id ', 'tracking_id',
@@ -139,11 +168,11 @@ class ExcelControl():
         # 初始化字段是否是非必须的字段计数
         needDrop = []
         columns = list(df.columns)
-        if team == 'slgat':
+        if team == 'slgat' or team == 'gat':
             if '运单号' in columns and '查件单号' in columns and '订单编号' in columns and '换单号' in columns:
                 df.drop(labels=['查件单号'], axis=1, inplace=True)     # 速派7-11的去掉多余的查件单号
-                if '运单编号' in columns and '客户单号' in columns and '转单号' in columns:
-                    df.drop(labels=['转单号'], axis=1, inplace=True)     # 顺航的去掉多余的转单号
+            if '运单编号' in columns and '客户单号' in columns and '转单号' in columns:
+                df.drop(labels=['转单号'], axis=1, inplace=True)     # 顺航的去掉多余的转单号
             if '运单编号' in columns and '件号' in columns and '转单号' in columns:
                 df.drop(labels=['运单编号'], axis=1, inplace=True)   # 立邦的去掉多余的运单编号
             if '新单号' in columns and '承运单号' in columns:
@@ -156,6 +185,11 @@ class ExcelControl():
             # df['状态时间'] = pd.to_datetime(df['状态时间'])
             # print(df)
             # print(df.columns)
+        if team == 'slsc':
+            if '订单号' not in df:
+                df.insert(0, '订单号', '')
+            if '原单号' in columns and '转单号' in columns and '渠道转单号' in columns:
+                df.drop(labels=['转单号'], axis=1, inplace=True)   # 天马的去掉多余的承运单号
         if team == 'slrb':
             if '内单号' in columns and '转单号' in columns and '原单号' in columns:  # 吉客印神龙直发签收表JP使用
                 df.drop(labels=['转单号'], axis=1, inplace=True)
@@ -197,14 +231,13 @@ class ExcelControl():
                     df.columns = columns
                     break
             df.drop(columns=df.columns[10:], axis=1, inplace=True)
-            if team == 'slgat':
+            if team == 'slgat' or team == 'gat':
                 if '状态' in columns and '货态' in columns:
                     df.drop(labels=['货态'], axis=1, inplace=True)
         elif shtName == 'LIST':
             # 有个叫LIST的sheet，在系统里所有的运单号和订单编号一样，所以把签收表里面的运单编号，替换成订单编号
             df['渠道转单号'] = df['内单号']
         columns = list(df.columns)
-        # print(df)
         # 保留一个列名，后面要用
         for index, column in enumerate(columns):
             if not column:
@@ -247,10 +280,11 @@ class ExcelControl():
         # print(df)
         # print(needDrop)
         if necessary >= 5:
+            # print(df['订单编号'])
             df.columns = columns
             df.drop(labels=needDrop, axis=1, inplace=True)
             df.dropna(axis=0, subset=['运单编号'], inplace=True)
-            # print(df.columns)
+            print(df.columns)
             if team == 'slrb':
                 try:
                     # df['状态时间'] = df['状态时间'].str.strip()
@@ -267,6 +301,13 @@ class ExcelControl():
                     # print(df['运单编号'])
                 except Exception as e:
                     print('----修改状态时间失败：', str(Exception) + str(e))
+            if team == 'slsc':
+                print(11)
+                print(df['订单编号'])
+                df['状态时间'] = df['状态时间'].replace(to_replace=0, value=datetime.datetime(1990, 1, 1, 0, 0))
+                df['状态时间'] = df['状态时间'].replace(to_replace=' ', value=datetime.datetime(1990, 1, 1, 0, 0))
+                df['状态时间'] = df['状态时间'].fillna(value=datetime.datetime(1990, 1, 1, 0, 0))
+                df['物流状态'] = df['物流状态'].fillna(value='未上线')
             if shtName in ['新竹']:
                 df['订单编号'] = df['订单编号'].str.replace('原单:', '')
             if shtName in ['全家']:
@@ -300,10 +341,10 @@ class ExcelControl():
             print(filePath)
             if dir[:2] != '~$':
                 df = pd.read_excel(filePath)
-                columns = list(df.columns)  # 获取数据的标题名，转为列表
-                for column_val in columns:
-                    if '订单编号' not in columns:
-                        df.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
+                # columns = list(df.columns)  # 获取数据的标题名，转为列表
+                # for column_val in columns:
+                #     if '订单编号' not in columns:
+                #         df.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
                 df.columns = ['订单编号']
                 self.sql.writeSqlReplace(df)
                 sql = 'INSERT IGNORE INTO {}_return (订单编号，添加时间) SELECT 订单编号, NOW() 添加时间 FROM tem; '.format(team)

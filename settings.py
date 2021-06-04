@@ -36,6 +36,13 @@ class Settings():
                       'datebase': '订单数据',   #数据库名称
                       'charset': 'utf8'         #数据库编码
                        }
+        self.mysql4 = {'host': 'tidb.giikin.cn',      #数据库地址
+                      'user': 'jinpeng',           #数据库账户
+                      'port': '39999',
+                      'password': 'BpWzdlaG8',     #数据库密码
+                      'datebase': 'gdqs_jinpeng',   #数据库名称
+                      'charset': 'utf8'         #数据库编码
+                       }
         self.logistics = {
             '时丰': {'apiToken': '6XgVJqpdy3lttVh7DniJtXdLdxzDhHk12RgMurLqM9aCFeimGrNB08cs0233',
                    'apiUrl': r'https://timesoms.com/api/orders/track/'},

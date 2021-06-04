@@ -70,7 +70,10 @@ class QueryTwo(Settings):
                   '港台': 'slgat',
                   '泰国': 'sltg'}
         start = datetime.datetime.now()
-        path = r'D:\Users\Administrator\Desktop\需要用到的文件\数据库'
+        if team == 'slsc':
+            path = r'D:\Users\Administrator\Desktop\需要用到的文件\品牌数据源'
+        else:
+            path = r'D:\Users\Administrator\Desktop\需要用到的文件\数据库'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -81,9 +84,11 @@ class QueryTwo(Settings):
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
     def wbsheetHost(self, filePath, team, query):
-        match2 = {'slgat': '港台',
+        match2 = {'slgat': '神龙港台',
                   'slgat_hfh': '火凤凰港台',
                   'slgat_hs': '红杉港台',
+                  'slsc': '品牌',
+                  'gat': '港台',
                   'sltg': '泰国',
                   'slxmt': '新马',
                   'slxmt_t': 'T新马',
@@ -136,7 +141,7 @@ class QueryTwo(Settings):
         dataFrame.to_sql('d1_host', con=self.engine1, index=False, if_exists='replace')
     # 写入总表
     def replaceSqlHost(self, team, query):
-        if team == 'slgat' or team == 'slgat_hfh' or team == 'slgat_hs':
+        if team in ('gat', 'slgat', 'slgat_hfh','slgat_hs'):
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
             				        IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
             			            DATE(h.下单时间) 日期,
@@ -184,7 +189,58 @@ class QueryTwo(Settings):
                             LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
                             LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                             LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`; '''.format(team)
-        elif team == 'slrb_jl' or team == 'slrb_js':
+        elif team in ('slsc'):
+            sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
+			                    IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
+			                    DATE(h.下单时间) 日期,
+				                h.运营团队 团队,
+				                IF(h.`币种` = '日币', 'JP', IF(h.`币种` = '菲律宾', 'PH', IF(h.`币种` = '新加坡', 'SG', IF(h.`币种` = '马来西亚', 'MY', IF(h.`币种` = '台币', 'TW', h.`币种`))))) 区域,
+				                IF(h.`币种` = '日币', '日本', IF(h.`币种` = '菲律宾', '菲律宾', IF(h.`币种` = '新加坡', '新加坡', IF(h.`币种` = '马来西亚', '马来西亚', IF(h.`币种` = '台币', '台湾', h.`币种`))))) 币种,
+				                h.平台 订单来源,
+				                订单编号,
+				                数量,
+				                h.联系电话 电话号码,
+				                h.运单号 运单编号,
+				                IF(h.`订单类型` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
+				                h.物流渠道 物流方式,
+			--	                IF(h.`物流渠道` LIKE '%捷浩通%', '捷浩通', IF(h.`物流渠道` LIKE '%翼通达%','翼通达', IF(h.`物流渠道` LIKE '%博佳图%', '博佳图', IF(h.`物流渠道` LIKE '%保辉达%', '保辉达物流', IF(h.`物流渠道` LIKE '%万立德%','万立德', h.`物流渠道`))))) 物流名称,
+				                dim_trans_way.simple_name 物流名称,
+				                dim_trans_way.remark 运输方式,
+				                IF(h.`货物类型` = 'P 普通货', 'P', IF(h.`货物类型` = 'T 特殊货', 'T', h.`货物类型`)) 货物类型,
+				                是否低价,
+				                产品id,
+				                产品名称,
+				                dim_cate.ppname 父级分类,
+				                dim_cate.pname 二级分类,
+    		                    dim_cate.`name` 三级分类,
+				                IF(h.支付方式 = '货到付款' ,'货到付款' , '在线') 付款方式,
+				                h.应付金额 价格,
+				                下单时间,
+				                审核时间,
+				                h.发货时间 仓储扫描时间,
+				                null 完结状态,
+				                h.完成时间 完结状态时间,
+				                null 价格RMB,
+				                null 价格区间,
+				                null 成本价,
+				                null 物流花费,
+				                null 打包花费,
+				                null 其它花费,
+				                h.重量 包裹重量,
+				                h.体积 包裹体积,
+				                邮编,
+				                h.转采购时间 添加物流单号时间,
+				                IF(h.运营团队 = '精灵家族-品牌',IF(h.站点ID=1000000269,'饰品','内衣'),h.站点ID) 站点ID,
+				                null 订单删除原因,
+				                h.订单状态 系统订单状态,
+				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
+            				    h.上线时间 上线时间
+                    FROM d1_host h 
+                    LEFT JOIN dim_product_slsc ON  dim_product_slsc.id = h.产品id
+            --        LEFT JOIN (SELECT * FROM dim_product WHERE id IN (SELECT MAX(id) FROM dim_product GROUP BY id ) ORDER BY id) e on e.id = h.产品id
+                    LEFT JOIN dim_cate ON  dim_cate.id = dim_product_slsc.third_cate_id
+                    LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
+        elif team in ('slrb_jl', 'slrb_js'):
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
 			                    IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
 			                    DATE(h.下单时间) 日期,
@@ -442,7 +498,6 @@ class QueryTwo(Settings):
             n = n + 500
             self.orderInfoQuery(tokenid, ord, searchType, team)
         print('单日查询耗时：', datetime.datetime.now() - start)
-
     def orderInfoQuery(self, tokenid, orderId, searchType, team):  # 进入订单检索界面
         url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         data = {'phone': None,
@@ -594,14 +649,22 @@ if __name__ == '__main__':
              'slxmt_hfh': '火凤凰-新马'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # for team in ['sltg', 'slgat', 'slgat_hfh', 'slgat_hs', slrb', 'slrb_jl', 'slrb_js', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    # for team in ['sltg']:
+    # for team in ['slsc']:
     #     query = '导入'         # 导入；，更新--->>数据更新切换
     #     m.readFormHost(team, query)
     # 手动更新状态
-    # for team in ['sltg', 'slgat', 'slgat_hfh',  'slgat_hs', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    for team in ['slgat']:
+    # for team in ['slsc', 'gat', 'slgat', 'slgat_hfh',  'slgat_hs', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh', 'sltg']:
+    for team in ['gat']:
         query = '更新'         # 导入；，更新--->>数据更新切换
         m.readFormHost(team, query)
+
+
+
+
+
+
+
+
 
 
     # -----------------------------------------------系统导入状态运行（二）-----------------------------------------
@@ -612,7 +675,7 @@ if __name__ == '__main__':
     print(begin)
     end = datetime.date(2021, 4, 2)
     print(end)
-    
+
     # yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 若无法查询，切换代理和直连的网络
     # mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
     # begin = datetime.date(yy, mm, 1)

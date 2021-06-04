@@ -9,15 +9,17 @@ from 单点更新 import QueryTwo
 import datetime
 
 start: datetime = datetime.datetime.now()
-team = 'slrb_jl'
-match = {'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
+team = 'slsc'
+match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
+         'slgat_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
+         'slgat_hs': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
+         'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
          'slrb_jl': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
          'slrb_js': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
          'slrb_hs': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
+         'slsc': r'D:\Users\Administrator\Desktop\需要用到的文件\品牌',
+         'gat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
          'sltg': r'D:\Users\Administrator\Desktop\需要用到的文件\A泰国签收表',
-         'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
-         'slgat_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
-         'slgat_hs': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
          'slxmt': r'D:\Users\Administrator\Desktop\需要用到的文件\A新马签收表',
          'slxmt_t': r'D:\Users\Administrator\Desktop\需要用到的文件\A新马签收表',
          'slxmt_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\A新马签收表'}
@@ -36,6 +38,15 @@ we = WlExecl()
 # 上传退货
 e.readReturnOrder(team)
 print('退货导入耗时：', datetime.datetime.now() - start)
+# 上传品牌数据
+# if team == 'slsc':
+#     query = '导入'
+#     QueryTwo.readFormHost(team, query)
+# elif team == 'gat':
+#     query = '更新'         # 导入；，更新--->>数据更新切换
+#     QueryTwo.readFormHost(team, query)
+# print('更新导入耗时：', datetime.datetime.now() - start)
+
 
 # ---读取execl文件---
 for dir in dirs:
@@ -56,14 +67,12 @@ for dir in dirs:
 print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
-m.creatMyOrderSl(team)  # 最近五天的全部订单信息
+# m.creatMyOrderSl(team)  # 最近五天的全部订单信息
 print('------------更新部分：---------------------')
-m.creatMyOrderSlTWO(team)   # 最近两个月的更新订单信息
+# m.creatMyOrderSlTWO(team)   # 最近两个月的更新订单信息
 print('处理耗时：', datetime.datetime.now() - start)
-m.connectOrder(team)      # 最近两个月的订单信息导出
+m.connectOrder(team)  # 最近两个月的订单信息导出
 print('输出耗时：', datetime.datetime.now() - start)
-
-
 
 
 # 输出签收率表、(备用)
