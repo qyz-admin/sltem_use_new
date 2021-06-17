@@ -47,7 +47,6 @@ class ExcelControl():
                             file = pd.DataFrame(lst[1:], columns=lst[0])
                             # print(file)
                         db = self.isRightSheet(file, team, sht.name)
-                        # print(db)
                     except Exception as e:
                         print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                     if db is not None and len(db) > 0:
@@ -102,17 +101,17 @@ class ExcelControl():
                          '上线时间': [False, ['''上线时间
 （即货交地派时间）''', '上线时间'], ['货交地派时间'], 'Inbound Date'],
                          '原运单号': [False, ['原包裹运单号(可含多个)', '原运单号'], []]},
-                'slsc': {'出货时间': [True, ['提货日期', '录单时间', '提交时间', '出货日期', '安排日期'], []],
-                         '订单编号': [True, ['订单号', '原单号'], []],
-                         '运单编号': [True, ['系统单号', '转单号', '运单编号', 'BJT转单号', '渠道转单号', '新单号'], []],
-                         '物流状态': [True, ['物流状态', '状态', '订单状态'], []],
-                         '状态时间': [True, ['状态时间', '日期',  '签收时间', '轨迹日期'], []],
+                'slsc': {'出货时间': [True, ['提货日期', '录单时间', '提交时间', '出货日期', '安排日期', '出库日期'], []],
+                         '订单编号': [True, ['订单号', '原单号', '订单号码'], []],
+                         '运单编号': [True, ['系统单号', '转单号', '运单编号', 'BJT转单号', '渠道转单号', '新单号', '提单号'], []],
+                         '物流状态': [True, ['物流状态', '状态', '订单状态', '运单最新状态'], []],
+                         '状态时间': [True, ['状态时间', '日期',  '签收时间', '轨迹日期', '运单最新状态时间'], []],
                          '问题明细': [False, ['问题件明细'], []],
                          '航班时间': [False, ['航班起飞时间'], ['航班起飞时间']],
                          '清关时间': [False, ['清关时间', '日本清关时间'], []],
                          '上线时间': [False, ['''上线时间
 （即货交地派时间）''', '出库时间'], ['货交地派时间'], 'Inbound Date'],
-                         '原运单号': [False, ['原包裹运单号(可含多个)', '原运单号', '原运单编号'], []]},
+                         '原运单号': [False, ['原包裹运单号(可含多个)', '原运单号'], []]},
                 'slgat': {'出货时间': [True, ['出货日期', '出货时间', '核重时间', '出库日期', '重出日期', '安排日期',
                                           '收件日期', '业务日期', '出库时间', '发货日期', '下单时间'], []],
                           '订单编号': [True, ['订单编号', '订单号', '订单号码', '客户单号', '内部单号', '原始订单号',
@@ -284,7 +283,7 @@ class ExcelControl():
             df.columns = columns
             df.drop(labels=needDrop, axis=1, inplace=True)
             df.dropna(axis=0, subset=['运单编号'], inplace=True)
-            print(df.columns)
+            # print(df.columns)
             if team == 'slrb':
                 try:
                     # df['状态时间'] = df['状态时间'].str.strip()
@@ -302,8 +301,7 @@ class ExcelControl():
                 except Exception as e:
                     print('----修改状态时间失败：', str(Exception) + str(e))
             if team == 'slsc':
-                print(11)
-                print(df['订单编号'])
+                # print(df['订单编号'])
                 df['状态时间'] = df['状态时间'].replace(to_replace=0, value=datetime.datetime(1990, 1, 1, 0, 0))
                 df['状态时间'] = df['状态时间'].replace(to_replace=' ', value=datetime.datetime(1990, 1, 1, 0, 0))
                 df['状态时间'] = df['状态时间'].fillna(value=datetime.datetime(1990, 1, 1, 0, 0))
@@ -341,10 +339,10 @@ class ExcelControl():
             print(filePath)
             if dir[:2] != '~$':
                 df = pd.read_excel(filePath)
-                # columns = list(df.columns)  # 获取数据的标题名，转为列表
-                # for column_val in columns:
-                #     if '订单编号' not in columns:
-                #         df.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
+                columns_value = list(df.columns)  # 获取数据的标题名，转为列表
+                for column_val in columns_value:
+                    if '订单编号' != column_val:
+                        df.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
                 df.columns = ['订单编号']
                 self.sql.writeSqlReplace(df)
                 sql = 'INSERT IGNORE INTO {}_return (订单编号，添加时间) SELECT 订单编号, NOW() 添加时间 FROM tem; '.format(team)

@@ -155,13 +155,29 @@ class BpsControl99(Settings):
 		print('更新成功…………')
 		return ordersDict
 
+
+
+	def newOrderInfoYY(self):                  # 进入老后台查询界面
+		url = 'https://www.hct.com.tw/Search/SearchGoods.aspx'
+		url = 'https://www.hct.com.tw/Search/SearchGoods_n.aspx'
+		data = {'no': 'Fzqmtq+jmRLI0W7T7Q5bRQ==',
+				'chk': 'CBViORgtxvwk5TlZHZe9XI4irB6B3Ulgk2oSph+RDGM='}
+		req = self.session.post(url=url, data=data)
+		print(req)
+		print(req.text)
+		print('-------已成功发送请求++++++')
+		# orderInfo = self.new_parseDate(req)   			# 获取订单简单信息
+		# print(orderInfo)
+
 if __name__ == '__main__':                    # 以老后台的简单查询为主，
 	start = datetime.datetime.now()
-	# s = BpsControl99('qiyuanzhang@jikeyin.com', 'qiyuanzhang123.0')
+	# s = BpsControl99('qiyuanzhang@jikeyin.com', 'qiyuanzhang123.')  老后台密码
+	# s = BpsControl99('qiyuanzhang@jikeyin.com', 'qiyuanzhang123.0') 新后台密码
 	# s = BpsControl99('gupeiyu@giikin.com', 'gu19931209*')
 	s = BpsControl99('zhangjing@giikin.com', 'Giao2020..0')
-	s.newOrderInfo('MY102010000268232', '订单号')
+	# s.newOrderInfo('MY102010000268232', '订单号')
 
+	s.newOrderInfoYY()
 	# begin = datetime.date(2021, 2, 1)
 	# print(begin)
 	# end = datetime.date(2021, 2, 2)

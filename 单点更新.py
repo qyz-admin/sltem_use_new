@@ -667,14 +667,22 @@ if __name__ == '__main__':
 
 
 
+
+
+
+
+
+
+
+
     # -----------------------------------------------系统导入状态运行（二）-----------------------------------------
     #   台湾token, 日本token, 新马token：  f5dc2a3134c17a2e970977232e1aae9b
     #   泰国token： 83583b29fc24ec0529082ff7928246a6
 
-    begin = datetime.date(2021, 4, 1)       # 若无法查询，切换代理和直连的网络
-    print(begin)
-    end = datetime.date(2021, 4, 2)
-    print(end)
+    # begin = datetime.date(2021, 4, 1)       # 若无法查询，切换代理和直连的网络
+    # print(begin)
+    # end = datetime.date(2021, 4, 2)
+    # print(end)
 
     # yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 若无法查询，切换代理和直连的网络
     # mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))

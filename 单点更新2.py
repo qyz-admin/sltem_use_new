@@ -457,13 +457,15 @@ class QueryTwo(Settings):
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
         r_header = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36',
-            'Referer': 'http://gimp.giikin.com/front/orderToolsServiceQuery'}
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+            'PHPSESSID': 'n0sif2a3f8maf57h3na4nrfks0',
+            'Referer': 'http://gimp.giikin.com/front/orderToolsOrderSearch'}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         print('正在处理json数据转化为dataframe…………')
         print(req)
+        print(req.text)
         print(551)
         # req = json.loads(req)  # json类型数据转换为dict字典
         # print(req)
@@ -474,7 +476,8 @@ class QueryTwo(Settings):
         print(550)
         print(req['location'].split('_ticker=')[1])
         data.update({'_ticker ': req['location'].split('_ticker=')[1]})
-        url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getQueryOrder&_user=1343&'
+        print(data)
+        url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         req = self.session.post(url=url, headers=r_header, data=data)
         print(5500)
         print(req)
@@ -635,7 +638,7 @@ if __name__ == '__main__':
     # -----------------------------------------------单个查询测试使用（三）-----------------------------------------
     team = 'slgat'              # ['slgat', 'slgat_hfh', 'slrb', 'sltg', 'slxmt', 'slxmt_hfh']
     searchType = '订单号'      # 运单号，订单号   查询切换
-    tokenid = 'c363a3284c2a8a0e6e07c5cb6b22223f'
+    tokenid = 'da9415d4e2dc9337cc08bc02cd7485e1'
     # tickerid = '255755c8118a841aba0f9643b49363d3'
     # m.orderInfoQuery(tokenid, tickerid, 'NR103021446315734', searchType, team)
     m.orderInfoQuery(tokenid, 'NR103021446315734', searchType, team)
