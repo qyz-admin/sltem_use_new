@@ -114,9 +114,12 @@ class QueryUpdate(Settings):
 					    ) b ON si.`订单编号` = b.`订单编号`
                 LEFT JOIN gat_logisitis_match c ON b.物流状态 = c.签收表物流状态
                 LEFT JOIN gat_return d ON si.订单编号 = d.订单编号;'''
+        sql = '''SELECT gat_zqsb.订单编号,gat_zqsb.系统订单状态,gat_zqsb.`系统物流状态`,gat_zqsb.`物流状态`,gat_zqsb.`最终状态`
+                FROM sheet1_iphone
+	            LEFT JOIN gat_zqsb ON sheet1_iphone.`订单编号` = gat_zqsb.`订单编号`;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入excel…………')
-        df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\查询状态{}.xlsx'.format('1'),
+        df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\订单检索-查询{}.xlsx'.format('1'),
                     sheet_name='查询', index=False)
         print('----已写入excel')
 

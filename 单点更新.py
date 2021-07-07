@@ -95,6 +95,7 @@ class QueryTwo(Settings):
                   'slxmt_hfh': '火凤凰新马',
                   'slrb': '日本',
                   'slrb_js': '金狮-日本',
+                  'slrb_hs': '红杉-日本',
                   'slrb_jl': '精灵-日本'}
         print('---正在获取 ' + match2[team] + ' 签收表的详情++++++')
         fileType = os.path.splitext(filePath)[1]
@@ -141,7 +142,7 @@ class QueryTwo(Settings):
         dataFrame.to_sql('d1_host', con=self.engine1, index=False, if_exists='replace')
     # 写入总表
     def replaceSqlHost(self, team, query):
-        if team in ('gat', 'slgat', 'slgat_hfh','slgat_hs'):
+        if team in ('gat', 'slgat', 'slgat_hfh', 'slgat_hs'):
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
             				        IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
             			            DATE(h.下单时间) 日期,
@@ -240,7 +241,7 @@ class QueryTwo(Settings):
             --        LEFT JOIN (SELECT * FROM dim_product WHERE id IN (SELECT MAX(id) FROM dim_product GROUP BY id ) ORDER BY id) e on e.id = h.产品id
                     LEFT JOIN dim_cate ON  dim_cate.id = dim_product_slsc.third_cate_id
                     LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
-        elif team in ('slrb_jl', 'slrb_js'):
+        elif team in ('slrb_jl', 'slrb_js', 'slrb_hs'):
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
 			                    IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
 			                    DATE(h.下单时间) 日期,
@@ -649,7 +650,7 @@ if __name__ == '__main__':
              'slxmt_hfh': '火凤凰-新马'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # for team in ['sltg', 'slgat', 'slgat_hfh', 'slgat_hs', slrb', 'slrb_jl', 'slrb_js', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    # for team in ['slsc']:
+    # for team in ['gat']:
     #     query = '导入'         # 导入；，更新--->>数据更新切换
     #     m.readFormHost(team, query)
     # 手动更新状态
