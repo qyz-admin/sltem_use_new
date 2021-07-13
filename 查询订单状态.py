@@ -119,7 +119,8 @@ class QueryUpdate(Settings):
 	            LEFT JOIN gat_zqsb ON sheet1_iphone.`订单编号` = gat_zqsb.`订单编号`;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入excel…………')
-        df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\订单检索-查询{}.xlsx'.format('1'),
+        rq = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+        df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\订单检索-查询{}.xlsx'.format(rq),
                     sheet_name='查询', index=False)
         print('----已写入excel')
 

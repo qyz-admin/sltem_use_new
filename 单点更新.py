@@ -144,7 +144,7 @@ class QueryTwo(Settings):
     def replaceSqlHost(self, team, query):
         if team in ('gat', 'slgat', 'slgat_hfh', 'slgat_hs'):
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
-            				        IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
+            				        IF(DAYOFMONTH(h.`下单时间`) >= '20', '3', IF(DAYOFMONTH(h.`下单时间`) <= '10', '1', '2')) 旬,
             			            DATE(h.下单时间) 日期,
             				        h.运营团队 团队,
             				        IF(h.`币种` = '台币', 'TW', IF(h.`币种` = '港币', 'HK', h.`币种`)) 区域,
@@ -192,7 +192,7 @@ class QueryTwo(Settings):
                             LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`; '''.format(team)
         elif team in ('slsc'):
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
-			                    IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
+			                    IF(DAYOFMONTH(h.`下单时间`) >= '20', '3', IF(DAYOFMONTH(h.`下单时间`) <= '10', '1', '2')) 旬,
 			                    DATE(h.下单时间) 日期,
 				                h.运营团队 团队,
 				                IF(h.`币种` = '日币', 'JP', IF(h.`币种` = '菲律宾', 'PH', IF(h.`币种` = '新加坡', 'SG', IF(h.`币种` = '马来西亚', 'MY', IF(h.`币种` = '台币', 'TW', h.`币种`))))) 区域,
@@ -243,7 +243,7 @@ class QueryTwo(Settings):
                     LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
         elif team in ('slrb_jl', 'slrb_js', 'slrb_hs'):
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
-			                    IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
+			                    IF(DAYOFMONTH(h.`下单时间`) >= '20', '3', IF(DAYOFMONTH(h.`下单时间`) <= '10', '1', '2')) 旬,
 			                    DATE(h.下单时间) 日期,
 				                h.运营团队 团队,
 				                IF(h.`币种` = '日币', 'JP', h.`币种`) 区域,
@@ -293,7 +293,7 @@ class QueryTwo(Settings):
                     LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
         elif team == 'slrb':
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
-        			                    IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
+        			                    IF(DAYOFMONTH(h.`下单时间`) >= '20', '3', IF(DAYOFMONTH(h.`下单时间`) <= '10', '1', '2')) 旬,
         			                    DATE(h.下单时间) 日期,
         				                h.运营团队 团队,
         				                IF(h.`币种` = '日币', 'JP', h.`币种`) 区域,
@@ -342,7 +342,7 @@ class QueryTwo(Settings):
                             LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
         elif team == 'sltg':
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
-                                IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
+                                IF(DAYOFMONTH(h.`下单时间`) >= '20', '3', IF(DAYOFMONTH(h.`下单时间`) <= '10', '1', '2')) 旬,
 			                    DATE(h.下单时间) 日期,
 				                h.运营团队 团队,
 				                IF(h.`币种` = '泰铢', 'TH', h.`币种`) 区域,
@@ -390,7 +390,7 @@ class QueryTwo(Settings):
                     LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`;'''.format(team)
         elif team in ('slxmt', 'slxmt_t', 'slxmt_hfh'):
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
-                            IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '10', '1', '2')) 旬,
+                            IF(DAYOFMONTH(h.`下单时间`) >= '20', '3', IF(DAYOFMONTH(h.`下单时间`) <= '10', '1', '2')) 旬,
                             DATE(h.下单时间) 日期,
                             h.运营团队 团队,
                             IF(h.`币种` = '马来西亚', 'MY', IF(h.`币种` ='菲律宾', 'PH', IF(h.`币种` = '新加坡', 'SG', null))) 区域,
@@ -465,8 +465,10 @@ class QueryTwo(Settings):
             		                    a.`系统物流状态`= IF(b.`系统物流状态` = '', NULL, b.`系统物流状态`),
             		                    a.`是否改派`= b.`是否改派`,
             		                    a.`物流方式`= IF(b.`物流方式` = '', NULL, b.`物流方式`),
-            		                    a.`物流名称`= b.`物流名称`,
+            		                    a.`物流名称`= IF(b.`物流名称` = '', NULL, b.`物流名称`),
             		                    a.`货物类型`= b.`货物类型`,
+            		                    a.`产品id`= IF(b.`产品id` = '', NULL, b.`产品id`),
+            		                    a.`产品名称`= IF(b.`产品名称` = '', NULL, b.`产品名称`),
             		                    a.`审核时间`= b.`审核时间`,
             		                    a.`仓储扫描时间`= b.`仓储扫描时间`,
             		                    a.`上线时间`= b.`上线时间`,
