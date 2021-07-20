@@ -440,6 +440,8 @@ class QueryTwo(Settings):
     def orderInfoQuery(self, tokenid, orderId, searchType, team):  # 进入订单检索界面
         url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         url = r'http://gimp.giikin.com/service?service=gorder.customer&action=getQueryOrder&_user=1343&'
+        url = r'https://gimp.giikin.com/service?service=gorder.order&action=getLogisticsTrace&numbers=1599128016&searchType=1'
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getLogisticsTrace&number=1599128204&_user=1343&_token=f0ac272a4928b4434bab32e109f3b199&_ticker=c7664517107a28a2760115fbb93d4a04'
         data = {'phone': None,
                 'email': None,
                 'ip': None,
@@ -461,7 +463,8 @@ class QueryTwo(Settings):
             'PHPSESSID': 'n0sif2a3f8maf57h3na4nrfks0',
             'Referer': 'http://gimp.giikin.com/front/orderToolsOrderSearch'}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        # req = self.session.post(url=url, headers=r_header, data=data)
+        req = self.session.get(url=url, headers=r_header)
         print('+++已成功发送请求......')
         print('正在处理json数据转化为dataframe…………')
         print(req)
@@ -638,10 +641,10 @@ if __name__ == '__main__':
     # -----------------------------------------------单个查询测试使用（三）-----------------------------------------
     team = 'slgat'              # ['slgat', 'slgat_hfh', 'slrb', 'sltg', 'slxmt', 'slxmt_hfh']
     searchType = '订单号'      # 运单号，订单号   查询切换
-    tokenid = 'da9415d4e2dc9337cc08bc02cd7485e1'
+    tokenid = '09f5f0d91a3b33a7d358470ca8aaad2a'
     # tickerid = '255755c8118a841aba0f9643b49363d3'
     # m.orderInfoQuery(tokenid, tickerid, 'NR103021446315734', searchType, team)
-    m.orderInfoQuery(tokenid, 'NR103021446315734', searchType, team)
+    m.orderInfoQuery(tokenid, '1599128016', searchType, team)
 
     # last_month = '2021-03-18'
     # m.orderInfo(tokenid, searchType, team, last_month)

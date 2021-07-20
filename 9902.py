@@ -26,6 +26,8 @@ class Login:
         if req and req.get('code') == 0:
             self.oauthkey = req['data']['oauthKey']
             self.qrcodeUrl = req['data']['url']
+            print (req['data']['oauthKey'])
+            print (req['data']['url'])
             return True
         return False
     @staticmethod
@@ -55,9 +57,13 @@ class Login:
                 }
                 req = self._requests('post', 'https://passport.bilibili.com/qrcode/getLoginInfo', data=data)
                 print(req)
+                print(22)
                 if req['data'] == -4:  # 未扫描
                     pass
                 elif req['data'] == -2:    # 过期
+                    self.getQRCode()
+                    pool.submit(self.showQRCode, self.qrcodeUrl)
+                elif req['data'] == -1:    # 过期
                     self.getQRCode()
                     pool.submit(self.showQRCode, self.qrcodeUrl)
                 elif req['data'] == -5:    # 扫描，等待

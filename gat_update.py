@@ -162,6 +162,8 @@ class QueryUpdate(Settings):
         print('更新成功…………')
 
 
+
+
     # 获取签收表内容---港澳台更新签收总表(一.附表)转存总表
     def makeSql(self, team):
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
@@ -244,7 +246,7 @@ class QueryUpdate(Settings):
         print('更新完成+++')
 
         print('正在获取---' + match[team] + ' ---更新数据内容…………')
-        sql = '''SELECT 日期, a.订单编号 订单编号, a.运单编号 运单编号,IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,系统订单状态, 
+        sql = '''SELECT 日期, 团队, a.订单编号 订单编号, a.运单编号 运单编号,IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,系统订单状态, 
                         IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
                         IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
                         IF(是否改派='二次改派', '改派', 是否改派) 是否改派, 物流方式,物流名称,付款方式,产品id,产品名称,父级分类,二级分类,三级分类
@@ -815,44 +817,13 @@ class QueryUpdate(Settings):
             # app.quit()
         print('----已写入excel ')
 
-    def qsb_report_T(self, team, day_yesterday, day_last):  # 获取各团队近两个月的物流数据
+
+    # 获取各团队近两个月的物流数据
+    def qsb_report_T(self, team, day_yesterday, day_last):
         match = {'gat': '港台'}
         filePath = []
         listT = []  # 查询sql的结果 存放池
         print('正在获取---' + match[team] + '---签收率…………')
-        # 总表
-        sql = '''SELECT cx.币种 线路,
-			                cx.团队 家族,
-			                cx.年月 月份,
-			                count(订单编号) as 总订单,
-			                concat(ROUND(SUM(IF(最终状态 = "已签收",1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-			                concat(ROUND(SUM(IF(最终状态 = "已签收",1,0)) /  count(订单编号) * 100,2),'%') as 总计签收,
-			                concat(ROUND(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / count(订单编号) * 100,2),'%') as 完成占比,
-			                null 序号
-                    FROM qsb_gat cx
-                    WHERE cx.`记录时间` = '{1}'
-                    GROUP BY cx.币种,cx.团队,cx.年月
-                    ORDER BY cx.币种,cx.团队,cx.年月;'''.format(team, day_yesterday)
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        listT.append(df)
-        # 总表-上月
-        sql2 = '''SELECT 线路,家族,月份,总订单,完成签收,总计签收,完成占比,@rownum:=@rownum+1 AS 序号
-	            FROM (SELECT cx.币种 线路,
-        			        cx.团队 家族,
-        			        cx.年月 月份,
-        			        count(订单编号) as 总订单,
-        			        concat(ROUND(SUM(IF(最终状态 = "已签收",1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-        			        concat(ROUND(SUM(IF(最终状态 = "已签收",1,0)) /  count(订单编号) * 100,2),'%') as 总计签收,
-        			        concat(ROUND(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / count(订单编号) * 100,2),'%') as 完成占比,
-        			        @rownum:=0 
-                        FROM qsb_gat cx
-                        WHERE cx.`记录时间` = '{1}'
-                        GROUP BY cx.币种,cx.团队,cx.年月
-                    ) s
-                ORDER BY s.线路,s.家族,s.月份;'''.format(team, day_last)
-        df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
-        listT.append(df2)
-
         # 物流
         sql3 = '''SELECT s2.币种,s2.团队 家族,s2.年月,s2.是否改派,s2.物流方式,
 						s2.总订单,
@@ -1307,7 +1278,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     write = '本期'
     # write = '上期'
-    last_time = '2021-06-30'
+    last_time = '2021-07-16'
     m.readFormHost(team, write, last_time)       #  更新签收表---港澳台（一）
 
     # m.makeSql(team)         # 转存表---港澳台（一.附表）

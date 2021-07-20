@@ -463,6 +463,7 @@ class SltemMonitoring(Settings):
         match2 = {'日本': 'qsb_slrb',
                   '品牌-日本': 'qsb_slsc',
                   '品牌-台湾': 'qsb_slsc',
+                  '品牌-香港': 'qsb_slsc',
                   '品牌-马来西亚': 'qsb_slsc',
                   '品牌-新加坡': 'qsb_slsc',
                   '品牌-菲律宾': 'qsb_slsc',
@@ -473,6 +474,7 @@ class SltemMonitoring(Settings):
         match3 = {'日本': '日本',
                   '品牌-日本': '日本',
                   '品牌-台湾': '台湾',
+                  '品牌-香港': '香港',
                   '品牌-马来西亚': '马来西亚',
                   '品牌-新加坡': '新加坡',
                   '品牌-菲律宾': '菲律宾',
@@ -485,6 +487,12 @@ class SltemMonitoring(Settings):
                     '神龙台湾': 'giikinliujun@163.com',
                     '火凤凰香港': 'giikinliujun@163.com',
                     '火凤凰台湾': 'giikinliujun@163.com',
+                    '品牌-日本': 'sunyaru@giikin.com',
+                    '品牌-台湾': 'sunyaru@giikin.com',
+                    '品牌-香港': 'sunyaru@giikin.com',
+                    '品牌-马来西亚': 'sunyaru@giikin.com',
+                    '品牌-新加坡': 'sunyaru@giikin.com',
+                    '品牌-菲律宾': 'sunyaru@giikin.com',
                     '日本': 'sunyaru@giikin.com'}
         # 筛选最大ID
         # print('正在创建临时监控数据源')
@@ -1159,7 +1167,7 @@ class SltemMonitoring(Settings):
                       '时效(总)_']  # 生成的工作表的表名
         file_Path = []  # 发送邮箱文件使用
         filePath = ''
-        if team in ['品牌-日本', '品牌-台湾', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
+        if team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
             filePath = 'F:\\查询\\品牌监控\\{} {} 监控表.xlsx'.format(today, team)
         elif team in ('神龙香港', '神龙台湾', '火凤凰香港', '火凤凰台湾'):
             filePath = 'F:\\查询\\港台监控\\{} {}监控表.xlsx'.format(today, team)
@@ -1192,9 +1200,10 @@ class SltemMonitoring(Settings):
         wbsht.close()
         app.quit()
         print('输出(监控)文件成功…………')
-        # file_Path.append(filePath)
-        # self.e.send('{} {}监控表.xlsx'.format(today, team), file_Path,
-        #             emailAdd[team])
+        file_Path.append(filePath)
+        if team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
+            self.e.send('{} {}监控表.xlsx'.format(today, team), file_Path,
+                        emailAdd[team])
         print('处理耗时：', datetime.datetime.now() - start)
 
         # 特殊单月-获取数据对比：
@@ -5471,14 +5480,14 @@ if __name__ == '__main__':
 
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    startday = '2021.06.12'
+    startday = '2021.06.19'
     for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '神龙台湾', '火凤凰台湾', '火凤凰香港']:
     # for team in ['新神龙-港台', '新火凤凰-港台']:
     # for team in ['神龙-港台']:
     # for team in ['火凤凰-港台']:
         m.readForm(team, startday, '导入')
     #     m.readForm(team, startday, '单独导入')
-    startday = '2021.07.12'
+    startday = '2021.07.19'
     for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '火凤凰台湾', '火凤凰台湾', '火凤凰香港']:
     # for team in ['神龙-港台']:
     # for team in ['火凤凰-港台']:
@@ -5522,11 +5531,11 @@ if __name__ == '__main__':
     team = '品牌'
     m.order_Monitoring(team)  # 各月缓存
 
-    startday = '2021.06.11'
+    startday = '2021.06.19'
     m.readForm(team, startday, '导入')
 
-    startday = '2021.07.12'
+    startday = '2021.07.19'
     m.readForm(team, startday, '导入')
 
-    for team in ['品牌-日本', '品牌-台湾', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
+    for team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
         m.sl_Monitoring(team)        # 输出数据
