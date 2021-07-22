@@ -195,8 +195,8 @@ class QueryTwo(Settings):
 			                    IF(DAYOFMONTH(h.`下单时间`) >= '20', '3', IF(DAYOFMONTH(h.`下单时间`) <= '10', '1', '2')) 旬,
 			                    DATE(h.下单时间) 日期,
 				                h.运营团队 团队,
-				                IF(h.`币种` = '日币', 'JP', IF(h.`币种` = '菲律宾', 'PH', IF(h.`币种` = '新加坡', 'SG', IF(h.`币种` = '马来西亚', 'MY', IF(h.`币种` = '台币', 'TW', h.`币种`))))) 区域,
-				                IF(h.`币种` = '日币', '日本', IF(h.`币种` = '菲律宾', '菲律宾', IF(h.`币种` = '新加坡', '新加坡', IF(h.`币种` = '马来西亚', '马来西亚', IF(h.`币种` = '台币', '台湾', h.`币种`))))) 币种,
+				                IF(h.`币种` = '日币', 'JP', IF(h.`币种` = '菲律宾', 'PH', IF(h.`币种` = '新加坡', 'SG', IF(h.`币种` = '马来西亚', 'MY', IF(h.`币种` = '台币', 'TW', IF(h.`币种` = '港币', 'HK', h.`币种`)))))) 区域,
+				                IF(h.`币种` = '日币', '日本', IF(h.`币种` = '菲律宾', '菲律宾', IF(h.`币种` = '新加坡', '新加坡', IF(h.`币种` = '马来西亚', '马来西亚', IF(h.`币种` = '台币', '台湾', IF(h.`币种` = '港币', '香港', h.`币种`)))))) 币种,
 				                h.平台 订单来源,
 				                订单编号,
 				                数量,
@@ -652,14 +652,14 @@ if __name__ == '__main__':
              'slxmt_hfh': '火凤凰-新马'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # for team in ['sltg', 'slgat', 'slgat_hfh', 'slgat_hs', slrb', 'slrb_jl', 'slrb_js', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    # for team in ['gat']:
-    #     query = '导入'         # 导入；，更新--->>数据更新切换
-    #     m.readFormHost(team, query)
+    for team in ['slsc']:
+        query = '导入'         # 导入；，更新--->>数据更新切换
+        m.readFormHost(team, query)
     # 手动更新状态
     # for team in ['slsc', 'gat', 'slgat', 'slgat_hfh',  'slgat_hs', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh', 'sltg']:
-    for team in ['gat']:
-        query = '更新'         # 导入；，更新--->>数据更新切换
-        m.readFormHost(team, query)
+    # for team in ['slsc']:
+    #     query = '更新'         # 导入；，更新--->>数据更新切换
+    #     m.readFormHost(team, query)
 
 
 

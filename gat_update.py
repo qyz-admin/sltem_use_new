@@ -110,7 +110,6 @@ class QueryUpdate(Settings):
 
     def writeCacheHost(self, dataFrame):    # 写入更新缓存表
         dataFrame.to_sql('gat_update', con=self.engine1, index=False, if_exists='replace')
-
     def replaceSqlHost(self, team):    # 更新-总表
         try:
             print('正在更新单表中......')
@@ -160,8 +159,6 @@ class QueryUpdate(Settings):
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
-
-
 
 
     # 获取签收表内容---港澳台更新签收总表(一.附表)转存总表
@@ -298,6 +295,378 @@ class QueryUpdate(Settings):
             print(tem2 + '----已写入excel')
             print('正在打印' + match[tem2] + ' 物流时效…………')
             self.m.data_wl(tem2)
+    # 新版签收率
+    def qsb_new(self, team, day_yesterday, day_last):  # 获取各团队近两个月的物流数据
+        match = {'gat': '港台'}
+        filePath = []
+        listT = []  # 查询sql的结果 存放池
+        print('正在获取---' + match[team] + '---签收率…………')
+        # 物流
+        sql = '''SELECT cx.币种 线路,
+			                cx.团队 家族,
+			                cx.年月 月份,
+			                count(订单编号) as 总订单,
+			                concat(ROUND(SUM(IF(最终状态 = "已签收",1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
+			                concat(ROUND(SUM(IF(最终状态 = "已签收",1,0)) /  count(订单编号) * 100,2),'%') as 总计签收,
+			                concat(ROUND(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / count(订单编号) * 100,2),'%') as 完成占比,
+			                null 序号
+                    FROM qsb_gat cx
+                    WHERE cx.`记录时间` = '{1}'
+                    GROUP BY cx.币种,cx.团队,cx.年月
+                    ORDER BY cx.币种,cx.团队,cx.年月;'''.format(team, day_yesterday)
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df)
+        # 物流-分旬
+        sql2 = '''SELECT 线路,家族,月份,总订单,完成签收,总计签收,完成占比,@rownum:=@rownum+1 AS 序号
+	            FROM (SELECT cx.币种 线路,
+        			        cx.团队 家族,
+        			        cx.年月 月份,
+        			        count(订单编号) as 总订单,
+        			        concat(ROUND(SUM(IF(最终状态 = "已签收",1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
+        			        concat(ROUND(SUM(IF(最终状态 = "已签收",1,0)) /  count(订单编号) * 100,2),'%') as 总计签收,
+        			        concat(ROUND(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / count(订单编号) * 100,2),'%') as 完成占比,
+        			        @rownum:=0 
+                        FROM qsb_gat cx
+                        WHERE cx.`记录时间` = '{1}'
+                        GROUP BY cx.币种,cx.团队,cx.年月
+                    ) s
+                ORDER BY s.线路,s.家族,s.月份;'''.format(team, day_last)
+        df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
+        listT.append(df2)
+
+        # 品类
+        sql3 = '''SELECT s2.币种,s2.团队 家族,s2.年月,s2.是否改派,s2.物流方式,
+						s2.总订单,
+						concat(ROUND(s2.签收 / s2.完成 * 100,2),'%') 完成签收,
+						concat(ROUND(s2.签收 / s2.总订单 * 100,2),'%') 总计签收,
+						concat(ROUND(s2.完成 / s2.总订单 * 100,2),'%') 完成占比,
+						concat(ROUND(s2.总订单 / s2.总订单量 * 100,2),'%') 单量占比,
+						concat(ROUND(s2.签收金额 / s2.总计金额 * 100,2),'%') '总计签收(金额)',
+						concat(ROUND(IF(s2.物流方式 like "总计", IF(@i > 1 ,@i - SUBSTRING_INDEX(@i,'.',1), @i), IF((@i:=@i + 总订单 / 总订单量) >1, @i - SUBSTRING_INDEX(@i,'.',1),  @i)) * 100,2),'%')  as 累计占比,
+			            null 序号
+				 FROM ( SELECT  IFNULL(s1.币种,'总计') as 币种,
+                                IFNULL(s1.团队,'总计') as 团队,
+                                IFNULL(s1.年月,'总计') as 年月,
+                                IFNULL(s1.是否改派,'总计') as 是否改派,
+                                IFNULL(s1.物流方式,'总计') as 物流方式,
+								SUM(s1.签收) 签收,
+								SUM(s1.完成) 完成,
+								SUM(s1.总订单) 总订单,
+								SUM(s1.总订单量) 总订单量,
+								SUM(s1.签收金额) 签收金额,
+								SUM(s1.总计金额) 总计金额
+                        FROM (	SELECT cx.币种 as 币种,
+								        cx.团队 as 团队,
+								        cx.年月 as 年月,
+								        cx.是否改派 as 是否改派,
+								        cx.物流方式 as 物流方式,
+                                        SUM(IF(最终状态 = "已签收",1,0)) as 签收,
+                                        SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 完成,
+                                        count(订单编号) as 总订单,
+                                        总订单量,
+                                        @i:=0,
+										SUM(IF(最终状态 = "已签收",`价格RMB`,0)) as 签收金额,
+										SUM(`价格RMB`) as 总计金额
+                                FROM (SELECT * FROM qsb_gat WHERE qsb_gat.`记录时间` = '{1}') cx
+                                LEFT JOIN (SELECT 币种,团队,年月,物流方式,count(订单编号) as 总订单量
+                                            FROM (SELECT * FROM qsb_gat WHERE qsb_gat.`记录时间` = '{1}') dg
+                                            GROUP BY dg.币种,dg.团队,dg.年月
+                                          ) cx2 ON cx.币种 = cx2.币种 AND  cx.团队 = cx2.团队 AND  cx.年月 = cx2.年月
+                                GROUP BY cx.`币种`,cx.`团队`, cx.`年月`, cx.`是否改派`, cx.`物流方式`
+                                ORDER BY cx.`币种`,cx.`团队`, cx.`年月`, cx.`是否改派` DESC,总订单 DESC
+						    ) s1
+						    GROUP BY s1.`币种`,s1.`团队`, s1.`年月`, s1.`是否改派`, s1.`物流方式`
+					   	    with rollup
+					    ) s2
+                ORDER BY    FIELD(s2.`币种`,'台湾','香港','总计'),
+							FIELD(s2.`团队`,'神龙家族-港澳台','火凤凰-港澳台','红杉家族-港澳台','红杉家族-港澳台2','金狮-港澳台','总计'),
+							FIELD(s2.`年月`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'),'总计'),
+							FIELD(s2.`是否改派`,'直发','改派','总计'),
+							FIELD(s2.`物流方式`,'总计'),
+							s2.总订单 DESC;'''.format(team, day_yesterday)
+        df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
+        listT.append(df3)
+        # 品类-分旬
+        sql4 = '''SELECT 币种,团队 家族,年月,是否改派,物流方式,总订单,完成签收,总计签收,完成占比,单量占比,总计签收金额 as '总计签收(金额)',累计占比, @rownum:=@rownum+1 AS 序号
+		        FROM ( SELECT s2.币种,
+        							s2.团队,
+        							s2.年月,
+        							s2.是否改派,
+        							s2.物流方式,
+        							s2.总订单,
+        							concat(ROUND(s2.签收 / s2.完成 * 100,2),'%') 完成签收,
+        							concat(ROUND(s2.签收 / s2.总订单 * 100,2),'%') 总计签收,
+        							concat(ROUND(s2.完成 / s2.总订单 * 100,2),'%') 完成占比,
+        							concat(ROUND(s2.总订单 / s2.总订单量 * 100,2),'%') 单量占比,
+        							concat(ROUND(s2.签收金额 / s2.总计金额 * 100,2),'%') 总计签收金额,
+        							concat(ROUND(IF(s2.物流方式 like "总计", IF(@i > 1 ,@i - SUBSTRING_INDEX(@i,'.',1), @i), IF((@i:=@i + 总订单 / 总订单量) >1, @i - SUBSTRING_INDEX(@i,'.',1),  @i)) * 100,2),'%')  as 累计占比
+        				 FROM ( SELECT  IFNULL(s1.币种,'总计') as 币种,
+                                        IFNULL(s1.团队,'总计') as 团队,
+                                        IFNULL(s1.年月,'总计') as 年月,
+                                        IFNULL(s1.是否改派,'总计') as 是否改派,
+                                        IFNULL(s1.物流方式,'总计') as 物流方式,
+        								SUM(s1.签收) 签收,
+        								SUM(s1.完成) 完成,
+        								SUM(s1.总订单) 总订单,
+        								SUM(s1.总订单量) 总订单量,
+        								SUM(s1.签收金额) 签收金额,
+        								SUM(s1.总计金额) 总计金额
+                                FROM (	SELECT cx.币种 as 币种,
+        								        cx.团队 as 团队,
+        								        cx.年月 as 年月,
+        								        cx.是否改派 as 是否改派,
+        								        cx.物流方式 as 物流方式,
+                                                SUM(IF(最终状态 = "已签收",1,0)) as 签收,
+                                                SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 完成,
+                                                count(订单编号) as 总订单,
+                                                总订单量,
+                                                @i:=0,
+        										SUM(IF(最终状态 = "已签收",`价格RMB`,0)) as 签收金额,
+        										SUM(`价格RMB`) as 总计金额
+                                        FROM (SELECT * FROM qsb_gat WHERE qsb_gat.`记录时间` = '{1}') cx
+                                        LEFT JOIN (SELECT 币种,团队,年月,物流方式,count(订单编号) as 总订单量
+                                                    FROM (SELECT * FROM qsb_gat WHERE qsb_gat.`记录时间` = '{1}') dg
+                                                    GROUP BY dg.币种,dg.团队,dg.年月
+                                                ) cx2 ON cx.币种 = cx2.币种 AND  cx.团队 = cx2.团队 AND  cx.年月 = cx2.年月
+                                        GROUP BY cx.`币种`,cx.`团队`, cx.`年月`, cx.`是否改派`, cx.`物流方式`
+                                        ORDER BY cx.`币种`,cx.`团队`, cx.`年月`, cx.`是否改派` DESC,总订单 DESC
+        						    ) s1
+        						    GROUP BY s1.`币种`,s1.`团队`, s1.`年月`, s1.`是否改派`, s1.`物流方式`
+        					   	    with rollup
+        					    ) s2
+                        ) s
+                        ORDER BY FIELD(s.`币种`,'台湾','香港','总计'),
+        					    FIELD(s.`团队`,'神龙家族-港澳台','火凤凰-港澳台','红杉家族-港澳台','红杉家族-港澳台2','金狮-港澳台','总计'),
+        					    FIELD(s.`年月`, DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'),'总计'),
+        					    FIELD(s.`是否改派`,'直发','改派','总计'),
+        					    FIELD(s.`物流方式`,'总计'),
+        					    s.总订单 DESC;'''.format(team, day_last)
+        df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
+        listT.append(df4)
+        # 品类二级-分旬
+        sql5 = '''SELECT s2.团队 家族,s2.币种,s2.年月,s2.父级分类,s2.二级分类,s2.旬,
+                        s2.签收,
+                        s2.拒收,
+                        s2.在途,
+                        s2.未发货,
+                        s2.未上线,
+                        s2.已退货,
+                        s2.理赔,
+                        s2.自发头程丢件,
+                        s2.已发货,
+                        s2.已完成,
+                        s2.总订单 as 全部,
+                        concat(ROUND(s2.签收 / s2.已完成 * 100,2),'%') as 完成签收,
+                        concat(ROUND(s2.签收 / s2.总订单 * 100,2),'%') as 总计签收,
+                        concat(ROUND(s2.已完成 / s2.总订单 * 100,2),'%') as 完成占比,
+                        concat(ROUND(s2.已完成 / s2.已发货 * 100,2),'%') as '已完成/已发货',
+                        concat(ROUND(s2.已退货 / s2.总订单 * 100,2),'%') as 退货率,
+
+                        concat(ROUND(s2.签收金额 / s2.完成金额 * 100,2),'%') as '完成签收(金额)',
+                        concat(ROUND(s2.签收金额 / s2.总计金额 * 100,2),'%') as '总计签收(金额)',
+                        concat(ROUND(s2.完成金额 / s2.总计金额 * 100,2),'%') as '完成占比(金额)',
+                        concat(ROUND(s2.完成金额 / s2.发货金额 * 100,2),'%') as '已完成/已发货(金额)',
+                        concat(ROUND(s2.退货金额 / s2.总计金额 * 100,2),'%') as '退货率(金额)',
+                        concat(ROUND(s2.总订单 / s2.总订单量 * 100,2),'%') as 单量占比
+                FROM ( SELECT  IFNULL(s1.币种,'合计') as 币种,
+                                IFNULL(s1.团队,'合计') as 团队,
+                                IFNULL(s1.年月,'合计') as 年月,
+                                IFNULL(s1.父级分类,'合计') as 父级分类,
+                                IFNULL(s1.二级分类,'合计') as 二级分类,
+                                IFNULL(s1.旬,'合计') as 旬,
+                                SUM(s1.签收) as 签收,
+                                SUM(s1.拒收) as 拒收,
+                                SUM(s1.在途) as 在途,
+                                SUM(s1.未发货) as 未发货,
+                                SUM(s1.未上线) as 未上线,
+                                SUM(s1.已退货) as 已退货,
+                                SUM(s1.理赔) as 理赔,
+                                SUM(s1.自发头程丢件) as 自发头程丢件,
+                                SUM(s1.已发货) as 已发货,
+                                SUM(s1.已完成) as 已完成,
+                                SUM(s1.总订单) as 总订单,
+                                SUM(s1.总订单量) as 总订单量,
+                                SUM(s1.签收金额) as 签收金额,
+                                SUM(s1.退货金额) as 退货金额,
+                                SUM(s1.完成金额) as 完成金额,
+                                SUM(s1.发货金额) as 发货金额,
+                                SUM(s1.总计金额) as 总计金额
+                        FROM (SELECT cx.币种 as 币种,
+                                    cx.团队 as 团队,
+                                    cx.年月 as 年月,
+                                    cx.父级分类 as 父级分类,
+                                    cx.二级分类 as 二级分类,
+                                    IF(cx.旬 =1,'上旬',IF(cx.旬 =2,'中旬',IF(cx.旬 =3,'下旬',cx.旬))) as 旬,
+                                    SUM(IF(最终状态 = "已签收",1,0)) as 签收,
+                                    SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+                                    SUM(IF(最终状态 = "在途",1,0)) as 在途,
+                                    SUM(IF(最终状态 = "未发货",1,0)) as 未发货,
+                                    SUM(IF(最终状态 = "未上线",1,0)) as 未上线,
+                                    SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
+                                    SUM(IF(最终状态 = "理赔",1,0)) as 理赔,
+                                    SUM(IF(最终状态 = "自发头程丢件",1,0)) as 自发头程丢件,
+                                    SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) as 已完成,
+                                    count(订单编号) as 总订单,
+                                    count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货,
+                                    总订单量,
+                                    SUM(IF(最终状态 = "已签收",`价格RMB`,0)) as 签收金额,
+                                    SUM(IF(最终状态 = "已退货",`价格RMB`,0)) as 退货金额,
+                                    SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔"),`价格RMB`,0)) as 完成金额,
+                                    SUM(`价格RMB`) as 总计金额,
+                                    SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
+                                FROM d1_gat cx
+                                LEFT JOIN (SELECT 币种,团队,年月,父级分类,count(订单编号) as 总订单量
+                                            FROM d1_gat dg
+                                            GROUP BY dg.币种,dg.团队,dg.年月
+                                          ) cx2 ON cx.币种 = cx2.币种 AND  cx.团队 = cx2.团队 AND cx.年月 = cx2.年月 
+                                GROUP BY cx.`币种`,cx.`团队`, cx.`年月`, cx.`父级分类`, cx.`二级分类`, cx.`旬`
+                                ORDER BY cx.`币种`,cx.`团队`, cx.`年月`, cx.`父级分类`, cx.`二级分类` DESC,总订单 DESC
+                        ) s1
+                        GROUP BY s1.`团队`,s1.`币种`, s1.`年月`, s1.`父级分类`, s1.`二级分类`, s1.`旬`
+                        with rollup
+                ) s2 HAVING s2.年月 <> '合计'
+                ORDER BY FIELD(s2.`团队`,'神龙家族-港澳台','火凤凰-港澳台','红杉家族-港澳台','红杉家族-港澳台2','金狮-港澳台','合计'),
+                        FIELD(s2.`币种`,'台湾','香港','合计'),
+                        FIELD(s2.`年月`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
+                        FIELD(s2.父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','合计' ),
+                        FIELD(s2.二级分类,'个人洗护','皮鞋','日用百货','影音娱乐','家用电器','药品','上衣','下装','饰品','保健器械','保健食品','彩妆','钱包','休闲运动鞋','内衣','护理护具','凉/拖鞋','裙子','个护电器','配饰',
+                                        '护肤','布艺家纺','母婴用品','厨房用品','汽车用品','双肩包','单肩包','手机外设','电脑外设','成人保健','套装','靴子','手表手环','行李箱包','户外运动','玩具','手表','宠物用品','合计' ),
+                        FIELD(s2.`旬`,'上旬','中旬','下旬','合计'),
+                        s2.总订单 DESC;'''.format(team, day_yesterday)
+        df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
+        listT.append(df5)
+
+        # 产品
+        sql5 = '''SELECT 币种,团队 家族,年月,是否改派,父级分类,总订单,完成签收,总计签收,完成占比,单量占比,总计签收金额 as `总计签收(金额)`,累计占比, @rownum:=@rownum+1 AS 序号
+		        FROM (SELECT s2.币种,
+        								s2.团队,
+        								s2.年月,
+        								s2.是否改派,
+        								s2.父级分类,
+        								s2.总订单,
+        								concat(ROUND(s2.签收 / s2.完成 * 100,2),'%') 完成签收,
+        								concat(ROUND(s2.签收 / s2.总订单 * 100,2),'%') 总计签收,
+        								concat(ROUND(s2.完成 / s2.总订单 * 100,2),'%') 完成占比,
+        								concat(ROUND(s2.总订单 / s2.总订单量 * 100,2),'%') 单量占比,
+        								concat(ROUND(s2.签收金额 / s2.总计金额 * 100,2),'%') 总计签收金额,
+                                        concat(ROUND(IF(s2.父级分类 like "总计", IF(@i > 1 ,@i - SUBSTRING_INDEX(@i,'.',1), @i), IF((@i:=@i + 总订单 / 总订单量) >1, @i - SUBSTRING_INDEX(@i,'.',1),  @i)) * 100,2),'%')  as 累计占比
+        				 FROM (
+                                SELECT  IFNULL(s1.币种,'总计') as 币种,
+                                        IFNULL(s1.团队,'总计') as 团队,
+                                        IFNULL(s1.年月,'总计') as 年月,
+                                        IFNULL(s1.是否改派,'总计') as 是否改派,
+                                        IFNULL(s1.父级分类,'总计') as 父级分类,
+        								SUM(s1.签收) 签收,
+        								SUM(s1.完成) 完成,
+        								SUM(s1.总订单) 总订单,
+        								SUM(s1.总订单量) 总订单量,
+        								SUM(s1.签收金额) 签收金额,
+        								SUM(s1.总计金额) 总计金额
+                                FROM (	 SELECT cx.币种 as 币种,
+        								        cx.团队 as 团队,
+        								        cx.年月 as 年月,
+        								        cx.是否改派 as 是否改派,
+        								        cx.父级分类 as 父级分类,
+                                                SUM(IF(最终状态 = "已签收",1,0)) as 签收,
+                                                SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 完成,
+                                                count(订单编号) as 总订单,
+                                                总订单量,
+                                                @i:=0,
+        										SUM(IF(最终状态 = "已签收",`价格RMB`,0)) as 签收金额,
+        										SUM(`价格RMB`) as 总计金额
+                                        FROM (SELECT * FROM qsb_gat WHERE qsb_gat.`记录时间` = '{1}') cx
+                                        LEFT JOIN  (SELECT 币种,团队,年月,父级分类,count(订单编号) as 总订单量
+                                                    FROM (SELECT * FROM qsb_gat WHERE qsb_gat.`记录时间` = '{1}') dg
+                                                    GROUP BY dg.币种,dg.团队,dg.年月
+                                                    ) cx2  ON cx.币种 = cx2.币种 AND  cx.团队 = cx2.团队 AND  cx.年月 = cx2.年月
+                                        GROUP BY cx.`币种`,cx.`团队`, cx.`年月`, cx.`是否改派`, cx.`父级分类`
+                                        ORDER BY cx.`币种`,cx.`团队`, cx.`年月`, cx.`是否改派` DESC,总订单 DESC
+        							) s1
+        						GROUP BY s1.`币种`,s1.`团队`, s1.`年月`, s1.`是否改派`, s1.`父级分类`
+        					   	with rollup
+        				) s2 
+        		) s
+                ORDER BY FIELD(s.`币种`,'台湾','香港','总计'),
+        				FIELD(s.`团队`,'神龙家族-港澳台','火凤凰-港澳台','红杉家族-港澳台','红杉家族-港澳台2','金狮-港澳台','总计'),
+        				FIELD(s.`年月`, DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'),'总计'),
+        				FIELD(s.`是否改派`,'直发','改派','总计'),
+        				FIELD(s.`父级分类`,'总计'),
+        				s.总订单 DESC;'''.format(team, day_last)
+        df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
+        listT.append(df5)
+
+        # 产品-分旬
+        sql6 = '''SELECT * 
+				    FROM ( SELECT   IFNULL( cx.`币种`,'总计') as 币种,
+                                    IFNULL( cx.`团队`,'总计') as 家族,
+                                    IFNULL( cx.`年月`,'总计') as 年月,
+                                    IFNULL( cx.`产品id`,'总计') as 产品id,
+                                    cx.`产品名称`,
+							        cx.`父级分类`,
+                                    count(订单编号) as 总订单,
+                                    SUM(IF(最终状态 = "已签收",1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 完成签收,
+                                    SUM(IF(最终状态 = "已签收",1,0)) /  count(订单编号) as 总计签收,
+                                    SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / count(订单编号) as 完成占比,
+                                    count(订单编号) /总订单2 单量占比,
+                                    SUM(IF(是否改派 = '直发',1,0)) as 直发总订单,
+                                    IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件") AND 是否改派 = '直发',1,0)),0) as 直发完成签收,
+                                    IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发总计签收,
+                                    IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件") AND 是否改派 = '直发',1,0)) / SUM(IF(是否改派 = '直发',1,0)),0) as 直发完成占比,
+                                    IFNULL(SUM(IF(是否改派 = '直发',1,0))  / 直发总订单2,0) as 直发单量占比,
+                                    SUM(IF(是否改派 = '改派',1,0)) as 改派总订单,
+                                    IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件") AND 是否改派 = '改派',1,0)),0) as 改派完成签收,
+                                    IFNULL(SUM(IF(最终状态 = "已签收" AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派总计签收,
+                                    IFNULL(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件") AND 是否改派 = '改派',1,0)) / SUM(IF(是否改派 = '改派',1,0)),0) as 改派完成占比,
+                                    IFNULL(SUM(IF(是否改派 = '改派',1,0)) / 改派总订单2,0) 改派单量占比
+                            FROM (SELECT * FROM qsb_gat WHERE qsb_gat.`记录时间` = '{1}') cx
+                            LEFT JOIN  (SELECT 币种,团队,年月,count(订单编号) as 总订单2 , 
+											    SUM(IF(是否改派 = '直发',1,0)) as 直发总订单2 , 
+												SUM(IF(是否改派 = '改派',1,0)) as 改派总订单2 
+										FROM (SELECT * FROM qsb_gat WHERE qsb_gat.`记录时间` = '{1}') da GROUP BY da.币种,da.团队,da.年月
+									) cx2  ON cx.币种 = cx2.币种 AND cx.团队 = cx2.团队 AND cx.年月 = cx2.年月
+                            GROUP BY cx.币种,cx.团队,cx.年月,`产品id`
+	                        with rollup
+					) s1
+	                ORDER BY	FIELD(s1.`币种`,'台湾','香港','总计'),
+								FIELD(s1.`团队`,'神龙家族-港澳台','火凤凰-港澳台','红杉家族-港澳台','红杉家族-港澳台2','金狮-港澳台','总计'),
+								FIELD(s1.`年月`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'),'总计'),
+								总订单 DESC;'''.format(team, day_yesterday)
+        df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
+        listT.append(df6)
+
+
+        print('正在写入excel…………')
+        today = datetime.date.today().strftime('%Y.%m.%d')
+        for wbbook in ['神龙', '火凤凰', '红杉', '金狮']:
+            file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}-签收率.xlsx'.format(today, wbbook)
+            sheet_name = ['每日', '总表', '总表上月', '物流', '物流上月', '品类', '品类上月', '产品', '产品明细台湾', '产品明细香港']
+            df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+            df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+            book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            for i in range(len(listT)):
+                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+            if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+                del book['Sheet1']
+            writer.save()
+            writer.close()
+            # print('正在运行' + wbbook + '表宏…………')
+            # app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
+            # app.display_alerts = False
+            # wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            # wbsht1 = app.books.open(file_path)
+            # wbsht.macro('py_sl_总运行')()
+            # wbsht1.save()
+            # wbsht1.close()
+            # wbsht.close()
+            # app.quit()
+        print('----已写入excel ')
+
+
+
+
+
 
     # report报表
     def qsb_report(self, team, day_yesterday, day_last):  # 获取各团队近两个月的物流数据
@@ -816,8 +1185,6 @@ class QueryUpdate(Settings):
             # wbsht.close()
             # app.quit()
         print('----已写入excel ')
-
-
     # 获取各团队近两个月的物流数据
     def qsb_report_T(self, team, day_yesterday, day_last):
         match = {'gat': '港台'}
@@ -1278,7 +1645,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     write = '本期'
     # write = '上期'
-    last_time = '2021-07-16'
+    last_time = '2021-07-20'
     m.readFormHost(team, write, last_time)       #  更新签收表---港澳台（一）
 
     # m.makeSql(team)         # 转存表---港澳台（一.附表）

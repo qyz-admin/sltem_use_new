@@ -206,7 +206,7 @@ class MysqlControl(Settings):
                  'slrb_hs': '"红杉家族-日本", "红杉家族-日本666"',
                  'slrb_jl': '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"'}
         # 12-1月的
-        if team in ('sltg', 'slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('sltg', 'slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat0', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             # 获取日期时间
             # sql = 'SELECT 日期 FROM {0}_order_list WHERE id = (SELECT MAX(id) FROM {0}_order_list);'.format(team)
             sql = 'SELECT MAX(`日期`) 日期 FROM {0}_order_list;'.format(team)
@@ -225,9 +225,9 @@ class MysqlControl(Settings):
             print(end)
         else:
             # 11-12月的
-            begin = datetime.date(2021, 1, 1)
+            begin = datetime.date(2021, 5, 23)
             print(begin)
-            end = datetime.date(2021, 4, 1)
+            end = datetime.date(2021, 7, 20)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -993,7 +993,7 @@ class MysqlControl(Settings):
                             sheet_name=match[tem2], index=False)
                 print(tem2 + '----已写入excel')
                 print('正在打印' + match[tem2] + ' 物流时效…………')
-                self.data_wl(tem2)
+                # self.data_wl(tem2)
         else:
             df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}签收表.xlsx'.format(today, match[team]),
                         sheet_name=match[team], index=False)
@@ -1931,24 +1931,24 @@ class MysqlControl(Settings):
         print('正在清除总表的可能删除了的订单…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
 
-        # sql = '''UPDATE gat_zqsb d
-        #         SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', d.`物流方式`) )
-        #         WHERE d.`是否改派` ='直发';'''
-        # print('正在修改-直发的物流渠道…………')
-        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
-        # sql = '''UPDATE gat_zqsb d
-        #         SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
-        #                         IF(d.`物流方式` LIKE '香港-立邦%','香港-立邦-改派',
-		# 						IF(d.`物流方式` LIKE '香港-易速配%','香港-易速配-改派',
-		# 						IF(d.`物流方式` LIKE '台湾-立邦普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-大黄蜂普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-森鸿-新竹%','森鸿',
-		# 						IF(d.`物流方式` LIKE '台湾-天马-顺丰%','天马顺丰',
-		# 						IF(d.`物流方式` LIKE '台湾-天马-新竹%' OR d.`物流方式` LIKE '台湾-天马-711%','天马新竹',
-		# 						IF(d.`物流方式` LIKE '台湾-天马-黑猫%','天马黑猫',
-		# 						IF(d.`物流方式` LIKE '台湾-易速配-龟山%' OR d.`物流方式` LIKE '台湾-易速配-新竹%' OR d.`物流方式` = '易速配','龟山',
-		# 						IF(d.`物流方式` LIKE '台湾-速派-新竹%' OR d.`物流方式` LIKE '台湾-速派-711超商%','速派', d.`物流方式`))  )  )  )  )  )  )  )
-        #         WHERE d.`是否改派` ='改派';'''
-        # print('正在修改-改派的物流渠道…………')
-        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
+        sql = '''UPDATE gat_zqsb d
+                SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', d.`物流方式`) )
+                WHERE d.`是否改派` ='直发';'''
+        print('正在修改-直发的物流渠道…………')
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
+        sql = '''UPDATE gat_zqsb d
+                SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
+                                IF(d.`物流方式` LIKE '香港-立邦%','香港-立邦-改派',
+								IF(d.`物流方式` LIKE '香港-易速配%','香港-易速配-改派',
+								IF(d.`物流方式` LIKE '台湾-立邦普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-大黄蜂普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-森鸿-新竹%','森鸿',
+								IF(d.`物流方式` LIKE '台湾-天马-顺丰%','天马顺丰',
+								IF(d.`物流方式` LIKE '台湾-天马-新竹%' OR d.`物流方式` LIKE '台湾-天马-711%','天马新竹',
+								IF(d.`物流方式` LIKE '台湾-天马-黑猫%','天马黑猫',
+								IF(d.`物流方式` LIKE '台湾-易速配-龟山%' OR d.`物流方式` LIKE '台湾-易速配-新竹%' OR d.`物流方式` = '易速配','龟山',
+								IF(d.`物流方式` LIKE '台湾-速派-新竹%' OR d.`物流方式` LIKE '台湾-速派-711超商%','速派', d.`物流方式`))  )  )  )  )  )  )  )
+                WHERE d.`是否改派` ='改派';'''
+        print('正在修改-改派的物流渠道…………')
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
 
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_now = (datetime.datetime.now()).strftime('%Y-%m-%d')
@@ -2155,56 +2155,59 @@ class MysqlControl(Settings):
 
         # 同产品各团队的对比
         print('正在获取---同产品各团队的对比…………')
-        sql14 = '''SELECT *
+        sql14 = '''SELECT *,
+			            IF(神龙完成签收 = '0.00%' OR 神龙完成签收 IS NULL, 神龙完成签收, concat(ROUND(神龙完成签收-完成签收,2),'%')) as 神龙对比,
+			            IF(火凤凰完成签收 = '0.00%' OR 火凤凰完成签收 IS NULL, 火凤凰完成签收, concat(ROUND(火凤凰完成签收-完成签收,2),'%')) as 火凤凰对比,
+			            IF(金狮完成签收 = '0.00%' OR 金狮完成签收 IS NULL, 金狮完成签收, concat(ROUND(金狮完成签收-完成签收,2),'%')) as 金狮对比,
+			            IF(红杉完成签收 = '0.00%' OR 红杉完成签收 IS NULL,红杉完成签收, concat(ROUND(红杉完成签收-完成签收,2),'%')) as 红杉对比
                 FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
                             IFNULL(cx.币种, '总计') 地区,
                             IFNULL(cx.产品id, '总计') 产品id,
                             IFNULL(cx.产品名称, '总计') 产品名称,
                             IFNULL(cx.父级分类, '总计') 父级分类,
-                        COUNT(cx.`订单编号`) as 总单量,
+                            COUNT(cx.`订单编号`) as 总单量,
                             SUM(IF( 最终状态 = "已签收",1,0)) as 签收,
                             SUM(IF( 最终状态 = "拒收",1,0)) as 拒收,
                             concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 改派占比,
                             concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                            concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                            concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                        SUM(IF(cx.家族 LIKE '神龙%',1,0)) as 神龙单量,
-                            SUM(IF(cx.家族 LIKE '神龙%' AND 最终状态 = "已签收",1,0)) as 神龙签收,
-                            SUM(IF(cx.家族 LIKE '神龙%' AND 最终状态 = "拒收",1,0)) as 神龙拒收,
+                        concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 完成签收,
+                            concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
+                            SUM(IF(cx.家族 LIKE '神龙%',1,0)) as 神龙单量,
+                            SUM(IF( cx.家族 LIKE '神龙%' AND 最终状态 = "已签收",1,0)) as 神龙签收,
+                            SUM(IF( cx.家族 LIKE '神龙%' AND 最终状态 = "拒收",1,0)) as 神龙拒收,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.家族 LIKE '神龙%',1,0)) * 100,2),'%') as 神龙改派占比,
-                            concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '神龙%',1,0)) * 100,2),'%') as 神龙总计签收,
-                            concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '神龙%' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 神龙完成签收,
-                            concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND  最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(cx.家族 LIKE '神龙%',1,0)) * 100,2),'%') as 神龙完成占比,
-                        SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) as 火凤凰单量,
-                            SUM(IF(cx.家族 LIKE '火凤凰%' AND 最终状态 = "已签收",1,0)) as 火凤凰签收,
+                            concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '神龙%',1,0)) * 100,2),'%') as 神龙签收率,
+                            concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '神龙%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 神龙完成签收,
+                            concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND  最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / SUM(IF(cx.家族 LIKE '神龙%',1,0)) * 100,2),'%') as 神龙完成占比,
+                            SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) as 火凤凰单量,
+                        SUM(IF( cx.家族 LIKE '火凤凰%' AND 最终状态 = "已签收",1,0)) as 火凤凰签收,
                             SUM(IF( cx.家族 LIKE '火凤凰%' AND 最终状态 = "拒收",1,0)) as 火凤凰拒收,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰改派占比,
-                            concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰总计签收,
-                            concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 火凤凰完成签收,
-                            concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND  最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰完成占比,
-                        SUM(IF(cx.家族 LIKE '金狮%',1,0)) as 金狮单量,
-                            SUM(IF(cx.家族 LIKE '金狮%' AND 最终状态 = "已签收",1,0)) as 金狮签收,
+                            concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰签收率,
+                             concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 火凤凰完成签收,
+                            concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND  最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰完成占比,
+                            SUM(IF(cx.家族 LIKE '金狮%',1,0)) as 金狮单量,
+                        SUM(IF( cx.家族 LIKE '金狮%' AND 最终状态 = "已签收",1,0)) as 金狮签收,
                             SUM(IF( cx.家族 LIKE '金狮%' AND 最终状态 = "拒收",1,0)) as 金狮拒收,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.家族 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮改派占比,
-                            concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮总计签收,
-                            concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '金狮%' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 金狮完成签收,
-                            concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND  最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(cx.家族 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮完成占比,
-                        SUM(IF(cx.家族 LIKE '红杉%',1,0)) as 红杉单量,
-                            SUM(IF(cx.家族 LIKE '红杉%' AND 最终状态 = "已签收",1,0)) as 红杉签收,
+                            concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮签收率,
+                            concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '金狮%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 金狮完成签收,
+                            concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND  最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / SUM(IF(cx.家族 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮完成占比,
+                            SUM(IF(cx.家族 LIKE '红杉%',1,0)) as 红杉单量,
+                        SUM(IF( cx.家族 LIKE '红杉%' AND 最终状态 = "已签收",1,0)) as 红杉签收,
                             SUM(IF( cx.家族 LIKE '红杉%' AND 最终状态 = "拒收",1,0)) as 红杉拒收,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.家族 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉改派占比,
-                            concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉总计签收,
-                            concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '红杉%' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 红杉完成签收,
-                            concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND  最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(cx.家族 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉完成占比
-                    FROM (SELECT *,
-                                IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",cc.团队)))) as 家族 
+                            concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉签收率,
+                            concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '红杉%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 红杉完成签收,
+                            concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND  最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / SUM(IF(cx.家族 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉完成占比
+                    FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",cc.团队)))) as 家族 
                         FROM gat_zqsb cc
-                        where cc.日期 >= '{0}'
+                        where cc.日期 >= '2021-06-01'
                         ) cx
                     GROUP BY cx.年月,cx.币种,cx.产品id
                 WITH ROLLUP ) s
-                ORDER BY FIELD(月份 ,DATE_FORMAT(CURDATE(),'%Y%m'),DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 MONTH),'%Y%m'),DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 2 MONTH),'%Y%m'),DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 3 MONTH),'%Y%m'),'总计' ),
-                        FIELD( 地区, '台湾', '香港', '总计' ),
+                ORDER BY FIELD(月份,DATE_FORMAT(CURDATE(),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 2 MONTH),'%Y%m'),'总计'),
+                        FIELD(地区,'台湾','香港','总计'),
                         总单量 DESC;'''.format(month_last, team)
         df14 = pd.read_sql_query(sql=sql14, con=self.engine1)
         listT.append(df14)
@@ -2263,16 +2266,16 @@ class MysqlControl(Settings):
             del book['Sheet1']
         writer.save()
         writer.close()
-        print('正在运行' + match[team] + '表宏…………')
-        app = xl.App(visible=False, add_book=False)  # 运行宏调整
-        app.display_alerts = False
-        wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
-        wbsht1 = app.books.open(file_path)
-        wbsht.macro('zl_report_day')()
-        wbsht1.save()
-        wbsht1.close()
-        wbsht.close()
-        app.quit()
+        # print('正在运行' + match[team] + '表宏…………')
+        # app = xl.App(visible=False, add_book=False)  # 运行宏调整
+        # app.display_alerts = False
+        # wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+        # wbsht1 = app.books.open(file_path)
+        # wbsht.macro('zl_report_day')()
+        # wbsht1.save()
+        # wbsht1.close()
+        # wbsht.close()
+        # app.quit()
         print('----已写入excel ')
         # filePath.append(file_path)
         # self.e.send('{} 神龙-{}物流时效.xlsx'.format(today, tem1), filePath,
@@ -2798,7 +2801,8 @@ if __name__ == '__main__':
     start = datetime.datetime.now()
 
     # 更新产品id的列表
-    m.update_gk_product()
+    # m.update_gk_product()
+    m.qsb_report('gat')
 
     # 测试物流时效
     # team = 'sltg'
@@ -2810,7 +2814,7 @@ if __name__ == '__main__':
     # -----------------------------------------暂停使用-------------------------------
     # m.qsb_wl('gat')
     # m.qsb_wl2('gat')
-    # m.qsb_report('gat')
+
 
     # for team in ['slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:  # 无运单号查询200
     #     m.noWaybillNumber(team)
