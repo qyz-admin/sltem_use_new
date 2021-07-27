@@ -87,6 +87,8 @@ class QueryTwo(Settings):
         match2 = {'slgat': '神龙港台',
                   'slgat_hfh': '火凤凰港台',
                   'slgat_hs': '红杉港台',
+                  'slgat_js': '金狮港台',
+                  'slgat_jp': '金鹏港台',
                   'slsc': '品牌',
                   'gat': '港台',
                   'sltg': '泰国',
@@ -142,7 +144,7 @@ class QueryTwo(Settings):
         dataFrame.to_sql('d1_host', con=self.engine1, index=False, if_exists='replace')
     # 写入总表
     def replaceSqlHost(self, team, query):
-        if team in ('gat', 'slgat', 'slgat_hfh', 'slgat_hs'):
+        if team in ('gat', 'slgat', 'slgat_hfh', 'slgat_hs', 'slgat_js', 'slgat_jp'):
             sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
             				        IF(DAYOFMONTH(h.`下单时间`) >= '20', '3', IF(DAYOFMONTH(h.`下单时间`) <= '10', '1', '2')) 旬,
             			            DATE(h.下单时间) 日期,
@@ -472,7 +474,8 @@ class QueryTwo(Settings):
             		                    a.`审核时间`= b.`审核时间`,
             		                    a.`仓储扫描时间`= b.`仓储扫描时间`,
             		                    a.`上线时间`= b.`上线时间`,
-            		                    a.`完结状态时间`= b.`完结状态时间`
+            		                    a.`完结状态时间`= b.`完结状态时间`,
+            		                    a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`)
             		                where a.`订单编号`= b.`订单编号`;'''.format(team)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
             except Exception as e:
@@ -652,14 +655,14 @@ if __name__ == '__main__':
              'slxmt_hfh': '火凤凰-新马'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # for team in ['sltg', 'slgat', 'slgat_hfh', 'slgat_hs', slrb', 'slrb_jl', 'slrb_js', 'slxmt', 'slxmt_t', 'slxmt_hfh']:
-    for team in ['slsc']:
-        query = '导入'         # 导入；，更新--->>数据更新切换
-        m.readFormHost(team, query)
+    # for team in ['gat']:
+    #     query = '导入'         # 导入；，更新--->>数据更新切换
+    #     m.readFormHost(team, query)
     # 手动更新状态
     # for team in ['slsc', 'gat', 'slgat', 'slgat_hfh',  'slgat_hs', 'slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh', 'sltg']:
-    # for team in ['slsc']:
-    #     query = '更新'         # 导入；，更新--->>数据更新切换
-    #     m.readFormHost(team, query)
+    for team in ['gat']:
+        query = '更新'         # 导入；，更新--->>数据更新切换
+        m.readFormHost(team, query)
 
 
 
@@ -703,8 +706,8 @@ if __name__ == '__main__':
     # # for team in ['slgat', 'slgat_hfh', 'slgat_hs']:
     # # for team in ['slxmt', 'slxmt_hfh', 'slxmt_t']:
     # # for team in ['slxmt_hfh']:
-    # # for team in ['sltg']:
-    #     print('++++++正在获取 ' + match1[team] + ' 信息++++++')
+    # for team in ['sltg']:
+    # #     print('++++++正在获取 ' + match1[team] + ' 信息++++++')
     #     for i in range((end - begin).days):  # 按天循环获取订单状态
     #         day = begin + datetime.timedelta(days=i)
     #         yesterday = str(day) + ' 23:59:59'

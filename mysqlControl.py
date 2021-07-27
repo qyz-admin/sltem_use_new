@@ -195,7 +195,7 @@ class MysqlControl(Settings):
         match = {'slgat': '"神龙家族-港澳台"',
                  'slgat_hfh': '"火凤凰-港澳台"',
                  'slgat_hs': '"红杉家族-港澳台", "红杉家族-港澳台2"',
-                 'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台"',
+                 'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-品牌4组"',
                  'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  'sltg': '"神龙家族-泰国"',
                  'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
@@ -206,7 +206,7 @@ class MysqlControl(Settings):
                  'slrb_hs': '"红杉家族-日本", "红杉家族-日本666"',
                  'slrb_jl': '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"'}
         # 12-1月的
-        if team in ('sltg', 'slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat0', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('sltg', 'slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             # 获取日期时间
             # sql = 'SELECT 日期 FROM {0}_order_list WHERE id = (SELECT MAX(id) FROM {0}_order_list);'.format(team)
             sql = 'SELECT MAX(`日期`) 日期 FROM {0}_order_list;'.format(team)
@@ -550,7 +550,7 @@ class MysqlControl(Settings):
         match = {'slgat': '"神龙家族-港澳台"',
                  'slgat_hfh': '"火凤凰-港澳台"',
                  'slgat_hs': '"红杉家族-港澳台", "红杉家族-港澳台2"',
-                 'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2"',
+                 'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-品牌4组"',
                  'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  'sltg': '"神龙家族-泰国"',
                  'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
@@ -741,6 +741,7 @@ class MysqlControl(Settings):
                  'slgat_hfh': '火凤凰-港台',
                  'slgat_hs': '红杉-港台',
                  'slgat_js': '金狮-港台',
+                 'slgat_jp': '金鹏-港台',
                  'gat': '港台',
                  'slsc': '品牌',
                  'slrb': '神龙-日本',
@@ -983,7 +984,7 @@ class MysqlControl(Settings):
         print('正在写入excel…………')
         filePath = []
         if team in ('gat'):
-            for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js'):
+            for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-品牌4组"|slgat_jp'):
                 tem1 = tem.split('|')[0]
                 tem2 = tem.split('|')[1]
                 sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)
@@ -1062,6 +1063,7 @@ class MysqlControl(Settings):
                  'slgat_hfh': ['台湾', '香港'],
                  'slgat_hs': ['台湾', '香港'],
                  'slgat_js': ['台湾', '香港'],
+                 'slgat_jp': ['台湾', '香港'],
                  'sltg': ['泰国'],
                  'slxmt': ['新加坡', '马来西亚', '菲律宾'],
                  'slxmt_t': ['新加坡', '马来西亚', '菲律宾'],
@@ -1074,6 +1076,7 @@ class MysqlControl(Settings):
                   'slgat_hfh': ['台湾|火凤凰-港澳台', '香港|火凤凰-港澳台'],
                   'slgat_hs': ['台湾|红杉家族-港澳台', '香港|红杉家族-港澳台'],
                   'slgat_js': ['台湾|金狮-港澳台', '香港|金狮-港澳台'],
+                  'slgat_jp': ['台湾|金鹏-港澳台', '香港|金鹏-港澳台'],
                   'sltg': ['泰国|神龙家族-泰国'],
                   'slxmt': ['新加坡|神龙家族-新加坡', '马来西亚|神龙家族-马来西亚', '菲律宾|神龙家族-菲律宾'],
                   'slxmt_t': ['新加坡|神龙-T新马菲', '马来西亚|神龙-T新马菲', '菲律宾|神龙-T新马菲'],
@@ -1091,8 +1094,7 @@ class MysqlControl(Settings):
                     '日本': 'sunyaru@giikin.com',
                     '韩国': 'sunyaru@giikin.com',
                     '品牌': 'sunyaru@giikin.com'}
-        if team in (
-        'sltg', 'slrb', 'slrb_jl', 'slgat', 'slgat_hfh', 'slgat_hs', 'slgat_js', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('sltg', 'slrb', 'slrb_jl', 'slgat', 'slgat_hfh', 'slgat_hs', 'slgat_js', 'slgat_jp', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             month_last = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
         else:
             pass
@@ -1355,6 +1357,8 @@ class MysqlControl(Settings):
                 file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙T-{}物流时效.xlsx'.format(today, tem1)
             elif team in ('slgat_js', 'slrb_js'):
                 file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 金狮-{}物流时效.xlsx'.format(today, tem1)
+            elif team in ('slgat_jp'):
+                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 金鹏-{}物流时效.xlsx'.format(today, tem1)
             elif team == 'slrb_jl':
                 file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 精灵-{}物流时效.xlsx'.format(today, tem1)
             else:
@@ -1945,7 +1949,8 @@ class MysqlControl(Settings):
 								IF(d.`物流方式` LIKE '台湾-天马-新竹%' OR d.`物流方式` LIKE '台湾-天马-711%','天马新竹',
 								IF(d.`物流方式` LIKE '台湾-天马-黑猫%','天马黑猫',
 								IF(d.`物流方式` LIKE '台湾-易速配-龟山%' OR d.`物流方式` LIKE '台湾-易速配-新竹%' OR d.`物流方式` = '易速配','龟山',
-								IF(d.`物流方式` LIKE '台湾-速派-新竹%' OR d.`物流方式` LIKE '台湾-速派-711超商%','速派', d.`物流方式`))  )  )  )  )  )  )  )
+								IF(d.`物流方式` LIKE '台湾-速派-新竹%' OR d.`物流方式` LIKE '台湾-速派-711超商%','速派', 
+								IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', d.`物流方式`)))  )  )  )  )  )  )  )
                 WHERE d.`是否改派` ='改派';'''
         print('正在修改-改派的物流渠道…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
@@ -1986,7 +1991,7 @@ class MysqlControl(Settings):
                             SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 改派完成,
                             SUM(IF(`是否改派` = '改派',1,0)) as 改派总订单
                         FROM (SELECT *,
-                               IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",cc.团队)))) as 家族 
+                               IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",IF(cc.团队 LIKE "%金鹏%","金鹏",cc.团队))))) as 家族 
                                 FROM gat_zqsb cc
                                 where cc.日期 >= '{0}'
                               ) cx
@@ -1996,7 +2001,7 @@ class MysqlControl(Settings):
                     GROUP BY 月份,地区,家族
                     ORDER BY 月份 DESC,
                             FIELD( 地区, '台湾', '香港', '总计' ),
-                            FIELD( 家族, '神龙', '火凤凰', '金狮', '红杉', '总计' );'''.format(month_last, team)
+                            FIELD( 家族, '神龙', '火凤凰', '金狮', '金鹏', '红杉', '总计' );'''.format(month_last, team)
         df0 = pd.read_sql_query(sql=sql0, con=self.engine1)
         listT.append(df0)
 
@@ -2023,15 +2028,15 @@ class MysqlControl(Settings):
         			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
         			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
                             FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",cc.团队)))) as 家族 
-                                  FROM gat_zqsb cc
+                                     IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",IF(cc.团队 LIKE "%金鹏%","金鹏",cc.团队))))) as 家族 
+                                 FROM gat_zqsb cc
                                   ) cx									
                             GROUP BY cx.年月,cx.币种,cx.家族
                             WITH ROLLUP 
         	            ) s
                         ORDER BY 月份 DESC,
                                 FIELD( 地区, '台湾', '香港', '总计' ),
-                                FIELD( s.家族, '神龙', '火凤凰','金狮', '红杉', '总计' ),
+                                FIELD( s.家族, '神龙', '火凤凰','金狮', '金鹏', '红杉', '总计' ),
                                 s.总单量 DESC;'''.format(team)
         df10 = pd.read_sql_query(sql=sql10, con=self.engine1)
         listT.append(df10)
@@ -2060,15 +2065,15 @@ class MysqlControl(Settings):
         			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
         			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
                             FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",cc.团队)))) as 家族 
-                                  FROM gat_zqsb cc
+                                      IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",IF(cc.团队 LIKE "%金鹏%","金鹏",cc.团队))))) as 家族 
+                                 FROM gat_zqsb cc
                                   )  cx									
                             GROUP BY cx.年月,cx.旬,cx.币种, cx.家族
                             WITH ROLLUP 
         	            ) s
                         ORDER BY 月份 DESC,旬,
                                 FIELD( 地区, '台湾', '香港', '总计' ),
-                                FIELD( s.家族, '神龙', '火凤凰','金狮', '红杉', '总计' ),
+                                FIELD( s.家族, '神龙', '火凤凰','金狮', '金鹏', '红杉', '总计' ),
                                 s.总单量 DESC;'''.format(team)
         df11 = pd.read_sql_query(sql=sql11, con=self.engine1)
         listT.append(df11)
@@ -2097,8 +2102,8 @@ class MysqlControl(Settings):
                                     concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
                                     concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
                             FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",cc.团队)))) as 家族 
-                                  FROM gat_zqsb cc
+                                      IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",IF(cc.团队 LIKE "%金鹏%","金鹏",cc.团队))))) as 家族 
+                                 FROM gat_zqsb cc
                                   where cc.日期 >= '{0}'
                                 ) cx                                  
                             GROUP BY cx.年月,cx.币种,cx.父级分类,cx.家族
@@ -2107,7 +2112,7 @@ class MysqlControl(Settings):
                         ORDER BY 月份 DESC,
                                 FIELD( 地区, '台湾', '香港', '总计' ),
                                 FIELD( 父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
-                                FIELD( s.家族, '神龙', '火凤凰','金狮', '红杉', '总计' ),
+                                FIELD( s.家族, '神龙', '火凤凰','金狮', '金鹏', '红杉', '总计' ),
                                 s.总单量 DESC;'''.format(month_last, team)
         df12 = pd.read_sql_query(sql=sql12, con=self.engine1)
         listT.append(df12)
@@ -2136,7 +2141,7 @@ class MysqlControl(Settings):
                                 concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
                                 concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
                                 concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
-                        FROM (SELECT *, IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",cc.团队)))) as 家族
+                        FROM (SELECT *, IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",IF(cc.团队 LIKE "%金鹏%","金鹏",cc.团队))))) as 家族
                                 FROM gat_zqsb cc
                                 where cc.日期 >= '{0}'
                             ) cx                                  
@@ -2146,9 +2151,9 @@ class MysqlControl(Settings):
                     ORDER BY FIELD(月份, '202108', '202107', '202106', '202105', '202104', '总计' ),
                             FIELD(地区, '台湾', '香港', '总计' ),
                             FIELD(是否改派, '直发', '改派', '总计' ),
-                            FIELD(物流方式, '台湾-大黄蜂普货头程-森鸿尾程', '台湾-立邦普货头程-森鸿尾程', '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
+                            FIELD(物流方式, '台湾-大黄蜂普货头程-森鸿尾程','台湾-大黄蜂普货头程-易速配尾程', '台湾-立邦普货头程-森鸿尾程','台湾-立邦普货头程-易速配尾程', '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
                                 '香港-立邦-顺丰','香港-森鸿-SH渠道','香港-森鸿-顺丰渠道','香港-易速配-顺丰', '龟山','森鸿','速派','天马顺丰','天马新竹','香港-立邦-改派','香港-森鸿-改派','香港-易速配-改派','总计' ),
-                            FIELD( s.家族, '神龙', '火凤凰','金狮', '红杉', '总计' ),
+                            FIELD( s.家族, '神龙', '火凤凰','金狮','金鹏', '红杉', '总计' ),
                             s.总单量 DESC;'''.format(month_last, team)
         df13 = pd.read_sql_query(sql=sql13, con=self.engine1)
         listT.append(df13)
@@ -2172,35 +2177,42 @@ class MysqlControl(Settings):
                             concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
                         concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 完成签收,
                             concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                            SUM(IF(cx.家族 LIKE '神龙%',1,0)) as 神龙单量,
+                        SUM(IF(cx.家族 LIKE '神龙%',1,0)) as 神龙单量,
                             SUM(IF( cx.家族 LIKE '神龙%' AND 最终状态 = "已签收",1,0)) as 神龙签收,
                             SUM(IF( cx.家族 LIKE '神龙%' AND 最终状态 = "拒收",1,0)) as 神龙拒收,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.家族 LIKE '神龙%',1,0)) * 100,2),'%') as 神龙改派占比,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '神龙%',1,0)) * 100,2),'%') as 神龙签收率,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '神龙%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 神龙完成签收,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND  最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / SUM(IF(cx.家族 LIKE '神龙%',1,0)) * 100,2),'%') as 神龙完成占比,
-                            SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) as 火凤凰单量,
-                        SUM(IF( cx.家族 LIKE '火凤凰%' AND 最终状态 = "已签收",1,0)) as 火凤凰签收,
+                        SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) as 火凤凰单量,
+                            SUM(IF( cx.家族 LIKE '火凤凰%' AND 最终状态 = "已签收",1,0)) as 火凤凰签收,
                             SUM(IF( cx.家族 LIKE '火凤凰%' AND 最终状态 = "拒收",1,0)) as 火凤凰拒收,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰改派占比,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰签收率,
                              concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 火凤凰完成签收,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND  最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰完成占比,
-                            SUM(IF(cx.家族 LIKE '金狮%',1,0)) as 金狮单量,
-                        SUM(IF( cx.家族 LIKE '金狮%' AND 最终状态 = "已签收",1,0)) as 金狮签收,
+                        SUM(IF(cx.家族 LIKE '金狮%',1,0)) as 金狮单量,
+                            SUM(IF( cx.家族 LIKE '金狮%' AND 最终状态 = "已签收",1,0)) as 金狮签收,
                             SUM(IF( cx.家族 LIKE '金狮%' AND 最终状态 = "拒收",1,0)) as 金狮拒收,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.家族 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮改派占比,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮签收率,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '金狮%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 金狮完成签收,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND  最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / SUM(IF(cx.家族 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮完成占比,
-                            SUM(IF(cx.家族 LIKE '红杉%',1,0)) as 红杉单量,
-                        SUM(IF( cx.家族 LIKE '红杉%' AND 最终状态 = "已签收",1,0)) as 红杉签收,
+                        SUM(IF(cx.家族 LIKE '金鹏%',1,0)) as 金鹏单量,
+                            SUM(IF( cx.家族 LIKE '金鹏%' AND 最终状态 = "已签收",1,0)) as 金鹏签收,
+                            SUM(IF( cx.家族 LIKE '金鹏%' AND 最终状态 = "拒收",1,0)) as 金鹏拒收,
+                            concat(ROUND(SUM(IF(cx.家族 LIKE '金鹏%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.家族 LIKE '金鹏%',1,0)) * 100,2),'%') as 金鹏改派占比,
+                            concat(ROUND(SUM(IF(cx.家族 LIKE '金鹏%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '金鹏%',1,0)) * 100,2),'%') as 金鹏签收率,
+                            concat(ROUND(SUM(IF(cx.家族 LIKE '金鹏%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '金鹏%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 金鹏完成签收,
+                            concat(ROUND(SUM(IF(cx.家族 LIKE '金鹏%' AND  最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / SUM(IF(cx.家族 LIKE '金鹏%',1,0)) * 100,2),'%') as 金鹏完成占比,
+                        SUM(IF(cx.家族 LIKE '红杉%',1,0)) as 红杉单量,
+                            SUM(IF( cx.家族 LIKE '红杉%' AND 最终状态 = "已签收",1,0)) as 红杉签收,
                             SUM(IF( cx.家族 LIKE '红杉%' AND 最终状态 = "拒收",1,0)) as 红杉拒收,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.家族 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉改派占比,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉签收率,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '红杉%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 红杉完成签收,
                             concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND  最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / SUM(IF(cx.家族 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉完成占比
-                    FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",cc.团队)))) as 家族 
+                    FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",IF(cc.团队 LIKE "%金鹏%","金鹏",cc.团队))))) as 家族 
                         FROM gat_zqsb cc
                         where cc.日期 >= '2021-06-01'
                         ) cx
@@ -2237,15 +2249,14 @@ class MysqlControl(Settings):
                             concat(ROUND(SUM(IF(cx.年月 = '202107' AND 最终状态 = "已签收",1,0)) / SUM(IF(cx.年月 = '202107',1,0)) * 100,2),'%') as 07总计签收,
                             concat(ROUND(SUM(IF(cx.年月 = '202107' AND 最终状态 = "已签收",1,0)) / SUM(IF(cx.年月 = '202107' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 07完成签收,
                             concat(ROUND(SUM(IF(cx.年月 = '202107' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(cx.年月 = '202107',1,0)) * 100,2),'%') as 07完成占比
-                    
                     FROM (SELECT *,
-                                IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",cc.团队)))) as 家族 
+                                IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",IF(cc.团队 LIKE "%金鹏%","金鹏",cc.团队))))) as 家族 
                          FROM gat_zqsb cc
                          )  cx
                     GROUP BY cx.家族,cx.币种,cx.产品id
                     WITH ROLLUP 
                 ) s
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','金狮','红杉','总计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','金狮','金鹏','红杉','总计'),
                         FIELD( 地区, '台湾', '香港', '总计' ),
                         s.总单量 DESC;'''
         df15 = pd.read_sql_query(sql=sql15, con=self.engine1)
@@ -2266,16 +2277,16 @@ class MysqlControl(Settings):
             del book['Sheet1']
         writer.save()
         writer.close()
-        # print('正在运行' + match[team] + '表宏…………')
-        # app = xl.App(visible=False, add_book=False)  # 运行宏调整
-        # app.display_alerts = False
-        # wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
-        # wbsht1 = app.books.open(file_path)
-        # wbsht.macro('zl_report_day')()
-        # wbsht1.save()
-        # wbsht1.close()
-        # wbsht.close()
-        # app.quit()
+        print('正在运行' + match[team] + '表宏…………')
+        app = xl.App(visible=False, add_book=False)  # 运行宏调整
+        app.display_alerts = False
+        wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+        wbsht1 = app.books.open(file_path)
+        wbsht.macro('zl_report_day')()
+        wbsht1.save()
+        wbsht1.close()
+        wbsht.close()
+        app.quit()
         print('----已写入excel ')
         # filePath.append(file_path)
         # self.e.send('{} 神龙-{}物流时效.xlsx'.format(today, tem1), filePath,
@@ -2801,8 +2812,8 @@ if __name__ == '__main__':
     start = datetime.datetime.now()
 
     # 更新产品id的列表
-    # m.update_gk_product()
-    m.qsb_report('gat')
+    m.update_gk_product()
+    # m.qsb_report('gat')
 
     # 测试物流时效
     # team = 'sltg'
