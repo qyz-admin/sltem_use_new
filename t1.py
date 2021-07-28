@@ -4,12 +4,12 @@ from excelControl import ExcelControl
 from mysqlControl import MysqlControl
 from wlMysql import WlMysql
 from wlExecl import WlExecl
-from 单点更新 import QueryTwo
-
+from sso_updata import QueryTwo
 import datetime
 
 start: datetime = datetime.datetime.now()
-team = 'gat'
+team = 'slsc'
+match1 = {'gat': '港台'}
 match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
          'slgat_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
          'slgat_hs': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
@@ -34,19 +34,11 @@ e = ExcelControl()
 m = MysqlControl()
 w = WlMysql()
 we = WlExecl()
+sso = QueryTwo()
 
 # 上传退货
 e.readReturnOrder(team)
 print('退货导入耗时：', datetime.datetime.now() - start)
-# 上传品牌数据
-# if team == 'slsc':
-#     query = '导入'
-#     QueryTwo.readFormHost(team, query)
-# elif team == 'gat':
-#     query = '更新'         # 导入；，更新--->>数据更新切换
-#     QueryTwo.readFormHost(team, query)
-# print('更新导入耗时：', datetime.datetime.now() - start)
-
 
 # ---读取execl文件---
 for dir in dirs:
@@ -67,12 +59,38 @@ for dir in dirs:
 print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
-# m.creatMyOrderSl(team)  # 最近五天的全部订单信息
+m.creatMyOrderSl(team)  # 最近五天的全部订单信息
+
 print('------------更新部分：---------------------')
-# m.creatMyOrderSlTWO(team)   # 最近两个月的更新订单信息
-print('处理耗时：', datetime.datetime.now() - start)
+if team == 'slsc':
+    m.creatMyOrderSlTWO(team)   # 最近两个月的更新订单信息
+    print('处理耗时：', datetime.datetime.now() - start)
+else:
+    yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 2、自动设置时间
+    mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
+    begin = datetime.date(yy, mm, 1)
+    print(begin)
+    yy2 = int(datetime.datetime.now().strftime('%Y'))
+    mm2 = int(datetime.datetime.now().strftime('%m'))
+    dd2 = int(datetime.datetime.now().strftime('%d'))
+    end = datetime.date(yy2, mm2, dd2)
+    print(end)
+    print(datetime.datetime.now())
+    print('++++++正在获取 ' + match1[team] + ' 信息++++++')
+    for i in range((end - begin).days):  # 按天循环获取订单状态
+        day = begin + datetime.timedelta(days=i)
+        yesterday = str(day) + ' 23:59:59'
+        last_month = str(day)
+        print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
+        searchType = '订单号'      # 运单号，订单号   查询切换
+        sso.orderInfo(searchType, team, last_month)
+    print('更新耗时：', datetime.datetime.now() - start)
+
+print('------------导出部分：---------------------')
 m.connectOrder(team)  # 最近两个月的订单信息导出
 print('输出耗时：', datetime.datetime.now() - start)
+
+
 
 
 # 输出签收率表、(备用)

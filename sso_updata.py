@@ -688,7 +688,7 @@ class QueryTwo(Settings):
         # print(data.columns)
         print('正在写入缓存中......')
         try:
-            df = data[['orderNumber', 'currency', 'area','shipInfo.shipPhone', 'wayBillNumber', 'saleId', 'saleProduct', 'productId', 'spec', 'quantity',
+            df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'wayBillNumber', 'saleId', 'saleProduct', 'productId', 'spec', 'quantity',
                        'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime', 'finishTime',
                        'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType', 'weight']]
             print(df)
@@ -706,6 +706,7 @@ class QueryTwo(Settings):
             				    TRIM(h.logisticsName) 物流方式,
             				    dim_trans_way.simple_name 物流名称,
             				    IF(h.`dpeStyle` = 'P 普通货', 'P', IF(h.`dpeStyle` = 'T 特殊货', 'T', h.`dpeStyle`)) 货物类型,
+            				    h.`saleId` 商品id,
             				    h.`productId` 产品id,
             		            h.`saleProduct` 产品名称,
             				    h.verifyTime 审核时间,
@@ -732,6 +733,7 @@ class QueryTwo(Settings):
                                 a.`物流方式`= IF(b.`物流方式` = '',NULL, b.`物流方式`),
                                 a.`物流名称`= IF(b.`物流名称` = '', NULL, b.`物流名称`),
                                 a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),
+                                a.`商品id`= IF(b.`商品id` = '', NULL, b.`商品id`),
                                 a.`产品id`= IF(b.`产品id` = '', NULL, b.`产品id`),
                                 a.`产品名称`= IF(b.`产品名称` = '', NULL, b.`产品名称`),
                                 a.`审核时间`= IF(b.`审核时间` = '', NULL, b.`审核时间`),
@@ -768,20 +770,20 @@ if __name__ == '__main__':
     #   台湾token, 日本token, 新马token：  f5dc2a3134c17a2e970977232e1aae9b
     #   泰国token： 83583b29fc24ec0529082ff7928246a6
 
-    begin = datetime.date(2021, 6, 1)       # 1、手动设置时间；若无法查询，切换代理和直连的网络
-    print(begin)
-    end = datetime.date(2021, 7, 28)
-    print(end)
-
-    # yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 2、自动设置时间
-    # mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
-    # begin = datetime.date(yy, mm, 1)
+    # begin = datetime.date(2021, 6, 1)       # 1、手动设置时间；若无法查询，切换代理和直连的网络
     # print(begin)
-    # yy2 = int(datetime.datetime.now().strftime('%Y'))
-    # mm2 = int(datetime.datetime.now().strftime('%m'))
-    # dd2 = int(datetime.datetime.now().strftime('%d'))
-    # end = datetime.date(yy2, mm2, dd2)
+    # end = datetime.date(2021, 7, 28)
     # print(end)
+
+    yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 2、自动设置时间
+    mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
+    begin = datetime.date(yy, mm, 1)
+    print(begin)
+    yy2 = int(datetime.datetime.now().strftime('%Y'))
+    mm2 = int(datetime.datetime.now().strftime('%m'))
+    dd2 = int(datetime.datetime.now().strftime('%d'))
+    end = datetime.date(yy2, mm2, dd2)
+    print(end)
 
     print(datetime.datetime.now())
     # for team in ['slsc', 'gat']:
