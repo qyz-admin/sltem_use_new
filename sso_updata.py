@@ -598,12 +598,13 @@ class QueryTwo(Settings):
 
 
 
-    # 更新团队订单明细（新后台的获取）
-    def orderInfo(self, searchType, team, last_month):  # 进入订单检索界面，
+
+    # 查询更新（新后台的获取）
+    def dayQuery(self, searchType, team, team2):  # 进入订单检索界面，
         print('>>>>>>正式查询中<<<<<<')
         print('正在获取需要订单信息......')
         start = datetime.datetime.now()
-        sql = '''SELECT id,`订单编号`  FROM {0}_order_list sl WHERE sl.`日期` = '{1}';'''.format(team, last_month)
+        sql = '''SELECT `订单编号`  FROM {0};'''.format(team)
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
         # print(ordersDict)
         if ordersDict.empty:
@@ -618,10 +619,34 @@ class QueryTwo(Settings):
             ord = ', '.join(orderId[n:n + 500])
             # print(ord)
             n = n + 500
-            self.orderInfoQuery(ord, searchType, team)
+            self.orderInfoQuery(ord, searchType, team, team2)
         print('单日查询耗时：', datetime.datetime.now() - start)
 
-    def orderInfoQuery(self, ord, searchType, team):  # 进入订单检索界面
+
+    # 更新团队订单明细（新后台的获取）
+    def orderInfo(self, searchType, team, team2, last_month):  # 进入订单检索界面，
+        print('>>>>>>正式查询中<<<<<<')
+        print('正在获取需要订单信息......')
+        start = datetime.datetime.now()
+        sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` = '{1}';'''.format(team, last_month)
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        # print(ordersDict)
+        if ordersDict.empty:
+            print('无需要更新订单信息！！！')
+            # sys.exit()
+            return
+        orderId = list(ordersDict['订单编号'])
+        print('获取耗时：', datetime.datetime.now() - start)
+        max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
+        n = 0
+        while n < max_count:        # 这里用到了一个while循环，穿越过来的
+            ord = ', '.join(orderId[n:n + 500])
+            # print(ord)
+            n = n + 500
+            self.orderInfoQuery(ord, searchType, team, team2)
+        print('单日查询耗时：', datetime.datetime.now() - start)
+
+    def orderInfoQuery(self, ord, searchType, team, team2):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
@@ -722,7 +747,7 @@ class QueryTwo(Settings):
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             df.to_sql('d1_cpy_cp', con=self.engine1, index=False, if_exists='replace')
             print('正在更新表总表中......')
-            sql = '''update {0}_order_list a, d1_cpy_cp b
+            sql = '''update {0} a, d1_cpy_cp b
                             set a.`币种`= b.`币种`,
                                 a.`数量`= b.`数量`,
                                 a.`电话号码`= b.`电话号码` ,
@@ -741,7 +766,7 @@ class QueryTwo(Settings):
                                 a.`仓储扫描时间`= IF(b.`仓储扫描时间` = '', NULL, b.`仓储扫描时间`),
                                 a.`完结状态时间`= IF(b.`完结状态时间` = '', NULL, b.`完结状态时间`),
                                 a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`)
-                    where a.`订单编号`=b.`订单编号`;'''.format(team)
+                    where a.`订单编号`=b.`订单编号`;'''.format(team2)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))

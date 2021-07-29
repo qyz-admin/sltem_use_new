@@ -8,8 +8,8 @@ from sso_updata import QueryTwo
 import datetime
 
 start: datetime = datetime.datetime.now()
-team = 'slsc'
-match1 = {'gat': '港台'}
+team = 'gat'
+match1 = {'gat_order_list': '港台'}
 match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
          'slgat_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
          'slgat_hs': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
@@ -62,10 +62,12 @@ print('导入耗时：', datetime.datetime.now() - start)
 m.creatMyOrderSl(team)  # 最近五天的全部订单信息
 
 print('------------更新部分：---------------------')
-if team == 'slsc':
+if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs'):
     m.creatMyOrderSlTWO(team)   # 最近两个月的更新订单信息
     print('处理耗时：', datetime.datetime.now() - start)
 else:
+    team = 'gat_order_list'     # 获取单号表
+    team2 = 'gat_order_list'    # 更新单号表
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 2、自动设置时间
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
     begin = datetime.date(yy, mm, 1)
@@ -83,7 +85,7 @@ else:
         last_month = str(day)
         print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
         searchType = '订单号'      # 运单号，订单号   查询切换
-        sso.orderInfo(searchType, team, last_month)
+        sso.orderInfo(searchType, team, team2, last_month)
     print('更新耗时：', datetime.datetime.now() - start)
 
 print('------------导出部分：---------------------')

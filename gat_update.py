@@ -108,6 +108,9 @@ class QueryUpdate(Settings):
             wb.close()
         app.quit()      # 工作表的订单信息    # 工作表的订单信息
 
+    def delete_order(self, dataFrame):    # 写入总表删除订单
+        dataFrame.to_sql('delete_order', con=self.engine1, index=False, if_exists='replace')
+
     def writeCacheHost(self, dataFrame):    # 写入更新缓存表
         dataFrame.to_sql('gat_update', con=self.engine1, index=False, if_exists='replace')
     def replaceSqlHost(self, team):    # 更新-总表
