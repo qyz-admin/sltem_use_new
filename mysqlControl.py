@@ -208,7 +208,6 @@ class MysqlControl(Settings):
         # 12-1月的
         if team in ('sltg', 'slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             # 获取日期时间
-            # sql = 'SELECT 日期 FROM {0}_order_list WHERE id = (SELECT MAX(id) FROM {0}_order_list);'.format(team)
             sql = 'SELECT MAX(`日期`) 日期 FROM {0}_order_list;'.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
             rq = pd.to_datetime(rq['日期'][0])
@@ -467,7 +466,7 @@ class MysqlControl(Settings):
                         AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
                 print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
                 df = pd.read_sql_query(sql=sql, con=self.engine20)
-            else:
+            elif team in ('gat'):
                 sql = '''SELECT a.id,
                             a.month 年月,
                             a.month_mid 旬,
@@ -512,7 +511,7 @@ class MysqlControl(Settings):
                             a.volume 包裹体积,
                             a.ship_zip 邮编,
                             a.turn_purchase_time 添加物流单号时间,
-                            a.del_reason 订单删除原因
+                            null 规格中文
                     FROM gk_order a
                             left join dim_area ON dim_area.id = a.area_id
                             left join dim_payment ON dim_payment.id = a.payment_id
@@ -546,7 +545,7 @@ class MysqlControl(Settings):
             print('写入完成…………')
         return '写入完成'
 
-    def creatMyOrderSlTWO(self, team):  # 最近两个月的更新订单信息
+    def creatMyOrderSlTWO(self, team, begin, end):  # 最近两个月的更新订单信息
         match = {'slgat': '"神龙家族-港澳台"',
                  'slgat_hfh': '"火凤凰-港澳台"',
                  'slgat_hs': '"红杉家族-港澳台", "红杉家族-港澳台2"',
@@ -561,21 +560,21 @@ class MysqlControl(Settings):
                  'slrb_hs': '"红杉家族-日本", "红杉家族-日本666"',
                  'slrb_jl': '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        if team in ('sltg', 'slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
-            yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
-            mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
-            begin = datetime.date(yy, mm, 1)
-            print(begin)
-            yy2 = int(datetime.datetime.now().strftime('%Y'))
-            mm2 = int(datetime.datetime.now().strftime('%m'))
-            dd2 = int(datetime.datetime.now().strftime('%d'))
-            end = datetime.date(yy2, mm2, dd2)
-            print(end)
-        else:
-            begin = datetime.date(2021, 5, 1)
-            print(begin)
-            end = datetime.date(2021, 7, 10)
-            print(end)
+        # if team in ('sltg', 'slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        #     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
+        #     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
+        #     begin = datetime.date(yy, mm, 1)
+        #     print(begin)
+        #     yy2 = int(datetime.datetime.now().strftime('%Y'))
+        #     mm2 = int(datetime.datetime.now().strftime('%m'))
+        #     dd2 = int(datetime.datetime.now().strftime('%d'))
+        #     end = datetime.date(yy2, mm2, dd2)
+        #     print(end)
+        # else:
+        #     begin = datetime.date(2021, 5, 1)
+        #     print(begin)
+        #     end = datetime.date(2021, 7, 10)
+        #     print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
             # print(str(day))
@@ -599,6 +598,7 @@ class MysqlControl(Settings):
              		            gk_sale.product_name 产品名称,
                                 dim_cate.ppname 父级分类,
                                 dim_cate.pname 二级分类,
+                                dim_cate.name 三级分类,
                                 a.logistics_type 货物类型,
                                 a.verity_time 审核时间,
                                 a.delivery_time 仓储扫描时间,
@@ -636,6 +636,7 @@ class MysqlControl(Settings):
              		            gk_sale.product_name 产品名称,
                                 dim_cate.ppname 父级分类,
                                 dim_cate.pname 二级分类,
+                                dim_cate.name 三级分类,
                                 a.logistics_type 货物类型,
                                 a.verity_time 审核时间,
                                 a.delivery_time 仓储扫描时间,
@@ -656,7 +657,7 @@ class MysqlControl(Settings):
                         WHERE a.rq = '{0}' AND a.rq <= '{1}'
                             AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
                 df = pd.read_sql_query(sql=sql, con=self.engine4)
-            else:
+            elif team in ('gat'):
                 sql = '''SELECT DISTINCT a.id,
                                 a.rq 日期,
                                 dim_currency_lang.pname 币种,
@@ -673,6 +674,7 @@ class MysqlControl(Settings):
              		            gk_sale.product_name 产品名称,
                                 dim_cate.ppname 父级分类,
                                 dim_cate.pname 二级分类,
+                                dim_cate.name 三级分类,
                                 a.logistics_type 货物类型,
                                 a.verity_time 审核时间,
                                 a.delivery_time 仓储扫描时间,
@@ -721,6 +723,7 @@ class MysqlControl(Settings):
 		                    a.`产品名称`=b.`产品名称`,
 		                    a.`父级分类`=b.`父级分类`,
 		                    a.`二级分类`=b.`二级分类`,
+		                    a.`三级分类`=b.`三级分类`,
 		                    a.`货物类型`=b.`货物类型`,
 		                    a.`审核时间`=b.`审核时间`,
 		                    a.`仓储扫描时间`=b.`仓储扫描时间`,
@@ -736,7 +739,7 @@ class MysqlControl(Settings):
             print('----更新完成----')
         return '更新完成'
 
-    def connectOrder(self, team):
+    def connectOrder(self, team, month_last, month_yesterday, month_begin):
         match = {'slgat': '神龙-港台',
                  'slgat_hfh': '火凤凰-港台',
                  'slgat_hs': '红杉-港台',
@@ -752,15 +755,15 @@ class MysqlControl(Settings):
                     'slgat_hfh': 'giikinliujun@163.com',
                     'slgat_hs': 'giikinliujun@163.com',
                     'slsc': 'sunyaru@giikin.com'}
-        if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat', 'slgat', 'slgat_hfh', 'slgat_hs'):
-            month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-            month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
-            month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
-            print(month_begin)
-        else:
-            month_last = '2021-03-01'
-            month_yesterday = '2021-04-01'
-            month_begin = '2021-02-01'
+        # if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat0', 'slgat', 'slgat_hfh', 'slgat_hs'):
+        #     month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+        #     month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
+        #     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
+        #     print(month_begin)
+        # else:
+        #     month_last = '2021-06-01'
+        #     month_yesterday = '2021-07-31'
+        #     month_begin = '2021-02-01'
         print('正在检查父级分类为空的信息---')
         sql = '''SELECT 订单编号,商品id,
 				        dp.product_id, dp.`name` product_name, dp.third_cate_id,
@@ -947,8 +950,8 @@ class MysqlControl(Settings):
                         IF(是否改派='二次改派', '改派', 是否改派) 是否改派,
                         物流方式,物流名称,null 运输方式,null 货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
                         二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,null 价格区间,
-                        包裹重量,null 包裹体积,null 邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 
-                        原运单号, b.物流状态 签收表物流状态,null 添加时间, null 成本价, 物流花费, null 打包花费, null 其它花费, null 添加物流单号时间,null 数量
+                        null 包裹重量,null 包裹体积,null 邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, null 签收表订单编号, null 签收表运单编号, 
+                        null 原运单号, b.物流状态 签收表物流状态,null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, null 添加物流单号时间,null 数量
                     FROM {0}_order_list a
                         LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} WHERE {0}.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
                         LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态

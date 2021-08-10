@@ -22,10 +22,12 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, \
 
 # -*- coding:utf-8 -*-
 class QueryTwo(Settings):
-    def __init__(self):
+    def __init__(self, userMobile, password):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
+        self.userMobile = userMobile
+        self.password = password
         self._online()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -61,10 +63,11 @@ class QueryTwo(Settings):
                                                                                     self.mysql2['datebase']))
 
     def _online(self):  # 登录系统保持会话状态
-        print('第一阶段获取-钉钉用户信息......')
+        print('正在登录后台系统中......')
+        # print('第一阶段获取-钉钉用户信息......')
         url = r'https://login.dingtalk.com/login/login_with_pwd'
-        data = {'mobile': '+86-18538110674',
-                'pwd': 'qyz04163510',
+        data = {'mobile': self.userMobile,
+                'pwd': self.password,
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
@@ -78,14 +81,14 @@ class QueryTwo(Settings):
                     'Referer': 'https://login.dingtalk.com/'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         req = req.json()
-        print(req)
+        # print(req)
         req_url = req['data']
         loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
-        print(loginTmpCode)
-        print('+++已获取loginTmpCode值+++')
+        # print(loginTmpCode)
+        # print('+++已获取loginTmpCode值+++')
 
         time.sleep(1)
-        print('第二阶段请求-登录页面......')
+        # print('第二阶段请求-登录页面......')
         url = r'http://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html'
         data = {'tmpCode': loginTmpCode,
                 'system': 1,
@@ -96,12 +99,12 @@ class QueryTwo(Settings):
                     'Origin': 'https://login.dingtalk.com',
                     'Referer': 'http://gsso.giikin.com/admin/login/logout.html'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
-        print(req.text)
-        print('+++请求登录页面url成功+++')
+        # print(req.text)
+        # print('+++请求登录页面url成功+++')
 
         time.sleep(1)
-        print('第三阶段请求-dingtalk服务器......')
-        print('（一）加载dingtalk_service跳转页面......')
+        # print('第三阶段请求-dingtalk服务器......')
+        # print('（一）加载dingtalk_service跳转页面......')
         url = req.text
         data = {'tmpCode': loginTmpCode,
                 'system': 1,
@@ -111,68 +114,68 @@ class QueryTwo(Settings):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False)
-        print(req.headers)
+        # print(req.headers)
         gimp = req.headers['Location']
-        print('+++已获取跳转页面+++')
+        # print('+++已获取跳转页面+++')
         time.sleep(1)
-        print('（二）请求dingtalk_service的cookie值......')
+        # print('（二）请求dingtalk_service的cookie值......')
         url = gimp
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        print(req)
-        print('+++已获取cookie值+++')
+        # print(req)
+        # print('+++已获取cookie值+++')
 
         time.sleep(2)
-        print('第四阶段页面-重定向跳转中......')
-        print('（一）加载chooselogin.html页面......')
+        # print('第四阶段页面-重定向跳转中......')
+        # print('（一）加载chooselogin.html页面......')
         url = r'http://gsso.giikin.com/admin/login_by_dingtalk/chooselogin.html'
         data = {'user_id': 1343}
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'Referer': gimp,
                     'Origin': 'http://gsso.giikin.com'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
-        print(req.headers)
+        # print(req.headers)
         index = req.headers['Location']
-        print('+++已获取gimp.giikin.com页面')
+        # print('+++已获取gimp.giikin.com页面')
         time.sleep(2)
-        print('（二）加载gimp.giikin.com页面......')
+        # print('（二）加载gimp.giikin.com页面......')
         url = index
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'Referer': index}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        print(req.headers)
+        # print(req.headers)
         index2 = req.headers['Location']
-        print('+++已获取index.html页面')
+        # print('+++已获取index.html页面')
 
         time.sleep(2)
-        print('（三）加载index.html页面......')
+        # print('（三）加载index.html页面......')
         url = 'http://gimp.giikin.com/' + index2
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        print(req.headers)
+        # print(req.headers)
         index_system = req.headers['Location']
-        print('+++已获取index.html?_system=18正式页面')
+        # print('+++已获取index.html?_system=18正式页面')
 
         time.sleep(2)
-        print('第五阶段正式页面-重定向跳转中......')
-        print('（一）加载index.html?_system页面......')
+        # print('第五阶段正式页面-重定向跳转中......')
+        # print('（一）加载index.html?_system页面......')
         url = index_system
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        print(req.headers)
+        # print(req.headers)
         index_system2 = req.headers['Location']
-        print('+++已获取index.html?_ticker=页面......')
+        # print('+++已获取index.html?_ticker=页面......')
         time.sleep(2)
-        print('（二）加载index.html?_ticker=页面......')
+        # print('（二）加载index.html?_ticker=页面......')
         url = index_system2
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        print(req)
-        print(req.headers)
+        # print(req)
+        # print(req.headers)
         print('++++++已成功登录++++++')
 
 
@@ -630,7 +633,7 @@ class QueryTwo(Settings):
         start = datetime.datetime.now()
         sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` = '{1}';'''.format(team, last_month)
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
-        # print(ordersDict)
+        print(ordersDict['订单编号'][0])
         if ordersDict.empty:
             print('无需要更新订单信息！！！')
             # sys.exit()
@@ -739,7 +742,8 @@ class QueryTwo(Settings):
             				    h.onlineTime 上线时间,
             				    h.deliveryTime 仓储扫描时间,
             				    h.finishTime 完结状态时间,
-            				    h.`weight` 包裹重量
+            				    h.`weight` 包裹重量,
+            				    h.`spec` 规格中文
                             FROM d1_cpy h
                                 LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
                                 LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -765,7 +769,8 @@ class QueryTwo(Settings):
                                 a.`上线时间`= IF(b.`上线时间` = '', NULL, b.`上线时间`),
                                 a.`仓储扫描时间`= IF(b.`仓储扫描时间` = '', NULL, b.`仓储扫描时间`),
                                 a.`完结状态时间`= IF(b.`完结状态时间` = '', NULL, b.`完结状态时间`),
-                                a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`)
+                                a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`),
+                                a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`)
                     where a.`订单编号`=b.`订单编号`;'''.format(team2)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:
@@ -773,9 +778,10 @@ class QueryTwo(Settings):
         print('++++++本批次更新成功+++++++')
 
 if __name__ == '__main__':
-    m = QueryTwo()
+    m = QueryTwo('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台',
+              'gat_order_list': '港台',
               'slsc': '品牌'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # for team in ['slsc', 'gat','slgat', 'slgat_hfh', 'slgat_hs', slrb', 'slrb_jl', 'slrb_js']:
@@ -790,35 +796,35 @@ if __name__ == '__main__':
 
 
 
-
     # -----------------------------------------------系统导入状态运行（二）-----------------------------------------
     #   台湾token, 日本token, 新马token：  f5dc2a3134c17a2e970977232e1aae9b
     #   泰国token： 83583b29fc24ec0529082ff7928246a6
 
-    # begin = datetime.date(2021, 6, 1)       # 1、手动设置时间；若无法查询，切换代理和直连的网络
-    # print(begin)
-    # end = datetime.date(2021, 7, 28)
-    # print(end)
-
-    yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 2、自动设置时间
-    mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
-    begin = datetime.date(yy, mm, 1)
+    begin = datetime.date(2021, 7, 2)       # 1、手动设置时间；若无法查询，切换代理和直连的网络
     print(begin)
-    yy2 = int(datetime.datetime.now().strftime('%Y'))
-    mm2 = int(datetime.datetime.now().strftime('%m'))
-    dd2 = int(datetime.datetime.now().strftime('%d'))
-    end = datetime.date(yy2, mm2, dd2)
+    end = datetime.date(2021, 7, 30)
     print(end)
-
+    # yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 2、自动设置时间
+    # mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
+    # begin = datetime.date(yy, mm, 1)
+    # print(begin)
+    # yy2 = int(datetime.datetime.now().strftime('%Y'))
+    # mm2 = int(datetime.datetime.now().strftime('%m'))
+    # dd2 = int(datetime.datetime.now().strftime('%d'))
+    # end = datetime.date(yy2, mm2, dd2)
+    # print(end)
     print(datetime.datetime.now())
-    # for team in ['slsc', 'gat']:
-    for team in ['gat']:
-        print('++++++正在获取 ' + match1[team] + ' 信息++++++')
-        for i in range((end - begin).days):  # 按天循环获取订单状态
-            day = begin + datetime.timedelta(days=i)
-            yesterday = str(day) + ' 23:59:59'
-            last_month = str(day)
-            print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
-            searchType = '订单号'      # 运单号，订单号   查询切换
-            m.orderInfo(searchType, team, last_month)
+
+    # team = 'gat_order_list'     # 获取单号表
+    # team2 = 'gat_order_list'    # 更新单号表
+    # searchType = '订单号'  # 运单号，订单号   查询切换
+    # print('++++++正在获取 ' + match1[team] + ' 信息++++++')
+    # for i in range((end - begin).days):  # 按天循环获取订单状态
+    #     day = begin + datetime.timedelta(days=i)
+    #     yesterday = str(day) + ' 23:59:59'
+    #     last_month = str(day)
+    #     print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
+    #     m.orderInfo(searchType, team, team2, last_month)
+
+    m.orderInfoQuery('NR106010740454348', '订单号', 'gat_order_list', 'gat_order_list')  # 进入订单检索界面
     print('更新耗时：', datetime.datetime.now() - start)

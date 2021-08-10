@@ -5,11 +5,13 @@ from mysqlControl import MysqlControl
 from wlMysql import WlMysql
 from wlExecl import WlExecl
 from sso_updata import QueryTwo
+from gat_update2 import QueryUpdate
 import datetime
-
+from dateutil.relativedelta import relativedelta
 start: datetime = datetime.datetime.now()
-team = 'gat'
-match1 = {'gat_order_list': '港台'}
+team = 'slsc'
+match1 = {'gat': '港台',
+          'slsc': '品牌'}
 match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
          'slgat_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
          'slgat_hs': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
@@ -28,13 +30,42 @@ match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台
 备注：  港台 需整理的表：香港立邦>(明细再copy一份保存) ； 台湾龟山改派>(copy保存为xlsx格式);
 说明：  日本 需整理的表：1、吉客印神龙直发签收表=密码：‘JKTSL’>(明细再copy保存；改派明细不需要);2、直发签收表>(明细再copy保存；3、状态更新需要copy保存);
 '''
+# 初始化时间设置
+if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat'):
+    # 更新时间
+    yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
+    mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
+    begin = datetime.date(yy, mm, 1)
+    print(begin)
+    yy2 = int(datetime.datetime.now().strftime('%Y'))
+    mm2 = int(datetime.datetime.now().strftime('%m'))
+    dd2 = int(datetime.datetime.now().strftime('%d'))
+    end = datetime.date(yy2, mm2, dd2)
+    print(end)
+    # 导出时间
+    month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+    month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
+    month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
+    print(month_begin)
+else:
+    # 更新时间
+    begin = datetime.date(2021, 7, 31)
+    print(begin)
+    end = datetime.date(2021, 8, 6)
+    print(end)
+    # 导出时间
+    month_last = '2021-07-01'
+    month_yesterday = '2021-08-10'
+    month_begin = '2021-06-01'
+
+# 库的引用
 path = match[team]
 dirs = os.listdir(path=path)
 e = ExcelControl()
 m = MysqlControl()
 w = WlMysql()
 we = WlExecl()
-sso = QueryTwo()
+qu = QueryUpdate()
 
 # 上传退货
 e.readReturnOrder(team)
@@ -63,34 +94,33 @@ m.creatMyOrderSl(team)  # 最近五天的全部订单信息
 
 print('------------更新部分：---------------------')
 if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs'):
-    m.creatMyOrderSlTWO(team)   # 最近两个月的更新订单信息
+    m.creatMyOrderSlTWO(team, begin, end)   # 最近两个月的更新订单信息
     print('处理耗时：', datetime.datetime.now() - start)
-else:
-    team = 'gat_order_list'     # 获取单号表
-    team2 = 'gat_order_list'    # 更新单号表
-    yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 2、自动设置时间
-    mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
-    begin = datetime.date(yy, mm, 1)
-    print(begin)
-    yy2 = int(datetime.datetime.now().strftime('%Y'))
-    mm2 = int(datetime.datetime.now().strftime('%m'))
-    dd2 = int(datetime.datetime.now().strftime('%d'))
-    end = datetime.date(yy2, mm2, dd2)
-    print(end)
+
+    print('------------导出部分：---------------------')
+    m.connectOrder(team, month_last, month_yesterday, month_begin)  # 最近两个月的订单信息导出
+    print('输出耗时：', datetime.datetime.now() - start)
+
+elif team in ('gat'):
+    sso = QueryTwo('+86-18538110674', 'qyz04163510')
     print(datetime.datetime.now())
     print('++++++正在获取 ' + match1[team] + ' 信息++++++')
+    tem = '{0}_order_list'.format(team)     # 获取单号表
+    tem2 = '{0}_order_list'.format(team)    # 更新单号表
     for i in range((end - begin).days):  # 按天循环获取订单状态
         day = begin + datetime.timedelta(days=i)
         yesterday = str(day) + ' 23:59:59'
         last_month = str(day)
         print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
         searchType = '订单号'      # 运单号，订单号   查询切换
-        sso.orderInfo(searchType, team, team2, last_month)
+        sso.orderInfo(searchType, tem, tem2, last_month)
     print('更新耗时：', datetime.datetime.now() - start)
 
-print('------------导出部分：---------------------')
-m.connectOrder(team)  # 最近两个月的订单信息导出
-print('输出耗时：', datetime.datetime.now() - start)
+    print('------------导出部分：---------------------')
+    # m.connectOrder(team, month_last, month_yesterday, month_begin)  # 最近两个月的订单信息导出
+    qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
+    print('输出耗时：', datetime.datetime.now() - start)
+
 
 
 

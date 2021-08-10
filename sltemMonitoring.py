@@ -526,8 +526,8 @@ class SltemMonitoring(Settings):
         Time_day.sort()
         print(Time_day[11])
         print(Time_day[10])
-        # Time_day[11] = '2021-06-30'
-        # Time_day[10] = '2021-05-30'
+        # Time_day[11] = '2021-08-02'
+        # Time_day[10] = '2021-07-02'
         listT = []  # 查询sql 存放池
         show_name = []  # 打印进度需要
         # 月签收率（天）---查询
@@ -2012,8 +2012,8 @@ class SltemMonitoring(Settings):
         Time_day.sort()
         print(Time_day[11])
         print(Time_day[10])
-        Time_day[11] = '2021-07-02'
-        Time_day[10] = '2021-06-02'
+        Time_day[11] = '2021-07-03'
+        Time_day[10] = '2021-08-03'
         listT = []  # 查询sql 存放池
         show_name = []  # 打印进度需要
         # 月签收率（天）---查询
@@ -2055,8 +2055,8 @@ class SltemMonitoring(Settings):
 				            SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0)) as 完成量,
 				            SUM(IF(`最终状态` = '已退货',1,0)) as 退货量
 	            FROM {0} sl_cx
-	            WHERE (sl_cx.`记录时间` = '2021-07-02' AND (sl_cx.`日期` BETWEEN '2021-06-01' AND '2021-06-30') 
-		 	            OR sl_cx.`记录时间` = '2021-06-02' AND (sl_cx.`日期` BETWEEN '2021-05-01' AND '2021-05-31'))
+	            WHERE (sl_cx.`记录时间` = '2021-07-03' AND (sl_cx.`日期` BETWEEN '2021-06-01' AND '2021-06-30') 
+		 	            OR sl_cx.`记录时间` = '2021-08-03' AND (sl_cx.`日期` BETWEEN '2021-07-01' AND '2021-07-31'))
 		            AND sl_cx.`币种` = '{1}' 
 		            AND sl_cx.`父级分类` IS NOT NULL 
 	            GROUP BY 年月,父级分类,二级分类,三级分类,物流方式,旬
@@ -2102,8 +2102,8 @@ class SltemMonitoring(Settings):
 				                SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0)) as 完成量,
 				                SUM(IF(`最终状态` = '已退货',1,0)) as 退货量
 	                FROM {0} sl_cx
-	                WHERE (sl_cx.`记录时间`= '2021-07-02' AND sl_cx.`日期` < '2021-06-01' 
-			                OR sl_cx.`记录时间`= '2021-06-02' AND sl_cx.`日期` < '2021-05-01')
+	                WHERE (sl_cx.`记录时间`= '2021-07-03' AND sl_cx.`日期` < '2021-06-01' 
+			                OR sl_cx.`记录时间`= '2021-08-03' AND sl_cx.`日期` < '2021-07-01')
 		                AND sl_cx.`币种` = '{1}' 
 		                AND sl_cx.`父级分类` IS NOT NULL 
 	                GROUP BY 年月,父级分类,二级分类,三级分类,物流方式,旬
@@ -2365,8 +2365,8 @@ class SltemMonitoring(Settings):
 				            SUM(IF(`最终状态` = '已签收',1,0)) as 直发签收量,
 				            SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') ,1,0)) as 直发完成量
 	            FROM {0} sl_cx
-	            WHERE (sl_cx.`记录时间` = '2021-07-02' AND ( sl_cx.`日期` BETWEEN '2021-06-01' AND '2021-06-30') 
-		 	            OR sl_cx.`记录时间` = '2021-06-02' AND (sl_cx.`日期` BETWEEN '2021-05-01' AND '2021-05-31'))
+	            WHERE (sl_cx.`记录时间` = '2021-07-03' AND ( sl_cx.`日期` BETWEEN '2021-06-01' AND '2021-06-30') 
+		 	            OR sl_cx.`记录时间` = '2021-08-03' AND (sl_cx.`日期` BETWEEN '2021-07-01' AND '2021-07-31'))
 		            AND sl_cx.`币种` = '{1}' 
 		            AND sl_cx.`是否改派` = "直发"
 		            AND sl_cx.`父级分类` IS NOT NULL 
@@ -2403,8 +2403,8 @@ class SltemMonitoring(Settings):
 				            SUM(IF(`最终状态` = '已签收',1,0)) as 直发签收量,
 				            SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') ,1,0)) as 直发完成量
 	            FROM {0} sl_cx
-	            WHERE (sl_cx.`记录时间`= '2021-07-02' AND sl_cx.`日期` < '2021-06-01'
-                    OR sl_cx.`记录时间`= '2021-06-02' AND sl_cx.`日期` < '2021-05-01')
+	            WHERE (sl_cx.`记录时间`= '2021-07-03' AND sl_cx.`日期` < '2021-06-01'
+                    OR sl_cx.`记录时间`= '2021-08-03' AND sl_cx.`日期` < '2021-08-01')
 		            AND sl_cx.`币种` = '{1}' 
 		            AND sl_cx.`是否改派` = "直发"
 		            AND sl_cx.`父级分类` IS NOT NULL 
@@ -5429,7 +5429,7 @@ class SltemMonitoring(Settings):
                     columns_value = ['团队', '区域', '电话号码', '运单编号', '物流状态', '物流状态代码', '货物类型', '付款方式', '价格',
                                      '包裹重量', '包裹体积', '邮编', '签收表是否存在', '签收表订单编号', '签收表运单编号', '省洲',
                                      '原运单号', '签收表物流状态', '添加时间', '成本价', '物流花费', '打包花费', '其它花费',
-                                     '添加物流单号时间', '订单删除原因', '数量', '站点ID', 'Nan']
+                                     '添加物流单号时间', '订单删除原因', '数量', '站点ID', 'Nan', '更新时间']
                     for column_val in columns_value:
                         if column_val in columns:
                             db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
@@ -5480,19 +5480,19 @@ if __name__ == '__main__':
 
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    startday = '2021.06.28'
+    startday = '2021.07.10'
     for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '神龙台湾', '火凤凰台湾', '火凤凰香港']:
     # for team in ['新神龙-港台', '新火凤凰-港台']:
     # for team in ['神龙-港台']:
     # for team in ['火凤凰-港台']:
         m.readForm(team, startday, '导入')
-    #     m.readForm(team, startday, '单独导入')
-    startday = '2021.07.28'
+        # m.readForm(team, startday, '单独导入')
+    startday = '2021.08.10'
     for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '火凤凰台湾', '火凤凰台湾', '火凤凰香港']:
     # for team in ['神龙-港台']:
     # for team in ['火凤凰-港台']:
         m.readForm(team, startday, '导入')
-        # m.readForm(team, startday, '单独导入')
+    #     m.readForm(team, startday, '单独导入')
 
     # # 获取监控表以上传的时间---监控运行（二）
     # for team in ['火凤凰台湾', '火凤凰香港', '神龙台湾', '神龙香港']:
@@ -5506,11 +5506,8 @@ if __name__ == '__main__':
     # #     m.data_Monitoring(team)     # 两月数据
     #     # m.costWaybill(team)       # 成本缓存 与 成本两月数据
         m.sl_Monitoring(team)        # 输出数据--     # 每月正常使用的时间（一）
-
-
-        # m.sl_Monitoring_TWO(team)    # 输出数据------ 每月使用的固定时间（二）
-        # m.sl_Monitoring_THREE(team)    # 输出上月数据---月初使用的固定时间（三）
-
+    #     m.sl_Monitoring_TWO(team)    # 输出数据------ 每月使用的固定时间（二）
+    #     m.sl_Monitoring_THREE(team)    # 输出上月数据---月初使用的固定时间（三）
 
 
 
@@ -5531,10 +5528,10 @@ if __name__ == '__main__':
     team = '品牌'
     m.order_Monitoring(team)  # 各月缓存
 
-    startday = '2021.06.28'
+    startday = '2021.07.10'
     m.readForm(team, startday, '导入')
 
-    startday = '2021.07.28'
+    startday = '2021.08.10'
     m.readForm(team, startday, '导入')
 
     for team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
