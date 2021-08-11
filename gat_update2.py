@@ -264,7 +264,7 @@ class QueryUpdate(Settings):
             df = df[['日期', '团队', '币种', '订单编号', '电话号码', '运单编号', '出货时间', '物流状态', '物流状态代码','状态时间', '上线时间',
                      '系统订单状态', '系统物流状态', '最终状态', '是否改派', '物流方式', '物流名称', '签收表物流状态', '付款方式','产品id', '产品名称',
                      '父级分类', '二级分类', '三级分类', '下单时间', '审核时间', '仓储扫描时间', '完结状态时间']]
-            df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} {} 更新-签收表.xlsx'.format(today, match[team]),
+            df.to_excel('G:\\输出文件\\{} {} 更新-签收表.xlsx'.format(today, match[team]),
                         sheet_name=match[team], index=False)
             print('----已写入excel')
         print('正在写入' + match[team] + ' 全部签收表中…………')
@@ -310,7 +310,7 @@ class QueryUpdate(Settings):
             sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace')
-            df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]),
+            df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]),
                         sheet_name=match[tem2], index=False)
             print(tem2 + '----已写入excel')
             print('正在打印' + match[tem2] + ' 物流时效…………')
@@ -1569,7 +1569,7 @@ class QueryUpdate(Settings):
         today = datetime.date.today().strftime('%Y.%m.%d')
         sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品整月香港', '产品分旬台湾', '产品分旬香港']
         print('正在将物流品类写入excel…………')
-        file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} {} 物流品类-签收率.xlsx'.format(today, match[team])
+        file_path = 'G:\\输出文件\\{} {} 物流品类-签收率.xlsx'.format(today, match[team])
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
@@ -1599,7 +1599,7 @@ class QueryUpdate(Settings):
         print('----已写入excel ')
 
         print('正在将品类分旬写入excel…………')
-        file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} {} 品类分旬-签收率.xlsx'.format(today, match[team])
+        file_path = 'G:\\输出文件\\{} {} 品类分旬-签收率.xlsx'.format(today, match[team])
         sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品整月香港', '产品分旬台湾', '产品分旬香港']
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -1628,7 +1628,7 @@ class QueryUpdate(Settings):
         print('----已写入excel ')
 
         print('正在将产品写入excel…………')
-        file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} {} 产品明细-签收率.xlsx'.format(today, match[team])
+        file_path = 'G:\\输出文件\\{} {} 产品明细-签收率.xlsx'.format(today, match[team])
         sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品分旬台湾', '产品整月香港', '产品分旬香港']
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -2016,7 +2016,7 @@ class QueryUpdate(Settings):
 
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
-        file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}-签收率.xlsx'.format(today, match[team])
+        file_path = 'G:\\输出文件\\{} {}-签收率.xlsx'.format(today, match[team])
         sheet_name = ['每日各线路', '各月各线路', '各月各线路分旬', '各品类各线路', '各物流各线路', '同产品各团队', '同产品各月']
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -2540,7 +2540,7 @@ class QueryUpdate(Settings):
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
         for wbbook in ['神龙', '火凤凰', '红杉', '金狮']:
-            file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}-签收率.xlsx'.format(today, wbbook)
+            file_path = 'G:\\输出文件\\{} {}-签收率.xlsx'.format(today, wbbook)
             sheet_name = ['每日', '总表', '总表上月', '物流', '物流上月', '品类', '品类上月', '产品', '产品明细台湾', '产品明细香港']
             df0 = pd.DataFrame([])  # 创建空的dataframe数据框
             df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -2987,7 +2987,7 @@ class QueryUpdate(Settings):
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
         for wbbook in ['神龙', '火凤凰', '红杉', '金狮']:
-            file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}-签收率.xlsx'.format(today, wbbook)
+            file_path = 'G:\\输出文件\\{} {}-签收率.xlsx'.format(today, wbbook)
             sheet_name = ['每日', '总表', '总表上月', '物流', '物流上月', '品类', '品类上月', '产品', '产品明细台湾', '产品明细香港']
             df0 = pd.DataFrame([])  # 创建空的dataframe数据框
             df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -3028,8 +3028,8 @@ if __name__ == '__main__':
     last_time = '2021-07-20'
     m.readFormHost(team, write, last_time)       #  更新签收表---港澳台（一）
     m.gat_new(team)         #  获取签收率报表
-    m.EportOrderBook(team)   #  导出总的签收表
-    m.qsb_new('gat')         #  获取每日报表
+    # m.EportOrderBook(team)   #  导出总的签收表
+    # m.qsb_new('gat')         #  获取每日报表
 
 
     # m.EportOrder(team)       #  导出需要更新的签收表

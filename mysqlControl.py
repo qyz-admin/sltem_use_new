@@ -993,16 +993,16 @@ class MysqlControl(Settings):
                 sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
                 df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace')
-                df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]),
+                df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]),
                             sheet_name=match[tem2], index=False)
                 print(tem2 + '----已写入excel')
                 print('正在打印' + match[tem2] + ' 物流时效…………')
                 # self.data_wl(tem2)
         else:
-            df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}签收表.xlsx'.format(today, match[team]),
+            df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[team]),
                         sheet_name=match[team], index=False)
             print('----已写入excel')
-            filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}签收表.xlsx'.format(today, match[team])]
+            filePath = ['G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[team])]
         if team in ('slsc'):
             self.e.send('{} {}签收表.xlsx'.format(today, match[team]), filePath,
                         emailAdd[team])
@@ -1053,10 +1053,10 @@ class MysqlControl(Settings):
                     ORDER BY a.`下单时间`;'''.format(team, 'gat', month_begin, month_last, month_yesterday)
             print('正在获取---' + match[team] + ' ---商城IG和UP订单数据内容…………')
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_excel('D:\\Users\\Administrator\\Desktop\\输出文件\\{} 商城-{}签收表.xlsx'.format(today, match[team]),
+            df.to_excel('G:\\输出文件\\{} 商城-{}签收表.xlsx'.format(today, match[team]),
                         sheet_name=match[team], index=False)
             print('----已写入excel')
-            filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 商城-{}签收表.xlsx'.format(today, match[team])]
+            filePath = ['G:\\输出文件\\{} 商城-{}签收表.xlsx'.format(today, match[team])]
             self.e.send('{} 商城-{}签收表.xlsx'.format(today, match[team]), filePath,
                         emailAdd2[team])
 
@@ -1353,19 +1353,19 @@ class MysqlControl(Settings):
             print('正在写入excel…………')
             today = datetime.date.today().strftime('%Y.%m.%d')
             if team in ('slgat_hfh', 'slxmt_hfh'):
-                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 火凤凰-{}物流时效.xlsx'.format(today, tem1)
+                file_path = 'G:\\输出文件\\{} 火凤凰-{}物流时效.xlsx'.format(today, tem1)
             elif team in ('slgat_hs', 'slrb_hs'):
-                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 红杉-{}物流时效.xlsx'.format(today, tem1)
+                file_path = 'G:\\输出文件\\{} 红杉-{}物流时效.xlsx'.format(today, tem1)
             elif team == 'slxmt_t':
-                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙T-{}物流时效.xlsx'.format(today, tem1)
+                file_path = 'G:\\输出文件\\{} 神龙T-{}物流时效.xlsx'.format(today, tem1)
             elif team in ('slgat_js', 'slrb_js'):
-                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 金狮-{}物流时效.xlsx'.format(today, tem1)
+                file_path = 'G:\\输出文件\\{} 金狮-{}物流时效.xlsx'.format(today, tem1)
             elif team in ('slgat_jp'):
-                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 金鹏-{}物流时效.xlsx'.format(today, tem1)
+                file_path = 'G:\\输出文件\\{} 金鹏-{}物流时效.xlsx'.format(today, tem1)
             elif team == 'slrb_jl':
-                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 精灵-{}物流时效.xlsx'.format(today, tem1)
+                file_path = 'G:\\输出文件\\{} 精灵-{}物流时效.xlsx'.format(today, tem1)
             else:
-                file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙-{}物流时效.xlsx'.format(today, tem1)
+                file_path = 'G:\\输出文件\\{} 神龙-{}物流时效.xlsx'.format(today, tem1)
             sheet_name = ['下单出库时', '出库完成时', '下单完成时', '改派下单完成时', '下单出库(分旬)', '出库完成(分旬)', '下单完成(分旬)', '改派下单完成(分旬)']
             df0 = pd.DataFrame([])  # 创建空的dataframe数据框
             df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -1897,7 +1897,7 @@ class MysqlControl(Settings):
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
         for wbbook in ['神龙', '火凤凰', '红杉', '金狮']:
-            file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}-签收率.xlsx'.format(today, wbbook)
+            file_path = 'G:\\输出文件\\{} {}-签收率.xlsx'.format(today, wbbook)
             sheet_name = ['每日', '总表', '总表上月', '物流', '物流上月', '品类', '品类上月', '产品', '产品明细台湾', '产品明细香港']
             df0 = pd.DataFrame([])  # 创建空的dataframe数据框
             df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -2267,7 +2267,7 @@ class MysqlControl(Settings):
 
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
-        file_path = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}-签收率.xlsx'.format(today, match[team])
+        file_path = 'G:\\输出文件\\{} {}-签收率.xlsx'.format(today, match[team])
         sheet_name = ['每日各线路', '各月各线路', '各月各线路分旬', '各品类各线路', '各物流各线路', '同产品各团队', '同产品各月']
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
