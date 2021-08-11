@@ -5480,14 +5480,14 @@ if __name__ == '__main__':
 
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    startday = '2021.07.10'
+    startday = '2021.07.11'
     for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '神龙台湾', '火凤凰台湾', '火凤凰香港']:
     # for team in ['新神龙-港台', '新火凤凰-港台']:
     # for team in ['神龙-港台']:
     # for team in ['火凤凰-港台']:
         m.readForm(team, startday, '导入')
         # m.readForm(team, startday, '单独导入')
-    startday = '2021.08.10'
+    startday = '2021.08.11'
     for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '火凤凰台湾', '火凤凰台湾', '火凤凰香港']:
     # for team in ['神龙-港台']:
     # for team in ['火凤凰-港台']:
@@ -5528,10 +5528,10 @@ if __name__ == '__main__':
     team = '品牌'
     m.order_Monitoring(team)  # 各月缓存
 
-    startday = '2021.07.10'
+    startday = '2021.07.11'
     m.readForm(team, startday, '导入')
 
-    startday = '2021.08.10'
+    startday = '2021.08.11'
     m.readForm(team, startday, '导入')
 
     for team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:

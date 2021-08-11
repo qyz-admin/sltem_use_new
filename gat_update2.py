@@ -3028,8 +3028,8 @@ if __name__ == '__main__':
     last_time = '2021-07-20'
     m.readFormHost(team, write, last_time)       #  更新签收表---港澳台（一）
     m.gat_new(team)         #  获取签收率报表
-    # m.EportOrderBook(team)   #  导出总的签收表
-    # m.qsb_new('gat')         #  获取每日报表
+    m.EportOrderBook(team)   #  导出总的签收表
+    m.qsb_new('gat')         #  获取每日报表
 
 
     # m.EportOrder(team)       #  导出需要更新的签收表

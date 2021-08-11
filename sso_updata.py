@@ -71,7 +71,7 @@ class QueryTwo(Settings):
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
-                'araToken': '0#19171626965820522806235080231627186242421867G0E5F84086457BA90D5DFC95A2522D7EFFA6F79',
+                'araToken': '0#19171628645731266586976965831628645747396525G1E2B0816DEBF96BC4199761B6A1F3C0FCD91FB',
                 'araScene': 'login',
                 'captchaImgCode': '',
                 'captchaSessionId': '',

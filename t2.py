@@ -9,7 +9,7 @@ from gat_update2 import QueryUpdate
 import datetime
 from dateutil.relativedelta import relativedelta
 start: datetime = datetime.datetime.now()
-team = 'gat'
+team = 'slsc'
 match1 = {'gat': '港台',
           'slsc': '品牌'}
 match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
@@ -101,7 +101,7 @@ if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs'):
     m.connectOrder(team, month_last, month_yesterday, month_begin)  # 最近两个月的订单信息导出
     print('输出耗时：', datetime.datetime.now() - start)
 
-elif team in ('gat'):
+elif team in ('ga6t'):
     sso = QueryTwo('+86-18538110674', 'qyz04163510')
     print(datetime.datetime.now())
     print('++++++正在获取 ' + match1[team] + ' 信息++++++')
