@@ -9,7 +9,7 @@ from gat_update2 import QueryUpdate
 import datetime
 from dateutil.relativedelta import relativedelta
 start: datetime = datetime.datetime.now()
-team = 'slsc'
+team = 'gat'
 match1 = {'gat': '港台',
           'slsc': '品牌'}
 match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
@@ -90,36 +90,36 @@ for dir in dirs:
 print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
-m.creatMyOrderSl(team)  # 最近五天的全部订单信息
+# m.creatMyOrderSl(team)  # 最近五天的全部订单信息
 
-print('------------更新部分：---------------------')
-if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs'):
-    m.creatMyOrderSlTWO(team, begin, end)   # 最近两个月的更新订单信息
-    print('处理耗时：', datetime.datetime.now() - start)
-
-    print('------------导出部分：---------------------')
-    m.connectOrder(team, month_last, month_yesterday, month_begin)  # 最近两个月的订单信息导出
-    print('输出耗时：', datetime.datetime.now() - start)
-
-elif team in ('gat'):
-    sso = QueryTwo('+86-18538110674', 'qyz04163510')
-    print(datetime.datetime.now())
-    print('++++++正在获取 ' + match1[team] + ' 信息++++++')
-    tem = '{0}_order_list'.format(team)     # 获取单号表
-    tem2 = '{0}_order_list'.format(team)    # 更新单号表
-    for i in range((end - begin).days):  # 按天循环获取订单状态
-        day = begin + datetime.timedelta(days=i)
-        yesterday = str(day) + ' 23:59:59'
-        last_month = str(day)
-        print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
-        searchType = '订单号'      # 运单号，订单号   查询切换
-        sso.orderInfo(searchType, tem, tem2, last_month)
-    print('更新耗时：', datetime.datetime.now() - start)
-
-    print('------------导出部分：---------------------')
-    # m.connectOrder(team, month_last, month_yesterday, month_begin)  # 最近两个月的订单信息导出
-    qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
-    print('输出耗时：', datetime.datetime.now() - start)
+# print('------------更新部分：---------------------')
+# if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs'):
+#     m.creatMyOrderSlTWO(team, begin, end)   # 最近两个月的更新订单信息
+#     print('处理耗时：', datetime.datetime.now() - start)
+#
+#     print('------------导出部分：---------------------')
+#     m.connectOrder(team, month_last, month_yesterday, month_begin)  # 最近两个月的订单信息导出
+#     print('输出耗时：', datetime.datetime.now() - start)
+#
+# elif team in ('gat'):
+#     sso = QueryTwo('+86-18538110674', 'qyz04163510')
+#     print(datetime.datetime.now())
+#     print('++++++正在获取 ' + match1[team] + ' 信息++++++')
+#     tem = '{0}_order_list'.format(team)     # 获取单号表
+#     tem2 = '{0}_order_list'.format(team)    # 更新单号表
+#     for i in range((end - begin).days):  # 按天循环获取订单状态
+#         day = begin + datetime.timedelta(days=i)
+#         yesterday = str(day) + ' 23:59:59'
+#         last_month = str(day)
+#         print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
+#         searchType = '订单号'      # 运单号，订单号   查询切换
+#         sso.orderInfo(searchType, tem, tem2, last_month)
+#     print('更新耗时：', datetime.datetime.now() - start)
+#
+#     print('------------导出部分：---------------------')
+#     # m.connectOrder(team, month_last, month_yesterday, month_begin)  # 最近两个月的订单信息导出
+#     qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
+#     print('输出耗时：', datetime.datetime.now() - start)
 
 
 

@@ -126,8 +126,7 @@ class QueryUpdate(Settings):
         		                    a.`产品id`= IF(b.`产品id` = '', NULL, b.`产品id`),
         		                    a.`产品名称`= IF(b.`产品名称` = '', NULL, b.`产品名称`),
         		                    a.`父级分类`= IF(b.`父级分类` = '', NULL, b.`父级分类`),
-        		                    a.`二级分类`= IF(b.`二级分类` = '', NULL, b.`二级分类`),
-        		                    a.`三级分类`= IF(b.`三级分类` = '', NULL, b.`三级分类`)
+        		                    a.`二级分类`= IF(b.`二级分类` = '', NULL, b.`二级分类`)
         		                where a.`订单编号`= b.`订单编号`;'''.format(team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
             print('正在更新总表中......')
@@ -143,8 +142,7 @@ class QueryUpdate(Settings):
                     		                    a.`产品id`= IF(b.`产品id` = '', NULL, b.`产品id`),
                     		                    a.`产品名称`= IF(b.`产品名称` = '', NULL, b.`产品名称`),
                     		                    a.`父级分类`= IF(b.`父级分类` = '', NULL, b.`父级分类`),
-                    		                    a.`二级分类`= IF(b.`二级分类` = '', NULL, b.`二级分类`),
-                    		                    a.`三级分类`= IF(b.`三级分类` = '', NULL, b.`三级分类`)
+                    		                    a.`二级分类`= IF(b.`二级分类` = '', NULL, b.`二级分类`)
                     		                where a.`订单编号`= b.`订单编号`;'''.format(team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:
@@ -261,9 +259,9 @@ class QueryUpdate(Settings):
             print('正在写入---' + match[team] + ' ---临时缓存…………')  # 备用临时缓存表
             df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace')
             print('正在写入excel…………')
-            df = df[['日期', '团队', '币种', '订单编号', '电话号码', '运单编号', '出货时间', '物流状态', '物流状态代码','状态时间', '上线时间',
-                     '系统订单状态', '系统物流状态', '最终状态', '是否改派', '物流方式', '物流名称', '签收表物流状态', '付款方式','产品id', '产品名称',
-                     '父级分类', '二级分类', '三级分类', '下单时间', '审核时间', '仓储扫描时间', '完结状态时间']]
+            df = df[['日期', '团队', '币种', '订单编号', '电话号码', '运单编号', '出货时间', '物流状态', '物流状态代码', '状态时间', '上线时间',
+                     '系统订单状态', '系统物流状态', '最终状态', '是否改派', '物流方式', '物流名称', '签收表物流状态', '付款方式', '产品id', '产品名称',
+                     '父级分类', '二级分类', '下单时间', '审核时间', '仓储扫描时间', '完结状态时间']]
             df.to_excel('G:\\输出文件\\{} {} 更新-签收表.xlsx'.format(today, match[team]),
                         sheet_name=match[team], index=False)
             print('----已写入excel')
@@ -726,7 +724,7 @@ class QueryUpdate(Settings):
         print('正在获取---产品整月 台湾…………')
         sql14 = '''SELECT *
                 FROM(SELECT IFNULL(s1.家族, '合计') 家族,IFNULL(s1.地区, '合计') 地区,IFNULL(s1.月份, '合计') 月份,
-                            IFNULL(s1.产品id, '合计') 产品id,IFNULL(s1.产品名称, '合计') 产品名称,IFNULL(s1.父级分类, '合计') 父级分类,
+                            IFNULL(s1.产品id, '合计') 产品id,IFNULL(s1.产品名称, '合计') 产品名称,IFNULL(s1.父级分类, '合计') 父级分类,IFNULL(s1.二级分类, '合计') 二级分类,
                             SUM(s1.已签收) as 已签收,
 						    SUM(s1.拒收) as 拒收,
 						    SUM(s1.已退货) as 已退货,
@@ -903,6 +901,7 @@ class QueryUpdate(Settings):
 								IFNULL(cx.产品id, '合计') 产品id,
 								IFNULL(cx.产品名称, '合计') 产品名称,
 								IFNULL(cx.父级分类, '合计') 父级分类,
+								IFNULL(cx.二级分类, '合计') 二级分类,
 								COUNT(cx.`订单编号`) as 总订单,
 								SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
 								SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
@@ -1008,7 +1007,7 @@ class QueryUpdate(Settings):
         print('正在获取---产品分旬 台湾…………')
         sql15 = '''SELECT *
                     FROM(SELECT IFNULL(s1.家族, '合计') 家族,IFNULL(s1.地区, '合计') 地区,IFNULL(s1.月份, '合计') 月份,IFNULL(s1.旬, '合计') 旬,
-						IFNULL(s1.产品id, '合计') 产品id,IFNULL(s1.产品名称, '合计') 产品名称,IFNULL(s1.父级分类, '合计') 父级分类,
+						IFNULL(s1.产品id, '合计') 产品id,IFNULL(s1.产品名称, '合计') 产品名称,IFNULL(s1.父级分类, '合计') 父级分类,IFNULL(s1.二级分类, '合计') 二级分类,
 						SUM(s1.已签收) as 已签收,
 						SUM(s1.拒收) as 拒收,
 						SUM(s1.已退货) as 已退货,
@@ -1186,6 +1185,7 @@ class QueryUpdate(Settings):
 								IFNULL(cx.产品id, '合计') 产品id,
 								IFNULL(cx.产品名称, '合计') 产品名称,
 								IFNULL(cx.父级分类, '合计') 父级分类,
+								IFNULL(cx.二级分类, '合计') 二级分类,
 								COUNT(cx.`订单编号`) as 总订单,
 								SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
 								SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
@@ -1298,6 +1298,7 @@ class QueryUpdate(Settings):
                         IFNULL(s1.产品id, '合计') 产品id,
                         IFNULL(s1.产品名称, '合计') 产品名称,
                         IFNULL(s1.父级分类, '合计') 父级分类,
+                        IFNULL(s1.二级分类, '合计') 二级分类,
 						SUM(s1.已签收) as 已签收,
 						SUM(s1.拒收) as 拒收,
 						SUM(s1.已退货) as 已退货,
@@ -1374,6 +1375,7 @@ class QueryUpdate(Settings):
 								IFNULL(cx.产品id, '合计') 产品id,
 								IFNULL(cx.产品名称, '合计') 产品名称,
 								IFNULL(cx.父级分类, '合计') 父级分类,
+								IFNULL(cx.二级分类, '合计') 二级分类,
 								COUNT(cx.`订单编号`) as 总订单,
 								SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
 								SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
@@ -1436,6 +1438,7 @@ class QueryUpdate(Settings):
 						IFNULL(s1.产品id, '合计') 产品id,
 						IFNULL(s1.产品名称, '合计') 产品名称,
 						IFNULL(s1.父级分类, '合计') 父级分类,
+						IFNULL(s1.二级分类, '合计') 二级分类,
 					SUM(s1.已签收) as 已签收,
 						SUM(s1.拒收) as 拒收,
 						SUM(s1.已退货) as 已退货,
@@ -1513,6 +1516,7 @@ class QueryUpdate(Settings):
 								IFNULL(cx.产品id, '合计') 产品id,
 								IFNULL(cx.产品名称, '合计') 产品名称,
 								IFNULL(cx.父级分类, '合计') 父级分类,
+								IFNULL(cx.二级分类, '合计') 二级分类,
 								COUNT(cx.`订单编号`) as 总订单,
 								SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
 								SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
@@ -1771,7 +1775,7 @@ class QueryUpdate(Settings):
             			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
             			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
                                         concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
+            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
             			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
             			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
                                 FROM (SELECT *,
@@ -1808,7 +1812,7 @@ class QueryUpdate(Settings):
             			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
             			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
                                         concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
+            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
             			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
             			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
                                 FROM (SELECT *,
@@ -1845,7 +1849,7 @@ class QueryUpdate(Settings):
                                         concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
                                         concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
                                         concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
+                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
                                         concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
                                         concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
                                 FROM (SELECT *,
@@ -1886,7 +1890,7 @@ class QueryUpdate(Settings):
                                     concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
                                     concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
                                     concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
+                                    concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
                                     concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
                             FROM (SELECT *, IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",IF(cc.团队 LIKE "%金鹏%","金鹏",cc.团队))))) as 家族
                                     FROM gat_zqsb cc
@@ -1929,35 +1933,35 @@ class QueryUpdate(Settings):
                                 SUM(IF( cx.家族 LIKE '神龙%' AND 最终状态 = "已签收",1,0)) as 神龙签收,
                                 SUM(IF( cx.家族 LIKE '神龙%' AND 最终状态 = "拒收",1,0)) as 神龙拒收,
                                 concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.家族 LIKE '神龙%',1,0)) * 100,2),'%') as 神龙改派占比,
-                                concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '神龙%',1,0)) * 100,2),'%') as 神龙签收率,
+                                concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '神龙%',1,0)) * 100,2),'%') as 神龙总计签收,
                                 concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '神龙%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 神龙完成签收,
                                 concat(ROUND(SUM(IF(cx.家族 LIKE '神龙%' AND  最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / SUM(IF(cx.家族 LIKE '神龙%',1,0)) * 100,2),'%') as 神龙完成占比,
                             SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) as 火凤凰单量,
                                 SUM(IF( cx.家族 LIKE '火凤凰%' AND 最终状态 = "已签收",1,0)) as 火凤凰签收,
                                 SUM(IF( cx.家族 LIKE '火凤凰%' AND 最终状态 = "拒收",1,0)) as 火凤凰拒收,
                                 concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰改派占比,
-                                concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰签收率,
+                                concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰总计签收,
                                  concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 火凤凰完成签收,
                                 concat(ROUND(SUM(IF(cx.家族 LIKE '火凤凰%' AND  最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / SUM(IF(cx.家族 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰完成占比,
                             SUM(IF(cx.家族 LIKE '金狮%',1,0)) as 金狮单量,
                                 SUM(IF( cx.家族 LIKE '金狮%' AND 最终状态 = "已签收",1,0)) as 金狮签收,
                                 SUM(IF( cx.家族 LIKE '金狮%' AND 最终状态 = "拒收",1,0)) as 金狮拒收,
                                 concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.家族 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮改派占比,
-                                concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮签收率,
+                                concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮总计签收,
                                 concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '金狮%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 金狮完成签收,
                                 concat(ROUND(SUM(IF(cx.家族 LIKE '金狮%' AND  最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / SUM(IF(cx.家族 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮完成占比,
                             SUM(IF(cx.家族 LIKE '金鹏%',1,0)) as 金鹏单量,
                                 SUM(IF( cx.家族 LIKE '金鹏%' AND 最终状态 = "已签收",1,0)) as 金鹏签收,
                                 SUM(IF( cx.家族 LIKE '金鹏%' AND 最终状态 = "拒收",1,0)) as 金鹏拒收,
                                 concat(ROUND(SUM(IF(cx.家族 LIKE '金鹏%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.家族 LIKE '金鹏%',1,0)) * 100,2),'%') as 金鹏改派占比,
-                                concat(ROUND(SUM(IF(cx.家族 LIKE '金鹏%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '金鹏%',1,0)) * 100,2),'%') as 金鹏签收率,
+                                concat(ROUND(SUM(IF(cx.家族 LIKE '金鹏%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '金鹏%',1,0)) * 100,2),'%') as 金鹏总计签收,
                                 concat(ROUND(SUM(IF(cx.家族 LIKE '金鹏%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '金鹏%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 金鹏完成签收,
                                 concat(ROUND(SUM(IF(cx.家族 LIKE '金鹏%' AND  最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / SUM(IF(cx.家族 LIKE '金鹏%',1,0)) * 100,2),'%') as 金鹏完成占比,
                             SUM(IF(cx.家族 LIKE '红杉%',1,0)) as 红杉单量,
                                 SUM(IF( cx.家族 LIKE '红杉%' AND 最终状态 = "已签收",1,0)) as 红杉签收,
                                 SUM(IF( cx.家族 LIKE '红杉%' AND 最终状态 = "拒收",1,0)) as 红杉拒收,
                                 concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.家族 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉改派占比,
-                                concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉签收率,
+                                concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉总计签收,
                                 concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.家族 LIKE '红杉%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 红杉完成签收,
                                 concat(ROUND(SUM(IF(cx.家族 LIKE '红杉%' AND  最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) / SUM(IF(cx.家族 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉完成占比
                         FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",IF(cc.团队 LIKE "%金鹏%","金鹏",cc.团队))))) as 家族 
@@ -3028,8 +3032,8 @@ if __name__ == '__main__':
     last_time = '2021-07-20'
     m.readFormHost(team, write, last_time)       #  更新签收表---港澳台（一）
     m.gat_new(team)         #  获取签收率报表
+    m.qsb_new(team)         #  获取每日报表
     m.EportOrderBook(team)   #  导出总的签收表
-    m.qsb_new('gat')         #  获取每日报表
 
 
     # m.EportOrder(team)       #  导出需要更新的签收表

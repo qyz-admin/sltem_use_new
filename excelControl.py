@@ -316,7 +316,7 @@ class ExcelControl():
             if '原运单号' in columns:
                 df['原运单号'] = df['原运单号'].astype(str)
                 df['原运单号'] = df['原运单号'].replace(to_replace=r'\.0$', regex=True, value=r'')
-            if team == 'slgat':
+            if team == 'slgat' or team == 'gat':
                 df['状态时间'] = df['状态时间'].replace(to_replace=0, value=datetime.datetime(1990, 1, 1, 0, 0))
                 df['状态时间'] = df['状态时间'].fillna(value=datetime.datetime(1990, 1, 1, 0, 0))
                 df['订单编号'] = df['订单编号'].astype(str)
