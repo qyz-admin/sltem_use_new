@@ -83,52 +83,48 @@ class QueryUpdate(Settings):
                     db = None
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                     print(db.columns)
-                    if upload == '查询':
+                    if upload == '查询-订单号':
                         columns_value = list(db.columns)  # 获取数据的标题名，转为列表
                         for column_val in columns_value:
                             if '订单编号' != column_val:
                                 db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
+                    elif upload == '查询-运单号':
+                        columns_value = list(db.columns)
+                        for column_val in columns_value:
+                            if '运单编号' != column_val:
+                                db.drop(labels=[column_val], axis=1, inplace=True)
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
-                    print('++++正在导入查询：' + sht.name + ' 共：' + str(len(db)) + '行',
-                          'sheet共：' + str(sht.used_range.last_cell.row) + '行')
-                    # 将返回的dateFrame导入数据库的临时表
-                    if upload == '上传':
-                        self.uploadTable(db)
-                    elif upload == '查询':
-                        self.writeCacheHost(db)
+                    print('++++正在导入查询：' + sht.name + '表； 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                    self.writeCacheHost(db, upload)
                     print('++++正在获取：' + sht.name + '--->>>到查询缓存表')
                 else:
                     print('----------数据为空导入失败：' + sht.name)
             wb.close()
         app.quit()
 
-
-    # 上传表格
-    def uploadTable(self, dataFrame):
-        dataFrame = dataFrame[['团队', '订单编号', '运单编号', '最终状态', '是否改派', '物流方式', '产品id', '产品名称','父级分类', '二级分类', '三级分类',
-                               '下单时间', '完结状态时间', '出货时间', '电话号码','金额', '姓名', '地址', '核实原因', '具体原因']]
-        dataFrame.to_sql('d1_jushou', con=self.engine1, index=False, if_exists='replace')
-
     # 写入更新缓存表
-    def writeCacheHost(self, dataFrame):
-        dataFrame.to_sql('sheet1_iphone', con=self.engine1, index=False, if_exists='replace')
-        print('正在更新数据内容…………')
-        # searchType = '订单号'  # 运单号，订单号   查询切换
-        # team = 'gat_order_list'  # 获取单号表
-        # team2 = 'gat_order_list'  # 更新单号表
-        # self.sso.dayQuery(searchType, team, team2)
-
-        print('正在获取查询数据内容…………')
-        sql = '''SELECT gat_zqsb.订单编号,gat_zqsb.系统订单状态,gat_zqsb.`系统物流状态`,gat_zqsb.`物流状态`,gat_zqsb.`最终状态`
-                FROM sheet1_iphone
-	            LEFT JOIN gat_zqsb ON sheet1_iphone.`订单编号` = gat_zqsb.`订单编号`;'''
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
+    def writeCacheHost(self, dataFrame, upload):
+        month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
+        df = None
+        if upload == '查询-订单号':
+            dataFrame.to_sql('sheet1_iphone', con=self.engine1, index=False, if_exists='replace')
+            sql = '''SELECT gat_zqsb.订单编号,gat_zqsb.系统订单状态,gat_zqsb.`系统物流状态`,gat_zqsb.`物流状态`,gat_zqsb.`最终状态`
+                            FROM sheet1_iphone
+            	            LEFT JOIN gat_zqsb ON sheet1_iphone.`订单编号` = gat_zqsb.`订单编号`;'''
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+        elif upload == '查询-运单号':
+            dataFrame.to_sql('sheet1_iphone_cy', con=self.engine1, index=False, if_exists='replace')
+            print('正在获取查询数据内容…………')
+            sql = '''SELECT b.订单编号, b.运单编号, IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态
+                    FROM sheet1_iphone_cy a
+                    LEFT JOIN (SELECT * FROM gat WHERE id IN (SELECT MAX(id) FROM gat WHERE gat.添加时间 > '{0} 00:00:00' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
+                    LEFT JOIN gat_logisitis_match c ON b.物流状态 = c.签收表物流状态;'''.format(month_begin)
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入excel…………')
         rq = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-        df.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq),
-                    sheet_name='查询', index=False)
+        df.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq),sheet_name='查询', index=False)
         print('----已写入excel')
 
 
@@ -342,13 +338,13 @@ if __name__ == '__main__':
               'slgat_hs': '红杉-港台',
               'slgat_js': '金狮-港台',
               'gat': '港台'}
+    team = 'gat'
     # -----------------------------------------------手动查询状态运行（一）-----------------------------------------
-    # # 查询状态  上传表格
-    # upload = '上传'
-    upload = '查询'
+    # upload = '查询-订单号'
+    upload = '查询-运单号'
     m.readFormHost(upload)
 
-    team = 'gat'
+
     # m.trans_way_cost(team)  # 同产品下的规格运费查询
     print('输出耗时：', datetime.datetime.now() - start)
 

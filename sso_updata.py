@@ -71,12 +71,12 @@ class QueryTwo(Settings):
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
-                'araToken': '0#19171628645731266586976965831628645747396525G1E2B0816DEBF96BC4199761B6A1F3C0FCD91FB',
+                'araToken': '0#19171628645731266586976965831629428312879386G1E2B0816DEBF96BC4199761B6A1F3C0FCD91FB',
                 'araScene': 'login',
                 'captchaImgCode': '',
                 'captchaSessionId': '',
                 'type': 'h5'}
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36',
                     'Origin': 'https://login.dingtalk.com',
                     'Referer': 'https://login.dingtalk.com/'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)

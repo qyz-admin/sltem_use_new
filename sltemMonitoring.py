@@ -5480,29 +5480,29 @@ if __name__ == '__main__':
 
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    startday = '2021.07.19'
-    for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '神龙台湾', '火凤凰台湾', '火凤凰香港']:
+    startday = '2021.07.20'
+    # for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '神龙台湾', '火凤凰台湾', '火凤凰香港']:
     # for team in ['新神龙-港台', '新火凤凰-港台']:
-    # for team in ['神龙-港台']:
+    for team in ['神龙-港台']:
     # for team in ['火凤凰-港台']:
         m.readForm(team, startday, '导入')
         # m.readForm(team, startday, '单独导入')
-    startday = '2021.08.19'
-    for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '火凤凰台湾', '火凤凰台湾', '火凤凰香港']:
-    # for team in ['神龙-港台']:
+    startday = '2021.08.20'
+    # for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '火凤凰台湾', '火凤凰台湾', '火凤凰香港']:
+    for team in ['神龙-港台']:
     # for team in ['火凤凰-港台']:
         m.readForm(team, startday, '导入')
     #     m.readForm(team, startday, '单独导入')
 
-    # # 获取监控表以上传的时间---监控运行（二）
-    # for team in ['火凤凰台湾', '火凤凰香港', '神龙台湾', '神龙香港']:
-    #     m.check_time(team)
+    # 获取监控表以上传的时间---监控运行（二）
+    for team in ['火凤凰台湾', '火凤凰香港', '神龙台湾', '神龙香港']:
+        m.check_time(team)
 
     # # 测试监控运行（三）
-    for team in ['神龙台湾', '神龙香港', '火凤凰台湾', '火凤凰香港']:
-    # for team in ['神龙台湾', '神龙香港']:
+    # for team in ['神龙台湾', '神龙香港', '火凤凰台湾', '火凤凰香港']:
+    for team in ['神龙台湾', '神龙香港']:
     # for team in ['火凤凰台湾', '火凤凰香港']:
-        m.order_Monitoring(team)    # 各月缓存
+    #     m.order_Monitoring(team)    # 各月缓存
     # #     m.data_Monitoring(team)     # 两月数据
     #     # m.costWaybill(team)       # 成本缓存 与 成本两月数据
         m.sl_Monitoring(team)        # 输出数据--     # 每月正常使用的时间（一）
@@ -5525,14 +5525,14 @@ if __name__ == '__main__':
 
 
     # -----------------------------------------------品牌运行（五）-----------------------------------------
-    team = '品牌'
-    m.order_Monitoring(team)  # 各月缓存
-
-    startday = '2021.07.19'
-    m.readForm(team, startday, '导入')
-
-    startday = '2021.08.19'
-    m.readForm(team, startday, '导入')
-
-    for team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
-        m.sl_Monitoring(team)        # 输出数据
+    # team = '品牌'
+    # m.order_Monitoring(team)  # 各月缓存
+    #
+    # startday = '2021.07.20'
+    # m.readForm(team, startday, '导入')
+    #
+    # startday = '2021.08.20'
+    # m.readForm(team, startday, '导入')
+    #
+    # for team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
+    #     m.sl_Monitoring(team)        # 输出数据

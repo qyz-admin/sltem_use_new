@@ -49,13 +49,13 @@ if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat'):
     print(month_begin)
 else:
     # 更新时间
-    begin = datetime.date(2021, 7, 31)
+    begin = datetime.date(2021, 7, 12)
     print(begin)
-    end = datetime.date(2021, 8, 6)
+    end = datetime.date(2021, 8, 20)
     print(end)
     # 导出时间
     month_last = '2021-07-01'
-    month_yesterday = '2021-08-10'
+    month_yesterday = '2021-08-20'
     month_begin = '2021-06-01'
 
 # 库的引用
@@ -90,7 +90,7 @@ for dir in dirs:
 print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
-m.creatMyOrderSl(team)  # 最近五天的全部订单信息
+# m.creatMyOrderSl(team)  # 最近五天的全部订单信息
 
 print('------------更新部分：---------------------')
 if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs'):

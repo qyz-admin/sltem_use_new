@@ -193,8 +193,6 @@ class QueryTwo(Settings):
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
     def wbsheetHost(self, filePath, team, searchType):
-        match2 = {'gat': '港台'}
-        print('---正在获取 ' +filePath + ' 的详情++++++')
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
         app.display_alerts = False
@@ -204,31 +202,38 @@ class QueryTwo(Settings):
                 try:
                     db = None
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
-                    print(db.columns)
-                    columns_value = list(db.columns)  # 获取数据的标题名，转为列表
+                    # print(db.columns)
+                    columns_value = list(db.columns)                             # 获取数据的标题名，转为列表
                     if '订单号' in columns_value:
                         db.rename(columns={'订单号': '订单编号'}, inplace=True)
                     for column_val in columns_value:
                         if '订单编号' != column_val:
                             db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
+                    db.dropna(axis=0, how='any', inplace=True)                  # 空值（缺失值），将空值所在的行/列删除后
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
-                    print('++++正在获取：' + sht.name + ' 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
-                    orderId = list(db['订单编号'])
-                    max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
-                    ord = ', '.join(orderId[0:500])
-                    df = self.orderInfoQuery(ord, searchType)
-                    dlist = []
-                    n = 0
-                    while n < max_count-500:  # 这里用到了一个while循环，穿越过来的
-                        n = n + 500
-                        ord = ','.join(orderId[n:n + 500])
-                        data = self.orderInfoQuery(ord, searchType)
-                        dlist.append(data)
-                    print('正在写入......')
+                    print(db)
                     rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-                    dp = df.append(dlist, ignore_index=True)
+                    print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                    orderId = list(db['订单编号'])
+                    print(orderId)
+                    max_count = len(orderId)                                    # 使用len()获取列表的长度，上节学的
+                    if max_count > 500:
+                        ord = ', '.join(orderId[0:500])
+                        df = self.orderInfoQuery(ord, searchType)
+                        dlist = []
+                        n = 0
+                        while n < max_count-500:                                # 这里用到了一个while循环，穿越过来的
+                            n = n + 500
+                            ord = ','.join(orderId[n:n + 500])
+                            data = self.orderInfoQuery(ord, searchType)
+                            dlist.append(data)
+                        print('正在写入......')
+                        dp = df.append(dlist, ignore_index=True)
+                    else:
+                        ord = ','.join(orderId[0:max_count])
+                        dp = self.orderInfoQuery(ord, searchType)
                     dp.columns = ['订单编号', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '拉黑率', '电话长度',
                                   '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
                                   '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '转采购时间', '发货时间', '上线时间', '完成时间',
