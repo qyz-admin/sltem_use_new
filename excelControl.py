@@ -102,10 +102,10 @@ class ExcelControl():
 （即货交地派时间）''', '上线时间'], ['货交地派时间'], 'Inbound Date'],
                          '原运单号': [False, ['原包裹运单号(可含多个)', '原运单号'], []]},
                 'slsc': {'出货时间': [True, ['提货日期', '录单时间', '提交时间', '出货日期', '安排日期', '出库日期', '创建日期'], []],
-                         '订单编号': [True, ['订单号', '原单号', '订单号码'], []],
-                         '运单编号': [True, ['系统单号', '转单号', '运单编号', 'BJT转单号', '渠道转单号', '新单号', '提单号'], []],
+                         '订单编号': [True, ['订单号', '原单号', '订单号码', '订单编号'], []],
+                         '运单编号': [True, ['系统单号', '转单号', '运单编号', 'BJT转单号', '渠道转单号', '新单号', '提单号', '运单号'], []],
                          '物流状态': [True, ['物流状态', '状态', '订单状态', '运单最新状态'], []],
-                         '状态时间': [True, ['状态时间', '日期',  '签收时间', '轨迹日期', '运单最新状态时间'], []],
+                         '状态时间': [True, ['状态时间', '日期',  '签收时间', '轨迹日期', '运单最新状态时间', '最新状态'], []],
                          '问题明细': [False, ['问题件明细'], []],
                          '航班时间': [False, ['航班起飞时间'], ['航班起飞时间']],
                          '清关时间': [False, ['清关时间', '日本清关时间'], []],
@@ -189,6 +189,8 @@ class ExcelControl():
                 df.insert(0, '订单号', '')
             if '原单号' in columns and '转单号' in columns and '渠道转单号' in columns:
                 df.drop(labels=['转单号'], axis=1, inplace=True)   # 天马的去掉多余的承运单号
+            if '出货时间' in columns and '提货日期' in columns and '渠道' in columns:
+                df.drop(labels=['出货时间'], axis=1, inplace=True)   # 天马的去掉多余的承运单号
         if team == 'slrb':
             if '内单号' in columns and '转单号' in columns and '原单号' in columns:  # 吉客印神龙直发签收表JP使用
                 df.drop(labels=['转单号'], axis=1, inplace=True)
@@ -301,7 +303,6 @@ class ExcelControl():
                 except Exception as e:
                     print('----修改状态时间失败：', str(Exception) + str(e))
             if team == 'slsc':
-                # print(df['订单编号'])
                 df['状态时间'] = df['状态时间'].replace(to_replace=0, value=datetime.datetime(1990, 1, 1, 0, 0))
                 df['状态时间'] = df['状态时间'].replace(to_replace=' ', value=datetime.datetime(1990, 1, 1, 0, 0))
                 df['状态时间'] = df['状态时间'].fillna(value=datetime.datetime(1990, 1, 1, 0, 0))

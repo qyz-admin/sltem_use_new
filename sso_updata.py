@@ -229,7 +229,7 @@ class QueryTwo(Settings):
                     db = None
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                     columns = list(db.columns)  # 获取数据的标题名，转为列表
-                    columns_value = ['商品链接', '规格(中文)', '收货人', '拉黑率', '电话长度', '邮编长度', '配送地址', '地址翻译',
+                    columns_value = ['商品链接', '收货人', '拉黑率', '电话长度', '邮编长度', '配送地址', '地址翻译',
                                      '邮箱', '留言', '审核人', '预选物流公司(新)', '是否api下单', '特价', '异常提示', '删除原因',
                                      '备注', '删除人', 'IP', '超商店铺ID', '超商店铺名称', '超商网点地址', '超商类型',
                                      '市/区', '优化师', '问题原因', '审单类型', '是否克隆', '代下单客服',
@@ -303,7 +303,8 @@ class QueryTwo(Settings):
             				        h.体积 包裹体积,
             				        邮编,
             				        h.转采购时间 添加物流单号时间,
-            				        null 订单删除原因,
+            				        h.`规格(中文)` 规格中文,
+            				        h.省洲 省洲,
             				        h.订单状态 系统订单状态,
             				        IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
             				        h.上线时间 上线时间
@@ -591,7 +592,9 @@ class QueryTwo(Settings):
             		                    a.`审核时间`= b.`审核时间`,
             		                    a.`仓储扫描时间`= b.`仓储扫描时间`,
             		                    a.`上线时间`= b.`上线时间`,
-            		                    a.`完结状态时间`= b.`完结状态时间`
+            		                    a.`完结状态时间`= b.`完结状态时间`,
+            		                    a.`规格中文`= b.`规格中文`,
+            		                    a.`省洲`= b.`省洲`
             		                where a.`订单编号`= b.`订单编号`;'''.format(team)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
             except Exception as e:
@@ -716,7 +719,7 @@ class QueryTwo(Settings):
         # print(data.columns)
         print('正在写入缓存中......')
         try:
-            df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'wayBillNumber', 'saleId', 'saleProduct', 'productId', 'spec', 'quantity',
+            df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId', 'spec', 'quantity',
                        'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime', 'finishTime',
                        'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType', 'weight']]
             print(df)
@@ -743,6 +746,7 @@ class QueryTwo(Settings):
             				    h.deliveryTime 仓储扫描时间,
             				    h.finishTime 完结状态时间,
             				    h.`weight` 包裹重量,
+                                h.`shipInfo.shipState` 省洲,
             				    h.`spec` 规格中文
                             FROM d1_cpy h
                                 LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
@@ -770,6 +774,7 @@ class QueryTwo(Settings):
                                 a.`仓储扫描时间`= IF(b.`仓储扫描时间` = '', NULL, b.`仓储扫描时间`),
                                 a.`完结状态时间`= IF(b.`完结状态时间` = '', NULL, b.`完结状态时间`),
                                 a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`),
+                                a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`),
                                 a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`)
                     where a.`订单编号`=b.`订单编号`;'''.format(team2)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
@@ -790,9 +795,9 @@ if __name__ == '__main__':
     #     query = '导入'         # 导入；，更新--->>数据更新切换
     #     m.readFormHost(team, query)
     # 2、手动更新状态
-    # for team in ['gat']:
-    #     query = '更新'         # 导入；，更新--->>数据更新切换
-    #     m.readFormHost(team, query)
+    for team in ['gat']:
+        query = '更新'         # 导入；，更新--->>数据更新切换
+        m.readFormHost(team, query)
 
 
 

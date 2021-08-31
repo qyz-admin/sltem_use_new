@@ -202,7 +202,7 @@ class QueryTwo(Settings):
                 try:
                     db = None
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
-                    # print(db.columns)
+                    print(db.columns)
                     columns_value = list(db.columns)                             # 获取数据的标题名，转为列表
                     if '订单号' in columns_value:
                         db.rename(columns={'订单号': '订单编号'}, inplace=True)
@@ -213,11 +213,10 @@ class QueryTwo(Settings):
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
-                    print(db)
+                    # print(db)
                     rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
                     print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
                     orderId = list(db['订单编号'])
-                    print(orderId)
                     max_count = len(orderId)                                    # 使用len()获取列表的长度，上节学的
                     if max_count > 500:
                         ord = ', '.join(orderId[0:500])

@@ -124,14 +124,15 @@ class QueryUpdate(Settings):
             df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入excel…………')
         rq = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-        df.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq),sheet_name='查询', index=False)
+        df.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False)
         print('----已写入excel')
 
 
     def trans_way_cost(self, team):
         match = {'gat': '港台', 'slsc': '品牌'}
+        output = datetime.datetime.now().strftime('%m%d')
         month_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        month_yesterday = '2021-08-12'
+        month_yesterday = '2021-08-24'
         print(month_yesterday)
         month_now = (datetime.datetime.now()).strftime('%Y%m')
         month_now = '202108'
@@ -197,7 +198,7 @@ class QueryUpdate(Settings):
                  '产品量', 'MIN(包裹重量)', 'MAX(包裹重量)', '重量差']]
         print('正在写入excel…………')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        df.to_excel('G:\\输出文件\\运费总直发-查询{}.xlsx'.format(rq),
+        df.to_excel('G:\\输出文件\\{} 运费总直发-查询{}.xlsx'.format(output, rq),
                     sheet_name='查询', index=False)
         print('----已写入excel')
 
@@ -261,7 +262,7 @@ class QueryUpdate(Settings):
                  '产品量', 'MIN(包裹重量)', 'MAX(包裹重量)', '重量差']]
         print('正在写入excel…………')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        df.to_excel('G:\\输出文件\\运费台湾直发-查询{}.xlsx'.format(rq),
+        df.to_excel('G:\\输出文件\\{} 运费台湾直发-查询{}.xlsx'.format(output, rq),
                     sheet_name='查询', index=False)
         print('----已写入excel')
 
@@ -325,7 +326,7 @@ class QueryUpdate(Settings):
                  '产品量', 'MIN(包裹重量)', 'MAX(包裹重量)', '重量差']]
         print('正在写入excel…………')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        df.to_excel('G:\\输出文件\\运费-查询{}.xlsx'.format(rq),
+        df.to_excel('G:\\输出文件\\{} 运费-查询{}.xlsx'.format(output, rq),
                     sheet_name='查询', index=False)
         print('----已写入excel')
 
@@ -340,8 +341,8 @@ if __name__ == '__main__':
               'gat': '港台'}
     team = 'gat'
     # -----------------------------------------------手动查询状态运行（一）-----------------------------------------
-    # upload = '查询-订单号'
-    upload = '查询-运单号'
+    upload = '查询-订单号'
+    # upload = '查询-运单号'
     m.readFormHost(upload)
 
 

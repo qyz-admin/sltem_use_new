@@ -278,6 +278,7 @@ class MysqlControl(Settings):
                             a.volume 包裹体积,
                             a.ship_zip 邮编,
                             a.turn_purchase_time 添加物流单号时间,
+                            null 省洲,
                             a.del_reason 订单删除原因,
                             a.ship_state 省洲
                     FROM gk_order a
@@ -337,6 +338,7 @@ class MysqlControl(Settings):
                             a.volume 包裹体积,
                             a.ship_zip 邮编,
                             a.turn_purchase_time 添加物流单号时间,
+                            null 省洲,
                             a.del_reason 订单删除原因,
                             IF(dim_area.name = '精灵家族-品牌',IF(a.coll_id=1000000269,'饰品','内衣'),a.coll_id) 站点ID
                     FROM gk_order a
@@ -395,6 +397,7 @@ class MysqlControl(Settings):
                                         a.volume 包裹体积,
                                         a.ship_zip 邮编,
                                         a.turn_purchase_time 添加物流单号时间,
+                                        null 省洲,
                                         a.del_reason 订单删除原因,
                                         IF(dim_area.name = '精灵家族-品牌',IF(a.coll_id=1000000269,'饰品','内衣'),a.coll_id) 站点ID
                                 FROM gk_order a
@@ -453,6 +456,7 @@ class MysqlControl(Settings):
                             a.volume 包裹体积,
                             a.ship_zip 邮编,
                             a.turn_purchase_time 添加物流单号时间,
+                            null 省洲,
                             a.del_reason 订单删除原因
                     FROM gk_order a
                             left join dim_area ON dim_area.id = a.area_id
@@ -511,7 +515,8 @@ class MysqlControl(Settings):
                             a.volume 包裹体积,
                             a.ship_zip 邮编,
                             a.turn_purchase_time 添加物流单号时间,
-                            null 规格中文
+                            null 规格中文,
+                            a.ship_state 省洲
                     FROM gk_order a
                             left join dim_area ON dim_area.id = a.area_id
                             left join dim_payment ON dim_payment.id = a.payment_id
@@ -606,7 +611,8 @@ class MysqlControl(Settings):
                                 a.finish_status 完结状态,
                                 a.endtime 完结状态时间,
                                 a.logistics_cost 物流花费,
-                                a.weight 包裹重量
+                                a.weight 包裹重量,
+                                null 省洲
                         FROM gk_order a
                                 left join dim_area ON dim_area.id = a.area_id
                                 left join dim_payment on dim_payment.id = a.payment_id
@@ -644,7 +650,8 @@ class MysqlControl(Settings):
                                 a.finish_status 完结状态,
                                 a.endtime 完结状态时间,
                                 a.logistics_cost 物流花费,
-                                a.weight 包裹重量
+                                a.weight 包裹重量,
+                                null 省洲
                         FROM gk_order a
                                 left join dim_area ON dim_area.id = a.area_id
                                 left join dim_payment on dim_payment.id = a.payment_id
@@ -682,7 +689,8 @@ class MysqlControl(Settings):
                                 IF(a.finish_status=0,'未收款',IF(a.finish_status=2,'收款',IF(a.finish_status=4,'退款',a.finish_status))) 完结状态,
                                 a.endtime 完结状态时间,
                                 a.logistics_cost 物流花费,
-                                a.weight 包裹重量
+                                a.weight 包裹重量,
+                                a.ship_state 省洲
                         FROM gk_order a
                                 left join dim_area ON dim_area.id = a.area_id
                                 left join dim_payment on dim_payment.id = a.payment_id
@@ -731,7 +739,8 @@ class MysqlControl(Settings):
 		                    a.`完结状态`=b.`完结状态`,
 		                    a.`物流花费`=b.`物流花费`,
 		                    a.`包裹重量`=b.`包裹重量`,
-		                    a.`完结状态时间`=b.`完结状态时间`
+		                    a.`完结状态时间`=b.`完结状态时间`,
+		                    a.`省洲`=b.`省洲`
 		                where a.`订单编号`=b.`订单编号`;'''.format(team)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
             except Exception as e:
@@ -819,7 +828,7 @@ class MysqlControl(Settings):
                         物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
                         二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,
                         包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-                        b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间,数量
+                        b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间,省洲,数量
                     FROM {0}_order_list a
                         LEFT JOIN (SELECT * FROM {1} WHERE id IN (SELECT MAX(id) FROM {1} WHERE {1}.添加时间 > '{2}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
                         LEFT JOIN {1}_logisitis_match c ON b.物流状态 = c.签收表物流状态
@@ -898,7 +907,7 @@ class MysqlControl(Settings):
                         是否改派,物流方式,物流名称,运输方式,'货到付款' AS 货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
                         二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,null 价格区间,
                         null 包裹重量,null 包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-                        b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态,b.添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, a.添加物流单号时间, 数量, a.站点ID
+                        b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态,b.添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, a.添加物流单号时间,省洲, 数量, a.站点ID
                     FROM {0}_order_list a
                         LEFT JOIN (SELECT * FROM {1} WHERE id IN (SELECT MAX(id) FROM {1} WHERE {1}.添加时间 > '{2}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
                         LEFT JOIN {1}_logisitis_match c ON b.物流状态 = c.签收表物流状态
@@ -918,13 +927,13 @@ class MysqlControl(Settings):
                         IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
                         IF(ISNULL(a.上线时间), IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '',b.上线时间), a.上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
                         IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                        IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
+                        IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), IF(系统物流状态= '发货中', '未上线', 系统物流状态)), '已退货') 最终状态,
                         IF(是否改派='二次改派', '改派', 是否改派) 是否改派,物流方式,
                         IF(物流名称 like '天马物流%','天马顺丰',IF(物流名称 like '天马运通%','天马新竹',IF(物流方式 like '台湾-大黄蜂普货头程-森鸿尾程%','大黄蜂',物流名称))) as 物流名称,运输方式,货物类型,是否低价,
                         IF(a.物流名称 like '%义达%', '在线付款' ,IF(a.付款方式 not like '货到付款', '在线付款' ,'货到付款')) 付款方式,
                         产品id,产品名称,父级分类,二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,包裹重量,包裹体积,邮编,
                         IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-                        b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态,b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间, 数量, 站点ID
+                        b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态,b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间, 省洲, 数量, 站点ID
                     FROM {0}_order_list a
                         LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} WHERE {0}.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
                         LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
@@ -946,12 +955,12 @@ class MysqlControl(Settings):
                         IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
                         IF(ISNULL(a.上线时间), IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '',b.上线时间), a.上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
                         IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                        IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
+                        IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), IF(系统物流状态= '发货中', '未上线', 系统物流状态)), '已退货') 最终状态,
                         IF(是否改派='二次改派', '改派', 是否改派) 是否改派,
                         物流方式,物流名称,null 运输方式,null 货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
                         二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,null 价格区间,
                         null 包裹重量,null 包裹体积,null 邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, null 签收表订单编号, null 签收表运单编号, 
-                        null 原运单号, b.物流状态 签收表物流状态,null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, null 添加物流单号时间,null 数量
+                        null 原运单号, b.物流状态 签收表物流状态,null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, null 添加物流单号时间,null 省洲, null 数量
                     FROM {0}_order_list a
                         LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} WHERE {0}.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
                         LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
@@ -966,7 +975,7 @@ class MysqlControl(Settings):
                         IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
                         IF(ISNULL(a.上线时间), IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '',b.上线时间), a.上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
                         IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                        IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
+                        IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), IF(系统物流状态= '发货中', '未上线', 系统物流状态)), '已退货') 最终状态,
                         IF(是否改派='二次改派', '改派', 是否改派) 是否改派,
                         物流方式,物流名称,运输方式,货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
                         二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,价格区间,

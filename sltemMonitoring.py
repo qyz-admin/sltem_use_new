@@ -141,6 +141,7 @@ class SltemMonitoring(Settings):
                     datetime.datetime.now().strftime('-%d')))
         # month_last = Time_da[6]
         month_last = '2021-04-01'
+
         print(month_last)
         if match[team] == 'slgat_hfh':
             sql = '''SELECT 年月, 旬, 日期, 币种, 订单来源, a.订单编号 订单编号, 
@@ -526,8 +527,8 @@ class SltemMonitoring(Settings):
         Time_day.sort()
         print(Time_day[11])
         print(Time_day[10])
-        # Time_day[11] = '2021-08-02'
-        # Time_day[10] = '2021-07-02'
+        Time_day[11] = '2021-08-31'
+        Time_day[10] = '2021-07-31'
         listT = []  # 查询sql 存放池
         show_name = []  # 打印进度需要
         # 月签收率（天）---查询
@@ -1189,16 +1190,19 @@ class SltemMonitoring(Settings):
             del book['Sheet1']
         writer.save()
         writer.close()
-        print('正在运行宏…………')
-        app = xl.App(visible=False, add_book=False)  # 运行宏调整
-        app.display_alerts = False
-        wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
-        wbsht1 = app.books.open(filePath)
-        wbsht.macro('sl_总监控运行')()
-        wbsht1.save()
-        wbsht1.close()
-        wbsht.close()
-        app.quit()
+        try:
+            print('正在运行宏…………')
+            app = xl.App(visible=False, add_book=False)  # 运行宏调整
+            app.display_alerts = False
+            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            wbsht1 = app.books.open(filePath)
+            wbsht.macro('sl_总监控运行')()
+            wbsht1.save()
+            wbsht1.close()
+            wbsht.close()
+            app.quit()
+        except Exception as e:
+            print('运行失败：', str(Exception) + str(e))
         print('输出(监控)文件成功…………')
         file_Path.append(filePath)
         if team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
@@ -5480,29 +5484,28 @@ if __name__ == '__main__':
 
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    startday = '2021.07.20'
-    # for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '神龙台湾', '火凤凰台湾', '火凤凰香港']:
-    # for team in ['新神龙-港台', '新火凤凰-港台']:
-    for team in ['神龙-港台']:
+    startday = '2021.07.31'
+    for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '神龙台湾', '火凤凰台湾', '火凤凰香港']:
+    # for team in ['神龙-港台']:
     # for team in ['火凤凰-港台']:
         m.readForm(team, startday, '导入')
         # m.readForm(team, startday, '单独导入')
-    startday = '2021.08.20'
-    # for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '火凤凰台湾', '火凤凰台湾', '火凤凰香港']:
-    for team in ['神龙-港台']:
+    startday = '2021.08.31'
+    for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '火凤凰台湾', '火凤凰台湾', '火凤凰香港']:
+    # for team in ['神龙-港台']:
     # for team in ['火凤凰-港台']:
         m.readForm(team, startday, '导入')
     #     m.readForm(team, startday, '单独导入')
 
     # 获取监控表以上传的时间---监控运行（二）
-    for team in ['火凤凰台湾', '火凤凰香港', '神龙台湾', '神龙香港']:
-        m.check_time(team)
+    # for team in ['火凤凰台湾', '火凤凰香港', '神龙台湾', '神龙香港']:
+    #     m.check_time(team)
 
     # # 测试监控运行（三）
-    # for team in ['神龙台湾', '神龙香港', '火凤凰台湾', '火凤凰香港']:
-    for team in ['神龙台湾', '神龙香港']:
+    for team in ['神龙台湾', '神龙香港', '火凤凰台湾', '火凤凰香港']:
+    # for team in ['神龙台湾', '神龙香港']:
     # for team in ['火凤凰台湾', '火凤凰香港']:
-    #     m.order_Monitoring(team)    # 各月缓存
+        m.order_Monitoring(team)    # 各月缓存
     # #     m.data_Monitoring(team)     # 两月数据
     #     # m.costWaybill(team)       # 成本缓存 与 成本两月数据
         m.sl_Monitoring(team)        # 输出数据--     # 每月正常使用的时间（一）
@@ -5525,14 +5528,14 @@ if __name__ == '__main__':
 
 
     # -----------------------------------------------品牌运行（五）-----------------------------------------
-    # team = '品牌'
-    # m.order_Monitoring(team)  # 各月缓存
-    #
-    # startday = '2021.07.20'
-    # m.readForm(team, startday, '导入')
-    #
-    # startday = '2021.08.20'
-    # m.readForm(team, startday, '导入')
-    #
-    # for team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
-    #     m.sl_Monitoring(team)        # 输出数据
+    team = '品牌'
+    m.order_Monitoring(team)  # 各月缓存
+
+    startday = '2021.07.31'
+    m.readForm(team, startday, '导入')
+
+    startday = '2021.08.31'
+    m.readForm(team, startday, '导入')
+
+    for team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
+        m.sl_Monitoring(team)        # 输出数据
