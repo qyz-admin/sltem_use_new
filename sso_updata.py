@@ -306,7 +306,7 @@ class QueryTwo(Settings):
             				        h.`规格(中文)` 规格中文,
             				        h.省洲 省洲,
             				        h.订单状态 系统订单状态,
-            				        IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
+            				        IF(h.`物流状态` in ('发货中'), null, h.`物流状态`) 系统物流状态,
             				        h.上线时间 上线时间
                             FROM d1_host h 
                             LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
@@ -356,7 +356,7 @@ class QueryTwo(Settings):
 				                IF(h.运营团队 = '精灵家族-品牌',IF(h.站点ID=1000000269,'饰品','内衣'),h.站点ID) 站点ID,
 				                null 订单删除原因,
 				                h.订单状态 系统订单状态,
-				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
+				                IF(h.`物流状态` in ('发货中'), null, h.`物流状态`) 系统物流状态,
             				    h.上线时间 上线时间
                     FROM d1_host h 
                     LEFT JOIN dim_product_slsc ON  dim_product_slsc.id = h.产品id
@@ -407,7 +407,7 @@ class QueryTwo(Settings):
 				                IF(h.运营团队 = '精灵家族-品牌',IF(h.站点ID=1000000269,'饰品','内衣'),h.站点ID) 站点ID,
 				                null 订单删除原因,
 				                h.订单状态 系统订单状态,
-				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
+				                IF(h.`物流状态` in ('发货中'), null, h.`物流状态`) 系统物流状态,
             				    h.上线时间 上线时间
                     FROM d1_host h 
                     LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
@@ -456,7 +456,7 @@ class QueryTwo(Settings):
         				                h.转采购时间 添加物流单号时间,
         				                null 订单删除原因,
         				                h.订单状态 系统订单状态,
-        				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
+        				                IF(h.`物流状态` in ('发货中'), null, h.`物流状态`) 系统物流状态,
             				            h.上线时间 上线时间 
                             FROM d1_host h 
                             LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
@@ -504,7 +504,7 @@ class QueryTwo(Settings):
 				                h.转采购时间 添加物流单号时间,
 				                null 订单删除原因,
 				                h.订单状态 系统订单状态,
-				                IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
+				                IF(h.`物流状态` in ('发货中'), null, h.`物流状态`) 系统物流状态,
             				    h.上线时间 上线时间
                     FROM d1_host h 
                     LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
@@ -553,7 +553,7 @@ class QueryTwo(Settings):
                             null 订单删除原因,
                             h.省洲 省洲,
                             h.订单状态 系统订单状态,
-                            IF(h.`物流状态` in ('发货中'), '在途', h.`物流状态`) 系统物流状态,
+                            IF(h.`物流状态` in ('发货中'), null, h.`物流状态`) 系统物流状态,
             				h.上线时间 上线时间
                         FROM d1_host h 
                             LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
@@ -732,7 +732,7 @@ class QueryTwo(Settings):
             				    h.`shipInfo.shipPhone` 电话号码,
             				    h.wayBillNumber 运单编号,
             				    h.orderStatus 系统订单状态,
-            				    IF(h.`logisticsStatus` in ('发货中'), '在途', h.`logisticsStatus`) 系统物流状态,
+            				    IF(h.`logisticsStatus` in ('发货中'), null, h.`logisticsStatus`) 系统物流状态,
             				    IF(h.`reassignmentTypeName` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
             				    TRIM(h.logisticsName) 物流方式,
             				    dim_trans_way.simple_name 物流名称,

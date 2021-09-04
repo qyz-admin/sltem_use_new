@@ -9,7 +9,7 @@ from gat_update2 import QueryUpdate
 import datetime
 from dateutil.relativedelta import relativedelta
 start: datetime = datetime.datetime.now()
-team = 'slsc'
+team = 'gat'
 match1 = {'gat': '港台',
           'slsc': '品牌'}
 match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
@@ -49,13 +49,13 @@ if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat'):
     print(month_begin)
 else:
     # 更新时间
-    begin = datetime.date(2021, 8, 1)
+    begin = datetime.date(2021, 7, 1)
     print(begin)
-    end = datetime.date(2021, 8, 30)
+    end = datetime.date(2021, 9, 3)
     print(end)
     # 导出时间
-    month_last = '2021-08-01'
-    month_yesterday = '2021-08-30'
+    month_last = '2021-07-01'
+    month_yesterday = '2021-09-02'
     month_begin = '2021-06-01'
 
 # 库的引用

@@ -114,16 +114,22 @@ class SltemMonitoring(Settings):
                  '品牌': 'slsc',
                  '神龙香港': 'gat',
                  '神龙台湾': 'gat',
+                 '金鹏香港': 'gat',
+                 '金鹏台湾': 'gat',
                  '火凤凰台湾': 'gat',
                  '火凤凰香港': 'gat'}
         match2 = {'日本': '日本',
                   '神龙香港': '香港',
                   '神龙台湾': '台湾',
+                  '金鹏香港': '香港',
+                  '金鹏台湾': '台湾',
                   '火凤凰台湾': '台湾',
                   '火凤凰香港': '香港'}
         match3 = {'日本': '日本',
                   '神龙香港': '神龙家族-港澳台',
                   '神龙台湾': '神龙家族-港澳台',
+                  '金鹏香港': '金鹏家族-品牌4组',
+                  '金鹏台湾': '金鹏家族-品牌4组',
                   '火凤凰台湾': '火凤凰-港澳台',
                   '火凤凰香港': '火凤凰-港澳台'}
         start: datetime = datetime.datetime.now()
@@ -210,6 +216,8 @@ class SltemMonitoring(Settings):
                   '日本': 'slrb',
                   '神龙香港': 'gat',
                   '神龙台湾': 'gat',
+                  '金鹏香港': 'gat',
+                  '金鹏台湾': 'gat',
                   '火凤凰台湾': 'gat',
                   '火凤凰香港': 'gat',
                   '泰国': 'sltg'}
@@ -219,6 +227,8 @@ class SltemMonitoring(Settings):
                   '日本': '日本',
                   '神龙香港': '香港',
                   '神龙台湾': '台湾',
+                  '金鹏香港': '香港',
+                  '金鹏台湾': '台湾',
                   '火凤凰台湾': '台湾',
                   '火凤凰香港': '香港',
                   '泰国': '泰国'}
@@ -228,6 +238,8 @@ class SltemMonitoring(Settings):
                   '日本': '日本',
                   '神龙香港': '港台神龙',
                   '神龙台湾': '港台神龙',
+                  '金鹏香港': '港台金鹏',
+                  '金鹏台湾': '港台金鹏',
                   '火凤凰台湾': '港台火凤凰',
                   '火凤凰香港': '港台火凤凰',
                   '泰国': '泰国'}
@@ -237,6 +249,8 @@ class SltemMonitoring(Settings):
                   '日本': '日本',
                   '神龙香港': '神龙家族-港澳台',
                   '神龙台湾': '神龙家族-港澳台',
+                  '金鹏香港': '金鹏家族-品牌4组',
+                  '金鹏台湾': '金鹏家族-品牌4组',
                   '火凤凰台湾': '火凤凰-港澳台',
                   '火凤凰香港': '火凤凰-港澳台',
                   '泰国': '泰国'}
@@ -470,6 +484,8 @@ class SltemMonitoring(Settings):
                   '品牌-菲律宾': 'qsb_slsc',
                   '神龙香港': 'qsb_slgat',
                   '神龙台湾': 'qsb_slgat',
+                  '金鹏香港': 'qsb_slgat_jp',
+                  '金鹏台湾': 'qsb_slgat_jp',
                   '火凤凰香港': 'qsb_slgat_hfh',
                   '火凤凰台湾': 'qsb_slgat_hfh'}
         match3 = {'日本': '日本',
@@ -481,6 +497,8 @@ class SltemMonitoring(Settings):
                   '品牌-菲律宾': '菲律宾',
                   '神龙香港': '香港',
                   '神龙台湾': '台湾',
+                  '金鹏香港': '香港',
+                  '金鹏台湾': '台湾',
                   '火凤凰台湾': '台湾',
                   '火凤凰香港': '香港',
                   '泰国': '泰国'}
@@ -527,8 +545,8 @@ class SltemMonitoring(Settings):
         Time_day.sort()
         print(Time_day[11])
         print(Time_day[10])
-        Time_day[11] = '2021-08-31'
-        Time_day[10] = '2021-07-31'
+        # Time_day[11] = '2021-08-31'
+        # Time_day[10] = '2021-07-31'
         listT = []  # 查询sql 存放池
         show_name = []  # 打印进度需要
         # 月签收率（天）---查询
@@ -1170,7 +1188,7 @@ class SltemMonitoring(Settings):
         filePath = ''
         if team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
             filePath = 'F:\\查询\\品牌监控\\{} {} 监控表.xlsx'.format(today, team)
-        elif team in ('神龙香港', '神龙台湾', '火凤凰香港', '火凤凰台湾'):
+        elif team in ('神龙香港', '神龙台湾', '火凤凰香港', '火凤凰台湾', '金鹏香港', '金鹏台湾'):
             filePath = 'F:\\查询\\港台监控\\{} {}监控表.xlsx'.format(today, team)
         if os.path.exists(filePath):  # 判断是否有需要的表格
             print("正在使用(上月)文件......")
@@ -1216,10 +1234,14 @@ class SltemMonitoring(Settings):
     def sl_Monitoring_TWO(self, team):
         match2 = {'神龙香港': 'qsb_slgat',
                   '神龙台湾': 'qsb_slgat',
+                  '金鹏香港': 'qsb_slgat_jp',
+                  '金鹏台湾': 'qsb_slgat_jp',
                   '火凤凰香港': 'qsb_slgat_hfh',
                   '火凤凰台湾': 'qsb_slgat_hfh'}
         match3 = {'神龙香港': '香港',
                   '神龙台湾': '台湾',
+                  '金鹏香港': '香港',
+                  '金鹏台湾': '台湾',
                   '火凤凰台湾': '台湾',
                   '火凤凰香港': '香港'}
         emailAdd = {'神龙香港': 'giikinliujun@163.com',
@@ -1250,18 +1272,6 @@ class SltemMonitoring(Settings):
         Time_day.sort()
         print(Time_day[11])
         print(Time_day[10])
-        now_day = '2021-06-29'
-        now_last = '2021-05-01'
-        now_last_end = '2021-05-31'
-        now_bengin = '2021-06-01'
-        now_bengin_end = '2021-06-28'
-
-        old_day = '2021-05-29'
-        old_last = '2021-04-01'
-        old_last_end = '2021-04-30'
-        old_bengin = '2021-05-01'
-        old_bengin_end = '2021-05-28'
-
         Time_day[11] = '2021-06-29'
         Time_day[10] = '2021-05-29'
         listT = []  # 查询sql 存放池
@@ -1931,7 +1941,7 @@ class SltemMonitoring(Settings):
             filePath = 'F:\\查询\\泰国监控\\{} {}监控表.xlsx'.format(today, team)
         elif team in ('新加坡', '马来西亚', '菲律宾'):
             filePath = 'F:\\查询\\新马监控\\{} {}监控表.xlsx'.format(today, team)
-        elif team in ('神龙香港', '神龙台湾', '火凤凰香港', '火凤凰台湾'):
+        elif team in ('神龙香港', '神龙台湾', '火凤凰香港', '火凤凰台湾', '金鹏香港', '金鹏台湾'):
             filePath = 'F:\\查询\\港台监控\\{} {}监控表.xlsx'.format(today, team)
         if os.path.exists(filePath):  # 判断是否有需要的表格
             print("正在使用(上月)文件......")
@@ -1974,11 +1984,15 @@ class SltemMonitoring(Settings):
         match2 = {'日本': 'qsb_slrb',
                   '神龙香港': 'qsb_slgat_cpy',
                   '神龙台湾': 'qsb_slgat_cpy',
+                  '金鹏香港': 'qsb_slgat_jp_cpy',
+                  '金鹏台湾': 'qsb_slgat_jp_cpy',
                   '火凤凰香港': 'qsb_slgat_hfh_cpy',
                   '火凤凰台湾': 'qsb_slgat_hfh_cpy'}
         match3 = {'日本': '日本',
                   '神龙香港': '香港',
                   '神龙台湾': '台湾',
+                  '金鹏香港': '香港',
+                  '金鹏台湾': '台湾',
                   '火凤凰台湾': '台湾',
                   '火凤凰香港': '香港'}
         emailAdd = {'神龙香港': 'giikinliujun@163.com',
@@ -2016,8 +2030,8 @@ class SltemMonitoring(Settings):
         Time_day.sort()
         print(Time_day[11])
         print(Time_day[10])
-        Time_day[11] = '2021-07-03'
-        Time_day[10] = '2021-08-03'
+        Time_day[10] = '2021-08-02'
+        Time_day[11] = '2021-09-02'
         listT = []  # 查询sql 存放池
         show_name = []  # 打印进度需要
         # 月签收率（天）---查询
@@ -2059,8 +2073,8 @@ class SltemMonitoring(Settings):
 				            SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0)) as 完成量,
 				            SUM(IF(`最终状态` = '已退货',1,0)) as 退货量
 	            FROM {0} sl_cx
-	            WHERE (sl_cx.`记录时间` = '2021-07-03' AND (sl_cx.`日期` BETWEEN '2021-06-01' AND '2021-06-30') 
-		 	            OR sl_cx.`记录时间` = '2021-08-03' AND (sl_cx.`日期` BETWEEN '2021-07-01' AND '2021-07-31'))
+	            WHERE (sl_cx.`记录时间` = '2021-08-02' AND (sl_cx.`日期` BETWEEN '2021-07-01' AND '2021-07-31') 
+		 	            OR sl_cx.`记录时间` = '2021-09-02' AND (sl_cx.`日期` BETWEEN '2021-08-01' AND '2021-08-31'))
 		            AND sl_cx.`币种` = '{1}' 
 		            AND sl_cx.`父级分类` IS NOT NULL 
 	            GROUP BY 年月,父级分类,二级分类,三级分类,物流方式,旬
@@ -2106,8 +2120,8 @@ class SltemMonitoring(Settings):
 				                SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0)) as 完成量,
 				                SUM(IF(`最终状态` = '已退货',1,0)) as 退货量
 	                FROM {0} sl_cx
-	                WHERE (sl_cx.`记录时间`= '2021-07-03' AND sl_cx.`日期` < '2021-06-01' 
-			                OR sl_cx.`记录时间`= '2021-08-03' AND sl_cx.`日期` < '2021-07-01')
+	                WHERE (sl_cx.`记录时间`= '2021-08-02' AND sl_cx.`日期` < '2021-07-01' 
+			                OR sl_cx.`记录时间`= '2021-09-02' AND sl_cx.`日期` < '2021-08-01')
 		                AND sl_cx.`币种` = '{1}' 
 		                AND sl_cx.`父级分类` IS NOT NULL 
 	                GROUP BY 年月,父级分类,二级分类,三级分类,物流方式,旬
@@ -2369,8 +2383,8 @@ class SltemMonitoring(Settings):
 				            SUM(IF(`最终状态` = '已签收',1,0)) as 直发签收量,
 				            SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') ,1,0)) as 直发完成量
 	            FROM {0} sl_cx
-	            WHERE (sl_cx.`记录时间` = '2021-07-03' AND ( sl_cx.`日期` BETWEEN '2021-06-01' AND '2021-06-30') 
-		 	            OR sl_cx.`记录时间` = '2021-08-03' AND (sl_cx.`日期` BETWEEN '2021-07-01' AND '2021-07-31'))
+	            WHERE (sl_cx.`记录时间` = '2021-08-02' AND ( sl_cx.`日期` BETWEEN '2021-07-01' AND '2021-07-31') 
+		 	            OR sl_cx.`记录时间` = '2021-09-02' AND (sl_cx.`日期` BETWEEN '2021-08-01' AND '2021-08-31'))
 		            AND sl_cx.`币种` = '{1}' 
 		            AND sl_cx.`是否改派` = "直发"
 		            AND sl_cx.`父级分类` IS NOT NULL 
@@ -2407,8 +2421,8 @@ class SltemMonitoring(Settings):
 				            SUM(IF(`最终状态` = '已签收',1,0)) as 直发签收量,
 				            SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') ,1,0)) as 直发完成量
 	            FROM {0} sl_cx
-	            WHERE (sl_cx.`记录时间`= '2021-07-03' AND sl_cx.`日期` < '2021-06-01'
-                    OR sl_cx.`记录时间`= '2021-08-03' AND sl_cx.`日期` < '2021-08-01')
+	            WHERE (sl_cx.`记录时间`= '2021-08-02' AND sl_cx.`日期` < '2021-08-01'
+                    OR sl_cx.`记录时间`= '2021-09-02' AND sl_cx.`日期` < '2021-09-01')
 		            AND sl_cx.`币种` = '{1}' 
 		            AND sl_cx.`是否改派` = "直发"
 		            AND sl_cx.`父级分类` IS NOT NULL 
@@ -2417,6 +2431,7 @@ class SltemMonitoring(Settings):
         listT.append(sqlWl3)
         show_name.append(' 月（各月）物流…………')
 
+        # 月时效（天）---查询
         sqltime2 = '''SELECT 币种,
 				            年月,
 				            物流方式,
@@ -2663,7 +2678,7 @@ class SltemMonitoring(Settings):
             filePath = 'F:\\查询\\泰国监控\\{} {}监控表.xlsx'.format(today, team)
         elif team in ('新加坡', '马来西亚', '菲律宾'):
             filePath = 'F:\\查询\\新马监控\\{} {}监控表.xlsx'.format(today, team)
-        elif team in ('神龙香港', '神龙台湾', '火凤凰香港', '火凤凰台湾'):
+        elif team in ('神龙香港', '神龙台湾', '火凤凰香港', '火凤凰台湾', '金鹏香港', '金鹏台湾'):
             filePath = 'F:\\查询\\港台监控\\{} {}监控表.xlsx'.format(today, team)
         if os.path.exists(filePath):  # 判断是否有需要的表格
             print("正在使用(上月)文件......")
@@ -2710,6 +2725,8 @@ class SltemMonitoring(Settings):
                   '日本': 'qsb_slrb',
                   '神龙香港': 'qsb_slgat_copy',
                   '神龙台湾': 'qsb_slgat_copy',
+                  '金鹏香港': 'qsb_slgat_jp',
+                  '金鹏台湾': 'qsb_slgat_jp',
                   '火凤凰香港': 'qsb_slgat_hfh_copy',
                   '火凤凰台湾': 'qsb_slgat_hfh_copy',
                   '泰国': 'qsb_sltg'}
@@ -2719,6 +2736,8 @@ class SltemMonitoring(Settings):
                   '日本': '日本',
                   '神龙香港': '香港',
                   '神龙台湾': '台湾',
+                  '金鹏香港': '香港',
+                  '金鹏台湾': '台湾',
                   '火凤凰台湾': '台湾',
                   '火凤凰香港': '香港',
                   '泰国': '泰国'}
@@ -3958,7 +3977,7 @@ class SltemMonitoring(Settings):
             filePath = 'F:\\查询\\泰国监控\\{} {}上月数据监控表.xlsx'.format(today, team)
         elif team in ('新加坡', '马来西亚', '菲律宾'):
             filePath = 'F:\\查询\\新马监控\\{} {}上月数据监控表.xlsx'.format(today, team)
-        elif team in ('神龙香港', '神龙台湾', '火凤凰香港', '火凤凰台湾'):
+        elif team in ('神龙香港', '神龙台湾', '火凤凰香港', '火凤凰台湾', '金鹏香港', '金鹏台湾'):
             filePath = 'F:\\查询\\港台监控\\{} {}上月数据监控表.xlsx'.format(today, team)
         if os.path.exists(filePath):                  # 判断是否有需要的表格
             print("正在使用(上月)文件......")
@@ -5395,14 +5414,9 @@ class SltemMonitoring(Settings):
                  'slxmt': '新马',
                  'slrb': '日本'}
         match3 = {'品牌': 'slsc',
-                  '神龙香港': 'slgat',
-                  '神龙台湾': 'slgat',
-                  '火凤凰台湾': 'slgat_hfh',
-                  '火凤凰香港': 'slgat_hfh',
                   '火凤凰-港台': 'slgat_hfh',
-                  '新火凤凰-港台': 'slgat_hfh',
                   '神龙-港台': 'slgat',
-                  '新神龙-港台': 'slgat',
+                  '金鹏-港台': 'slgat_jp',
                   '港台': 'slgat'}
         start = datetime.datetime.now()
         # startday = datetime.datetime.now().strftime('%Y.%m.%d')
@@ -5484,31 +5498,32 @@ if __name__ == '__main__':
 
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    startday = '2021.07.31'
-    for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '神龙台湾', '火凤凰台湾', '火凤凰香港']:
+    startday = '2021.08.03'
+    for team in ['神龙-港台', '火凤凰-港台', '金鹏-港台']:
     # for team in ['神龙-港台']:
     # for team in ['火凤凰-港台']:
         m.readForm(team, startday, '导入')
         # m.readForm(team, startday, '单独导入')
-    startday = '2021.08.31'
-    for team in ['神龙-港台', '火凤凰-港台', '神龙香港', '火凤凰台湾', '火凤凰台湾', '火凤凰香港']:
+    startday = '2021.09.03'
+    for team in ['神龙-港台', '火凤凰-港台', '金鹏-港台']:
     # for team in ['神龙-港台']:
     # for team in ['火凤凰-港台']:
         m.readForm(team, startday, '导入')
-    #     m.readForm(team, startday, '单独导入')
+        # m.readForm(team, startday, '单独导入')
 
     # 获取监控表以上传的时间---监控运行（二）
     # for team in ['火凤凰台湾', '火凤凰香港', '神龙台湾', '神龙香港']:
     #     m.check_time(team)
 
     # # 测试监控运行（三）
-    for team in ['神龙台湾', '神龙香港', '火凤凰台湾', '火凤凰香港']:
+    for team in ['神龙台湾', '神龙香港', '火凤凰台湾', '火凤凰香港', '金鹏台湾']:
     # for team in ['神龙台湾', '神龙香港']:
     # for team in ['火凤凰台湾', '火凤凰香港']:
         m.order_Monitoring(team)    # 各月缓存
     # #     m.data_Monitoring(team)     # 两月数据
     #     # m.costWaybill(team)       # 成本缓存 与 成本两月数据
         m.sl_Monitoring(team)        # 输出数据--     # 每月正常使用的时间（一）
+
     #     m.sl_Monitoring_TWO(team)    # 输出数据------ 每月使用的固定时间（二）
     #     m.sl_Monitoring_THREE(team)    # 输出上月数据---月初使用的固定时间（三）
 
@@ -5531,10 +5546,10 @@ if __name__ == '__main__':
     team = '品牌'
     m.order_Monitoring(team)  # 各月缓存
 
-    startday = '2021.07.31'
+    startday = '2021.08.03'
     m.readForm(team, startday, '导入')
 
-    startday = '2021.08.31'
+    startday = '2021.09.03'
     m.readForm(team, startday, '导入')
 
     for team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:

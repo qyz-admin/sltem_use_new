@@ -240,12 +240,12 @@ class QueryUpdate(Settings):
                             IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
                             IF(ISNULL(a.上线时间), IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '',b.上线时间), a.上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
                             IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                            IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), IF(系统物流状态= '发货中', '未上线', 系统物流状态)), '已退货') 最终状态,
+                            IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
                             IF(是否改派='二次改派', '改派', 是否改派) 是否改派,
                             物流方式,物流名称,null 运输方式,null 货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
                             二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,null 价格区间,
                             null 包裹重量,null 包裹体积,null 邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, null 签收表订单编号, null 签收表运单编号,
-                            null 原运单号, b.物流状态 签收表物流状态,null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, null 添加物流单号时间, 省洲,null 数量
+                            null 原运单号, b.物流状态 签收表物流状态,null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, null 添加物流单号时间,省洲,数量
                         FROM {0}_order_list a
                             LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} WHERE {0}.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
                             LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
@@ -290,8 +290,8 @@ class QueryUpdate(Settings):
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
         else:
-            month_last = '2021-05-01'
-            month_yesterday = '2021-06-10'
+            month_last = '2021-07-01'
+            month_yesterday = '2021-09-02'
         print(month_last)
         print(month_yesterday)
         print('正在获取---' + match[team] + ' ---全部数据内容…………')
@@ -322,8 +322,8 @@ class QueryUpdate(Settings):
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
         else:
-            month_last = '2021-06-01'
-            month_yesterday = '2021-07-31'
+            month_last = '2021-07-01'
+            month_yesterday = '2021-09-01'
         print(month_last)
         print(month_yesterday)
         filePath = []
@@ -2807,12 +2807,13 @@ class QueryUpdate(Settings):
 
     # 新版签收率-报表(刘姐看的)
     def qsb_new(self, team):  # 报表各团队近两个月的物流数据
-        month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-        month_now = datetime.datetime.now().strftime('%Y-%m-%d')
         match = {'gat': '港台-每日'}
-        emailAdd = {'台湾': 'giikinliujun@163.com',
-                    '香港': 'giikinliujun@163.com',
-                    '品牌': 'sunyaru@giikin.com'}
+        if team == 'ga9t':
+            month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+            month_now = datetime.datetime.now().strftime('%Y-%m-%d')
+        else:
+            month_last = '2021-07-01'
+            month_now = '2021-09-04'
         sql = '''DELETE FROM gat_zqsb
                 WHERE gat_zqsb.`订单编号` IN (SELECT 订单编号
             								FROM gat_order_list 
@@ -2825,7 +2826,6 @@ class QueryUpdate(Settings):
                 WHERE gz.`系统订单状态` = '已转采购' and gz.`是否改派` = '改派' and gz.`审核时间` >= '{0} 00:00:00' AND gz.`日期` >= '{1}';'''.format(month_now, month_last)
         print('正在清除不参与计算的今日改派订单…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
-
 
         sql = '''UPDATE gat_zqsb d
                 SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', d.`物流方式`) )
@@ -2847,8 +2847,6 @@ class QueryUpdate(Settings):
         print('正在修改-改派的物流渠道…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
 
-        month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-        month_now = (datetime.datetime.now()).strftime('%Y-%m-%d')
         filePath = []
         listT = []  # 查询sql的结果 存放池
         print('正在获取---' + match[team] + '---签收率…………')
@@ -3047,7 +3045,7 @@ class QueryUpdate(Settings):
                             GROUP BY cx.年月,cx.币种,cx.是否改派,cx.家族,cx.物流方式
                             WITH ROLLUP
                         ) s
-                        ORDER BY FIELD(月份, '202108', '202107', '202106', '202105', '202104', '总计' ),
+                        ORDER BY FIELD(月份, '202109', '202108', '202107', '202106', '202105', '202104', '总计' ),
                                 FIELD(地区, '台湾', '香港', '总计' ),
                                 FIELD(是否改派, '直发', '改派', '总计' ),
                                 FIELD( s.家族, '神龙', '火凤凰','金狮','金鹏', '红杉', '总计' ),
@@ -3201,7 +3199,7 @@ class QueryUpdate(Settings):
                             GROUP BY cx.年月,cx.币种,cx.是否改派,cx.物流方式,cx.家族
                             WITH ROLLUP
                         ) s
-                        ORDER BY FIELD(月份, '202108', '202107', '202106', '202105', '202104', '总计' ),
+                        ORDER BY FIELD(月份, '202109', '202108', '202107', '202106', '202105', '202104', '总计' ),
                                 FIELD(地区, '台湾', '香港', '总计' ),
                                 FIELD(是否改派, '直发', '改派', '总计' ),
                                 FIELD(物流方式, '台湾-大黄蜂普货头程-森鸿尾程','台湾-大黄蜂普货头程-易速配尾程', '台湾-立邦普货头程-森鸿尾程','台湾-立邦普货头程-易速配尾程', '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
@@ -3287,6 +3285,10 @@ class QueryUpdate(Settings):
                                 IFNULL(cx.产品名称, '总计') 产品名称,
                                 IFNULL(cx.父级分类, '总计') 父级分类,
                                 COUNT(cx.`订单编号`) as 总单量,
+                            SUM(IF(cx.年月 = '202109',1,0)) as 09总单量,
+                                concat(ROUND(SUM(IF(cx.年月 = '202109' AND 最终状态 = "已签收",1,0)) / SUM(IF(cx.年月 = '202109',1,0)) * 100,2),'%') as 09总计签收,
+                                concat(ROUND(SUM(IF(cx.年月 = '202109' AND 最终状态 = "已签收",1,0)) / SUM(IF(cx.年月 = '202109' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 09完成签收,
+                                concat(ROUND(SUM(IF(cx.年月 = '202109' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(cx.年月 = '202109',1,0)) * 100,2),'%') as 09完成占比,
                             SUM(IF(cx.年月 = '202104',1,0)) as 04总单量,
                                 concat(ROUND(SUM(IF(cx.年月 = '202104' AND 最终状态 = "已签收",1,0)) / SUM(IF(cx.年月 = '202104',1,0)) * 100,2),'%') as 04总计签收,
                                 concat(ROUND(SUM(IF(cx.年月 = '202104' AND 最终状态 = "已签收",1,0)) / SUM(IF(cx.年月 = '202104' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 04完成签收,
