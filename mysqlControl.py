@@ -755,7 +755,6 @@ class MysqlControl(Settings):
                  'slgat_hs': '红杉-港台',
                  'slgat_js': '金狮-港台',
                  'slgat_jp': '金鹏-港台',
-                 'slgat_hfh_yy': '火凤凰-港台(繁体)',
                  'slgat_low': '神龙-低价',
                  'gat': '港台',
                  'slsc': '品牌',
@@ -999,7 +998,7 @@ class MysqlControl(Settings):
         print('正在写入excel…………')
         filePath = []
         if team in ('gat'):
-            for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-品牌4组"|slgat_jp', '"火凤凰-港台(繁体)"|slgat_hfh_yy', '"神龙-低价"|slgat_low'):
+            for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-品牌4组"|slgat_jp', '"神龙-低价"|slgat_low'):
                 tem1 = tem.split('|')[0]
                 tem2 = tem.split('|')[1]
                 sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)
@@ -1079,7 +1078,6 @@ class MysqlControl(Settings):
                  'slgat_hs': ['台湾', '香港'],
                  'slgat_js': ['台湾', '香港'],
                  'slgat_jp': ['台湾', '香港'],
-                 'slgat_hfh_yy': ['台湾', '香港'],
                  'slgat_low': ['台湾', '香港'],
                  'sltg': ['泰国'],
                  'slxmt': ['新加坡', '马来西亚', '菲律宾'],
@@ -1094,7 +1092,6 @@ class MysqlControl(Settings):
                   'slgat_hs': ['台湾|红杉家族-港澳台', '香港|红杉家族-港澳台'],
                   'slgat_js': ['台湾|金狮-港澳台', '香港|金狮-港澳台'],
                   'slgat_jp': ['台湾|金鹏-港澳台', '香港|金鹏-港澳台'],
-                  'slgat_hfh_yy': ['台湾|火凤凰-港台(繁体)', '香港|火凤凰-港台(繁体)'],
                   'slgat_low': ['台湾|神龙-低价', '香港|神龙-低价'],
                   'sltg': ['泰国|神龙家族-泰国'],
                   'slxmt': ['新加坡|神龙家族-新加坡', '马来西亚|神龙家族-马来西亚', '菲律宾|神龙家族-菲律宾'],

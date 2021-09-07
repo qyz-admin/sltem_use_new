@@ -9,7 +9,7 @@ from gat_update2 import QueryUpdate
 import datetime
 from dateutil.relativedelta import relativedelta
 start: datetime = datetime.datetime.now()
-team = 'gat'
+team = 'slsc'
 match1 = {'gat': '港台',
           'slsc': '品牌'}
 match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
