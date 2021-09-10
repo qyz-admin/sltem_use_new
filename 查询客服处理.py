@@ -240,70 +240,237 @@ class QueryUpdate(Settings):
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_sql('product_info', con=self.engine1, index=False, if_exists='replace')
 
-        print('正在获取 上月产品前十（总团队） 信息…………')
-        sql1 = '''SELECT ss.年月, ss.币种, ss.团队, ss.产品id, ss.产品名称, 
-                        IF(ss.商品数量 = 0,NULL,ss.商品数量) as 商品数量,
-                        IF(换货数量 = 0,NULL,换货数量) as 换货数量,
-                        IF(退货数量 = 0,NULL,退货数量) as 退货数量,
-                        IF(SUM(换货数量 + 退货数量) = 0,NULL,SUM(换货数量 + 退货数量)) as 已处理数量,
-                        IF(工单数量 = 0,NULL,工单数量) as 工单数量,
-                        concat(ROUND(IF(SUM(换货数量 + 退货数量) = 0,NULL,SUM(换货数量 + 退货数量))  / 工单数量 * 100,2),'%') as 处理占比
-                FROM product_info ss
-                LEFT JOIN
-                (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'合计' 团队,产品id,COUNT(订单编号) 换货单量,SUM(数量) as 换货数量
-                    FROM 换货表 th
-                    GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 产品id
-                    ORDER BY DATE_FORMAT(导入时间,'%Y%m') DESC,币种, 换货单量 DESC
-                    ) cx ON ss.年月 = cx.年月 AND ss.币种 = cx.币种 AND ss.团队 = cx.团队 AND ss.产品id = cx.产品id
-                LEFT JOIN
-                (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'合计' 团队,产品id,COUNT(订单编号) 退货单量,SUM(数量) as 退货数量
-                    FROM 退货表 th
-                    GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 产品id
-                    ORDER BY DATE_FORMAT(导入时间,'%Y%m') DESC,币种, 退货单量 DESC
-                ) cx2 ON ss.年月 = cx2.年月 AND ss.币种 = cx2.币种 AND ss.团队 = cx2.团队 AND ss.产品id = cx2.产品id
-                LEFT JOIN
-                (SELECT DATE_FORMAT(提交时间,'%Y%m') as 年月,币种,'合计' 所属团队,产品id,COUNT(订单编号) 工单单量,SUM(数量) as 工单数量
-                    FROM 工单收集表 th
-                        GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种, 产品id
-                        ORDER BY DATE_FORMAT(提交时间,'%Y%m') DESC,币种, 工单单量 DESC
-                ) cx3 ON ss.年月 = cx3.年月 AND ss.币种 = cx3.币种 AND ss.团队 = cx3.所属团队 AND ss.产品id = cx3.产品id
-                WHERE ss.团队 = '合计'
-                GROUP BY ss.年月,ss.币种,ss.团队,ss.产品id
-                ORDER BY ss.年月,ss.币种,工单数量 DESC;'''
+        print('正在获取 上月产品前十（总） 信息…………')
+        sql1 = '''SELECT *
+				FROM (
+				    (SELECT *,concat(ROUND(IF(已处理数量 = 0,NULL,已处理数量)  / 工单数量 * 100,2),'%') as 处理占比
+				    FROM (SELECT ss.年月, ss.币种, ss.团队, ss.产品id, ss.产品名称, 
+                                IF(ss.商品数量 = 0,NULL,ss.商品数量) as 商品数量,
+                                IF(换货数量 = 0,NULL,换货数量) as 换货数量,
+                                IF(退货数量 = 0,NULL,退货数量) as 退货数量,
+						        IF((IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量)) = 0,NULL,(IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量))) as 已处理数量,
+                                IF(工单数量 = 0,NULL,工单数量) as 工单数量				
+                        FROM product_info ss
+                    LEFT JOIN
+                        (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'合计' 团队,产品id,COUNT(订单编号) 换货单量,SUM(数量) as 换货数量
+                            FROM 换货表 th
+                            GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 产品id
+                            ORDER BY DATE_FORMAT(导入时间,'%Y%m') DESC,币种, 换货单量 DESC
+                        ) cx ON ss.年月 = cx.年月 AND ss.币种 = cx.币种 AND ss.团队 = cx.团队 AND ss.产品id = cx.产品id
+                    LEFT JOIN
+                        (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'合计' 团队,产品id,COUNT(订单编号) 退货单量,SUM(数量) as 退货数量
+                            FROM 退货表 th
+                            GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 产品id
+                            ORDER BY DATE_FORMAT(导入时间,'%Y%m') DESC,币种, 退货单量 DESC
+                        ) cx2 ON ss.年月 = cx2.年月 AND ss.币种 = cx2.币种 AND ss.团队 = cx2.团队 AND ss.产品id = cx2.产品id
+                    LEFT JOIN
+                        (SELECT DATE_FORMAT(提交时间,'%Y%m') as 年月,币种,'合计' 所属团队,产品id,COUNT(订单编号) 工单单量,SUM(数量) as 工单数量
+                            FROM 工单收集表 th
+                            GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种, 产品id
+                            ORDER BY DATE_FORMAT(提交时间,'%Y%m') DESC,币种, 工单单量 DESC
+                        ) cx3 ON ss.年月 = cx3.年月 AND ss.币种 = cx3.币种 AND ss.团队 = cx3.所属团队 AND ss.产品id = cx3.产品id
+                        WHERE ss.团队 = '合计'
+                        GROUP BY ss.年月,ss.币种,ss.团队,ss.产品id
+                        ORDER BY ss.年月,ss.币种,工单数量 DESC
+				    ) s
+				)
+				UNION all
+				(SELECT *,concat(ROUND(IF(已处理数量 = 0,NULL,已处理数量)  / 工单数量 * 100,2),'%') as 处理占比
+				    FROM (SELECT ss.年月, ss.币种, ss.团队, ss.产品id, ss.产品名称, 
+                                IF(ss.商品数量 = 0,NULL,ss.商品数量) as 商品数量,
+                                IF(换货数量 = 0,NULL,换货数量) as 换货数量,
+                                IF(退货数量 = 0,NULL,退货数量) as 退货数量,
+						        IF((IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量)) = 0,NULL,(IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量))) as 已处理数量,
+                                IF(工单数量 = 0,NULL,工单数量) as 工单数量
+                        FROM product_info ss
+                    LEFT JOIN
+                        (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,团队,产品id,COUNT(订单编号) 换货单量,SUM(数量) as 换货数量
+                            FROM 换货表 th
+                            GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 团队, 产品id
+                            ORDER BY DATE_FORMAT(导入时间,'%Y%m') DESC,币种, 团队 , 换货单量 DESC
+                        ) cx ON ss.年月 = cx.年月 AND ss.币种 = cx.币种 AND ss.团队 = cx.团队 AND ss.产品id = cx.产品id
+                    LEFT JOIN
+                        (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,团队,产品id,COUNT(订单编号) 退货单量,SUM(数量) as 退货数量
+                            FROM 退货表 th
+                            GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 团队, 产品id
+                            ORDER BY DATE_FORMAT(导入时间,'%Y%m') DESC,币种, 团队 , 退货单量 DESC
+                        ) cx2 ON ss.年月 = cx2.年月 AND ss.币种 = cx2.币种 AND ss.团队 = cx2.团队 AND ss.产品id = cx2.产品id
+                    LEFT JOIN
+                        (SELECT DATE_FORMAT(提交时间,'%Y%m') as 年月,币种,所属团队,产品id,COUNT(订单编号) 工单单量,SUM(数量) as 工单数量
+                            FROM 工单收集表 th
+                            GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种, 所属团队, 产品id
+                            ORDER BY DATE_FORMAT(提交时间,'%Y%m') DESC,币种, 所属团队 , 工单单量 DESC
+                        ) cx3 ON ss.年月 = cx3.年月 AND ss.币种 = cx3.币种 AND ss.团队 = cx3.所属团队 AND ss.产品id = cx3.产品id
+                        WHERE ss.团队 != '合计'
+                        GROUP BY ss.年月,ss.币种,ss.团队,ss.产品id 
+                        ORDER BY ss.年月,ss.币种,ss.团队,工单数量 DESC
+                    ) s
+				)
+				) sx;'''
         df1 = pd.read_sql_query(sql=sql1, con=self.engine1)
         listT.append(df1)
-        print('正在获取 上月产品前十（分团队） 信息…………')
-        sql2 = '''SELECT ss.年月, ss.币种, ss.团队, ss.产品id, ss.产品名称, 
-                        IF(ss.商品数量 = 0,NULL,ss.商品数量) as 商品数量,
-                        IF(换货数量 = 0,NULL,换货数量) as 换货数量,
-                        IF(退货数量 = 0,NULL,退货数量) as 退货数量,
-                        IF(SUM(退货数量 + 退货数量) = 0,NULL,SUM(退货数量 + 退货数量)) as 已处理量,
-                        IF(工单数量 = 0,NULL,工单数量) as 工单数量,
-                        concat(ROUND(IF(SUM(退货数量 + 退货数量) = 0,NULL,SUM(退货数量 + 退货数量))  / 工单单量 * 100,2),'%') as 处理占比
-                FROM product_info ss
-                LEFT JOIN
-                (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,团队,产品id,COUNT(订单编号) 换货单量,SUM(数量) as 换货数量
-                    FROM 换货表 th
-                    GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 团队, 产品id
-                    ORDER BY DATE_FORMAT(导入时间,'%Y%m') DESC,币种, 团队 , 换货单量 DESC
-                    ) cx ON ss.年月 = cx.年月 AND ss.币种 = cx.币种 AND ss.团队 = cx.团队 AND ss.产品id = cx.产品id
-                LEFT JOIN
-                (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,团队,产品id,COUNT(订单编号) 退货单量,SUM(数量) as 退货数量
-                    FROM 退货表 th
-                    GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 团队, 产品id
-                    ORDER BY DATE_FORMAT(导入时间,'%Y%m') DESC,币种, 团队 , 退货单量 DESC
-                ) cx2 ON ss.年月 = cx2.年月 AND ss.币种 = cx2.币种 AND ss.团队 = cx2.团队 AND ss.产品id = cx2.产品id
-                LEFT JOIN
-                (SELECT DATE_FORMAT(提交时间,'%Y%m') as 年月,币种,所属团队,产品id,COUNT(订单编号) 工单单量,SUM(数量) as 工单数量
-                    FROM 工单收集表 th
-                        GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种, 所属团队, 产品id
-                        ORDER BY DATE_FORMAT(提交时间,'%Y%m') DESC,币种, 所属团队 , 工单单量 DESC
-                ) cx3 ON ss.年月 = cx3.年月 AND ss.币种 = cx3.币种 AND ss.团队 = cx3.所属团队 AND ss.产品id = cx3.产品id
-                WHERE ss.团队 != '合计'
-                GROUP BY ss.年月,ss.币种,ss.团队,ss.产品id 
-                ORDER BY ss.年月,ss.币种,ss.团队,工单数量 DESC;'''
-        df2= pd.read_sql_query(sql=sql2, con=self.engine1)
+        print('正在获取 上月产品前十（明细） 信息…………')
+        sql2 = '''SELECT s.年月, s.币种, s.团队,s.产品id, s.商品数量, s.换货数量, s.退货数量,s.已处理数量,s.工单数量,
+                        concat(ROUND(IF(已处理数量 = 0,NULL,已处理数量)  / 工单数量 * 100,2),'%') as 处理占比,
+				        IF(下错订单 = 0,NULL,下错订单) 下错订单,concat(ROUND(IF(下错订单 = 0,NULL,下错订单) / 工单数量 * 100,2),'%') as 占比,
+                        IF(重复订单 = 0,NULL,重复订单) 重复订单,concat(ROUND(IF(重复订单 = 0,NULL,重复订单) / 工单数量 * 100,2),'%') as 占比,
+                        IF(尺寸不合 = 0,NULL,尺寸不合) 尺寸不合,concat(ROUND(IF(尺寸不合 = 0,NULL,尺寸不合) / 工单数量 * 100,2),'%') as 占比,
+                        IF(尺码偏大 = 0,NULL,尺码偏大) 尺码偏大,concat(ROUND(IF(尺码偏大 = 0,NULL,尺码偏大) / 工单数量 * 100,2),'%') as 占比,
+                        IF(尺码偏小 = 0,NULL,尺码偏小) 尺码偏小,concat(ROUND(IF(尺码偏小 = 0,NULL,尺码偏小) / 工单数量 * 100,2),'%') as 占比,
+                        IF(价格较高 = 0,NULL,价格较高) 价格较高,concat(ROUND(IF(价格较高 = 0,NULL,价格较高) / 工单数量 * 100,2),'%') as 占比,
+                        IF(产品质量不合格 = 0,NULL,产品质量不合格) 产品质量不合格,concat(ROUND(IF(产品质量不合格 = 0,NULL,产品质量不合格) / 工单数量 * 100,2),'%') as 占比,
+                        IF(产品瑕疵 = 0,NULL,产品瑕疵) 产品瑕疵,concat(ROUND(IF(产品瑕疵 = 0,NULL,产品瑕疵) / 工单数量 * 100,2),'%') as 占比,
+                        IF(漏发错发 = 0,NULL,漏发错发) 漏发错发,concat(ROUND(IF(漏发错发 = 0,NULL,漏发错发) / 工单数量 * 100,2),'%') as 占比,
+                        IF(产品不符合客户预期 = 0,NULL,产品不符合客户预期) 产品不符合客户预期,concat(ROUND(IF(产品不符合客户预期 = 0,NULL,产品不符合客户预期) / 工单数量 * 100,2),'%') as 占比,
+                        IF(与网站不符 = 0,NULL,与网站不符) 与网站不符,concat(ROUND(IF(与网站不符 = 0,NULL,与网站不符) / 工单数量 * 100,2),'%') as 占比,
+                        IF(中国制造 = 0,NULL,中国制造) 中国制造,concat(ROUND(IF(中国制造 = 0,NULL,中国制造) / 工单数量 * 100,2),'%') as 占比,
+                        IF(非正品拒收 = 0,NULL,非正品拒收) 非正品拒收,concat(ROUND(IF(非正品拒收 = 0,NULL,非正品拒收) / 工单数量 * 100,2),'%') as 占比,
+                        IF(产品到货无法使用 = 0,NULL,产品到货无法使用) 产品到货无法使用,concat(ROUND(IF(产品到货无法使用 = 0,NULL,产品到货无法使用) / 工单数量 * 100,2),'%') as 占比,
+                        IF(客户不会使用该产品 = 0,NULL,客户不会使用该产品) 客户不会使用该产品,concat(ROUND(IF(客户不会使用该产品 = 0,NULL,客户不会使用该产品) / 工单数量 * 100,2),'%') as 占比,
+                        IF(客户自身原因 = 0,NULL,客户自身原因) 客户自身原因,concat(ROUND(IF(客户自身原因 = 0,NULL,客户自身原因) / 工单数量 * 100,2),'%') as 占比,
+                        IF(没有产品说明书 = 0,NULL,没有产品说明书) 没有产品说明书,concat(ROUND(IF(没有产品说明书 = 0,NULL,没有产品说明书) / 工单数量 * 100,2),'%') as 占比,
+                        IF(不喜欢 = 0,NULL,不喜欢) 不喜欢,concat(ROUND(IF(不喜欢 = 0,NULL,不喜欢) / 工单数量 * 100,2),'%') as 占比,
+                        IF(无订购 = 0,NULL,无订购) 无订购,concat(ROUND(IF(无订购 = 0,NULL,无订购) / 工单数量 * 100,2),'%') as 占比,
+                        IF(无理由拒收退货 = 0,NULL,无理由拒收退货) 无理由拒收退货,concat(ROUND(IF(无理由拒收退货 = 0,NULL,无理由拒收退货) / 工单数量 * 100,2),'%') as 占比,
+                        IF(已在其他地方购买 = 0,NULL,已在其他地方购买) 已在其他地方购买,concat(ROUND(IF(已在其他地方购买 = 0,NULL,已在其他地方购买) / 工单数量 * 100,2),'%') as 占比,
+                        IF(其他 = 0,NULL,其他) 其他,concat(ROUND(IF(其他 = 0,NULL,其他) / 工单数量 * 100,2),'%') as 占比
+				    FROM (SELECT ss.年月, ss.币种, ss.团队, CONCAT(ss.产品id,'#',ss.产品名称) 产品id, 
+                                IF(ss.商品数量 = 0,NULL,ss.商品数量) as 商品数量,
+                                IF(换货数量 = 0,NULL,换货数量) as 换货数量,
+                                IF(退货数量 = 0,NULL,退货数量) as 退货数量,
+						        IF((IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量)) = 0,NULL,(IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量))) as 已处理数量,
+                                IF(工单数量 = 0,NULL,工单数量) as 工单数量,
+                                下错订单,重复订单,尺寸不合,尺码偏大,尺码偏小,价格较高,产品质量不合格,产品瑕疵,漏发错发,产品不符合客户预期,与网站不符,中国制造,
+                                非正品拒收,产品到货无法使用,客户不会使用该产品,客户自身原因,没有产品说明书,不喜欢,无订购,无理由拒收退货,已在其他地方购买,其他
+                        FROM product_info ss
+                    LEFT JOIN
+                        (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'合计' 团队,产品id,COUNT(订单编号) 换货单量,SUM(数量) as 换货数量
+                            FROM 换货表 th
+                            GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 产品id
+                            ORDER BY DATE_FORMAT(导入时间,'%Y%m') DESC,币种, 换货单量 DESC
+                        ) cx ON ss.年月 = cx.年月 AND ss.币种 = cx.币种 AND ss.团队 = cx.团队 AND ss.产品id = cx.产品id
+                    LEFT JOIN
+                        (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'合计' 团队,产品id,COUNT(订单编号) 退货单量,SUM(数量) as 退货数量
+                            FROM 退货表 th
+                            GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 产品id
+                            ORDER BY DATE_FORMAT(导入时间,'%Y%m') DESC,币种, 退货单量 DESC
+                        ) cx2 ON ss.年月 = cx2.年月 AND ss.币种 = cx2.币种 AND ss.团队 = cx2.团队 AND ss.产品id = cx2.产品id
+                    LEFT JOIN
+                        (SELECT DATE_FORMAT(提交时间,'%Y%m') as 年月,币种,'合计' 所属团队,产品id,COUNT(订单编号) 工单单量,SUM(数量) as 工单数量,
+										SUM(IF(`问题类型` = '下错订单',数量,0)) AS 下错订单,
+                        				SUM(IF(`问题类型` = '重复订单',数量,0)) AS 重复订单,
+                        				SUM(IF(`问题类型` = '尺寸不合',数量,0)) AS 尺寸不合,
+                        				SUM(IF(`问题类型` = '尺码偏大',数量,0)) AS 尺码偏大,
+                        				SUM(IF(`问题类型` = '尺码偏小',数量,0)) AS 尺码偏小,
+                        				SUM(IF(`问题类型` = '价格较高',数量,0)) AS 价格较高,
+                        				SUM(IF(`问题类型` = '产品质量不合格',数量,0)) AS 产品质量不合格,
+                        				SUM(IF(`问题类型` = '产品瑕疵',数量,0)) AS 产品瑕疵,
+                        				SUM(IF(`问题类型` = '漏发错发',数量,0)) AS 漏发错发,
+                        				SUM(IF(`问题类型` = '产品不符合客户预期',数量,0)) AS 产品不符合客户预期,
+                        				SUM(IF(`问题类型` = '与网站不符',数量,0)) AS 与网站不符,
+                        				SUM(IF(`问题类型` = '中国制造',数量,0)) AS 中国制造,
+                        				SUM(IF(`问题类型` = '非正品拒收',数量,0)) AS 非正品拒收,
+                        				SUM(IF(`问题类型` = '产品到货无法使用',数量,0)) AS 产品到货无法使用,
+                        				SUM(IF(`问题类型` = '客户不会使用该产品',数量,0)) AS 客户不会使用该产品,
+                        				SUM(IF(`问题类型` = '客户自身原因',数量,0)) AS 客户自身原因,
+                        				SUM(IF(`问题类型` = '没有产品说明书',数量,0)) AS 没有产品说明书,
+                        				SUM(IF(`问题类型` = '不喜欢',数量,0)) AS 不喜欢,
+                        				SUM(IF(`问题类型` = '无订购',数量,0)) AS 无订购,
+                        				SUM(IF(`问题类型` = '无理由拒收退货',数量,0)) AS 无理由拒收退货,
+                        				SUM(IF(`问题类型` = '已在其他地方购买',数量,0)) AS 已在其他地方购买,
+                        				SUM(IF(`问题类型` = '其他',数量,0)) AS 其他
+                            FROM 工单收集表 th
+                            GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种, 产品id
+                            ORDER BY DATE_FORMAT(提交时间,'%Y%m') DESC,币种, 工单单量 DESC
+                        ) cx3 ON ss.年月 = cx3.年月 AND ss.币种 = cx3.币种 AND ss.团队 = cx3.所属团队 AND ss.产品id = cx3.产品id
+                        WHERE ss.团队 = '合计'
+                        GROUP BY ss.年月,ss.币种,ss.团队,ss.产品id
+                        ORDER BY ss.年月,ss.币种,工单数量 DESC
+				    ) s
+						GROUP BY s.年月,s.币种,s.团队,s.产品id;'''
+        df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
         listT.append(df2)
+        sql3 = '''SELECT s.年月, s.币种, s.团队,s.产品id, s.商品数量, s.换货数量, s.退货数量,s.已处理数量,s.工单数量,
+                        concat(ROUND(IF(已处理数量 = 0,NULL,已处理数量) / 工单数量 * 100,2),'%') as 处理占比,
+				        IF(下错订单 = 0,NULL,下错订单) 下错订单,concat(ROUND(IF(下错订单 = 0,NULL,下错订单) / 工单数量 * 100,2),'%') as 占比,
+                        IF(重复订单 = 0,NULL,重复订单) 重复订单,concat(ROUND(IF(重复订单 = 0,NULL,重复订单) / 工单数量 * 100,2),'%') as 占比,
+                        IF(尺寸不合 = 0,NULL,尺寸不合) 尺寸不合,concat(ROUND(IF(尺寸不合 = 0,NULL,尺寸不合) / 工单数量 * 100,2),'%') as 占比,
+                        IF(尺码偏大 = 0,NULL,尺码偏大) 尺码偏大,concat(ROUND(IF(尺码偏大 = 0,NULL,尺码偏大) / 工单数量 * 100,2),'%') as 占比,
+                        IF(尺码偏小 = 0,NULL,尺码偏小) 尺码偏小,concat(ROUND(IF(尺码偏小 = 0,NULL,尺码偏小) / 工单数量 * 100,2),'%') as 占比,
+                        IF(价格较高 = 0,NULL,价格较高) 价格较高,concat(ROUND(IF(价格较高 = 0,NULL,价格较高) / 工单数量 * 100,2),'%') as 占比,
+                        IF(产品质量不合格 = 0,NULL,产品质量不合格) 产品质量不合格,concat(ROUND(IF(产品质量不合格 = 0,NULL,产品质量不合格) / 工单数量 * 100,2),'%') as 占比,
+                        IF(产品瑕疵 = 0,NULL,产品瑕疵) 产品瑕疵,concat(ROUND(IF(产品瑕疵 = 0,NULL,产品瑕疵) / 工单数量 * 100,2),'%') as 占比,
+                        IF(漏发错发 = 0,NULL,漏发错发) 漏发错发,concat(ROUND(IF(漏发错发 = 0,NULL,漏发错发) / 工单数量 * 100,2),'%') as 占比,
+                        IF(产品不符合客户预期 = 0,NULL,产品不符合客户预期) 产品不符合客户预期,concat(ROUND(IF(产品不符合客户预期 = 0,NULL,产品不符合客户预期) / 工单数量 * 100,2),'%') as 占比,
+                        IF(与网站不符 = 0,NULL,与网站不符) 与网站不符,concat(ROUND(IF(与网站不符 = 0,NULL,与网站不符) / 工单数量 * 100,2),'%') as 占比,
+                        IF(中国制造 = 0,NULL,中国制造) 中国制造,concat(ROUND(IF(中国制造 = 0,NULL,中国制造) / 工单数量 * 100,2),'%') as 占比,
+                        IF(非正品拒收 = 0,NULL,非正品拒收) 非正品拒收,concat(ROUND(IF(非正品拒收 = 0,NULL,非正品拒收) / 工单数量 * 100,2),'%') as 占比,
+                        IF(产品到货无法使用 = 0,NULL,产品到货无法使用) 产品到货无法使用,concat(ROUND(IF(产品到货无法使用 = 0,NULL,产品到货无法使用) / 工单数量 * 100,2),'%') as 占比,
+                        IF(客户不会使用该产品 = 0,NULL,客户不会使用该产品) 客户不会使用该产品,concat(ROUND(IF(客户不会使用该产品 = 0,NULL,客户不会使用该产品) / 工单数量 * 100,2),'%') as 占比,
+                        IF(客户自身原因 = 0,NULL,客户自身原因) 客户自身原因,concat(ROUND(IF(客户自身原因 = 0,NULL,客户自身原因) / 工单数量 * 100,2),'%') as 占比,
+                        IF(没有产品说明书 = 0,NULL,没有产品说明书) 没有产品说明书,concat(ROUND(IF(没有产品说明书 = 0,NULL,没有产品说明书) / 工单数量 * 100,2),'%') as 占比,
+                        IF(不喜欢 = 0,NULL,不喜欢) 不喜欢,concat(ROUND(IF(不喜欢 = 0,NULL,不喜欢) / 工单数量 * 100,2),'%') as 占比,
+                        IF(无订购 = 0,NULL,无订购) 无订购,concat(ROUND(IF(无订购 = 0,NULL,无订购) / 工单数量 * 100,2),'%') as 占比,
+                        IF(无理由拒收退货 = 0,NULL,无理由拒收退货) 无理由拒收退货,concat(ROUND(IF(无理由拒收退货 = 0,NULL,无理由拒收退货) / 工单数量 * 100,2),'%') as 占比,
+                        IF(已在其他地方购买 = 0,NULL,已在其他地方购买) 已在其他地方购买,concat(ROUND(IF(已在其他地方购买 = 0,NULL,已在其他地方购买) / 工单数量 * 100,2),'%') as 占比,
+                        IF(其他 = 0,NULL,其他) 其他,concat(ROUND(IF(其他 = 0,NULL,其他) / 工单数量 * 100,2),'%') as 占比
+				    FROM (SELECT ss.年月, ss.币种, ss.团队, CONCAT(ss.产品id,'#',ss.产品名称) 产品id, 
+                                IF(ss.商品数量 = 0,NULL,ss.商品数量) as 商品数量,
+                                IF(换货数量 = 0,NULL,换货数量) as 换货数量,
+                                IF(退货数量 = 0,NULL,退货数量) as 退货数量,
+						        IF((IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量)) = 0,NULL,(IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量))) as 已处理数量,
+                                IF(工单数量 = 0,NULL,工单数量) as 工单数量,
+                                下错订单,重复订单,尺寸不合,尺码偏大,尺码偏小,价格较高,产品质量不合格,产品瑕疵,漏发错发,产品不符合客户预期,与网站不符,中国制造,
+                                非正品拒收,产品到货无法使用,客户不会使用该产品,客户自身原因,没有产品说明书,不喜欢,无订购,无理由拒收退货,已在其他地方购买,其他
+                        FROM product_info ss
+                    LEFT JOIN
+                        (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,团队,产品id,COUNT(订单编号) 换货单量,SUM(数量) as 换货数量
+                            FROM 换货表 th
+                            GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 团队, 产品id
+                            ORDER BY DATE_FORMAT(导入时间,'%Y%m') DESC,币种, 团队 , 换货单量 DESC
+                        ) cx ON ss.年月 = cx.年月 AND ss.币种 = cx.币种 AND ss.团队 = cx.团队 AND ss.产品id = cx.产品id
+                    LEFT JOIN
+                        (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,团队,产品id,COUNT(订单编号) 退货单量,SUM(数量) as 退货数量
+                            FROM 退货表 th
+                            GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 团队, 产品id
+                            ORDER BY DATE_FORMAT(导入时间,'%Y%m') DESC,币种, 团队 , 退货单量 DESC
+                        ) cx2 ON ss.年月 = cx2.年月 AND ss.币种 = cx2.币种 AND ss.团队 = cx2.团队 AND ss.产品id = cx2.产品id
+                    LEFT JOIN
+                        (SELECT DATE_FORMAT(提交时间,'%Y%m') as 年月,币种,所属团队,产品id,COUNT(订单编号) 工单单量,SUM(数量) as 工单数量,
+										SUM(IF(`问题类型` = '下错订单',数量,0)) AS 下错订单,
+                        				SUM(IF(`问题类型` = '重复订单',数量,0)) AS 重复订单,
+                        				SUM(IF(`问题类型` = '尺寸不合',数量,0)) AS 尺寸不合,
+                        				SUM(IF(`问题类型` = '尺码偏大',数量,0)) AS 尺码偏大,
+                        				SUM(IF(`问题类型` = '尺码偏小',数量,0)) AS 尺码偏小,
+                        				SUM(IF(`问题类型` = '价格较高',数量,0)) AS 价格较高,
+                        				SUM(IF(`问题类型` = '产品质量不合格',数量,0)) AS 产品质量不合格,
+                        				SUM(IF(`问题类型` = '产品瑕疵',数量,0)) AS 产品瑕疵,
+                        				SUM(IF(`问题类型` = '漏发错发',数量,0)) AS 漏发错发,
+                        				SUM(IF(`问题类型` = '产品不符合客户预期',数量,0)) AS 产品不符合客户预期,
+                        				SUM(IF(`问题类型` = '与网站不符',数量,0)) AS 与网站不符,
+                        				SUM(IF(`问题类型` = '中国制造',数量,0)) AS 中国制造,
+                        				SUM(IF(`问题类型` = '非正品拒收',数量,0)) AS 非正品拒收,
+                        				SUM(IF(`问题类型` = '产品到货无法使用',数量,0)) AS 产品到货无法使用,
+                        				SUM(IF(`问题类型` = '客户不会使用该产品',数量,0)) AS 客户不会使用该产品,
+                        				SUM(IF(`问题类型` = '客户自身原因',数量,0)) AS 客户自身原因,
+                        				SUM(IF(`问题类型` = '没有产品说明书',数量,0)) AS 没有产品说明书,
+                        				SUM(IF(`问题类型` = '不喜欢',数量,0)) AS 不喜欢,
+                        				SUM(IF(`问题类型` = '无订购',数量,0)) AS 无订购,
+                        				SUM(IF(`问题类型` = '无理由拒收退货',数量,0)) AS 无理由拒收退货,
+                        				SUM(IF(`问题类型` = '已在其他地方购买',数量,0)) AS 已在其他地方购买,
+                        				SUM(IF(`问题类型` = '其他',数量,0)) AS 其他
+                            FROM 工单收集表 th
+                            GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种, 所属团队, 产品id
+                            ORDER BY DATE_FORMAT(提交时间,'%Y%m') DESC,币种, 所属团队 , 工单单量 DESC
+                        ) cx3 ON ss.年月 = cx3.年月 AND ss.币种 = cx3.币种 AND ss.团队 = cx3.所属团队 AND ss.产品id = cx3.产品id
+                        WHERE ss.团队 != '合计'
+                        GROUP BY ss.年月,ss.币种,ss.团队,ss.产品id 
+                        ORDER BY ss.年月,ss.币种,ss.团队,工单数量 DESC
+                    ) s
+					GROUP BY s.年月,s.币种,s.团队,s.产品id;'''
+        df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
+        listT.append(df3)
+
 
         print('正在获取 第二部分 信息…………')
         print('正在获取 总体单量 信息…………')
@@ -337,14 +504,14 @@ class QueryUpdate(Settings):
                             SUM(IF(`占比` = '>=50%',1,0)) AS '>=50%单量',
                             SUM(IF(`占比` != '0%',1,0)) AS '非换补单量',
                             COUNT(订单编号) 换货单量
-                        FROM ( SELECT *,IF(克隆后金额/金额 = 0,'0%',
+                        FROM ( SELECT *,IF(克隆后金额/金额 = 0 OR 克隆后金额/金额 IS null,'0%',
                                         IF(克隆后金额/金额 > 0 AND 克隆后金额/金额 <= 0.1,'<10%',
                                         IF(克隆后金额/金额 > 0.1 AND 克隆后金额/金额 <= 0.2,'<20%',
                                         IF(克隆后金额/金额 > 0.2 AND 克隆后金额/金额 <= 0.3,'<30%',
                                         IF(克隆后金额/金额 > 0.3 AND 克隆后金额/金额 <= 0.4,'<40%',
                                         IF(克隆后金额/金额 > 0.4 AND 克隆后金额/金额 <= 0.5,'<50%',
                                         IF(克隆后金额/金额 > 0.5,'>=50%',克隆后金额/金额))))))) as 占比
-                                FROM 换货表
+                                FROM 换货表 th WHERE th.`币种` IN ('台币','港币')
                             ) th
                         GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种
                     ) s1
@@ -359,14 +526,14 @@ class QueryUpdate(Settings):
                         SUM(IF(`占比` = '>=50%',1,0)) AS '>=50%单量',
                         SUM(IF(`占比` != '0%',1,0)) AS '不全款单量',
                         COUNT(订单编号) 退货单量
-                    FROM ( SELECT *,IF(退款金额/金额 = 0,'0%',
+                    FROM ( SELECT *,IF(退款金额/金额 = 0 OR 退款金额/金额 IS null,'0%',
                                     IF(退款金额/金额 > 0 AND 退款金额/金额 <= 0.1,'<10%',
                                     IF(退款金额/金额 > 0.1 AND 退款金额/金额 <= 0.2,'<20%',
                                     IF(退款金额/金额 > 0.2 AND 退款金额/金额 <= 0.3,'<30%',
                                     IF(退款金额/金额 > 0.3 AND 退款金额/金额 <= 0.4,'<40%',
                                     IF(退款金额/金额 > 0.4 AND 退款金额/金额 <= 0.5,'<50%',
                                     IF(退款金额/金额 > 0.5,'>=50%',退款金额/金额))))))) as 占比
-                            FROM 退货表
+                            FROM 退货表 th WHERE th.`币种` IN ('台币','港币')
                         ) th
                     GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种
                     ) s2 ON s1.年月 = s2.年月 AND s1.币种 = s2.币种 AND s1.团队 = s2.团队
@@ -409,14 +576,14 @@ class QueryUpdate(Settings):
                             SUM(IF(`占比` = '>=50%',克隆后金额,0)) AS '>=50%单量',
                             SUM(IF(`占比` != '0%',克隆后金额,0)) AS '非换补单量',
                             SUM(克隆后金额) 换货单量
-                        FROM ( SELECT *,IF(克隆后金额/金额 = 0,'0%',
+                        FROM ( SELECT *,IF(克隆后金额/金额 = 0 OR 克隆后金额/金额 IS null,'0%',
                                         IF(克隆后金额/金额 > 0 AND 克隆后金额/金额 <= 0.1,'<10%',
                                         IF(克隆后金额/金额 > 0.1 AND 克隆后金额/金额 <= 0.2,'<20%',
                                         IF(克隆后金额/金额 > 0.2 AND 克隆后金额/金额 <= 0.3,'<30%',
                                         IF(克隆后金额/金额 > 0.3 AND 克隆后金额/金额 <= 0.4,'<40%',
                                         IF(克隆后金额/金额 > 0.4 AND 克隆后金额/金额 <= 0.5,'<50%',
                                         IF(克隆后金额/金额 > 0.5,'>=50%',克隆后金额/金额))))))) as 占比
-                                FROM 换货表
+                                FROM 换货表 th WHERE th.`币种` IN ('台币','港币')
                             ) th
                         GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种
                 ) s1
@@ -431,14 +598,14 @@ class QueryUpdate(Settings):
                         SUM(IF(`占比` = '>=50%',退款金额,0)) AS '>=50%单量',
                         SUM(IF(`占比` != '0%',退款金额,0)) AS '不全款单量',
                         SUM(退款金额) 退货单量
-                FROM ( SELECT *,IF(退款金额/金额 = 0,'0%',
+                FROM ( SELECT *,IF(退款金额/金额 = 0 OR 退款金额/金额 IS null,'0%',
                                 IF(退款金额/金额 > 0 AND 退款金额/金额 <= 0.1,'<10%',
                                 IF(退款金额/金额 > 0.1 AND 退款金额/金额 <= 0.2,'<20%',
                                 IF(退款金额/金额 > 0.2 AND 退款金额/金额 <= 0.3,'<30%',
                                 IF(退款金额/金额 > 0.3 AND 退款金额/金额 <= 0.4,'<40%',
                                 IF(退款金额/金额 > 0.4 AND 退款金额/金额 <= 0.5,'<50%',
                                 IF(退款金额/金额 > 0.5,'>=50%',退款金额/金额))))))) as 占比
-                        FROM 退货表
+                        FROM 退货表 th WHERE th.`币种` IN ('台币','港币')
                     ) th
                 GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种
                 ) s2 ON s1.年月 = s2.年月 AND s1.币种 = s2.币种 AND s1.团队 = s2.团队
@@ -481,14 +648,14 @@ class QueryUpdate(Settings):
                             SUM(IF(`占比` = '>=50%',金额,0)) AS '>=50%单量',
                             SUM(IF(`占比` != '0%',金额,0)) AS '非换补单量',
                             SUM(金额) 换货单量
-                        FROM ( SELECT *,IF(克隆后金额/金额 = 0,'0%',
+                        FROM ( SELECT *,IF(克隆后金额/金额 = 0 OR 克隆后金额/金额 IS null,'0%',
                                         IF(克隆后金额/金额 > 0 AND 克隆后金额/金额 <= 0.1,'<10%',
                                         IF(克隆后金额/金额 > 0.1 AND 克隆后金额/金额 <= 0.2,'<20%',
                                         IF(克隆后金额/金额 > 0.2 AND 克隆后金额/金额 <= 0.3,'<30%',
                                         IF(克隆后金额/金额 > 0.3 AND 克隆后金额/金额 <= 0.4,'<40%',
                                         IF(克隆后金额/金额 > 0.4 AND 克隆后金额/金额 <= 0.5,'<50%',
                                         IF(克隆后金额/金额 > 0.5,'>=50%',克隆后金额/金额))))))) as 占比
-                                FROM 换货表
+                                FROM 换货表 th WHERE th.`币种` IN ('台币','港币')
                             ) th
                         GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种
                 ) s1
@@ -503,14 +670,14 @@ class QueryUpdate(Settings):
                         SUM(IF(`占比` = '>=50%',金额,0)) AS '>=50%单量',
                         SUM(IF(`占比` != '0%',金额,0)) AS '不全款单量',
                         SUM(金额) 退货单量
-                FROM ( SELECT *,IF(退款金额/金额 = 0,'0%',
+                FROM ( SELECT *,IF(退款金额/金额 = 0 OR 退款金额/金额 IS null,'0%',
                                 IF(退款金额/金额 > 0 AND 退款金额/金额 <= 0.1,'<10%',
                                 IF(退款金额/金额 > 0.1 AND 退款金额/金额 <= 0.2,'<20%',
                                 IF(退款金额/金额 > 0.2 AND 退款金额/金额 <= 0.3,'<30%',
                                 IF(退款金额/金额 > 0.3 AND 退款金额/金额 <= 0.4,'<40%',
                                 IF(退款金额/金额 > 0.4 AND 退款金额/金额 <= 0.5,'<50%',
                                 IF(退款金额/金额 > 0.5,'>=50%',退款金额/金额))))))) as 占比
-                        FROM 退货表
+                        FROM 退货表 th WHERE th.`币种` IN ('台币','港币')
                     ) th
                 GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种
                 ) s2 ON s1.年月 = s2.年月 AND s1.币种 = s2.币种 AND s1.团队 = s2.团队
@@ -554,14 +721,14 @@ class QueryUpdate(Settings):
                             SUM(IF(`占比` = '>=50%',1,0)) AS '>=50%单量',
                             SUM(IF(`占比` != '0%',1,0)) AS '非换补单量',
                             COUNT(订单编号) 换货单量
-                        FROM ( SELECT *,IF(克隆后金额/金额 = 0,'0%',
+                        FROM ( SELECT *,IF(克隆后金额/金额 = 0 OR 克隆后金额/金额 IS null,'0%',
                                         IF(克隆后金额/金额 > 0 AND 克隆后金额/金额 <= 0.1,'<10%',
                                         IF(克隆后金额/金额 > 0.1 AND 克隆后金额/金额 <= 0.2,'<20%',
                                         IF(克隆后金额/金额 > 0.2 AND 克隆后金额/金额 <= 0.3,'<30%',
                                         IF(克隆后金额/金额 > 0.3 AND 克隆后金额/金额 <= 0.4,'<40%',
                                         IF(克隆后金额/金额 > 0.4 AND 克隆后金额/金额 <= 0.5,'<50%',
                                         IF(克隆后金额/金额 > 0.5,'>=50%',克隆后金额/金额))))))) as 占比
-                                FROM 换货表
+                                FROM 换货表 th WHERE th.`币种` IN ('台币','港币')
                             ) th
                         GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 团队
                     ) s1
@@ -576,14 +743,14 @@ class QueryUpdate(Settings):
                         SUM(IF(`占比` = '>=50%',1,0)) AS '>=50%单量',
                         SUM(IF(`占比` != '0%',1,0)) AS '不全款单量',
                         COUNT(订单编号) 退货单量
-                    FROM ( SELECT *,IF(退款金额/金额 = 0,'0%',
+                    FROM ( SELECT *,IF(退款金额/金额 = 0 OR 退款金额/金额 IS null,'0%',
                                     IF(退款金额/金额 > 0 AND 退款金额/金额 <= 0.1,'<10%',
                                     IF(退款金额/金额 > 0.1 AND 退款金额/金额 <= 0.2,'<20%',
                                     IF(退款金额/金额 > 0.2 AND 退款金额/金额 <= 0.3,'<30%',
                                     IF(退款金额/金额 > 0.3 AND 退款金额/金额 <= 0.4,'<40%',
                                     IF(退款金额/金额 > 0.4 AND 退款金额/金额 <= 0.5,'<50%',
                                     IF(退款金额/金额 > 0.5,'>=50%',退款金额/金额))))))) as 占比
-                            FROM 退货表
+                            FROM 退货表 th WHERE th.`币种` IN ('台币','港币')
                         ) th
                     GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 团队
                     ) s2 ON s1.年月 = s2.年月 AND s1.币种 = s2.币种 AND s1.团队 = s2.团队
@@ -626,14 +793,14 @@ class QueryUpdate(Settings):
                             SUM(IF(`占比` = '>=50%',克隆后金额,0)) AS '>=50%单量',
                             SUM(IF(`占比` != '0%',克隆后金额,0)) AS '非换补单量',
                             SUM(克隆后金额) 换货单量
-                        FROM ( SELECT *,IF(克隆后金额/金额 = 0,'0%',
+                        FROM ( SELECT *,IF(克隆后金额/金额 = 0 OR 克隆后金额/金额 IS null,'0%',
                                         IF(克隆后金额/金额 > 0 AND 克隆后金额/金额 <= 0.1,'<10%',
                                         IF(克隆后金额/金额 > 0.1 AND 克隆后金额/金额 <= 0.2,'<20%',
                                         IF(克隆后金额/金额 > 0.2 AND 克隆后金额/金额 <= 0.3,'<30%',
                                         IF(克隆后金额/金额 > 0.3 AND 克隆后金额/金额 <= 0.4,'<40%',
                                         IF(克隆后金额/金额 > 0.4 AND 克隆后金额/金额 <= 0.5,'<50%',
                                         IF(克隆后金额/金额 > 0.5,'>=50%',克隆后金额/金额))))))) as 占比
-                                FROM 换货表
+                                FROM 换货表 th WHERE th.`币种` IN ('台币','港币')
                             ) th
                         GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 团队
                 ) s1
@@ -648,14 +815,14 @@ class QueryUpdate(Settings):
                         SUM(IF(`占比` = '>=50%',退款金额,0)) AS '>=50%单量',
                         SUM(IF(`占比` != '0%',退款金额,0)) AS '不全款单量',
                         SUM(退款金额) 退货单量
-                FROM ( SELECT *,IF(退款金额/金额 = 0,'0%',
+                FROM ( SELECT *,IF(退款金额/金额 = 0 OR 退款金额/金额 IS null,'0%',
                                 IF(退款金额/金额 > 0 AND 退款金额/金额 <= 0.1,'<10%',
                                 IF(退款金额/金额 > 0.1 AND 退款金额/金额 <= 0.2,'<20%',
                                 IF(退款金额/金额 > 0.2 AND 退款金额/金额 <= 0.3,'<30%',
                                 IF(退款金额/金额 > 0.3 AND 退款金额/金额 <= 0.4,'<40%',
                                 IF(退款金额/金额 > 0.4 AND 退款金额/金额 <= 0.5,'<50%',
                                 IF(退款金额/金额 > 0.5,'>=50%',退款金额/金额))))))) as 占比
-                        FROM 退货表
+                        FROM 退货表 th WHERE th.`币种` IN ('台币','港币')
                     ) th
                 GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 团队
                 ) s2 ON s1.年月 = s2.年月 AND s1.币种 = s2.币种 AND s1.团队 = s2.团队
@@ -697,14 +864,14 @@ class QueryUpdate(Settings):
                             SUM(IF(`占比` = '>=50%',金额,0)) AS '>=50%单量',
                             SUM(IF(`占比` != '0%',金额,0)) AS '非换补单量',
                             SUM(金额) 换货单量
-                        FROM ( SELECT *,IF(克隆后金额/金额 = 0,'0%',
+                        FROM ( SELECT *,IF(克隆后金额/金额 = 0 OR 克隆后金额/金额 IS null,'0%',
                                         IF(克隆后金额/金额 > 0 AND 克隆后金额/金额 <= 0.1,'<10%',
                                         IF(克隆后金额/金额 > 0.1 AND 克隆后金额/金额 <= 0.2,'<20%',
                                         IF(克隆后金额/金额 > 0.2 AND 克隆后金额/金额 <= 0.3,'<30%',
                                         IF(克隆后金额/金额 > 0.3 AND 克隆后金额/金额 <= 0.4,'<40%',
                                         IF(克隆后金额/金额 > 0.4 AND 克隆后金额/金额 <= 0.5,'<50%',
                                         IF(克隆后金额/金额 > 0.5,'>=50%',克隆后金额/金额))))))) as 占比
-                                FROM 换货表
+                                FROM 换货表 th WHERE th.`币种` IN ('台币','港币')
                             ) th
                         GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 团队
                 ) s1
@@ -719,14 +886,14 @@ class QueryUpdate(Settings):
                         SUM(IF(`占比` = '>=50%',金额,0)) AS '>=50%单量',
                         SUM(IF(`占比` != '0%',金额,0)) AS '不全款单量',
                         SUM(金额) 退货单量
-                FROM ( SELECT *,IF(退款金额/金额 = 0,'0%',
+                FROM ( SELECT *,IF(退款金额/金额 = 0 OR 退款金额/金额 IS null,'0%',
                                 IF(退款金额/金额 > 0 AND 退款金额/金额 <= 0.1,'<10%',
                                 IF(退款金额/金额 > 0.1 AND 退款金额/金额 <= 0.2,'<20%',
                                 IF(退款金额/金额 > 0.2 AND 退款金额/金额 <= 0.3,'<30%',
                                 IF(退款金额/金额 > 0.3 AND 退款金额/金额 <= 0.4,'<40%',
                                 IF(退款金额/金额 > 0.4 AND 退款金额/金额 <= 0.5,'<50%',
                                 IF(退款金额/金额 > 0.5,'>=50%',退款金额/金额))))))) as 占比
-                        FROM 退货表
+                        FROM 退货表 th WHERE th.`币种` IN ('台币','港币')
                     ) th
                 GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 团队
                 ) s2 ON s1.年月 = s2.年月 AND s1.币种 = s2.币种 AND s1.团队 = s2.团队
@@ -741,7 +908,7 @@ class QueryUpdate(Settings):
         print('正在写入excel…………')
         today = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         file_path = 'G:\\输出文件\\\\客服处理汇总 {}.xlsx'.format(today)
-        sheet_name = ['总团队', '分团队', '退换补单量', '退换补返回金额', '退换补金额', '分退换补单量', '分退换补返回金额', '分退换补金额']
+        sheet_name = ['总团队', '分团队', '分团队2', '总体单量', '总体克隆金额', '总体金额', '分团队单量', '分团队克隆金额', '分团队金额']
         df0 = pd.DataFrame([])                                      # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)                        # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         writer = pd.ExcelWriter(file_path, engine='openpyxl')       # 初始化写入对象

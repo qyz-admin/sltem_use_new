@@ -79,13 +79,19 @@ class QueryTwo(Settings):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36',
                     'Origin': 'https://login.dingtalk.com',
                     'Referer': 'https://login.dingtalk.com/'}
-        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
-        req = req.json()
-        # print(req)
-        req_url = req['data']
-        loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
-        # print(loginTmpCode)
-        # print('+++已获取loginTmpCode值+++')
+        loginTmpCode = None
+        try:
+            req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+            req = req.json()
+            # print(req)
+            req_url = req['data']
+            loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
+            # print(loginTmpCode)
+            # print('+++已获取loginTmpCode值+++')
+        except Exception as e:
+            print('登录失败：  3 分钟后重新尝试登录', str(Exception) + str(e))
+            time.sleep(180)
+            self._online()
 
         time.sleep(1)
         # print('第二阶段请求-登录页面......')
@@ -625,7 +631,12 @@ class QueryTwo(Settings):
             ord = ', '.join(orderId[n:n + 500])
             # print(ord)
             n = n + 500
-            self.orderInfoQuery(ord, searchType, team, team2)
+            try:
+                self.orderInfoQuery(ord, searchType, team, team2)
+            except Exception as e:
+                print('获取失败： 30秒后重新获取', str(Exception) + str(e))
+                time.sleep(30)
+                self.orderInfoQuery(ord, searchType, team, team2)
         print('单日查询耗时：', datetime.datetime.now() - start)
 
 
@@ -685,9 +696,8 @@ class QueryTwo(Settings):
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
         ordersDict = []
-        for result in req['data']['list']:
-            # print(result)
-            try:
+        try:
+            for result in req['data']['list']:
                 # 添加新的字典键-值对，为下面的重新赋值用
                 result['saleId'] = 0
                 result['saleProduct'] = 0
@@ -697,26 +707,26 @@ class QueryTwo(Settings):
                 result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
                 result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
                 result['spec'] = result['specs'][0]['spec']
-            except Exception as e:
-                print('转化失败：', str(Exception) + str(e) + str(result['orderNumber']))
-            quest = ''
-            for re in result['questionReason']:
-                quest = quest + ';' + re
-            result['questionReason'] = quest
-            delr = ''
-            for re in result['delReason']:
-                delr = delr + ';' + re
-            result['delReason'] = delr
-            auto = ''
-            for re in result['autoVerify']:
-                auto = auto + ';' + re
-            result['autoVerify'] = auto
-            self.q.put(result)
-        # print(len(req['data']['list']))
-        for i in range(len(req['data']['list'])):
-            ordersDict.append(self.q.get())
-        data = pd.json_normalize(ordersDict)
-        # print(data.columns)
+                quest = ''
+                for re in result['questionReason']:
+                    quest = quest + ';' + re
+                result['questionReason'] = quest
+                delr = ''
+                for re in result['delReason']:
+                    delr = delr + ';' + re
+                result['delReason'] = delr
+                auto = ''
+                for re in result['autoVerify']:
+                    auto = auto + ';' + re
+                result['autoVerify'] = auto
+                ordersDict.append(result)
+            #     self.q.put(result)
+            # for i in range(len(req['data']['list'])):
+            #     ordersDict.append(self.q.get())
+            data = pd.json_normalize(ordersDict)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+            self.orderInfoQuery(ord, searchType, team, team2)
         print('正在写入缓存中......')
         try:
             df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId', 'spec', 'quantity',
@@ -781,6 +791,7 @@ class QueryTwo(Settings):
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('++++++本批次更新成功+++++++')
+        print('*' * 50)
 
 if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')

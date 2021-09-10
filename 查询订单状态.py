@@ -130,12 +130,12 @@ class QueryUpdate(Settings):
 
     def trans_way_cost(self, team):
         match = {'gat': '港台', 'slsc': '品牌'}
-        output = datetime.datetime.now().strftime('%m%d')
+        output = datetime.datetime.now().strftime('%m.%d')
         month_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        month_yesterday = '2021-08-24'
+        month_yesterday = '2021-09-08'
         print(month_yesterday)
         month_now = (datetime.datetime.now()).strftime('%Y%m')
-        month_now = '202108'
+        month_now = '202109'
         print(month_now)
 
         sql = '''SELECT 年月,日期,团队,币种,订单编号,数量,电话号码,运单编号,是否改派,物流方式,商品id,ds.产品id,产品名称,价格,下单时间,审核时间,仓储扫描时间,完结状态,完结状态时间,物流花费,包裹重量,包裹体积,规格中文,产品量
@@ -343,9 +343,9 @@ if __name__ == '__main__':
     # -----------------------------------------------手动查询状态运行（一）-----------------------------------------
     # upload = '查询-订单号'
     upload = '查询-运单号'
-    m.readFormHost(upload)
+    # m.readFormHost(upload)
 
 
-    # m.trans_way_cost(team)  # 同产品下的规格运费查询
+    m.trans_way_cost(team)  # 同产品下的规格运费查询
     print('输出耗时：', datetime.datetime.now() - start)
 

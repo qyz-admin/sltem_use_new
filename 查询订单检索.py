@@ -188,8 +188,8 @@ class QueryTwo(Settings):
             filePath = os.path.join(path, dir)
             if dir[:2] != '~$':
                 print(filePath)
-                self.wbsheetHost(filePath, team, searchType)
-                # self.cs_wbsheetHost(filePath, team, searchType)
+                # self.wbsheetHost(filePath, team, searchType)
+                self.cs_wbsheetHost(filePath, team, searchType)
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
     def wbsheetHost(self, filePath, team, searchType):
@@ -269,28 +269,12 @@ class QueryTwo(Settings):
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
                     print('++++正在导入更新：' + sht.name + ' 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
-                    # orderId = list(db['订单编号'])
-                    # max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
-                    # n = 0
-                    # ord = ', '.join(orderId[n:n + 500])
-                    # df = self.orderInfoQuery(ord, searchType)
-                    # dlist = []
-                    # n = 500
-                    # while n < max_count:  # 这里用到了一个while循环，穿越过来的
-                    #     ord = ', '.join(orderId[n:n + 500])
-                    #     n = n + 500
-                        # data = self.orderInfoQuery(ord, searchType)
-                        # dlist.append(data)
-                    # print('查询耗时：', datetime.datetime.now() - start)
-                    # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-                    # dp = df.append(dlist, ignore_index=True)
-                    # dp.to_excel('H:\\桌面\\test\\订单查询{}.xlsx'.format(rq), sheet_name='查询', index=False)
-                    self.InfoQuery(db, searchType)
+                    self.cs_InfoQuery(db, searchType)
                 else:
                     print('----------数据为空导入失败：' + sht.name)
             wb.close()
         app.quit()
-    def InfoQuery(self, db, searchType):  # 调用多线程
+    def cs_InfoQuery(self, db, searchType):  # 调用多线程
         orderId = list(db['订单编号'])
         max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
         n = 0
@@ -375,9 +359,8 @@ class QueryTwo(Settings):
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
         ordersDict = []
-        for result in req['data']['list']:
-            # print(result)
-            try:
+        try:
+            for result in req['data']['list']:
                 # 添加新的字典键-值对，为下面的重新赋值用
                 result['saleId'] = 0
                 result['saleProduct'] = 0
@@ -387,34 +370,23 @@ class QueryTwo(Settings):
                 result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
                 result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
                 result['spec'] = result['specs'][0]['spec']
-            except Exception as e:
-                print('转化失败：', str(Exception) + str(e) + str(result['orderNumber']))
-            quest = ''
-            for re in result['questionReason']:
-                quest = quest + ';' + re
-            result['questionReason'] = quest
-            delr = ''
-            for re in result['delReason']:
-                delr = delr + ';' + re
-            result['delReason'] = delr
-            auto = ''
-            for re in result['autoVerify']:
-                auto = auto + ';' + re
-            result['autoVerify'] = auto
-            self.q.put(result)
-        # print(len(req['data']['list']))
-        for i in range(len(req['data']['list'])):
-            ordersDict.append(self.q.get())
-        data = pd.json_normalize(ordersDict)
-        # print(data.columns)
-        print('正在写入缓存中......')
-        try:
-            rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-            # data.to_excel('H:\\桌面\\test\\订单查询{}.xlsx'.format(rq), sheet_name='查询', index=False)
-            # print('----已写入excel')
+                quest = ''
+                for re in result['questionReason']:
+                    quest = quest + ';' + re
+                result['questionReason'] = quest
+                delr = ''
+                for re in result['delReason']:
+                    delr = delr + ';' + re
+                result['delReason'] = delr
+                auto = ''
+                for re in result['autoVerify']:
+                    auto = auto + ';' + re
+                result['autoVerify'] = auto
+                ordersDict.append(result)
         except Exception as e:
-            print('更新失败：', str(Exception) + str(e))
-        print('++++++本批次更新成功+++++++')
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+            self.orderInfoQuery(ord, searchType)
+        data = pd.json_normalize(ordersDict)
         try:
             self.q.put(data)
         except Exception as e:
@@ -454,8 +426,8 @@ class QueryTwo(Settings):
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersdict = []
         print('正在处理json数据转化为dataframe…………')
-        for result in req['data']['list']:
-            try:
+        try:
+            for result in req['data']['list']:
                 result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
                 result['saleName'] = 0
                 result['productId'] = 0
@@ -466,21 +438,22 @@ class QueryTwo(Settings):
                 result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
                 result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
                 result['spec'] = result['specs'][0]['spec']
-            except Exception as e:
-                print('转化失败：', str(Exception) + str(e) + str(result['orderNumber']))
-            quest = ''
-            for re in result['questionReason']:
-                quest = quest + ';' + re
-            result['questionReason'] = quest
-            delr = ''
-            for re in result['delReason']:
-                delr = delr + ';' + re
-            result['delReason'] = delr
-            auto = ''
-            for re in result['autoVerify']:
-                auto = auto + ';' + re
-            result['autoVerify'] = auto
-            ordersdict.append(result)
+                quest = ''
+                for re in result['questionReason']:
+                    quest = quest + ';' + re
+                result['questionReason'] = quest
+                delr = ''
+                for re in result['delReason']:
+                    delr = delr + ';' + re
+                result['delReason'] = delr
+                auto = ''
+                for re in result['autoVerify']:
+                    auto = auto + ';' + re
+                result['autoVerify'] = auto
+                ordersdict.append(result)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+            self.orderInfoQuery(ord, searchType)
         #     self.q.put(result)
         # for i in range(len(req['data']['list'])):
         #     ordersdict.append(self.q.get())
