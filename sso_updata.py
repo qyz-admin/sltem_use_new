@@ -79,23 +79,16 @@ class QueryTwo(Settings):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36',
                     'Origin': 'https://login.dingtalk.com',
                     'Referer': 'https://login.dingtalk.com/'}
-        loginTmpCode = None
-        try:
-            req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
-            req = req.json()
-            # print(req)
-            req_url = req['data']
-            loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
-            # print(loginTmpCode)
-            # print('+++已获取loginTmpCode值+++')
-        except Exception as e:
-            print('登录失败：  3 分钟后重新尝试登录', str(Exception) + str(e))
-            time.sleep(180)
-            self._online()
+        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+        req = req.json()
+        # print(req)
+        req_url = req['data']
+        loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
+        # print('+++已获取loginTmpCode值: ' + loginTmpCode)
 
         time.sleep(1)
         # print('第二阶段请求-登录页面......')
-        url = r'http://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html'
+        url = r'https://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html'
         data = {'tmpCode': loginTmpCode,
                 'system': 1,
                 'url': '',
@@ -122,7 +115,7 @@ class QueryTwo(Settings):
         req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False)
         # print(req.headers)
         gimp = req.headers['Location']
-        # print('+++已获取跳转页面+++')
+        # print('+++已获取跳转页面： ' + gimp)
         time.sleep(1)
         # print('（二）请求dingtalk_service的cookie值......')
         url = gimp
@@ -181,9 +174,9 @@ class QueryTwo(Settings):
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req)
-        # print(req.headers)
+        print(req.headers)
         print('++++++已成功登录++++++')
-
+        print('*' * 50)
 
     # 获取签收表内容
     def readFormHost(self, team, query):
@@ -234,7 +227,9 @@ class QueryTwo(Settings):
                 try:
                     db = None
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
+                    # db.rename(columns={'规格(中文)': '规格中文'})
                     columns = list(db.columns)  # 获取数据的标题名，转为列表
+                    # print(columns)
                     columns_value = ['商品链接', '收货人', '拉黑率', '电话长度', '邮编长度', '配送地址', '地址翻译',
                                      '邮箱', '留言', '审核人', '预选物流公司(新)', '是否api下单', '特价', '异常提示', '删除原因',
                                      '备注', '删除人', 'IP', '超商店铺ID', '超商店铺名称', '超商网点地址', '超商类型',
@@ -287,6 +282,7 @@ class QueryTwo(Settings):
             				        dim_trans_way.remark 运输方式,
             				        IF(h.`货物类型` = 'P 普通货', 'P', IF(h.`货物类型` = 'T 特殊货', 'T', h.`货物类型`)) 货物类型,
             				        是否低价,
+            				        商品ID,
             				        产品id,
             				        产品名称,
             				        dim_cate.ppname 父级分类,
@@ -309,7 +305,7 @@ class QueryTwo(Settings):
             				        h.体积 包裹体积,
             				        邮编,
             				        h.转采购时间 添加物流单号时间,
-            				        h.`规格(中文)` 规格中文,
+            				        h.`规格中文` 规格中文,
             				        h.省洲 省洲,
             				        h.订单状态 系统订单状态,
             				        IF(h.`物流状态` in ('发货中'), null, h.`物流状态`) 系统物流状态,
@@ -593,21 +589,23 @@ class QueryTwo(Settings):
             		                    a.`系统物流状态`= IF(b.`系统物流状态` = '', NULL, b.`系统物流状态`),
             		                    a.`是否改派`= b.`是否改派`,
             		                    a.`物流方式`= IF(b.`物流方式` = '', NULL, b.`物流方式`),
-            		                    a.`物流名称`= b.`物流名称`,
-            		                    a.`货物类型`= b.`货物类型`,
-            		                    a.`审核时间`= b.`审核时间`,
-            		                    a.`仓储扫描时间`= b.`仓储扫描时间`,
-            		                    a.`上线时间`= b.`上线时间`,
-            		                    a.`完结状态时间`= b.`完结状态时间`,
-            		                    a.`规格中文`= b.`规格中文`,
-            		                    a.`省洲`= b.`省洲`
+            		                    a.`物流名称`= IF(b.`物流名称` = '', NULL, b.`物流名称`),
+            		                    a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),
+                                        a.`商品id`= IF(b.`商品ID` = '', NULL, b.`商品ID`),
+                                        a.`产品id`= IF(b.`产品id` = '', NULL, b.`产品id`),
+                                        a.`产品名称`= IF(b.`产品名称` = '', NULL, b.`产品名称`),
+            		                    a.`审核时间`= IF(b.`审核时间` = '', NULL, b.`审核时间`),
+            		                    a.`仓储扫描时间`= IF(b.`仓储扫描时间` = '', NULL, b.`仓储扫描时间`),
+            		                    a.`上线时间`= IF(b.`上线时间` = '', NULL, b.`上线时间`),
+            		                    a.`完结状态时间`= IF(b.`完结状态时间` = '', NULL, b.`完结状态时间`),
+            		                    a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`),
+            		                    a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
+            		                    a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`)
             		                where a.`订单编号`= b.`订单编号`;'''.format(team)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
             except Exception as e:
                 print('更新失败：', str(Exception) + str(e))
             print('更新成功…………')
-
-
 
 
 
@@ -691,8 +689,8 @@ class QueryTwo(Settings):
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
         # print(req.text)
-        print('+++已成功发送请求......')
-        print('正在处理json数据转化为dataframe…………')
+        # print('+++已成功发送请求......')
+        # print('正在处理json数据转化为dataframe…………')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
         ordersDict = []
@@ -726,7 +724,7 @@ class QueryTwo(Settings):
             data = pd.json_normalize(ordersDict)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
-            self.orderInfoQuery(ord, searchType, team, team2)
+            # self.orderInfoQuery(ord, searchType, team, team2)
         print('正在写入缓存中......')
         try:
             df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId', 'spec', 'quantity',
@@ -791,7 +789,7 @@ class QueryTwo(Settings):
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('++++++本批次更新成功+++++++')
-        print('*' * 50)
+        print('************************************************************')
 
 if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')
@@ -842,5 +840,5 @@ if __name__ == '__main__':
     #     print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
     #     m.orderInfo(searchType, team, team2, last_month)
 
-    m.orderInfoQuery('NR106010740454348', '订单号', 'gat_order_list', 'gat_order_list')  # 进入订单检索界面
-    print('更新耗时：', datetime.datetime.now() - start)
+    # m.orderInfoQuery('NR106010740454348', '订单号', 'gat_order_list', 'gat_order_list')  # 进入订单检索界面
+    # print('更新耗时：', datetime.datetime.now() - start)

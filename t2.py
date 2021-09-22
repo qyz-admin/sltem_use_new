@@ -49,14 +49,14 @@ if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat'):
     print(month_begin)
 else:
     # 更新时间
-    begin = datetime.date(2021, 7, 1)
+    begin = datetime.date(2021, 4, 1)
     print(begin)
-    end = datetime.date(2021, 9, 3)
+    end = datetime.date(2021, 7, 31)
     print(end)
     # 导出时间
-    month_last = '2021-07-01'
-    month_yesterday = '2021-09-02'
-    month_begin = '2021-06-01'
+    month_last = '2021-08-01'
+    month_yesterday = '2021-09-15'
+    month_begin = '2021-07-01'
 
 # 库的引用
 path = match[team]

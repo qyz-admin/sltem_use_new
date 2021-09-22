@@ -188,8 +188,8 @@ class QueryTwo(Settings):
             filePath = os.path.join(path, dir)
             if dir[:2] != '~$':
                 print(filePath)
-                # self.wbsheetHost(filePath, team, searchType)
-                self.cs_wbsheetHost(filePath, team, searchType)
+                self.wbsheetHost(filePath, team, searchType)
+                # self.cs_wbsheetHost(filePath, team, searchType)
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
     def wbsheetHost(self, filePath, team, searchType):
@@ -425,7 +425,7 @@ class QueryTwo(Settings):
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersdict = []
-        print('正在处理json数据转化为dataframe…………')
+        # print('正在处理json数据转化为dataframe…………')
         try:
             for result in req['data']['list']:
                 result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
@@ -453,7 +453,8 @@ class QueryTwo(Settings):
                 ordersdict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
-            self.orderInfoQuery(ord, searchType)
+            # time.sleep(10)
+            # self.orderInfoQuery(ord, searchType)
         #     self.q.put(result)
         # for i in range(len(req['data']['list'])):
         #     ordersdict.append(self.q.get())
@@ -467,6 +468,7 @@ class QueryTwo(Settings):
                    'cloneUser', 'isClone', 'warehouse', 'smsStatus', 'logisticsControl', 'logisticsRefuse',
                    'logisticsUpdateTime', 'stateTime', 'update_time']]
         print('++++++本批次查询成功+++++++')
+        print('*' * 50)
         return df
 
 

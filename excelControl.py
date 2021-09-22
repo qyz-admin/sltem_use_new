@@ -321,7 +321,7 @@ class ExcelControl():
                 df['状态时间'] = df['状态时间'].replace(to_replace=0, value=datetime.datetime(1990, 1, 1, 0, 0))
                 df['状态时间'] = df['状态时间'].fillna(value=datetime.datetime(1990, 1, 1, 0, 0))
                 df['订单编号'] = df['订单编号'].astype(str)
-                df = df[~(df['订单编号'].str.contains('TW|XM'))]
+                # df = df[~(df['订单编号'].str.contains('TW|XM'))]
                 df.reset_index(drop=True, inplace=True)
             elif team == 'sltg':
                 df['订单编号'] = df['订单编号'].astype(str)

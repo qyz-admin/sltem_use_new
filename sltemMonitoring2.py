@@ -77,7 +77,7 @@ class SltemMonitoring(Settings):
                 print('xxxx时间配置出错失败00：' + str(i) + '月份', str(Exception) + str(e))
                 Time_day.append(str(int(datetime.datetime.now().year) - 1) + '-' + str(i) + (
                     datetime.datetime.now().strftime('-%d')))
-        # 对时间数组进行排序  list.sort(cmp=None, key=None, reverse=False)；reverse -- 排序规则，reverse = True 降序， reverse = False 升序（默认）
+        #  对时间数组进行排序  list.sort(cmp=None, key=None, reverse=False)；reverse -- 排序规则，reverse = True 降序， reverse = False 升序（默认）
         Time_day.sort()
         print('正在获取本次同期比较需要的---具体时间......')
         print(Time_day[11])
@@ -171,11 +171,10 @@ class SltemMonitoring(Settings):
                         AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                     ORDER BY a.`下单时间`;'''.format(match[team], 'slgat', month_last, match2[team])
         elif match[team] == 'gat':
-            sql = '''SELECT 年月, 旬, 日期, 币种, 订单来源, 订单编号, 出货时间, 状态时间, 上线时间, 系统订单状态, 系统物流状态, 退货登记,
-                            最终状态, 是否改派,物流方式,物流名称,运输方式,是否低价,产品id,产品名称,父级分类,二级分类,三级分类,下单时间,
-                            审核时间,仓储扫描时间,完结状态时间,价格区间,价格RMB
+            sql = '''SELECT 年月, 旬, 日期, 团队, 币种, 订单来源, 订单编号, 出货时间, 状态时间, 上线时间, 最终状态, 是否改派,物流方式,产品id,产品名称,
+                            父级分类,二级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格RMB
                     FROM {0}_zqsb a 
-                    WHERE a.日期 >= '{1}' AND a.币种 = '{2}' AND a.团队 = '{3}'
+                    WHERE a.日期 >= '{1}'
                     ORDER BY a.`下单时间`;'''.format(match[team], month_last, match2[team], match3[team])
         elif match[team] == 'slsc':
             sql = '''SELECT 年月, 旬, 日期, 币种, 订单来源, 订单编号, 出货时间, 状态时间, 上线时间, 系统订单状态, 系统物流状态, 退货登记,
@@ -513,12 +512,6 @@ class SltemMonitoring(Settings):
                     '品牌-新加坡': 'sunyaru@giikin.com',
                     '品牌-菲律宾': 'sunyaru@giikin.com',
                     '日本': 'sunyaru@giikin.com'}
-        # 筛选最大ID
-        # print('正在创建临时监控数据源')
-        # today = datetime.date.today().strftime('%Y.%m.%d')
-        # sql = '''SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} GROUP BY 订单编号);'''.format(match2[team])
-        # df = pd.read_sql_query(sql=sql, con=self.engine1)
-        # df.to_sql('qsb_临时', con=self.engine1, index=False, if_exists='replace')
         start: datetime = datetime.datetime.now()
         Time_day = []
         for i in range(1, datetime.datetime.now().month + 1):  # 获取当年当前的月份时间
@@ -550,34 +543,22 @@ class SltemMonitoring(Settings):
         listT = []  # 查询sql 存放池
         show_name = []  # 打印进度需要
         # 月签收率（天）---查询
-        sqlqsb2 = '''SELECT 币种,
-				            年月,
-				            父级分类,
-				            二级分类,
-				            三级分类,
-				            物流方式,
-				            旬,
-				            总订单量, 
+        sqlqsb2 = '''SELECT 币种,年月,父级分类,二级分类,三级分类,物流方式,旬,总订单量, 
 				            签收量 / 完成量 AS '总签收/完成',
 				            签收量 / 总订单量 AS '总签收/总计',
 				            退货量 / 总订单量 AS '退款率',
 				            完成量 / 总订单量 AS '总完成占比',
-                            直发量 直发总计,
+                        直发量 直发总计,
 				            直发签收量 / 直发完成量 AS '直发签收/完成',
 				            直发签收量 / 直发量 AS '直发签收/总计',
 				            直发完成量 / 直发量 AS '直发完成占比',
-                            改派量 改派总计,
+                        改派量 改派总计,
 				            改派签收量 / 改派完成量 AS '改派签收/完成',
 				            改派签收量 / 改派量 AS '改派签收/总计',
 				            改派完成量 / 改派量 AS '改派完成占比'
-	            FROM( SELECT IFNULL(币种,'合计') 币种,
-				            IFNULL(年月,'合计') 年月,
-				            IFNULL(父级分类,'合计') 父级分类,
-				            IFNULL(二级分类,'合计') 二级分类,
-				            IFNULL(三级分类,'合计') 三级分类,
-				            IFNULL(物流方式,'合计') 物流方式,
-				            IFNULL(旬,'合计') 旬,
-				            COUNT(`订单编号`) 总订单量, 
+	            FROM( SELECT IFNULL(币种,'合计') 币种,IFNULL(年月,'合计') 年月,
+                            IFNULL(父级分类,'合计') 父级分类,IFNULL(二级分类,'合计') 二级分类,null 三级分类,
+				            IFNULL(物流方式,'合计') 物流方式,IFNULL(旬,'合计') 旬,COUNT(`订单编号`) 总订单量, 
 				            SUM(IF(`是否改派` = '直发',1,0)) as 直发量,
 				            SUM(IF(`是否改派` = '直发' AND `最终状态` = '已签收',1,0)) as 直发签收量,
 				            SUM(IF(`是否改派` = '直发' AND `最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') ,1,0)) as 直发完成量,
@@ -1028,14 +1009,13 @@ class SltemMonitoring(Settings):
 				                SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`完结状态时间`,`上线时间`),0)) AS '直发上线-完成时'
 
 	                    FROM {0} sl_cx
-	                    WHERE (sl_cx.`记录时间` = '{2}' AND (sl_cx.`日期` BETWEEN DATE_SUB('{2}', INTERVAL DAY ('{2}') - 1 DAY ) AND DATE_SUB('{2}', INTERVAL 1 DAY)) 
-		 	                OR sl_cx.`记录时间` = '{3}' AND (sl_cx.`日期` BETWEEN DATE_SUB('{3}', INTERVAL DAY ('{3}') - 1 DAY ) AND DATE_SUB('{3}', INTERVAL 1 DAY)))
+	                    WHERE sl_cx.`记录时间` = '{2}'
 		                    AND sl_cx.`币种` = '{1}' 
 		                    AND sl_cx.`是否改派` = "直发"
 		                    AND sl_cx.`父级分类` IS NOT NULL 
 		                    AND sl_cx.`仓储扫描时间` IS NOT NULL 
 	                    GROUP BY 年月,旬,物流方式,父级分类
-                        with rollup ) sl;'''.format(match2[team], match3[team], Time_day[11], Time_day[10])
+                        with rollup ) sl;'''.format(match2[team], match3[team], Time_day[11])
         listT.append(sqltime3)
         show_name.append(' 月（旬）时效…………')
         # 月时效(各月)---查询
@@ -2516,14 +2496,13 @@ class SltemMonitoring(Settings):
 				                SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发上线完成量,
 				                SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`完结状态时间`,`上线时间`),0)) AS '直发上线-完成时'
 	                    FROM {0} sl_cx
-	                    WHERE (sl_cx.`记录时间` = '{2}' AND (sl_cx.`日期` BETWEEN DATE_SUB('{2}', INTERVAL DAY ('{2}') - 1 DAY ) AND DATE_SUB('{2}', INTERVAL 1 DAY)) 
-		 	                OR sl_cx.`记录时间` = '{3}' AND (sl_cx.`日期` BETWEEN DATE_SUB('{3}', INTERVAL DAY ('{3}') - 1 DAY ) AND DATE_SUB('{3}', INTERVAL 1 DAY)))
+	                    WHERE sl_cx.`记录时间` = '{2}'
 		                    AND sl_cx.`币种` = '{1}' 
 		                    AND sl_cx.`是否改派` = "直发"
 		                    AND sl_cx.`父级分类` IS NOT NULL 
 		                    AND sl_cx.`仓储扫描时间` IS NOT NULL 
 	                    GROUP BY 年月,旬,物流方式,父级分类
-                        with rollup ) sl;'''.format(match2[team], match3[team], Time_day[11], Time_day[10])
+                        with rollup ) sl;'''.format(match2[team], match3[team], Time_day[11])
         listT.append(sqltime3)
         show_name.append(' 月（旬）时效…………')
         # 月时效(各月)---查询
@@ -5502,13 +5481,13 @@ if __name__ == '__main__':
 
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    startday = '2021.08.22'
+    startday = '2021.08.10'
     for team in ['神龙-港台', '火凤凰-港台', '金鹏-港台']:
     # for team in ['神龙-港台']:
     # for team in ['火凤凰-港台']:
         m.readForm(team, startday, '导入')
         # m.readForm(team, startday, '单独导入')
-    startday = '2021.09.22'
+    startday = '2021.09.10'
     for team in ['神龙-港台', '火凤凰-港台', '金鹏-港台']:
     # for team in ['神龙-港台']:
     # for team in ['火凤凰-港台']:
@@ -5524,12 +5503,12 @@ if __name__ == '__main__':
     # for team in ['神龙台湾', '神龙香港']:
     # for team in ['火凤凰台湾', '火凤凰香港']:
         m.order_Monitoring(team)    # 各月缓存
-    #     m.data_Monitoring(team)     # 两月数据
+    # #     m.data_Monitoring(team)     # 两月数据
     #     # m.costWaybill(team)       # 成本缓存 与 成本两月数据
         m.sl_Monitoring(team)        # 输出数据--     # 每月正常使用的时间（一）
 
-        # m.sl_Monitoring_TWO(team)    # 输出数据------ 每月使用的固定时间（二）
-        # m.sl_Monitoring_THREE(team)    # 输出上月数据---月初使用的固定时间（三）
+    #     m.sl_Monitoring_TWO(team)    # 输出数据------ 每月使用的固定时间（二）
+    #     m.sl_Monitoring_THREE(team)    # 输出上月数据---月初使用的固定时间（三）
 
 
 
@@ -5550,10 +5529,10 @@ if __name__ == '__main__':
     team = '品牌'
     m.order_Monitoring(team)  # 各月缓存
 
-    startday = '2021.08.22'
+    startday = '2021.08.10'
     m.readForm(team, startday, '导入')
 
-    startday = '2021.09.22'
+    startday = '2021.09.10'
     m.readForm(team, startday, '导入')
 
     for team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
