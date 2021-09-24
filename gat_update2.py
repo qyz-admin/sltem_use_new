@@ -88,30 +88,27 @@ class QueryUpdate(Settings):
                 try:
                     db = None
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
-                    # print(db.columns)
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
                     print('++++正在导入更新：' + sht.name + ' 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
-                    # 将返回的dateFrame导入数据库的临时表
-                    self.writeCacheHost(db)
+                    self.writeCacheHost(db)             # 将返回的dateFrame导入数据库的临时表
                     print('++++正在更新：' + sht.name + '--->>>到总订单')
-                    # 将数据库的临时表替换进指定的总表
-                    if write == '本期':
+                    if write == '本期':                 # 将数据库的临时表替换进指定的总表
                         self.replacHost(team)
-                    elif write == '本期并转存':
-                        self.replacHost(team)
-                        self.makeSql(team)
                     elif write == '上期':
                         self.replaceHostbefore(team, last_time)
                     print('++++----->>>' + sht.name + '：订单更新完成++++')
                 else:
                     print('----------数据为空导入失败：' + sht.name)
             wb.close()
-        app.quit()      # 工作表的订单信息    # 工作表的订单信息
+        app.quit()                                     # 工作表的订单信息
     def writeCacheHost(self, dataFrame):    # 写入更新缓存表
         dataFrame.to_sql('gat_update', con=self.engine1, index=False, if_exists='replace')
-    def repHost(self, team):    # 更新-总表
+
+
+    # 更新-总表(地区签收率使用)
+    def repHost(self, team):    # 更新-总表(地区签收率使用)
         try:
             print('正在更新总表中......')
             sql = '''update {0}_zqsb a, gat_update b
@@ -125,8 +122,8 @@ class QueryUpdate(Settings):
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
-
-    def replacHost(self, team):    # 更新-总表
+    # 更新-总表（总体签收率使用）
+    def replacHost(self, team):
         try:
             print('正在更新单表中......')
             sql = '''update {0}_order_list a, gat_update b
@@ -162,42 +159,7 @@ class QueryUpdate(Settings):
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
-    def replaceHostbefore(self, team, last_time):    # 更新上期-总表 DATE_SUB(CURDATE(), INTERVAL 1 month)
-        try:
-            print('正在获取往昔数据中......')
-            sql = '''SELECT 年月, 旬, 日期, IF(团队 LIKE "%红杉%","红杉",IF(团队 LIKE "火凤凰%","火凤凰",IF(团队 LIKE "神龙家族%","神龙",IF(团队 LIKE "金狮%","金狮",IF(团队 LIKE "神龙-低价%","神龙-低价",IF(团队 LIKE "金鹏%","金鹏",团队)))))) as 团队,
-                            币种, 订单来源, 订单编号, 出货时间, 状态时间, 上线时间, 最终状态,是否改派,物流方式, 产品id, 父级分类,二级分类,下单时间, 审核时间,仓储扫描时间,完结状态时间,if(价格RMB = '',null,价格RMB) 价格RMB, 
-                            '{0}' 记录时间
-                    FROM gat_update;'''.format(last_time)
-            df = pd.read_sql_query(sql=sql, con=self.engine1)
-            print('正在添加缓存中......')
-            df.to_sql('gat_update_cp', con=self.engine1, index=False, if_exists='replace')
-            print('正在数据添加中......')
-            sql = '''REPLACE INTO qsb_{0} SELECT * FROM gat_update_cp; '''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
-        except Exception as e:
-            print('更新失败：', str(Exception) + str(e))
-        print('更新成功…………')
 
-    # 获取签收表内容---港澳台更新签收总表(一.附表)转存总表
-    def makeSql(self, team):
-        month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-        month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
-        try:
-            print('正在查询中' + month_yesterday + '最近两个月的订单......')
-            sql = '''SELECT 年月, 旬, 日期, IF(团队 LIKE "红杉%","红杉",IF(团队 LIKE "金狮%","金狮", IF(团队 LIKE "火凤凰%","火凤凰", IF(团队 LIKE "神龙%","神龙",团队)))) 团队,
-                            币种, 订单编号, 出货时间, 状态时间, 上线时间, 系统订单状态, 系统物流状态, 退货登记, 最终状态,是否改派,物流方式,
-                            是否低价,产品id,产品名称,父级分类,二级分类,下单时间, 审核时间,仓储扫描时间,完结状态时间,价格RMB, curdate() 记录时间
-                    FROM {0}_zqsb a WHERE a.日期 >= '{1}' and a.日期 <= '{2}' and a.`运单编号` is not null ;'''.format(team, month_last, month_yesterday)
-            df = pd.read_sql_query(sql=sql, con=self.engine1)
-            print('正在添加缓存中......')
-            df.to_sql('gat_update_cp', con=self.engine1, index=False, if_exists='replace')
-            print('正在转存数据中......')
-            sql = '''REPLACE INTO qsb_{0} SELECT * FROM gat_update_cp; '''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
-        except Exception as e:
-            print('转存失败：', str(Exception) + str(e))
-        print('转存成功…………')
 
     #  导出需要更新的签收表---港澳台(二)
     def EportOrder(self, team, month_last, month_yesterday, month_begin):
@@ -326,6 +288,22 @@ class QueryUpdate(Settings):
             print(tem2 + '----已写入excel')
             print('正在打印' + match[tem2] + ' 物流时效…………')
             # self.m.data_wl(tem2)
+        try:
+            print('正在转存中' + month_yesterday + '最近两个月的订单......')
+            sql = '''SELECT 年月, 旬, 日期, IF(团队 LIKE "红杉%","红杉",IF(团队 LIKE "金狮%","金狮", IF(团队 LIKE "火凤凰%","火凤凰", IF(团队 LIKE "神龙%","神龙",团队)))) 团队,
+                            币种, 订单来源, 订单编号, 出货时间, 状态时间, 上线时间, 最终状态,是否改派,物流方式,
+                            产品id,父级分类,二级分类,下单时间, 审核时间,仓储扫描时间,完结状态时间,价格RMB, curdate() 记录时间
+                    FROM d1_{0} a WHERE a.`运单编号` is not null ;'''.format(team)
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            print('正在添加缓存中......')
+            df.to_sql('gat_update_cp', con=self.engine1, index=False, if_exists='replace')
+            print('正在转存数据中......')
+            sql = '''REPLACE INTO qsb_{0} SELECT * FROM gat_update_cp; '''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        except Exception as e:
+            print('转存失败：', str(Exception) + str(e))
+        print('转存成功…………')
+
 
     # 新版签收率-报表(自己看的)
     def gat_new(self, team, dim_product):  # 报表各团队近两个月的物流数据
@@ -2819,7 +2797,6 @@ class QueryUpdate(Settings):
         except Exception as e:
             print('运行失败：', str(Exception) + str(e))
         print('----已写入excel ')
-
     # 新版签收率-报表(刘姐看的)
     def qsb_new(self, team):  # 报表各团队近两个月的物流数据
         match = {'gat': '港台-每日'}
@@ -3432,6 +3409,7 @@ class QueryUpdate(Settings):
             print('运行失败：', str(Exception) + str(e))
         print('----已写入excel ')
 
+
     # 更新-地区签收率(自己看的)
     def address_repot(self, team):    # 更新-地区签收率
         today = datetime.date.today().strftime('%Y.%m.%d')
@@ -3653,6 +3631,23 @@ class QueryUpdate(Settings):
         # except Exception as e:
         #     print('运行失败：', str(Exception) + str(e))
         # print('----已写入excel ')
+    # 更新上期-总表 DATE_SUB(CURDATE(), INTERVAL 1 month)
+    def replaceHostbefore(self, team, last_time):
+        try:
+            print('正在获取往昔数据中......')
+            sql = '''SELECT 年月, 旬, 日期, IF(团队 LIKE "%红杉%","红杉",IF(团队 LIKE "火凤凰%","火凤凰",IF(团队 LIKE "神龙家族%","神龙",IF(团队 LIKE "金狮%","金狮",IF(团队 LIKE "神龙-低价%","神龙-低价",IF(团队 LIKE "金鹏%","金鹏",团队)))))) as 团队,
+                            币种, 订单来源, 订单编号, 出货时间, 状态时间, 上线时间, 最终状态,是否改派,物流方式, 产品id, 父级分类,二级分类,下单时间, 审核时间,仓储扫描时间,完结状态时间,if(价格RMB = '',null,价格RMB) 价格RMB, 
+                            '{0}' 记录时间
+                    FROM gat_update;'''.format(last_time)
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            print('正在添加缓存中......')
+            df.to_sql('gat_update_cp', con=self.engine1, index=False, if_exists='replace')
+            print('正在数据添加中......')
+            sql = '''REPLACE INTO qsb_{0} SELECT * FROM gat_update_cp; '''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        except Exception as e:
+            print('更新失败：', str(Exception) + str(e))
+        print('更新成功…………')
 
 
     # report报表（备用）
@@ -4636,7 +4631,6 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    # write = '本期并转存'
     # write = '上期'
     last_time = '2021-08-16'
     write = '本期'

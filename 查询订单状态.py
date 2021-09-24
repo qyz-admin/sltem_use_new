@@ -334,7 +334,7 @@ class QueryUpdate(Settings):
         match = {'gat': '港台', 'slsc': '品牌'}
         output = datetime.datetime.now().strftime('%m.%d')
         month_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        month_yesterday = '2021-09-14'
+        month_yesterday = '2021-09-24'
         print(month_yesterday)
         month_now = (datetime.datetime.now()).strftime('%Y%m')
         month_now = '202109'
@@ -415,10 +415,10 @@ if __name__ == '__main__':
     # -----------------------------------------------手动查询状态运行（一）-----------------------------------------
     # m.trans_way_cost(team)  # 同产品下的规格运费查询
 
-    upload = '查询-订单号'
+    # upload = '查询-订单号'
     # upload = '查询-运单号'
-    m.readFormHost(upload)
+    # m.readFormHost(upload)
 
-    # m.trans_way_cost_new(team)  # 同产品下的规格运费查询
+    m.trans_way_cost_new(team)  # 同产品下的规格运费查询
     print('输出耗时：', datetime.datetime.now() - start)
 
