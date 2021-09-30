@@ -290,9 +290,8 @@ class QueryUpdate(Settings):
             # self.m.data_wl(tem2)
         try:
             print('正在转存中' + month_yesterday + '最近两个月的订单......')
-            sql = '''SELECT 年月, 旬, 日期, IF(团队 LIKE "红杉%","红杉",IF(团队 LIKE "金狮%","金狮", IF(团队 LIKE "火凤凰%","火凤凰", IF(团队 LIKE "神龙%","神龙",团队)))) 团队,
-                            币种, 订单来源, 订单编号, 出货时间, 状态时间, 上线时间, 最终状态,是否改派,物流方式,
-                            产品id,父级分类,二级分类,下单时间, 审核时间,仓储扫描时间,完结状态时间,价格RMB, curdate() 记录时间
+            sql = '''SELECT 年月, 旬, 日期, 团队,币种, 订单来源, 订单编号, 出货时间, IF(`状态时间` = '',NULL,状态时间) as 状态时间, 上线时间, 最终状态,是否改派,物流方式,
+                            产品id,父级分类,二级分类,三级分类,下单时间, 审核时间,仓储扫描时间,完结状态时间,价格RMB, curdate() 记录时间
                     FROM d1_{0} a WHERE a.`运单编号` is not null ;'''.format(team)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             print('正在添加缓存中......')
@@ -3631,13 +3630,14 @@ class QueryUpdate(Settings):
         # except Exception as e:
         #     print('运行失败：', str(Exception) + str(e))
         # print('----已写入excel ')
-    # 更新上期-总表 DATE_SUB(CURDATE(), INTERVAL 1 month)
+
+
+    # 更新上期-总表 （备用） DATE_SUB(CURDATE(), INTERVAL 1 month)
     def replaceHostbefore(self, team, last_time):
         try:
             print('正在获取往昔数据中......')
-            sql = '''SELECT 年月, 旬, 日期, IF(团队 LIKE "%红杉%","红杉",IF(团队 LIKE "火凤凰%","火凤凰",IF(团队 LIKE "神龙家族%","神龙",IF(团队 LIKE "金狮%","金狮",IF(团队 LIKE "神龙-低价%","神龙-低价",IF(团队 LIKE "金鹏%","金鹏",团队)))))) as 团队,
-                            币种, 订单来源, 订单编号, 出货时间, 状态时间, 上线时间, 最终状态,是否改派,物流方式, 产品id, 父级分类,二级分类,下单时间, 审核时间,仓储扫描时间,完结状态时间,if(价格RMB = '',null,价格RMB) 价格RMB, 
-                            '{0}' 记录时间
+            sql = '''SELECT 年月, 旬, 日期, 团队,币种, 订单来源, 订单编号, 出货时间, 状态时间, 上线时间, 最终状态,是否改派,物流方式, 产品id, 
+                            父级分类,二级分类,三级分类,下单时间, 审核时间,仓储扫描时间,完结状态时间,IF(价格RMB = '',null,价格RMB) as 价格RMB, '{0}' as 记录时间
                     FROM gat_update;'''.format(last_time)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             print('正在添加缓存中......')
@@ -3648,8 +3648,6 @@ class QueryUpdate(Settings):
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
-
-
     # report报表（备用）
     def qsb_report(self, team, day_yesterday, day_last):  # 获取各团队近两个月的物流数据
         match = {'gat': '港台'}
@@ -4632,7 +4630,7 @@ if __name__ == '__main__':
         3、last_time：   切换：更新上传时间；
     '''
     # write = '上期'
-    last_time = '2021-08-16'
+    last_time = '2021-09-16'
     write = '本期'
     dim_product = '总产品'
     m.readFormHost(team, write, last_time)      #  更新签收表---港澳台（一）
@@ -4640,6 +4638,7 @@ if __name__ == '__main__':
     m.gat_new(team, dim_product)                #  获取-签收率-报表
     m.qsb_new(team)                             #  获取-每日-报表
     m.EportOrderBook(team)                      #  导出-总的-签收表
+
 
     # m.address_repot(team)                       #  获取-地区签收率-报表
      # 停用备用使用

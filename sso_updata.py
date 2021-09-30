@@ -694,6 +694,7 @@ class QueryTwo(Settings):
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
         ordersDict = []
+        count = 0
         try:
             for result in req['data']['list']:
                 # 添加新的字典键-值对，为下面的重新赋值用
@@ -724,7 +725,11 @@ class QueryTwo(Settings):
             data = pd.json_normalize(ordersDict)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
-            # self.orderInfoQuery(ord, searchType, team, team2)
+            count = count + 1
+            time.sleep(30)
+            self.orderInfoQuery(ord, searchType, team, team2)
+            if count == 3:
+                pass
         print('正在写入缓存中......')
         try:
             df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId', 'spec', 'quantity',
