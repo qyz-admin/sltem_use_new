@@ -249,7 +249,7 @@ class QueryUpdate(Settings):
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
         print('已清除不参与计算的今日改派订单…………')
     # 导出总的签收表---各家族-港澳台(三)
-    def EportOrderBook(self, team):
+    def EportOrderBook(self, team, month_last, month_yesterday):
         today = datetime.date.today().strftime('%Y.%m.%d')
         match = {'slgat': '神龙-港台',
                  'slgat_hfh': '火凤凰-港台',
@@ -263,12 +263,12 @@ class QueryUpdate(Settings):
                  'slrb_jl': '精灵-日本',
                  'slrb_js': '金狮-日本',
                  'slrb_hs': '红杉-日本'}
-        if team in ('gat'):
-            month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-            month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
-        else:
-            month_last = '2021-07-01'
-            month_yesterday = '2021-09-02'
+        # if team in ('gat9'):
+        #     month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+        #     month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
+        # else:
+        #     month_last = '2021-08-01'
+        #     month_yesterday = '2021-10-01'
         print(month_last)
         print(month_yesterday)
         print('正在获取---' + match[team] + ' ---全部数据内容…………')
@@ -305,17 +305,17 @@ class QueryUpdate(Settings):
 
 
     # 新版签收率-报表(自己看的)
-    def gat_new(self, team, dim_product):  # 报表各团队近两个月的物流数据
+    def gat_new(self, team, dim_product, month_last, month_yesterday):  # 报表各团队近两个月的物流数据
         match = {'gat': '港台'}
         emailAdd = {'台湾': 'giikinliujun@163.com',
                     '香港': 'giikinliujun@163.com',
                     '品牌': 'sunyaru@giikin.com'}
-        if team == 'gat':
-            month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-            month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
-        else:
-            month_last = '2021-04-01'
-            month_yesterday = '2021-08-31'
+        # if team == 'gat9':
+        #     month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+        #     month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
+        # else:
+        #     month_last = '2021-08-01'
+        #     month_yesterday = '2021-09-30'
         print(month_last)
         print(month_yesterday)
         filePath = []
@@ -2797,14 +2797,14 @@ class QueryUpdate(Settings):
             print('运行失败：', str(Exception) + str(e))
         print('----已写入excel ')
     # 新版签收率-报表(刘姐看的)
-    def qsb_new(self, team):  # 报表各团队近两个月的物流数据
+    def qsb_new(self, team, month_last, month_now):  # 报表各团队近两个月的物流数据
         match = {'gat': '港台-每日'}
-        if team == 'gat':
-            month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-            month_now = datetime.datetime.now().strftime('%Y-%m-%d')
-        else:
-            month_last = '2021-07-01'
-            month_now = '2021-09-06'
+        # if team == 'ga9t':
+        #     month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+        #     month_now = datetime.datetime.now().strftime('%Y-%m-%d')
+        # else:
+        #     month_last = '2021-08-01'
+        #     month_now = '2021-09-30'
         sql = '''DELETE FROM gat_zqsb
                 WHERE gat_zqsb.`订单编号` IN (SELECT 订单编号
             								FROM gat_order_list 
@@ -3410,15 +3410,15 @@ class QueryUpdate(Settings):
 
 
     # 更新-地区签收率(自己看的)
-    def address_repot(self, team):    # 更新-地区签收率
+    def address_repot(self, team, month_last, month_yesterday):    # 更新-地区签收率
         today = datetime.date.today().strftime('%Y.%m.%d')
         match = {'gat': '港台'}
-        if team == 'gat':
-            month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-            month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
-        else:
-            month_last = '2021-06-01'
-            month_yesterday = '2021-07-31'
+        # if team == 'gat':
+        #     month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+        #     month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
+        # else:
+        #     month_last = '2021-06-01'
+        #     month_yesterday = '2021-07-31'
         print(month_last)
         print(month_yesterday)
         try:
@@ -4629,15 +4629,25 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
+    if team == 'gat':
+        month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+        month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
+        month_now = datetime.datetime.now().strftime('%Y-%m-%d')
+    else:
+        month_last = '2021-08-01'
+        month_yesterday = '2021-09-30'
+        month_now = '2021-10-05'
     # write = '上期'
     last_time = '2021-09-16'
     write = '本期'
     dim_product = '总产品'
     m.readFormHost(team, write, last_time)      #  更新签收表---港澳台（一）
 
-    m.gat_new(team, dim_product)                #  获取-签收率-报表
-    m.qsb_new(team)                             #  获取-每日-报表
-    m.EportOrderBook(team)                      #  导出-总的-签收表
+    m.gat_new(team, dim_product, month_last, month_yesterday)               #  获取-签收率-报表
+    m.qsb_new(team, month_last, month_now)                             #  获取-每日-报表
+    m.EportOrderBook(team, month_last, month_yesterday)                      #  导出-总的-签收表
+
+
 
 
     # m.address_repot(team)                       #  获取-地区签收率-报表

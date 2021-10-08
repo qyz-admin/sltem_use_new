@@ -1,4 +1,5 @@
 import os
+import win32com.client as win32
 from openpyxl import Workbook, load_workbook
 from excelControl import ExcelControl
 from mysqlControl import MysqlControl
@@ -9,7 +10,7 @@ from gat_update2 import QueryUpdate
 import datetime
 from dateutil.relativedelta import relativedelta
 start: datetime = datetime.datetime.now()
-team = 'gat'
+team = 'slsc'
 match1 = {'gat': '港台',
           'slsc': '品牌'}
 match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
@@ -49,13 +50,13 @@ if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat'):
     print(month_begin)
 else:
     # 更新时间
-    begin = datetime.date(2021, 4, 1)
+    begin = datetime.date(2021, 8, 1)
     print(begin)
-    end = datetime.date(2021, 7, 31)
+    end = datetime.date(2021, 10, 5)
     print(end)
     # 导出时间
     month_last = '2021-08-01'
-    month_yesterday = '2021-09-15'
+    month_yesterday = '2021-10-05'
     month_begin = '2021-07-01'
 
 # 库的引用
@@ -75,6 +76,15 @@ print('退货导入耗时：', datetime.datetime.now() - start)
 for dir in dirs:
     filePath = os.path.join(path, dir)
     print(filePath)
+    if 'xlsx' not in filePath:
+        excel = win32.gencache.EnsureDispatch('Excel.Application')
+        wb = excel.Workbooks.Open(filePath)
+        wb.SaveAs(filePath + "x", FileFormat=51)  # FileFormat = 51 is for .xlsx extension
+        wb.Close()  # FileFormat = 56 is for .xls extension
+        excel.Application.Quit()
+        filePath = filePath + "x"
+        print(filePath)
+        print('****** 已成功将 xls 转换 xlsx 格式 ******')
     if dir[:2] != '~$':
         wb_start = datetime.datetime.now()
         wb = load_workbook(filePath, data_only=True)

@@ -131,11 +131,11 @@ class SltemMonitoring(Settings):
                 # print(count)
                 # print(day2)
                 if count == 1:
-                    print('结束')
+                    # print('结束')
                     break
                 for k in rq['记录时间']:
                     if day2 == k:
-                        print('有')
+                        # print('有')
                         last_month = k
                         count = count + 1
                         break
@@ -163,7 +163,7 @@ class SltemMonitoring(Settings):
         print('写入缓存耗时：', datetime.datetime.now() - start)
 
     # 获取每月正常使用的时间（二）
-    def sl_Monitoring(self, team, now_month, last_month):
+    def sl_Monitoring(self, team, now_month, last_month, ready):
         match = {'品牌-日本': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  '品牌-香港': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  '品牌-台湾': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
@@ -702,7 +702,10 @@ class SltemMonitoring(Settings):
         app.display_alerts = False
         wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
         wbsht1 = app.books.open(filePath)
-        wbsht.macro('sl_总监控运行')()
+        if ready == '本期宏':
+            wbsht.macro('sl_总监控运行')()
+        else:
+            wbsht.macro('sl_总监控运行3')()
         wbsht1.save()
         wbsht1.close()
         wbsht.close()
@@ -785,29 +788,21 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    # last_month = '2021.08.30'
-    # now_month = '2021.09.29'
-    # for team in ['神龙-港台', '火凤凰-港台', '金鹏-港台', '红杉-港台', '金狮-港台', '神龙-低价']:
-    #     m.readForm(team, last_month)      # 上月上传
-        # m.readForm(team, now_month)       # 本月上传
+    last_month = '2021.09.08'
+    now_month = '2021.10.08'
+    for team in ['神龙-港台', '火凤凰-港台', '金鹏-港台', '红杉-港台', '金狮-港台', '神龙-低价']:
+        # m.readForm(team, last_month)      # 上月上传
+        m.readForm(team, now_month)       # 本月上传
 
     # 测试监控运行（二）-- 第一种手动方式
-    # m.order_Monitoring('港台')        # 各月缓存（整体一）
-    # for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '金鹏-台湾']:
-    #     now_month = now_month.replace('.', '-')           # 修改配置时间
-    #     last_month = last_month.replace('.', '-')
-    #     m.sl_Monitoring(team, now_month, last_month)      # 输出数据--每月正常使用的时间（二）
+    m.order_Monitoring('港台')        # 各月缓存（整体一）
+    for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '金鹏-台湾']:
+        now_month = now_month.replace('.', '-')           # 修改配置时间
+        last_month = last_month.replace('.', '-')
+        m.sl_Monitoring(team, now_month, last_month, '本期宏')      # 输出数据--每月正常使用的时间（二）
+        # m.sl_Monitoring(team, now_month, last_month, '上期宏')      # 输出数据--每月正常使用的时间（二）
 
 
     # 测试监控运行（三）-- 第二种自动方式
     # m.match_time('港台')      # 检测时间
 
-
-
-    for last_month in ['2021.09.01', '2021.09.02', '2021.09.03', '2021.09.04', '2021.09.06', '2021.09.07', '2021.09.08', '2021.09.09', '2021.09.10']:
-        for team in ['神龙-港台', '火凤凰-港台', '金鹏-港台', '红杉-港台', '金狮-港台', '神龙-低价']:
-            m.readForm(team, last_month)  # 上月上传
-
-    for last_month in ['2021.09.13', '2021.09.14', '2021.09.15', '2021.09.16', '2021.09.17', '2021.09.18', '2021.09.22', '2021.09.23', '2021.09.24']:
-        for team in ['神龙-港台', '火凤凰-港台', '金鹏-港台', '红杉-港台', '金狮-港台', '神龙-低价']:
-            m.readForm(team, last_month)  # 上月上传

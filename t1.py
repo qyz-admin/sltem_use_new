@@ -1,5 +1,6 @@
 import os
 from openpyxl import Workbook, load_workbook
+
 from excelControl import ExcelControl
 from mysqlControl import MysqlControl
 from wlMysql import WlMysql
@@ -7,6 +8,7 @@ from wlExecl import WlExecl
 from sso_updata import QueryTwo
 from gat_update2 import QueryUpdate
 import datetime
+import win32com.client as win32
 from dateutil.relativedelta import relativedelta
 start: datetime = datetime.datetime.now()
 team = 'gat'
@@ -75,6 +77,15 @@ print('退货导入耗时：', datetime.datetime.now() - start)
 for dir in dirs:
     filePath = os.path.join(path, dir)
     print(filePath)
+    if 'xlsx' not in filePath:
+        excel = win32.gencache.EnsureDispatch('Excel.Application')
+        wb = excel.Workbooks.Open(filePath)
+        wb.SaveAs(filePath + "x", FileFormat=51)  # FileFormat = 51 is for .xlsx extension
+        wb.Close()  # FileFormat = 56 is for .xls extension
+        excel.Application.Quit()
+        filePath = filePath + "x"
+        print(filePath)
+        print('已成功将 xls 转换 xlsx 格式~')
     if dir[:2] != '~$':
         wb_start = datetime.datetime.now()
         wb = load_workbook(filePath, data_only=True)

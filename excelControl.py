@@ -34,12 +34,11 @@ class ExcelControl():
                 # 部分不可能是明细表的sheet直接排除，因为这些表的字段结构和明细表可能相似。
                 if '问题件' not in sht.name and '录单' not in sht.name and '退件问题' not in sht.name and \
                         '历史' not in sht.name and '取件' not in sht.name and \
-                        '异常' not in sht.name and sht.api.visible == -1:
+                        '异常' not in sht.name and sht.api.Visible == -1:
                     try:    # 可能会读取sheet内容失败，所以写了这个
                         db = None
                         # 读取sht的所有已使用单元格内容，并转换为pd的DateFrame格式
-                        file = sht.used_range.options(pd.DataFrame, header=1,
-                                                      numbers=int, index=False).value
+                        file = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                         # print(file)
                         # 如果xlwings的直接转换失败的话。读取单元格值，并转换为db.DateFrame格式
                         if file.empty or sht.name == '宅配':
