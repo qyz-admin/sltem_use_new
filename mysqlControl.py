@@ -207,7 +207,7 @@ class MysqlControl(Settings):
                  'slrb_hs': '"红杉家族-日本", "红杉家族-日本666"',
                  'slrb_jl': '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"'}
         # 12-1月的
-        if team in ('sltg', 'slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('slsc', 'gat', 'sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             # 获取日期时间
             sql = 'SELECT MAX(`日期`) 日期 FROM {0}_order_list;'.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
