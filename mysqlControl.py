@@ -225,9 +225,9 @@ class MysqlControl(Settings):
             print(end)
         else:
             # 11-12月的
-            begin = datetime.date(2021, 7, 30)
+            begin = datetime.date(2021, 10, 10)
             print(begin)
-            end = datetime.date(2021, 8, 1)
+            end = datetime.date(2021, 10, 13)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -577,7 +577,10 @@ class MysqlControl(Settings):
                             a.ship_zip 邮编,
                             a.turn_purchase_time 添加物流单号时间,
                             null 规格中文,
-                            a.ship_state 省洲
+                            a.ship_state 省洲,
+                            null 审单类型,
+                            a.del_reason 删除原因,
+                            a.question_reason 问题原因
                     FROM gk_order a
                             left join dim_area ON dim_area.id = a.area_id
                             left join dim_payment ON dim_payment.id = a.payment_id
@@ -1114,7 +1117,7 @@ class MysqlControl(Settings):
             print('---' + match[team] + ' 不打印文件')
         else:
             print('正在打印' + match[team] + ' 物流时效…………')
-            self.data_wl(team)
+            # self.data_wl(team)
         print('正在写入' + match[team] + ' 全部签收表中…………')
         if team == 'slrb':
             sql = 'REPLACE INTO {0}_zqsb_rb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)

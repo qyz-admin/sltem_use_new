@@ -2886,6 +2886,32 @@ class QueryUpdate(Settings):
         df0 = pd.read_sql_query(sql=sql0, con=self.engine1)
         listT.append(df0)
 
+        # 01、各团队-审核率 删单率
+        print('正在获取---01、各团队-审核率_删单率…………')
+        sql01 = '''SELECT gs.币种,SUBSTRING(删除原因,2) as 删除原因, 
+        			            COUNT(订单编号)  as 有效订单, 
+        			            SUM(IF(gs.`审单类型` = '是',1,0)) as 自动审单量,
+        			            concat(ROUND(SUM(IF(gs.`审单类型` = '是',1,0)) / 总订单量 * 100,2),'%') as 自动审单量率,
+        			            SUM(IF(gs.`审单类型` = '否' or gs.`审单类型` IS NULL,1,0)) as 人工审单量,
+        			            concat(ROUND(SUM(IF(gs.`审单类型` = '否' or gs.`审单类型` IS NULL,1,0)) / 总订单量 * 100,2),'%') as 人工审单量率,
+        			            SUM(IF(gs.`问题原因` IS NOT NULL,1,0)) as 问题订单量,
+        			            SUM(IF(gs.`问题原因` IS NOT NULL AND gs.`系统订单状态` IN ("已删除","支付失败","未支付"),1,0)) as 问题订单删单量,
+        			            concat(ROUND(SUM(IF(gs.`问题原因` IS NOT NULL AND gs.`系统订单状态` NOT IN ("已删除","支付失败","未支付"),1,0)) / SUM(IF(gs.`问题原因` IS NOT NULL,1,0))  * 100,2),'%') as 问题订单转化率,
+        			            SUM(IF(gs.`系统订单状态` = '已删除',1,0)) as 删单量,
+        			            concat(ROUND(SUM(IF(gs.`系统订单状态` = '已删除',1,0)) / 总订单量 * 100,2),'%') as 删单率
+                            FROM  gat_order_list gs
+                            LEFT JOIN (SELECT 币种, COUNT(订单编号)  as 总订单量
+        					            FROM  gat_order_list gss
+        					            WHERE gss.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+        					            GROUP BY gss.`币种`
+        					) gs2 ON gs.`币种` = gs2.`币种`
+                            WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                            GROUP BY gs.`币种`,gs.`删除原因`
+                            WITH ROLLUP
+                            ORDER BY gs.币种,有效订单 DESC'''
+        df01 = pd.read_sql_query(sql=sql01, con=self.engine1)
+        listT.append(df01)
+
         # 1、各月-各团队
         print('正在获取---1、各月各团队…………')
         sql10 = '''SELECT *
@@ -3324,6 +3350,158 @@ class QueryUpdate(Settings):
         df51 = pd.read_sql_query(sql=sql51, con=self.engine1)
         listT.append(df51)
 
+        # 13、各团队-问题率
+        print('正在获取---3、各团队-问题率…………')
+        sql02 = '''SELECT *
+                FROM (
+                    (SELECT 币种,'核实地址' AS 问题原因,核实地址 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实地址%",1,0)) as 核实地址
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'核实姓名' AS 问题原因,核实姓名 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实姓名%",1,0)) as 核实姓名
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'核实规格' AS 问题原因,核实规格 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实规格%",1,0)) as 核实规格
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'核实数量' AS 问题原因,核实数量 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实数量%",1,0)) as 核实数量
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'核实电话' AS 问题原因,核实电话 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实电话%",1,0)) as 核实电话
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'重复下单' AS 问题原因,重复下单 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%重复下单%",1,0)) as 重复下单
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'核实拉黑率' AS 问题原因,核实拉黑率 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实拉黑率%",1,0)) as 核实拉黑率
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'核实IP' AS 问题原因,核实IP AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实IP%",1,0)) as 核实IP
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'回复留言' AS 问题原因,回复留言 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%回复留言%",1,0)) as 回复留言
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'核实金额' AS 问题原因,核实金额 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实金额%",1,0)) as 核实金额
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'删运单号' AS 问题原因,删运单号 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%删运单号%",1,0)) as 删运单号
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'可疑订单' AS 问题原因,可疑订单 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%可疑订单%",1,0)) as 可疑订单
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'核实邮箱' AS 问题原因,核实邮箱 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实邮箱%",1,0)) as 核实邮箱
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'无法派送地区' AS 问题原因,无法派送地区 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%无法派送地区%",1,0)) as 无法派送地区
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = '2021-10-02'
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'核实邮编' AS 问题原因,核实邮编 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实邮编%",1,0)) as 核实邮编
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'拼团未完成' AS 问题原因,拼团未完成 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%拼团未完成%",1,0)) as 拼团未完成
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'支付失败' AS 问题原因,支付失败 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%支付失败%",1,0)) as 支付失败
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )
+                UNION
+                    (SELECT 币种,'未支付' AS 问题原因,未支付 AS 数量
+                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%未支付%",1,0)) as 未支付
+                                FROM  gat_order_list gs
+                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                                GROUP BY gs.`币种`
+                        ) ss
+                    )					
+                ) scs
+                ORDER BY 币种 , 数量 DESC;'''
+        # df02 = pd.read_sql_query(sql=sql02, con=self.engine1)
+        # listT.append(df02)
+
         # 11、各团队-各二级品类
         print('正在获取---3、各团队-各二级品类…………')
         sql20 = '''SELECT *
@@ -3381,7 +3559,7 @@ class QueryUpdate(Settings):
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
         file_path = 'G:\\输出文件\\{} {}-签收率.xlsx'.format(today, match[team])
-        sheet_name = ['每日各团队', '各月各团队', '各月各团队分旬', '各团队各品类', '各团队各物流', '各团队各平台', '各平台各团队', '各品类各团队', '各物流各团队', '同产品各团队','同产品各月', '各团队二级品类']
+        sheet_name = ['每日各团队', '审核率_删单率', '各月各团队', '各月各团队分旬', '各团队各品类', '各团队各物流', '各团队各平台', '各平台各团队', '各品类各团队', '各物流各团队', '同产品各团队','同产品各月', '各团队二级品类']
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象

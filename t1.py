@@ -1,6 +1,6 @@
 import os
+import win32com.client as win32
 from openpyxl import Workbook, load_workbook
-
 from excelControl import ExcelControl
 from mysqlControl import MysqlControl
 from wlMysql import WlMysql
@@ -8,7 +8,6 @@ from wlExecl import WlExecl
 from sso_updata import QueryTwo
 from gat_update2 import QueryUpdate
 import datetime
-import win32com.client as win32
 from dateutil.relativedelta import relativedelta
 start: datetime = datetime.datetime.now()
 team = 'gat'
@@ -23,6 +22,7 @@ match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台
          'slrb_hs': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
          'slsc': r'D:\Users\Administrator\Desktop\需要用到的文件\品牌',
          'gat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
+         'gat_upload': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表 - 单独上传',
          'sltg': r'D:\Users\Administrator\Desktop\需要用到的文件\A泰国签收表',
          'slxmt': r'D:\Users\Administrator\Desktop\需要用到的文件\A新马签收表',
          'slxmt_t': r'D:\Users\Administrator\Desktop\需要用到的文件\A新马签收表',
@@ -51,18 +51,23 @@ if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat'):
     print(month_begin)
 else:
     # 更新时间
-    begin = datetime.date(2021, 7, 31)
+    begin = datetime.date(2021, 8, 1)
     print(begin)
-    end = datetime.date(2021, 8, 6)
+    end = datetime.date(2021, 9, 1)
     print(end)
     # 导出时间
-    month_last = '2021-07-01'
-    month_yesterday = '2021-08-10'
-    month_begin = '2021-06-01'
+    month_last = '2021-08-01'
+    month_yesterday = '2021-09-01'
+    month_begin = '2021-07-01'
 
 # 库的引用
-path = match[team]
-dirs = os.listdir(path=path)
+if team == 'gat':
+    path = match['gat_upload']
+    dirs = os.listdir(path=path)
+else:
+    path = match[team]
+    dirs = os.listdir(path=path)
+
 e = ExcelControl()
 m = MysqlControl()
 w = WlMysql()
@@ -85,7 +90,7 @@ for dir in dirs:
         excel.Application.Quit()
         filePath = filePath + "x"
         print(filePath)
-        print('已成功将 xls 转换 xlsx 格式~')
+        print('****** 已成功将 xls 转换成 xlsx 格式 ******')
     if dir[:2] != '~$':
         wb_start = datetime.datetime.now()
         wb = load_workbook(filePath, data_only=True)
@@ -100,9 +105,10 @@ for dir in dirs:
         print('单表+++导入-耗时：', datetime.datetime.now() - wb_start)
 print('导入耗时：', datetime.datetime.now() - start)
 
+
 # TODO---数据库分段读取---
 # m.creatMyOrderSl(team)  # 最近五天的全部订单信息
-
+#
 # print('------------更新部分：---------------------')
 # if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs'):
 #     m.creatMyOrderSlTWO(team, begin, end)   # 最近两个月的更新订单信息

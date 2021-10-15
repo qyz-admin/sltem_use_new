@@ -22,6 +22,7 @@ match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台
          'slrb_hs': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
          'slsc': r'D:\Users\Administrator\Desktop\需要用到的文件\品牌',
          'gat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
+         'gat_upload': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表 - 单独上传',
          'sltg': r'D:\Users\Administrator\Desktop\需要用到的文件\A泰国签收表',
          'slxmt': r'D:\Users\Administrator\Desktop\需要用到的文件\A新马签收表',
          'slxmt_t': r'D:\Users\Administrator\Desktop\需要用到的文件\A新马签收表',
@@ -32,7 +33,7 @@ match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台
 说明：  日本 需整理的表：1、吉客印神龙直发签收表=密码：‘JKTSL’>(明细再copy保存；改派明细不需要);2、直发签收表>(明细再copy保存；3、状态更新需要copy保存);
 '''
 # 初始化时间设置
-if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat'):
+if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'ga9t'):
     # 更新时间
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
@@ -50,14 +51,14 @@ if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat'):
     print(month_begin)
 else:
     # 更新时间
-    begin = datetime.date(2021, 8, 1)
+    begin = datetime.date(2021, 10, 4)
     print(begin)
-    end = datetime.date(2021, 10, 5)
+    end = datetime.date(2021, 10, 14)
     print(end)
     # 导出时间
-    month_last = '2021-08-01'
-    month_yesterday = '2021-10-05'
-    month_begin = '2021-07-01'
+    month_last = '2021-09-01'
+    month_yesterday = '2021-10-14'
+    month_begin = '2021-08-01'
 
 # 库的引用
 path = match[team]
@@ -84,7 +85,7 @@ for dir in dirs:
         excel.Application.Quit()
         filePath = filePath + "x"
         print(filePath)
-        print('****** 已成功将 xls 转换 xlsx 格式 ******')
+        print('****** 已成功将 xls 转换成 xlsx 格式 ******')
     if dir[:2] != '~$':
         wb_start = datetime.datetime.now()
         wb = load_workbook(filePath, data_only=True)

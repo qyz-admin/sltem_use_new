@@ -5550,10 +5550,10 @@ if __name__ == '__main__':
     team = '品牌'
     m.order_Monitoring(team)  # 各月缓存
 
-    startday = '2021.08.28'
+    startday = '2021.09.11'
     m.readForm(team, startday, '导入')
 
-    startday = '2021.09.28'
+    startday = '2021.10.11'
     m.readForm(team, startday, '导入')
 
     for team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:

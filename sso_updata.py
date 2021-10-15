@@ -734,7 +734,7 @@ class QueryTwo(Settings):
         try:
             df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId', 'spec', 'quantity',
                        'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime', 'finishTime',
-                       'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType', 'weight']]
+                       'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'questionReason']]
             print(df)
             print('正在更新临时表中......')
             df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
@@ -760,7 +760,10 @@ class QueryTwo(Settings):
             				    h.finishTime 完结状态时间,
             				    h.`weight` 包裹重量,
                                 h.`shipInfo.shipState` 省洲,
-            				    h.`spec` 规格中文
+            				    h.`spec` 规格中文,
+            				    h.`autoVerify` 审单类型,
+            				    h.`delReason` 删除原因,
+            				    h.`questionReason` 问题原因
                             FROM d1_cpy h
                                 LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
                                 LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -788,7 +791,10 @@ class QueryTwo(Settings):
                                 a.`完结状态时间`= IF(b.`完结状态时间` = '', NULL, b.`完结状态时间`),
                                 a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`),
                                 a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`),
-                                a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`)
+                                a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
+                                a.`审单类型`= IF(b.`审单类型` = '', NULL, IF(b.`审单类型` like '%自动审单通过%','是','否')),
+                                a.`删除原因`= IF(b.`删除原因` = '', NULL,  b.`删除原因`),
+                                a.`问题原因`= IF(b.`问题原因` = '', NULL,  b.`问题原因`)
                     where a.`订单编号`=b.`订单编号`;'''.format(team2)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:
@@ -819,9 +825,9 @@ if __name__ == '__main__':
     #   台湾token, 日本token, 新马token：  f5dc2a3134c17a2e970977232e1aae9b
     #   泰国token： 83583b29fc24ec0529082ff7928246a6
 
-    begin = datetime.date(2021, 7, 2)       # 1、手动设置时间；若无法查询，切换代理和直连的网络
+    begin = datetime.date(2021, 10, 12)       # 1、手动设置时间；若无法查询，切换代理和直连的网络
     print(begin)
-    end = datetime.date(2021, 7, 30)
+    end = datetime.date(2021, 10, 13)
     print(end)
     # yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 2、自动设置时间
     # mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
@@ -834,16 +840,16 @@ if __name__ == '__main__':
     # print(end)
     print(datetime.datetime.now())
 
-    # team = 'gat_order_list'     # 获取单号表
-    # team2 = 'gat_order_list'    # 更新单号表
-    # searchType = '订单号'  # 运单号，订单号   查询切换
-    # print('++++++正在获取 ' + match1[team] + ' 信息++++++')
-    # for i in range((end - begin).days):  # 按天循环获取订单状态
-    #     day = begin + datetime.timedelta(days=i)
-    #     yesterday = str(day) + ' 23:59:59'
-    #     last_month = str(day)
-    #     print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
-    #     m.orderInfo(searchType, team, team2, last_month)
+    team = 'gat_order_list'     # 获取单号表
+    team2 = 'gat_order_list'    # 更新单号表
+    searchType = '订单号'  # 运单号，订单号   查询切换
+    print('++++++正在获取 ' + match1[team] + ' 信息++++++')
+    for i in range((end - begin).days):  # 按天循环获取订单状态
+        day = begin + datetime.timedelta(days=i)
+        yesterday = str(day) + ' 23:59:59'
+        last_month = str(day)
+        print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
+        m.orderInfo(searchType, team, team2, last_month)
 
-    # m.orderInfoQuery('NR106010740454348', '订单号', 'gat_order_list', 'gat_order_list')  # 进入订单检索界面
+    # m.orderInfoQuery('GT110072237341137', '订单号', 'gat_order_list', 'gat_order_list')  # 进入订单检索界面
     # print('更新耗时：', datetime.datetime.now() - start)
