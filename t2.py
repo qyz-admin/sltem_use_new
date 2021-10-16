@@ -53,11 +53,11 @@ else:
     # 更新时间
     begin = datetime.date(2021, 10, 4)
     print(begin)
-    end = datetime.date(2021, 10, 14)
+    end = datetime.date(2021, 10, 16)
     print(end)
     # 导出时间
     month_last = '2021-09-01'
-    month_yesterday = '2021-10-14'
+    month_yesterday = '2021-10-16'
     month_begin = '2021-08-01'
 
 # 库的引用

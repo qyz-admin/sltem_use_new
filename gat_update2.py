@@ -2785,10 +2785,7 @@ class QueryUpdate(Settings):
             app.display_alerts = False
             wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
             wbsht1 = app.books.open(file_path)
-            if dim_product == '总产品':
-                wbsht.macro('gat_产品签收率_总')()
-            elif dim_product == '分产品':
-                wbsht.macro('gat_产品签收率_明细')()
+            wbsht.macro('gat_产品签收率_总')()
             wbsht1.save()
             wbsht1.close()
             wbsht.close()
@@ -2843,8 +2840,51 @@ class QueryUpdate(Settings):
         print('正在获取---' + match[team] + '---签收率…………')
         # 0、每日-各团队
         print('正在获取---0、每日各团队…………')
-        sql0 = '''SELECT 月份,地区, 家族,
-                            SUM(s.昨日订单量) as 昨日订单量,
+        # sql0 = '''SELECT 月份,地区, 家族,
+        #                     SUM(s.昨日订单量) as 有运单号,
+        #                     SUM(s.直发签收) as 直发签收,
+        #                     SUM(s.直发拒收) as 直发拒收,
+        #                     SUM(s.直发完成) as 直发完成,
+        #                     SUM(s.直发总订单) as 直发总订单,
+        #                     concat(ROUND(IFNULL(SUM(s.直发签收) / SUM(s.直发完成), 0) * 100,2),'%') as 直发完成签收,
+        #                     concat(ROUND(IFNULL(SUM(s.直发签收) / SUM(s.直发总订单), 0) * 100,2),'%') as 直发总计签收,
+        #                     concat(ROUND(IFNULL(SUM(s.直发完成) / SUM(s.直发总订单), 0) * 100,2),'%')as 直发完成占比,
+        #                     SUM(s.改派签收) as 改派签收,
+        #                     SUM(s.改派拒收) as 改派拒收,
+        #                     SUM(s.改派完成) as 改派完成,
+        #                     SUM(s.改派总订单) as 改派总订单,
+        #                     concat(ROUND(IFNULL(SUM(s.改派签收) / SUM(s.改派完成), 0) * 100,2),'%') as 改派完成签收,
+        #                     concat(ROUND(IFNULL(SUM(s.改派签收) / SUM(s.改派总订单), 0) * 100,2),'%') as 改派总计签收,
+        #                     concat(ROUND(IFNULL(SUM(s.改派完成) / SUM(s.改派总订单), 0) * 100,2),'%') as 改派完成占比
+        #             FROM( SELECT IFNULL(cx.`年月`, '总计') 月份,
+        #                         IFNULL(cx.币种, '总计') 地区,
+        #                         IFNULL(cx.家族, '总计') 家族,
+        #                         SUM(IF(cx.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY),1,0)) as 昨日订单量,
+        #                         SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) as 直发签收,
+        #                         SUM(IF(`是否改派` = '直发' AND 最终状态 = "拒收",1,0)) as 直发拒收,
+        #                         SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 直发完成,
+        #                         SUM(IF(`是否改派` = '直发',1,0)) as 直发总订单,
+        #                         SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) as 改派签收,
+        #                         SUM(IF(`是否改派` = '改派' AND 最终状态 = "拒收",1,0)) as 改派拒收,
+        #                         SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 改派完成,
+        #                         SUM(IF(`是否改派` = '改派',1,0)) as 改派总订单
+        #                     FROM (SELECT *,
+        #                                 IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","金鹏",cc.团队)))))) as 家族
+        #                             FROM gat_zqsb cc
+        #                             where cc.日期 >= '{0}' and cc.`运单编号` is not null
+        #                           ) cx
+        #                     GROUP BY cx.年月,cx.币种,cx.家族
+        #                     WITH ROLLUP
+        #                 ) s
+        #                 GROUP BY 月份,地区,家族
+        #                 ORDER BY 月份 DESC,
+        #                         FIELD( 地区, '台湾', '香港', '总计' ),
+        #                         FIELD( 家族, '神龙', '火凤凰', '金狮', '金鹏', '神龙-低价', '红杉', '总计');'''.format(month_last, team)
+        sql0 = '''SELECT *
+                FROM (SELECT IFNULL(s.`年月`, '总计') 月份,
+                            IFNULL(s.币种, '总计') 地区,
+                            IFNULL(s.家族, '总计') 家族,  
+                            SUM(昨日单量) 昨日单量,
                             SUM(s.直发签收) as 直发签收,
                             SUM(s.直发拒收) as 直发拒收,
                             SUM(s.直发完成) as 直发完成,
@@ -2859,10 +2899,10 @@ class QueryUpdate(Settings):
                             concat(ROUND(IFNULL(SUM(s.改派签收) / SUM(s.改派完成), 0) * 100,2),'%') as 改派完成签收,
                             concat(ROUND(IFNULL(SUM(s.改派签收) / SUM(s.改派总订单), 0) * 100,2),'%') as 改派总计签收,
                             concat(ROUND(IFNULL(SUM(s.改派完成) / SUM(s.改派总订单), 0) * 100,2),'%') as 改派完成占比
-                    FROM( SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                IFNULL(cx.币种, '总计') 地区,
-                                IFNULL(cx.家族, '总计') 家族,  
-                                SUM(IF(cx.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY),1,0)) as 昨日订单量,
+                    FROM( SELECT cx.`年月`,
+                                cx.`币种`,
+                                cx.`家族`,  
+                                总订单量 昨日单量,
                                 SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) as 直发签收,
                                 SUM(IF(`是否改派` = '直发' AND 最终状态 = "拒收",1,0)) as 直发拒收,
                                 SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 直发完成,
@@ -2871,18 +2911,28 @@ class QueryUpdate(Settings):
                                 SUM(IF(`是否改派` = '改派' AND 最终状态 = "拒收",1,0)) as 改派拒收,
                                 SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 改派完成,
                                 SUM(IF(`是否改派` = '改派',1,0)) as 改派总订单
-                            FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","金鹏",cc.团队)))))) as 家族 
+                            FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","金鹏",cc.团队)))))) as 家族 
                                     FROM gat_zqsb cc
                                     where cc.日期 >= '{0}' and cc.`运单编号` is not null 
-                                  ) cx
-                            GROUP BY cx.年月,cx.币种,cx.家族
-                            WITH ROLLUP 
-                        ) s
-                        GROUP BY 月份,地区,家族
-                        ORDER BY 月份 DESC,
-                                FIELD( 地区, '台湾', '香港', '总计' ),
-                                FIELD( 家族, '神龙', '火凤凰', '金狮', '金鹏', '神龙-低价', '红杉', '总计');'''.format(month_last, team)
+                            ) cx	
+							LEFT JOIN 
+							(SELECT 年月,币种,家族,count(订单编号) as 总订单量
+								FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","金鹏",cc.团队)))))) as 家族 
+										FROM gat_order_list cc 
+										WHERE  cc.日期 = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+								) dg  
+								GROUP BY dg.年月,dg.币种,dg.家族
+							) cx2 
+							ON  cx.年月 = cx2.年月 AND cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族   
+                          GROUP BY cx.年月,cx.币种,cx.家族
+                        ) s						
+                    GROUP BY 月份,地区,家族
+					WITH ROLLUP 
+					HAVING `地区` IS NOT NULL
+				) ss					
+                ORDER BY 月份 DESC,
+                        FIELD( 地区, '台湾', '香港', '总计' ),
+                        FIELD( 家族, '神龙', '火凤凰', '金狮', '金鹏', '神龙-低价', '红杉', '总计');'''.format(month_last, team)
         df0 = pd.read_sql_query(sql=sql0, con=self.engine1)
         listT.append(df0)
 
@@ -2908,7 +2958,8 @@ class QueryUpdate(Settings):
                             WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
                             GROUP BY gs.`币种`,gs.`删除原因`
                             WITH ROLLUP
-                            ORDER BY gs.币种,有效订单 DESC'''
+                            HAVING gs.`币种` IS NOT null
+                            ORDER BY gs.币种,有效订单 DESC;'''
         df01 = pd.read_sql_query(sql=sql01, con=self.engine1)
         listT.append(df01)
 
@@ -3306,6 +3357,51 @@ class QueryUpdate(Settings):
 
         # 10、同产品各月的对比
         print('正在获取---10、同产品各月的对比…………')
+        # sql51 = '''SELECT *
+        #             FROM(SELECT IFNULL(cx.`家族`, '总计') 家族,
+        #                         IFNULL(cx.币种, '总计') 地区,
+        #                         IFNULL(cx.产品id, '总计') 产品id,
+        #                         IFNULL(cx.产品名称, '总计') 产品名称,
+        #                         IFNULL(cx.父级分类, '总计') 父级分类,
+        #                         COUNT(cx.`订单编号`) as 总单量,
+        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202104',1,0)) as 04总单量,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202104',1,0)) * 100,2),'%') as 04总计签收,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 04完成签收,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202104',1,0)) * 100,2),'%') as 04完成占比,
+        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202105',1,0)) as 05总单量,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202105',1,0)) * 100,2),'%') as 05总计签收,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 05完成签收,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202105',1,0)) * 100,2),'%') as 05完成占比,
+        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202106',1,0)) as 06总单量,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202106',1,0)) * 100,2),'%') as 06总计签收,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 06完成签收,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202106',1,0)) * 100,2),'%') as 06完成占比,
+        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202107',1,0)) as 07总单量,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202107',1,0)) * 100,2),'%') as 07总计签收,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 07完成签收,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202107',1,0)) * 100,2),'%') as 07完成占比,
+        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202108',1,0)) as 08总单量,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202108',1,0)) * 100,2),'%') as 08总计签收,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 08完成签收,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202108',1,0)) * 100,2),'%') as 08完成占比,
+        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) as 09总单量,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) * 100,2),'%') as 09总计签收,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 09完成签收,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) * 100,2),'%') as 09完成占比,
+        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202110',1,0)) as 10总单量,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202110' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) * 100,2),'%') as 10总计签收,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202110' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 10完成签收,
+        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202110' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) * 100,2),'%') as 10完成占比
+        #                 FROM (SELECT *,
+        #                             IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","金鹏",cc.团队)))))) as 家族
+        #                         FROM gat_zqsb cc where cc.`运单编号` is not null
+        #                      )  cx
+        #                 GROUP BY cx.家族,cx.币种,cx.产品id
+        #                 WITH ROLLUP
+        #             ) s
+        #             ORDER BY FIELD(s.`家族`,'神龙','火凤凰','金狮','金鹏','神龙-低价','红杉','总计'),
+        #                     FIELD( 地区, '台湾', '香港', '总计' ),
+        #                     s.总单量 DESC;'''
         sql51 = '''SELECT *
                     FROM(SELECT IFNULL(cx.`家族`, '总计') 家族,
                                 IFNULL(cx.币种, '总计') 地区,
@@ -3313,30 +3409,34 @@ class QueryUpdate(Settings):
                                 IFNULL(cx.产品名称, '总计') 产品名称,
                                 IFNULL(cx.父级分类, '总计') 父级分类,
                                 COUNT(cx.`订单编号`) as 总单量,
-                            SUM(IF(date_format(cx.日期,'%Y%m') = '202104',1,0)) as 04总单量,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202104',1,0)) * 100,2),'%') as 04总计签收,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 04完成签收,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202104',1,0)) * 100,2),'%') as 04完成占比,
-                            SUM(IF(date_format(cx.日期,'%Y%m') = '202105',1,0)) as 05总单量,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202105',1,0)) * 100,2),'%') as 05总计签收,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 05完成签收,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202105',1,0)) * 100,2),'%') as 05完成占比,
-                            SUM(IF(date_format(cx.日期,'%Y%m') = '202106',1,0)) as 06总单量,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202106',1,0)) * 100,2),'%') as 06总计签收,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 06完成签收,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202106',1,0)) * 100,2),'%') as 06完成占比,        
-                            SUM(IF(date_format(cx.日期,'%Y%m') = '202107',1,0)) as 07总单量,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202107',1,0)) * 100,2),'%') as 07总计签收,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 07完成签收,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202107',1,0)) * 100,2),'%') as 07完成占比,
-                            SUM(IF(date_format(cx.日期,'%Y%m') = '202108',1,0)) as 08总单量,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202108',1,0)) * 100,2),'%') as 08总计签收,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 08完成签收,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202108',1,0)) * 100,2),'%') as 08完成占比,
-                            SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) as 09总单量,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) * 100,2),'%') as 09总计签收,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 09完成签收,
-                                concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) * 100,2),'%') as 09完成占比
+                            SUM(IF(年月 = 202104,1,0)) as 04总单量,
+                                concat(ROUND(SUM(IF(年月 = 202104 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202104,1,0)) * 100,2),'%') as 04总计签收,
+                                concat(ROUND(SUM(IF(年月 = 202104 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202104 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 04完成签收,
+                                concat(ROUND(SUM(IF(年月 = 202104 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202104,1,0)) * 100,2),'%') as 04完成占比,
+                            SUM(IF(年月 = 202105,1,0)) as 05总单量,
+                                concat(ROUND(SUM(IF(年月 = 202105 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202105,1,0)) * 100,2),'%') as 05总计签收,
+                                concat(ROUND(SUM(IF(年月 = 202105 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202105 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 05完成签收,
+                                concat(ROUND(SUM(IF(年月 = 202105 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202105,1,0)) * 100,2),'%') as 05完成占比,
+                            SUM(IF(年月 = 202106,1,0)) as 06总单量,
+                                concat(ROUND(SUM(IF(年月 = 202106 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202106,1,0)) * 100,2),'%') as 06总计签收,
+                                concat(ROUND(SUM(IF(年月 = 202106 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202106 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 06完成签收,
+                                concat(ROUND(SUM(IF(年月 = 202106 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202106,1,0)) * 100,2),'%') as 06完成占比,        
+                            SUM(IF(年月 = 202107,1,0)) as 07总单量,
+                                concat(ROUND(SUM(IF(年月 = 202107 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202107,1,0)) * 100,2),'%') as 07总计签收,
+                                concat(ROUND(SUM(IF(年月 = 202107 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202107 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 07完成签收,
+                                concat(ROUND(SUM(IF(年月 = 202107 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202107,1,0)) * 100,2),'%') as 07完成占比,
+                            SUM(IF(年月 = 202108,1,0)) as 08总单量,
+                                concat(ROUND(SUM(IF(年月 = 202108 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202108,1,0)) * 100,2),'%') as 08总计签收,
+                                concat(ROUND(SUM(IF(年月 = 202108 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202108 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 08完成签收,
+                                concat(ROUND(SUM(IF(年月 = 202108 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202108,1,0)) * 100,2),'%') as 08完成占比,
+                            SUM(IF(年月 = 202109,1,0)) as 09总单量,
+                                concat(ROUND(SUM(IF(年月 = 202109 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202109,1,0)) * 100,2),'%') as 09总计签收,
+                                concat(ROUND(SUM(IF(年月 = 202109 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202109 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 09完成签收,
+                                concat(ROUND(SUM(IF(年月 = 202109 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202109,1,0)) * 100,2),'%') as 09完成占比,
+                            SUM(IF(年月 = 202110,1,0)) as 10总单量,
+                                concat(ROUND(SUM(IF(年月 = 202110 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202109,1,0)) * 100,2),'%') as 10总计签收,
+                                concat(ROUND(SUM(IF(年月 = 202110 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202109 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 10完成签收,
+                                concat(ROUND(SUM(IF(年月 = 202110 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202109,1,0)) * 100,2),'%') as 10完成占比      
                         FROM (SELECT *,
                                     IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","金鹏",cc.团队)))))) as 家族 
                                 FROM gat_zqsb cc where cc.`运单编号` is not null 
@@ -3351,7 +3451,7 @@ class QueryUpdate(Settings):
         listT.append(df51)
 
         # 13、各团队-问题率
-        print('正在获取---3、各团队-问题率…………')
+        # print('正在获取---3、各团队-问题率…………')
         sql02 = '''SELECT *
                 FROM (
                     (SELECT 币种,'核实地址' AS 问题原因,核实地址 AS 数量
@@ -3503,7 +3603,7 @@ class QueryUpdate(Settings):
         # listT.append(df02)
 
         # 11、各团队-各二级品类
-        print('正在获取---3、各团队-各二级品类…………')
+        # print('正在获取---3、各团队-各二级品类…………')
         sql20 = '''SELECT *
                     FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
                                 IFNULL(cx.`币种`, '总计') 地区,
@@ -3560,14 +3660,14 @@ class QueryUpdate(Settings):
         today = datetime.date.today().strftime('%Y.%m.%d')
         file_path = 'G:\\输出文件\\{} {}-签收率.xlsx'.format(today, match[team])
         sheet_name = ['每日各团队', '审核率_删单率', '各月各团队', '各月各团队分旬', '各团队各品类', '各团队各物流', '各团队各平台', '各平台各团队', '各品类各团队', '各物流各团队', '同产品各团队','同产品各月', '各团队二级品类']
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        df0 = pd.DataFrame([])                                          # 创建空的dataframe数据框
+        df0.to_excel(file_path, index=False)                            # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        writer = pd.ExcelWriter(file_path, engine='openpyxl')           # 初始化写入对象
+        book = load_workbook(file_path)                                 # 可以向不同的sheet写入数据（对现有工作表的追加）
+        writer.book = book                                              # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
         for i in range(len(listT)):
             listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        if 'Sheet1' in book.sheetnames:                                 # 删除新建文档时的第一个工作表
             del book['Sheet1']
         writer.save()
         writer.close()
