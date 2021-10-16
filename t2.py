@@ -10,7 +10,7 @@ from gat_update2 import QueryUpdate
 import datetime
 from dateutil.relativedelta import relativedelta
 start: datetime = datetime.datetime.now()
-team = 'slsc'
+team = 'gat'
 match1 = {'gat': '港台',
           'slsc': '品牌'}
 match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
@@ -129,7 +129,7 @@ elif team in ('gat'):
 
     print('------------导出部分：---------------------')
     # m.connectOrder(team, month_last, month_yesterday, month_begin)  # 最近两个月的订单信息导出
-    qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
+    # qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
     print('输出耗时：', datetime.datetime.now() - start)
 
 

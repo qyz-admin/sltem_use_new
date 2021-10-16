@@ -734,7 +734,7 @@ class QueryTwo(Settings):
         try:
             df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId', 'spec', 'quantity',
                        'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime', 'finishTime',
-                       'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'questionReason']]
+                       'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'questionReason', 'service']]
             print(df)
             print('正在更新临时表中......')
             df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
@@ -763,7 +763,8 @@ class QueryTwo(Settings):
             				    h.`spec` 规格中文,
             				    h.`autoVerify` 审单类型,
             				    h.`delReason` 删除原因,
-            				    h.`questionReason` 问题原因
+            				    h.`questionReason` 问题原因,
+            				    h.`service` 下单人
                             FROM d1_cpy h
                                 LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
                                 LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -786,7 +787,7 @@ class QueryTwo(Settings):
                                 a.`产品id`= IF(b.`产品id` = '', NULL, b.`产品id`),
                                 a.`产品名称`= IF(b.`产品名称` = '', NULL, b.`产品名称`),
                                 a.`审核时间`= IF(b.`审核时间` = '', NULL, b.`审核时间`),
-                                a.`上线时间`= IF(b.`上线时间` = '', NULL, b.`上线时间`),
+                                a.`上线时间`= IF(b.`上线时间` = '' or b.`上线时间` = '0000-00-00 00:00:00' , NULL, b.`上线时间`),
                                 a.`仓储扫描时间`= IF(b.`仓储扫描时间` = '', NULL, b.`仓储扫描时间`),
                                 a.`完结状态时间`= IF(b.`完结状态时间` = '', NULL, b.`完结状态时间`),
                                 a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`),
@@ -794,7 +795,8 @@ class QueryTwo(Settings):
                                 a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
                                 a.`审单类型`= IF(b.`审单类型` = '', NULL, IF(b.`审单类型` like '%自动审单通过%','是','否')),
                                 a.`删除原因`= IF(b.`删除原因` = '', NULL,  b.`删除原因`),
-                                a.`问题原因`= IF(b.`问题原因` = '', NULL,  b.`问题原因`)
+                                a.`问题原因`= IF(b.`问题原因` = '', NULL,  b.`问题原因`),
+                                a.`下单人`= IF(b.`下单人` = '', NULL,  b.`下单人`)
                     where a.`订单编号`=b.`订单编号`;'''.format(team2)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:
@@ -825,9 +827,9 @@ if __name__ == '__main__':
     #   台湾token, 日本token, 新马token：  f5dc2a3134c17a2e970977232e1aae9b
     #   泰国token： 83583b29fc24ec0529082ff7928246a6
 
-    begin = datetime.date(2021, 10, 12)       # 1、手动设置时间；若无法查询，切换代理和直连的网络
+    begin = datetime.date(2021, 10, 15)       # 1、手动设置时间；若无法查询，切换代理和直连的网络
     print(begin)
-    end = datetime.date(2021, 10, 13)
+    end = datetime.date(2021, 10, 16)
     print(end)
     # yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 2、自动设置时间
     # mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
@@ -851,5 +853,5 @@ if __name__ == '__main__':
         print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
         m.orderInfo(searchType, team, team2, last_month)
 
-    # m.orderInfoQuery('GT110072237341137', '订单号', 'gat_order_list', 'gat_order_list')  # 进入订单检索界面
+    # m.orderInfoQuery('GP210619103223PGNXK7', '订单号', 'gat_order_list', 'gat_order_list')  # 进入订单检索界面
     # print('更新耗时：', datetime.datetime.now() - start)

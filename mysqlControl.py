@@ -580,7 +580,8 @@ class MysqlControl(Settings):
                             a.ship_state 省洲,
                             null 审单类型,
                             a.del_reason 删除原因,
-                            a.question_reason 问题原因
+                            a.question_reason 问题原因,
+                            null 下单人
                     FROM gk_order a
                             left join dim_area ON dim_area.id = a.area_id
                             left join dim_payment ON dim_payment.id = a.payment_id
