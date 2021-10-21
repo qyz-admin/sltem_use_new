@@ -727,8 +727,11 @@ class QueryTwo(Settings):
             print('转化失败： 重新获取中', str(Exception) + str(e))
             count = count + 1
             time.sleep(30)
-            self.orderInfoQuery(ord, searchType, team, team2)
+            # self.orderInfoQuery(ord, searchType, team, team2)
+            print(last_month)
+            self.orderInfo(searchType, team, team2, last_month)
             if count == 3:
+                print('--->>>重启失败： 需手动重新启动！！！')
                 pass
         print('正在写入缓存中......')
         try:
