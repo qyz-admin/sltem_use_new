@@ -456,19 +456,26 @@ class QueryTwo(Settings):
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
             # time.sleep(10)
+            # print(team)
+            # print(searchType)
+            # self.readFormHost(team, searchType)
             # self.orderInfoQuery(ord, searchType)
         #     self.q.put(result)
         # for i in range(len(req['data']['list'])):
         #     ordersdict.append(self.q.get())
         data = pd.json_normalize(ordersdict)
-        df = data[['orderNumber', 'currency', 'area', 'productId', 'saleProduct', 'saleName', 'spec',
-                   'shipInfo.shipName', 'shipInfo.shipPhone', 'percent', 'phoneLength', 'shipInfo.shipAddress',
-                   'amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime',
-                   'logisticsName', 'dpeStyle', 'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName',
-                   'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime',
-                   'finishTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer',
-                   'autoVerify', 'cloneUser', 'isClone', 'warehouse', 'smsStatus', 'logisticsControl',
-                   'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'update_time']]
+        df = None
+        try:
+            df = data[['orderNumber', 'currency', 'area', 'productId', 'saleProduct', 'saleName', 'spec',
+                    'shipInfo.shipName', 'shipInfo.shipPhone', 'percent', 'phoneLength', 'shipInfo.shipAddress',
+                    'amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime',
+                    'logisticsName', 'dpeStyle', 'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName',
+                    'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime',
+                    'finishTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer',
+                    'autoVerify', 'cloneUser', 'isClone', 'warehouse', 'smsStatus', 'logisticsControl',
+                    'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'update_time']]
+        except Exception as e:
+            print('------查询为空')
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         return df

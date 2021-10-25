@@ -1001,10 +1001,10 @@ class MysqlControl(Settings):
                     ORDER BY a.`下单时间`;'''.format(team, 'slrb', month_begin, month_last, month_yesterday)
         elif team in ('slsc'):
             print(month_yesterday)
-            print('正在获取台湾的物流信息......')
+            # print('正在获取台湾的物流信息......')
             sql = '''REPLACE INTO slsc SELECT null,订单编号,原运单号,运单编号,出货时间,物流状态,状态时间,航班时间,清关时间,上线时间,更新时间 添加时间 
                     FROM gat WHERE gat.`添加时间` = '{0} 00:00:00';'''.format(month_yesterday)
-            df = pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            # df = pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,

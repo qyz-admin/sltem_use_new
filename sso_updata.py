@@ -728,6 +728,9 @@ class QueryTwo(Settings):
             count = count + 1
             time.sleep(30)
             # self.orderInfoQuery(ord, searchType, team, team2)
+            print(searchType)
+            print(team)
+            print(team2)
             print(last_month)
             self.orderInfo(searchType, team, team2, last_month)
             if count == 3:
