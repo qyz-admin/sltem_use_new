@@ -277,7 +277,7 @@ class QueryUpdate(Settings):
         print('正在写入---' + match[team] + ' ---临时缓存…………')             # 备用临时缓存表
         df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace')
 
-        for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-品牌4组"|slgat_jp', '"神龙-低价"|slgat_low'):
+        for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-小虎队"|slgat_jp', '"神龙-低价"|slgat_low'):
             tem1 = tem.split('|')[0]
             tem2 = tem.split('|')[1]
             sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)
@@ -2940,7 +2940,7 @@ class QueryUpdate(Settings):
         # 01、各团队-审核率 删单率
         print('正在获取---01、各团队-审核率_删单率…………')
         sql01 = '''SELECT gs.币种,SUBSTRING(删除原因,2) as 删除原因, 
-        			            COUNT(订单编号)  as 有效订单, 
+        			            COUNT(订单编号) as 单量, 
         			            SUM(IF(gs.`审单类型` = '是',1,0)) as 自动审单量,
         			            concat(ROUND(SUM(IF(gs.`审单类型` = '是',1,0)) / 总订单量 * 100,2),'%') as 自动审单量率,
         			            SUM(IF(gs.`审单类型` = '否' or gs.`审单类型` IS NULL,1,0)) as 人工审单量,
@@ -2960,7 +2960,7 @@ class QueryUpdate(Settings):
                             GROUP BY gs.`币种`,gs.`删除原因`
                             WITH ROLLUP
                             HAVING gs.`币种` IS NOT null
-                            ORDER BY gs.币种,有效订单 DESC;'''
+                            ORDER BY gs.币种,单量 DESC;'''
         df01 = pd.read_sql_query(sql=sql01, con=self.engine1)
         listT.append(df01)
 
@@ -4891,6 +4891,81 @@ class QueryUpdate(Settings):
             # app.quit()
         print('----已写入excel ')
 
+    # 拒收核实-查询需要的产品id
+    def jushou(self):
+        print('正在查询拒收核实-需要的产品ID…………')
+        listT = []  # 查询sql的结果 存放池
+        sql = '''SELECT *
+                FROM(SELECT IFNULL(s1.家族, '合计') 家族, IFNULL(s1.地区, '合计') 地区, IFNULL(s1.月份, '合计') 月份,
+                            IFNULL(s1.产品id, '合计') 产品id,
+						    IFNULL(s1.产品名称, '合计') 产品名称,
+						    IFNULL(s1.父级分类, '合计') 父级分类,
+						    IFNULL(s1.二级分类, '合计') 二级分类,
+                            SUM(s1.已签收) as 已签收,
+						    SUM(s1.拒收) as 拒收,
+					        SUM(s1.已退货) as 已退货,
+				            SUM(s1.已完成) as 已完成,
+						    SUM(s1.总订单) as 总订单,
+						    concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.已完成),0) * 100,2),'%') as 完成签收,
+						    concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.总订单),0) * 100,2),'%') as 总计签收,
+						    concat(ROUND(IFNULL(SUM(s1.已完成) / SUM(s1.总订单),0) * 100,2),'%') as 完成占比,
+						    concat(ROUND(IFNULL(SUM(s1.已退货) / SUM(s1.总订单),0) * 100,2),'%') as 退货率,
+						    concat(ROUND(IFNULL(SUM(s1.拒收) / SUM(s1.已完成),0) * 100,2),'%') as 拒收率
+                    FROM(SELECT IFNULL(cx.`家族`, '合计') 家族, IFNULL(cx.币种, '合计') 地区, IFNULL(cx.`年月`, '合计') 月份,
+						        IFNULL(cx.产品id, '合计') 产品id,
+						        IFNULL(cx.产品名称, '合计') 产品名称,
+						        IFNULL(cx.父级分类, '合计') 父级分类,
+						        IFNULL(cx.二级分类, '合计') 二级分类,
+						        COUNT(cx.`订单编号`) as 总订单,
+						        SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
+						        SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+						        SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
+						        SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成		
+		                FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","金鹏",cc.团队)))))) as 家族
+                                FROM gat_zqsb cc 
+					            WHERE cc.年月 = DATE_FORMAT(CURDATE(),'%Y%m') AND cc.`是否改派` = '直发' and cc.`币种` = '台湾' AND cc.`运单编号` is not null
+		                ) cx
+                        GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
+                    ) s1
+                    GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
+                    WITH ROLLUP 
+                ) s 
+                HAVING s.月份 != '合计' AND s.产品id != '合计' AND s.`总订单` >= '100' AND s.`拒收` >= '1'
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','金狮','金鹏','红杉','合计'),
+                        FIELD(s.`地区`,'台湾','香港','合计'),
+                        FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'),'合计'),
+                        FIELD(s.`产品id`,'合计'),
+                        s.拒收 DESC;'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df)
+
+        # df1 = df[df.家族.apply(lambda x:str(x).startswith('神龙'))]   # 查询筛选匹配（一）模糊
+        df1 = df.loc[df["家族"] == "神龙"]                              # 查询筛选匹配（二）精准
+        listT.append(df1)
+
+        df2 = df.loc[df["家族"] == "火凤凰"]
+        listT.append(df2)
+
+        df3 = df.loc[df["家族"] == "金鹏"]
+        listT.append(df3)
+
+        print('正在写入excel…………')
+        today = datetime.date.today().strftime('%m.%d')
+        file_path = 'G:\\输出文件\\{} 拒收核实-需产品ID.xlsx'.format(today)
+        sheet_name = ['总表', '神龙', '火凤凰', '金鹏']
+        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        for i in range(len(listT)):
+            listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            del book['Sheet1']
+        writer.save()
+        writer.close()
+        print('----已写入excel ')
+
 if __name__ == '__main__':
     m = QueryUpdate()
     start: datetime = datetime.datetime.now()
@@ -4907,26 +4982,24 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    if team == 'gat':
+    if team == 'ga9t':
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
         month_now = datetime.datetime.now().strftime('%Y-%m-%d')
     else:
-        month_last = '2021-08-01'
-        month_yesterday = '2021-09-30'
-        month_now = '2021-10-05'
+        month_last = '2021-09-01'
+        month_yesterday = '2021-11-01'
+        month_now = '2021-11-01'
     # write = '上期'
     last_time = '2021-09-16'
     write = '本期'
     dim_product = '总产品'
     m.readFormHost(team, write, last_time)      #  更新签收表---港澳台（一）
 
-    m.gat_new(team, dim_product, month_last, month_yesterday)               #  获取-签收率-报表
+    m.gat_new(team, dim_product, month_last, month_yesterday)          #  获取-签收率-报表
     m.qsb_new(team, month_last, month_now)                             #  获取-每日-报表
-    m.EportOrderBook(team, month_last, month_yesterday)                      #  导出-总的-签收表
-
-
-
+    m.EportOrderBook(team, month_last, month_yesterday)                #  导出-总的-签收表
+    m.jushou()                                                           #  拒收核实-查询需要的产品id
 
     # m.address_repot(team)                       #  获取-地区签收率-报表
      # 停用备用使用

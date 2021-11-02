@@ -336,8 +336,8 @@ class QueryUpdate(Settings):
         month_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         # month_yesterday = '2021-09-28'
         print(month_yesterday)
-        month_now = (datetime.datetime.now()).strftime('%Y%m')
-        # month_now = '202109'
+        # month_now = (datetime.datetime.now()).strftime('%Y%m')
+        month_now = '202110'
         print(month_now)
 
         sql = '''SELECT * 
@@ -417,7 +417,7 @@ if __name__ == '__main__':
 
     # upload = '查询-订单号'
     upload = '查询-运单号'
-    m.readFormHost(upload)
+    # m.readFormHost(upload)
 
     m.trans_way_cost_new(team)  # 同产品下的规格运费查询
     print('输出耗时：', datetime.datetime.now() - start)

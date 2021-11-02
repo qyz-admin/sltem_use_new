@@ -195,7 +195,7 @@ class MysqlControl(Settings):
         match = {'slgat': '"神龙家族-港澳台"',
                  'slgat_hfh': '"火凤凰-港澳台"',
                  'slgat_hs': '"红杉家族-港澳台", "红杉家族-港澳台2"',
-                 'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-品牌4组", "火凤凰-港台(繁体)", "神龙-低价"',
+                 'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队", "火凤凰-港台(繁体)", "神龙-低价"',
                  'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  'sltg': '"神龙家族-泰国"',
                  'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
@@ -590,8 +590,7 @@ class MysqlControl(Settings):
                             left join dim_cate ON dim_cate.id = a.third_cate_id
                             left join intervals ON intervals.id = a.intervals
                             left join dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
-                    WHERE  a.rq = '{0}' AND a.rq <= '{1}'
-                        AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
+                    WHERE  a.rq = '{0}' AND a.rq <= '{1}' AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
                 print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
                 df = pd.read_sql_query(sql=sql, con=self.engine2)
             sql = 'SELECT * FROM dim_order_status;'
@@ -619,7 +618,7 @@ class MysqlControl(Settings):
         match = {'slgat': '"神龙家族-港澳台"',
                  'slgat_hfh': '"火凤凰-港澳台"',
                  'slgat_hs': '"红杉家族-港澳台", "红杉家族-港澳台2"',
-                 'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-品牌4组", "火凤凰-港台(繁体)", "神龙-低价"',
+                 'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队", "火凤凰-港台(繁体)", "神龙-低价"',
                  'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  'sltg': '"神龙家族-泰国"',
                  'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
@@ -1080,7 +1079,7 @@ class MysqlControl(Settings):
         print('正在写入excel…………')
         filePath = []
         if team in ('gat'):
-            for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-品牌4组"|slgat_jp', '"神龙-低价"|slgat_low'):
+            for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-小虎队"|slgat_jp', '"神龙-低价"|slgat_low'):
                 tem1 = tem.split('|')[0]
                 tem2 = tem.split('|')[1]
                 sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)

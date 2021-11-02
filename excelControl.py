@@ -174,6 +174,8 @@ class ExcelControl():
                 df.drop(labels=['运单编号'], axis=1, inplace=True)   # 立邦的去掉多余的运单编号
             if '新单号' in columns and '承运单号' in columns:
                 df.drop(labels=['承运单号'], axis=1, inplace=True)   # 天马的去掉多余的承运单号
+            if '加' in columns and '原单号' in columns and '改派失败原因' in columns:
+                df.drop(labels=['原单号'], axis=1, inplace=True)   # 龟山的去掉多余的承运单号
         if team == 'slxmt':
             if '出货时间' not in df:
                 df.insert(0, '出货时间', '')
