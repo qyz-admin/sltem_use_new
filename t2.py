@@ -33,7 +33,7 @@ match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台
 说明：  日本 需整理的表：1、吉客印神龙直发签收表=密码：‘JKTSL’>(明细再copy保存；改派明细不需要);2、直发签收表>(明细再copy保存；3、状态更新需要copy保存);
 '''
 # 初始化时间设置
-if team in ('sls9c', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'ga9t'):
+if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'ga9t'):
     # 更新时间
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
@@ -53,11 +53,11 @@ else:
     # 更新时间
     begin = datetime.date(2021, 9, 1)
     print(begin)
-    end = datetime.date(2021, 11, 1)
+    end = datetime.date(2021, 11, 5)
     print(end)
     # 导出时间
     month_last = '2021-09-01'
-    month_yesterday = '2021-11-01'
+    month_yesterday = '2021-11-05'
     month_begin = '2021-08-01'
 
 # 库的引用

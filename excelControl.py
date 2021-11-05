@@ -309,6 +309,8 @@ class ExcelControl():
                 df['状态时间'] = df['状态时间'].replace(to_replace='取消', value=datetime.datetime(1990, 1, 1, 0, 0))
                 df['状态时间'] = df['状态时间'].replace(to_replace='-', value=datetime.datetime(1990, 1, 1, 0, 0))
                 df['状态时间'] = df['状态时间'].replace(to_replace=' ', value=datetime.datetime(1990, 1, 1, 0, 0))
+                df['状态时间'] = df['状态时间'].replace(to_replace='通知取消', value=datetime.datetime(1990, 1, 1, 0, 0))
+                df['状态时间'] = df['状态时间'].replace(to_replace='10.20退回吉客印仓库', value=datetime.datetime(1990, 1, 1, 0, 0))
                 df['状态时间'] = df['状态时间'].fillna(value=datetime.datetime(1990, 1, 1, 0, 0))
                 df['物流状态'] = df['物流状态'].fillna(value='未上线')
             if shtName in ['新竹']:

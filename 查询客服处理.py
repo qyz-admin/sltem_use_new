@@ -81,20 +81,27 @@ class QueryUpdate(Settings):
                 print(filePath)
                 print('****** 已成功将 xls 转换成 xlsx 格式 ******')
             if dir[:2] != '~$':
-                print(filePath)
                 wb_data = None
                 if '换货' in dir:
+                    print(filePath)
                     wb_data = '换货表'
                 elif '退货' in dir:
+                    print(filePath)
                     wb_data = '退货表'
                 elif '工单' in dir:
+                    print(filePath)
                     wb_data = '工单收集表'
                 elif '台湾系统' in dir or '香港系统' in dir or '问题件+客诉件' in dir or '問題件+客訴件' in dir or 'export' in dir or '理赔订单' in dir:
+                    print(filePath)
                     wb_data = '客服电话处理'
                 elif '压单反馈' in dir and startday in dir:
+                    print(filePath)
                     wb_data = '压单反馈'
+                elif '核实出的拒收原因' in dir:
+                    print(filePath)
+                    wb_data = '拒收核实'
                 if wb_data is None:
-                    print('***本表不符合上传表的格式，即将跳过此表！！！')
+                    print('***不符合上传格式，跳过此表！！！')
                     pass
                 else:
                     self.wbsheetHost(filePath, wb_data)
@@ -125,6 +132,9 @@ class QueryUpdate(Settings):
                             team = '工单收集表'
                             db = db[['订单编号', '产品id', '产品名称', '问题类型', '环节问题', '订单金额', '订单状态', '运单号', '物流状态', '签收时间', '所属团队',
                                     '提交形式', '提交时间', '同步模块', '模块进展', '登记人', '币种', '数量']]
+                        elif wb_data == '拒收核实':
+                            team = '拒收核实'
+                            db = db[['处理日期', '订单编号', '核实原因', '具体原因', '再次下单']]
                         elif wb_data == '压单反馈':
                             team = '压单反馈'
                             db = db[['订单编号', '产品ID', '产品名称', '币种', '团队', '状态', '反馈时间', '压单原因', '其他原因', '采购员', '入库时间', '下单时间', '其他原因最后更新时间']]
@@ -132,6 +142,9 @@ class QueryUpdate(Settings):
                             db = db[(db['币种'].str.contains('台币|港币'))]
                         elif wb_data == '客服电话处理':
                             db, team = self.infoSheet(db, sht.name, fileName)
+                            if team == '采购异常':
+                                db = db[(db['币种'].str.contains('台币|港币'))]
+                                db.drop(labels=['币种'], axis=1, inplace=True)
                             print('正在导入的数据库表：' + str(team))             # 类型错误:只能连接str(不是“列表”)到str
                         if db is not None and len(db) > 0:
                             print('++++正在导入：' + sht.name + ' 表； 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
@@ -173,7 +186,8 @@ class QueryUpdate(Settings):
                           '处理结果': [True, ['处理结果'], []],
                           '反馈时间': [True, ['反馈时间'], []],
                           '处理时间': [True, ['处理时间'], []],
-                          '取消原因': [True, ['取消原因'], []]},
+                          '取消原因': [True, ['取消原因'], []],
+                          '币种': [False, ['币种'], []]},
                 '丢件_破损_扣货': {'订单编号': [True, ['订单编号'], []],
                                     '处理结果': [True, ['处理结果'], []],
                                     '具体原因': [True, ['具体原因'], []],
@@ -1080,20 +1094,21 @@ if __name__ == '__main__':
     m = QueryUpdate()
     start: datetime = datetime.datetime.now()
     # -----------------------------------------------手动查询状态运行（一）-----------------------------------------
-    m.readFormHost('202110')                   # 读取需要的工作表内容（工单、退货、换补发； 系统问题件、物流问题件、物流客诉件； 系统采购异常； 压单反馈表）
+    # m.readFormHost('202110')                   # 读取需要的工作表内容（工单、退货、换补发； 系统问题件、物流问题件、物流客诉件； 系统采购异常； 压单反馈表）
     # m.writeSql()                               # 获取工单和退换货的客服处理记录
 
 
 
-    # begin = datetime.date(2021, 10, 25)       # 若无法查询，切换代理和直连的网络
-    # print(begin)
-    # end = datetime.date(2021, 11, 1)
-    # print(end)
-    # for i in range((end - begin).days):  # 按天循环获取订单状态
-    #     day = begin + datetime.timedelta(days=i)
-    #     startday = str(day).replace('-', '')
-    #     print(startday)
-    #     m.readFormHost(startday)
+    begin = datetime.date(2021, 10, 1)       # 压单反馈上传使用
+    print(begin)
+    end = datetime.date(2021, 10, 2)
+    print(end)
+    for i in range((end - begin).days):  # 按天循环获取订单状态
+        day = begin + datetime.timedelta(days=i)
+        upload = str(day)
+        startday = str(day).replace('-', '')
+        print(startday)
+        m.readFormHost(startday)
 
 
     print('输出耗时：', datetime.datetime.now() - start)

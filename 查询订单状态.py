@@ -336,8 +336,8 @@ class QueryUpdate(Settings):
         month_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         # month_yesterday = '2021-09-28'
         print(month_yesterday)
-        # month_now = (datetime.datetime.now()).strftime('%Y%m')
-        month_now = '202110'
+        month_now = (datetime.datetime.now()).strftime('%Y%m')
+        # month_now = '202110'
         print(month_now)
 
         sql = '''SELECT * 
@@ -352,7 +352,7 @@ class QueryUpdate(Settings):
 								) dds on ds.`产品id` = dds.`产品id`
 								LEFT JOIN (SELECT 产品id,`规格中文`,COUNT(订单编号) 单量, MIN(包裹重量) as 重量小, MAX(包裹重量) as 重量大,  MAX(包裹重量)-MIN(包裹重量) as 重量差
 											FROM gat_order_list d 
-											WHERE d.`年月` = '{1}' and d.`是否改派` = '直发' AND d.`产品id` <> 0 AND d.`包裹重量` <> 0 AND d.系统订单状态 IN ('已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+											WHERE d.`年月` >= '{1}' and d.`是否改派` = '直发' AND d.`产品id` <> 0 AND d.`包裹重量` <> 0 AND d.系统订单状态 IN ('已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
 											GROUP BY d.`产品id`,d.`规格中文`
 											ORDER BY d. 产品id
 							 ) dds2 on ds.`产品id` = dds2.`产品id` AND ds.`规格中文` = dds2.`规格中文`

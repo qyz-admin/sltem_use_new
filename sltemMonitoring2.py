@@ -172,8 +172,8 @@ class SltemMonitoring(Settings):
                  '品牌-菲律宾': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  '神龙-香港': '"神龙家族-港澳台"',
                  '神龙-台湾': '"神龙家族-港澳台"',
-                 '金鹏-香港': '"金鹏家族-小虎队"',
-                 '金鹏-台湾': '"金鹏家族-小虎队"',
+                 '小虎队-香港': '"金鹏家族-小虎队"',
+                 '小虎队-台湾': '"金鹏家族-小虎队"',
                  '神龙低价-台湾': '"神龙-低价"',
                  '火凤凰-台湾': '"火凤凰-港澳台", "火凤凰-港台(繁体)"',
                  '火凤凰-香港': '"火凤凰-港澳台", "火凤凰-港台(繁体)"'}
@@ -184,7 +184,7 @@ class SltemMonitoring(Settings):
         # 初始化配置
         start: datetime = datetime.datetime.now()
         family = ""
-        if team in ('神龙-香港', '神龙-台湾', '火凤凰-香港', '火凤凰-台湾', '金鹏-香港', '金鹏-台湾', '神龙低价-台湾'):
+        if team in ('神龙-香港', '神龙-台湾', '火凤凰-香港', '火凤凰-台湾', '小虎队-香港', '小虎队-台湾', '神龙低价-台湾'):
             family = 'qsb_gat'
         elif team in ('品牌-日本', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾', '品牌-台湾', '品牌-香港'):
             family = 'qsb_slsc'
@@ -678,7 +678,7 @@ class SltemMonitoring(Settings):
         filePath = ''
         if "品牌" in team:
             filePath = 'F:\\查询\\品牌监控\\{} {} 监控表.xlsx'.format(today, team)
-        elif "神龙" in team or "火凤凰" in team or "金鹏" in team:
+        elif "神龙" in team or "火凤凰" in team or "小虎队" in team:
             filePath = 'F:\\查询\\港台监控\\{} {} 监控表.xlsx'.format(today, team)
         if os.path.exists(filePath):  # 判断是否有需要的表格
             print("正在使用(上月)文件......")
@@ -724,11 +724,11 @@ class SltemMonitoring(Settings):
         match3 = {'品牌': 'slsc',
                   '火凤凰-港台': 'slgat_hfh',
                   '神龙-港台': 'slgat',
-                  '金鹏-港台': 'slgat_jp',
+                  '小虎队-港台': 'slgat_jp',
                   '港台': 'slgat'}
         start = datetime.datetime.now()
         family = ""
-        if team in ('神龙-港台', '火凤凰-港台', '金鹏-港台', '红杉-港台', '金狮-港台', '神龙-低价'):
+        if team in ('神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-低价'):
             family = 'gat'
         elif team in ('品牌签收表'):
             family = 'slsc'
@@ -789,20 +789,20 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2021.10.01'
-    now_month = '2021.11.01'
-    # for team in ['神龙-港台', '火凤凰-港台', '金鹏-港台', '红杉-港台', '金狮-港台', '神龙-低价']:
+    last_month = '2021.10.05'
+    now_month = '2021.11.05'
+    # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-低价']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传
 
     # 测试监控运行（二）-- 第一种手动方式
-    # m.order_Monitoring('港台')        # 各月缓存（整体一）
-    for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '金鹏-台湾', '神龙低价-台湾']:
+    m.order_Monitoring('港台')        # 各月缓存（整体一）
+    for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '小虎队-台湾', '神龙低价-台湾']:
     # for team in ['火凤凰-台湾']:
         now_month = now_month.replace('.', '-')           # 修改配置时间
         last_month = last_month.replace('.', '-')
-        # m.sl_Monitoring(team, now_month, last_month, '本期宏')      # 输出数据--每月正常使用的时间（二）
-        m.sl_Monitoring(team, now_month, last_month, '上期宏')      # 输出数据--每月正常使用的时间（二）
+        m.sl_Monitoring(team, now_month, last_month, '本期宏')      # 输出数据--每月正常使用的时间（二）
+        # m.sl_Monitoring(team, now_month, last_month, '上期宏')      # 输出数据--每月正常使用的时间（二）
 
 
     # 测试监控运行（三）-- 第二种自动方式
