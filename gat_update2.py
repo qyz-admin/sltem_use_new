@@ -3002,9 +3002,9 @@ class QueryUpdate(Settings):
 							ON  cx.年月 = cx2.年月 AND cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族   
                           GROUP BY cx.年月,cx.币种,cx.家族
                         ) s						
-                    GROUP BY 月份,地区,家族
+                    GROUP BY s.年月,s.币种,s.家族
 					WITH ROLLUP 
-					HAVING `地区` IS NOT NULL
+					HAVING `地区` <> '总计'
 				) ss					
                 ORDER BY 月份 DESC,
                         FIELD( 地区, '台湾', '香港', '总计' ),
@@ -5072,7 +5072,7 @@ if __name__ == '__main__':
         month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
     else:
         month_last = '2021-09-01'
-        month_yesterday = '2021-11-05'
+        month_yesterday = '2021-11-09'
 
     last_time = '2021-09-16'
     write = '本期'
@@ -5081,8 +5081,7 @@ if __name__ == '__main__':
     m.gat_new(team, month_last, month_yesterday)          #  获取-签收率-报表
     m.qsb_new(team, '2021-09-01')                             #  获取-每日-报表
     m.EportOrderBook(team, month_last, month_yesterday)                #  导出-总的-签收表
-
-    # m.jushou()                                                           #  拒收核实-查询需要的产品id
+    m.jushou()                                                           #  拒收核实-查询需要的产品id
 
     # m.address_repot(team)                       #  获取-地区签收率-报表
      # 停用备用使用

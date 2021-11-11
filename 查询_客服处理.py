@@ -122,16 +122,22 @@ class QueryUpdate(Settings):
                         # print(db.columns)
                         if wb_data == '换货表':
                             team = '换货表'
-                            db = db[['订单编号', '运单号', '物流渠道', '产品Id', '产品名称', '数量', '电话', '反馈方式', '金额', '克隆后金额', '是否上门取货', '反馈问题类型',
+                            db = db[['订单编号', '运单号', '物流渠道', '产品Id', '产品名称', '数量', '电话', '反馈方式', '金额', '克隆后金额', '是否上门取货','反馈问题类型',
                                     '新订单编号', '新产品名称', '支付类型', '登记人', '导入时间', '处理人', '处理时间', '下单时间', '币种', '团队', '包裹到仓']]
+                            db['币种'] = db['币种'].astype(str)
+                            db = db[(db['币种'].str.contains('台币|港币'))]
                         elif wb_data == '退货表':
                             team = '退货表'
                             db = db[['订单编号', '运单号', '物流渠道', '产品Id', '产品名称', '数量', '电话', '反馈方式', '金额', '是否上门取货', '反馈问题类型',
                                     '退款金额', '支付类型', '登记人', '导入时间', '处理人', '处理时间', '下单时间', '币种', '团队', '退款类型', '包裹到仓', '站点ID']]
+                            db['币种'] = db['币种'].astype(str)
+                            db = db[(db['币种'].str.contains('台币|港币'))]
                         elif wb_data == '工单收集表':
                             team = '工单收集表'
                             db = db[['订单编号', '产品id', '产品名称', '问题类型', '环节问题', '订单金额', '订单状态', '运单号', '物流状态', '签收时间', '所属团队',
                                     '提交形式', '提交时间', '同步模块', '模块进展', '登记人', '币种', '数量']]
+                            db['币种'] = db['币种'].astype(str)
+                            db = db[(db['币种'].str.contains('台币|港币'))]
                         elif wb_data == '拒收核实':
                             team = '拒收核实'
                             db = db[['处理日期', '订单编号', '核实原因', '具体原因', '再次下单']]
@@ -147,14 +153,18 @@ class QueryUpdate(Settings):
                                 db.drop(labels=['币种'], axis=1, inplace=True)
                             print('正在导入的数据库表：' + str(team))             # 类型错误:只能连接str(不是“列表”)到str
                         if db is not None and len(db) > 0:
-                            print('++++正在导入：' + sht.name + ' 表； 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
-                            db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-                            print('++++成功导入缓存表')
-                            columns = list(db.columns)
-                            columns = ','.join(columns)
-                            sql = '''REPLACE INTO {}({}, 记录时间) SELECT *, NOW() 记录时间 FROM customer;'''.format(team, columns)
-                            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=2000)
-                            print('++++：' + sht.name + '表--->>>更新成功')
+                            if wb_data in ('换货表', '退货表', '工单收集表'):
+                                db.to_sql(wb_data, con=self.engine1, index=False, if_exists='replace')
+                                print('++++成功导入: ' + wb_data + '表')
+                            else:
+                                print('++++正在导入：' + sht.name + ' 表； 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                                db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+                                print('++++成功导入缓存表')
+                                columns = list(db.columns)
+                                columns = ','.join(columns)
+                                sql = '''REPLACE INTO {}({}, 记录时间) SELECT *, NOW() 记录时间 FROM customer;'''.format(team, columns)
+                                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=2000)
+                                print('++++：' + sht.name + '表--->>>更新成功')
                         else:
                             print('----------数据为空导入失败：' + sht.name + ' 表；')
                     except Exception as e:
@@ -398,7 +408,7 @@ class QueryUpdate(Settings):
         sql1 = '''SELECT *
 				FROM (
 				    (SELECT *,concat(ROUND(IF(已处理数量 = 0,NULL,已处理数量)  / 工单数量 * 100,2),'%') as 处理占比
-				    FROM (SELECT ss.年月, ss.币种, ss.团队, ss.产品id, ss.产品名称, 
+				    FROM (SELECT ss.年月, ss.币种, ss.团队, CONCAT(ss.产品id,'#',ss.产品名称) as  产品信息,
                                 IF(ss.商品数量 = 0,NULL,ss.商品数量) as 商品数量,
                                 IF(换货数量 = 0,NULL,换货数量) as 换货数量,
                                 IF(退货数量 = 0,NULL,退货数量) as 退货数量,
@@ -430,7 +440,7 @@ class QueryUpdate(Settings):
 				)
 				UNION all
 				(SELECT *,concat(ROUND(IF(已处理数量 = 0,NULL,已处理数量)  / 工单数量 * 100,2),'%') as 处理占比
-				    FROM (SELECT ss.年月, ss.币种, ss.团队, ss.产品id, ss.产品名称, 
+				    FROM (SELECT ss.年月, ss.币种, ss.团队,  CONCAT(ss.产品id,'#',ss.产品名称) as  产品信息,
                                 IF(ss.商品数量 = 0,NULL,ss.商品数量) as 商品数量,
                                 IF(换货数量 = 0,NULL,换货数量) as 换货数量,
                                 IF(退货数量 = 0,NULL,退货数量) as 退货数量,
@@ -1095,7 +1105,7 @@ if __name__ == '__main__':
     start: datetime = datetime.datetime.now()
     # -----------------------------------------------手动查询状态运行（一）-----------------------------------------
     # m.readFormHost('202110')                   # 读取需要的工作表内容（工单、退货、换补发； 系统问题件、物流问题件、物流客诉件； 系统采购异常； 压单反馈表）
-    # m.writeSql()                               # 获取工单和退换货的客服处理记录
+    m.writeSql()                               # 获取工单和退换货的客服处理记录
 
 
 

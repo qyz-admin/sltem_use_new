@@ -53,11 +53,11 @@ else:
     # 更新时间
     begin = datetime.date(2021, 9, 1)
     print(begin)
-    end = datetime.date(2021, 11, 5)
+    end = datetime.date(2021, 11, 11)
     print(end)
     # 导出时间
     month_last = '2021-09-01'
-    month_yesterday = '2021-11-05'
+    month_yesterday = '2021-11-11'
     month_begin = '2021-08-01'
 
 # 库的引用
@@ -78,6 +78,7 @@ for dir in dirs:
     filePath = os.path.join(path, dir)
     print(filePath)
     if 'xlsx' not in filePath:
+        wbsheet = filePath
         excel = win32.gencache.EnsureDispatch('Excel.Application')
         wb = excel.Workbooks.Open(filePath)
         wb.SaveAs(filePath + "x", FileFormat=51)  # FileFormat = 51 is for .xlsx extension
@@ -86,6 +87,7 @@ for dir in dirs:
         filePath = filePath + "x"
         print(filePath)
         print('****** 已成功将 xls 转换成 xlsx 格式 ******')
+        os.remove(wbsheet)
     if dir[:2] != '~$':
         wb_start = datetime.datetime.now()
         wb = load_workbook(filePath, data_only=True)

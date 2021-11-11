@@ -83,6 +83,7 @@ for dir in dirs:
     filePath = os.path.join(path, dir)
     print(filePath)
     if 'xlsx' not in filePath:
+        wbsheet = filePath
         excel = win32.gencache.EnsureDispatch('Excel.Application')
         wb = excel.Workbooks.Open(filePath)
         wb.SaveAs(filePath + "x", FileFormat=51)  # FileFormat = 51 is for .xlsx extension
@@ -91,6 +92,7 @@ for dir in dirs:
         filePath = filePath + "x"
         print(filePath)
         print('****** 已成功将 xls 转换成 xlsx 格式 ******')
+        os.remove(wbsheet)
     if dir[:2] != '~$':
         wb_start = datetime.datetime.now()
         wb = load_workbook(filePath, data_only=True)
