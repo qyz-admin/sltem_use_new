@@ -5,7 +5,7 @@ from queryControl import QueryControl
 from emailControl import EmailControl
 from bpsControl import BpsControl
 from sltemMonitoring import SltemMonitoring
-
+import win32api,win32con
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from tkinter import messagebox
 import os
@@ -201,13 +201,13 @@ class MysqlControl(Settings):
                  'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
                  'slxmt_t': '"神龙-T新马菲"',
                  'slxmt_hfh': '"火凤凰-新加坡", "火凤凰-马来西亚", "火凤凰-菲律宾"',
-                 'rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"',
+                 'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"',
                  'slrb': '"神龙家族-日本团队"',
                  'slrb_js': '"金狮-日本"',
                  'slrb_hs': '"红杉家族-日本", "红杉家族-日本666"',
                  'slrb_jl': '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"'}
         # 12-1月的
-        if team in ('slsc', 'gat', 'sltg', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
+        if team in ('slsc', 'gat', 'sltg', 'sl_9rb', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
             # 获取日期时间
             sql = 'SELECT MAX(`日期`) 日期 FROM {0}_order_list;'.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -225,9 +225,9 @@ class MysqlControl(Settings):
             print(end)
         else:
             # 11-12月的
-            begin = datetime.date(2021, 10, 10)
+            begin = datetime.date(2021, 10, 1)
             print(begin)
-            end = datetime.date(2021, 10, 13)
+            end = datetime.date(2021, 11, 13)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -472,7 +472,7 @@ class MysqlControl(Settings):
                         AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
                 print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
                 df = pd.read_sql_query(sql=sql, con=self.engine20)
-            elif team in ('rb'):
+            elif team in ('sl_rb'):
                 sql = '''SELECT a.id,
                                             a.month 年月,
                                             a.month_mid 旬,
@@ -624,7 +624,7 @@ class MysqlControl(Settings):
                  'slxmt': '"神龙家族-新加坡", "神龙家族-马来西亚", "神龙家族-菲律宾"',
                  'slxmt_t': '"神龙-T新马菲"',
                  'slxmt_hfh': '"火凤凰-新加坡", "火凤凰-马来西亚", "火凤凰-菲律宾"',
-                 'rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"',
+                 'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"',
                  'slrb': '"神龙家族-日本团队"',
                  'slrb_js': '"金狮-日本"',
                  'slrb_hs': '"红杉家族-日本", "红杉家族-日本666"',
@@ -651,7 +651,7 @@ class MysqlControl(Settings):
             yesterday = str(day) + ' 23:59:59'
             last_month = str(day)
             print('正在更新 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单信息…………')
-            if team in ('slrb', 'slrb_jl', 'slrb_js', 'slrb_hs'):
+            if team in ('sl_rb', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs'):
                 sql = '''SELECT DISTINCT a.id,
                                 a.rq 日期,
                                 dim_currency_lang.pname 币种,
@@ -837,8 +837,8 @@ class MysqlControl(Settings):
                  'slgat_jp': '小虎队-港台',
                  'slgat_low': '神龙-低价',
                  'gat': '港台',
-                 'rb': '日本',
                  'slsc': '品牌',
+                 'sl_rb': '日本',
                  'slrb': '神龙-日本',
                  'slrb_jl': '精灵-日本',
                  'slrb_js': '金狮-日本',
@@ -978,7 +978,7 @@ class MysqlControl(Settings):
                     WHERE a.日期 >= '{2}' AND a.日期 <= '{3}'
                         AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
-        elif team in ('slrb_jl', 'slrb_js', 'slrb_hs'):
+        elif team == 'sl_rb':
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', null, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
@@ -997,7 +997,7 @@ class MysqlControl(Settings):
                         LEFT JOIN {1}_return d ON a.订单编号 = d.订单编号
                     WHERE a.日期 >= '{3}' AND a.日期 <= '{4}'
                         AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                    ORDER BY a.`下单时间`;'''.format(team, 'slrb', month_begin, month_last, month_yesterday)
+                    ORDER BY a.`下单时间`;'''.format(team, team, month_begin, month_last, month_yesterday)
         elif team in ('slsc'):
             print(month_yesterday)
             # print('正在获取台湾的物流信息......')
@@ -1090,7 +1090,7 @@ class MysqlControl(Settings):
                 print(tem2 + '----已写入excel')
                 print('正在打印' + match[tem2] + ' 物流时效…………')
                 # self.data_wl(tem2)
-        elif team in ('rb'):
+        elif team in ('sl_rb'):
             for tem in ('"神龙家族-日本团队"|slrb', '"金狮-日本"|slrb_js', '"红杉家族-日本","红杉家族-日本666"|slrb_hs', '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"|slrb_jl'):
                 tem1 = tem.split('|')[0]
                 tem2 = tem.split('|')[1]
@@ -1101,7 +1101,7 @@ class MysqlControl(Settings):
                             sheet_name=match[tem2], index=False)
                 print(tem2 + '----已写入excel')
                 print('正在打印' + match[tem2] + ' 物流时效…………')
-                self.data_wl(tem2)
+                # self.data_wl(tem2)
         else:
             df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[team]),
                         sheet_name=match[team], index=False)
@@ -2960,5 +2960,5 @@ if __name__ == '__main__':
     # for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾']:
     #     sm.costWaybill(team)
     print('耗时：', datetime.datetime.now() - start)
-
+    win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)
 

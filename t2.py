@@ -1,4 +1,5 @@
 import os
+import win32api,win32con
 import win32com.client as win32
 from openpyxl import Workbook, load_workbook
 from excelControl import ExcelControl
@@ -10,12 +11,13 @@ from gat_update2 import QueryUpdate
 import datetime
 from dateutil.relativedelta import relativedelta
 start: datetime = datetime.datetime.now()
-team = 'slsc'
+team = 'gat'
 match1 = {'gat': '港台',
           'slsc': '品牌'}
 match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
          'slgat_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
          'slgat_hs': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
+         'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
          'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
          'slrb_jl': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
          'slrb_js': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
@@ -33,7 +35,7 @@ match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台
 说明：  日本 需整理的表：1、吉客印神龙直发签收表=密码：‘JKTSL’>(明细再copy保存；改派明细不需要);2、直发签收表>(明细再copy保存；3、状态更新需要copy保存);
 '''
 # 初始化时间设置
-if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'ga9t'):
+if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat', 'sl_rb'):
     # 更新时间
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
@@ -51,14 +53,14 @@ if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'ga9t'):
     print(month_begin)
 else:
     # 更新时间
-    begin = datetime.date(2021, 9, 1)
+    begin = datetime.date(2021, 10, 1)
     print(begin)
-    end = datetime.date(2021, 11, 11)
+    end = datetime.date(2021, 11, 12)
     print(end)
     # 导出时间
-    month_last = '2021-09-01'
-    month_yesterday = '2021-11-11'
-    month_begin = '2021-08-01'
+    month_last = '2021-10-01'
+    month_yesterday = '2021-11-12'
+    month_begin = '2021-09-01'
 
 # 库的引用
 path = match[team]
@@ -106,7 +108,7 @@ print('导入耗时：', datetime.datetime.now() - start)
 m.creatMyOrderSl(team)  # 最近五天的全部订单信息
 
 print('------------更新部分：---------------------')
-if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs'):
+if team in ('ga99t', 'slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'sl_rb'):
     m.creatMyOrderSlTWO(team, begin, end)   # 最近两个月的更新订单信息
     print('处理耗时：', datetime.datetime.now() - start)
 
@@ -115,7 +117,7 @@ if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs'):
     print('输出耗时：', datetime.datetime.now() - start)
 
 elif team in ('gat'):
-    sso = QueryTwo('+86-18538110674', 'qyz04163510')
+    sso = QueryTwo('+86-18538110674', 'qyz04163510', '1343')
     print(datetime.datetime.now())
     print('++++++正在获取 ' + match1[team] + ' 信息++++++')
     tem = '{0}_order_list'.format(team)     # 获取单号表
@@ -140,7 +142,7 @@ elif team in ('gat'):
 
 
 
-
+win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)
 # 输出签收率表、(备用)
 # tem = '泰国'
 # w.OrderQuan(team, tem)

@@ -9,7 +9,7 @@ from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from dateutil.relativedelta import relativedelta
 import datetime
 import xlwings
-
+import win32api,win32con
 
 # -*- coding:utf-8 -*-
 class SltemMonitoring(Settings):
@@ -681,8 +681,8 @@ class SltemMonitoring(Settings):
         elif "神龙" in team or "火凤凰" in team or "小虎队" in team:
             filePath = 'F:\\查询\\港台监控\\{} {} 监控表.xlsx'.format(today, team)
         if os.path.exists(filePath):  # 判断是否有需要的表格
-            print("正在使用(上月)文件......")
-            filePath = filePath
+            print("正在清除重复文件......")
+            os.remove(filePath)
         else:  # 判断是否无需要的表格，进行初始化创建
             print("正在创建文件......")
             df0 = pd.DataFrame([])  # 创建空的dataframe数据框
@@ -789,8 +789,8 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2021.10.11'
-    now_month = '2021.11.11'
+    last_month = '2021.10.16'
+    now_month = '2021.11.16'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-低价']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传
@@ -807,4 +807,4 @@ if __name__ == '__main__':
 
     # 测试监控运行（三）-- 第二种自动方式
     # m.match_time('港台')      # 检测时间
-
+    win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒", win32con.MB_OK)

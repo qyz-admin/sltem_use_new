@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import datetime
 import xlwings
+import win32api,win32con
 
 import requests
 import json
@@ -419,6 +420,7 @@ if __name__ == '__main__':
     upload = '查询-运单号'
     # m.readFormHost(upload)
 
+
     m.trans_way_cost_new(team)  # 同产品下的规格运费查询
     print('输出耗时：', datetime.datetime.now() - start)
-
+    win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)

@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import datetime
 import xlwings
-
+import win32api,win32con
 import requests
 import json
 import sys
@@ -5008,7 +5008,7 @@ class QueryUpdate(Settings):
 						        SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成		
 		                FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族
                                 FROM gat_zqsb cc 
-					            WHERE cc.年月 = DATE_FORMAT(CURDATE(),'%Y%m') AND cc.`是否改派` = '直发' and cc.`币种` = '台湾' AND cc.`运单编号` is not null
+					            WHERE cc.年月 = DATE_FORMAT(CURDATE(),'%Y%m') AND cc.`币种` = '台湾' AND cc.`运单编号` is not null
 		                ) cx
                         GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
                     ) s1
@@ -5016,7 +5016,7 @@ class QueryUpdate(Settings):
                     WITH ROLLUP 
                 ) s 
                 HAVING s.月份 != '合计' AND s.产品id != '合计' AND s.`总订单` >= '100' AND s.`拒收` >= '1'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
@@ -5031,13 +5031,19 @@ class QueryUpdate(Settings):
         df2 = df.loc[df["家族"] == "火凤凰"]
         listT.append(df2)
 
-        df3 = df.loc[df["家族"] == "金鹏"]
+        df3 = df.loc[df["家族"] == "小虎队"]
+        listT.append(df3)
+
+        df3 = df.loc[df["家族"] == "神龙-低价"]
         listT.append(df3)
 
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%m.%d')
         file_path = 'G:\\输出文件\\{} 拒收核实-需产品ID.xlsx'.format(today)
-        sheet_name = ['总表', '神龙', '火凤凰', '金鹏']
+        if os.path.exists(file_path):  # 判断是否有需要的表格
+            print("正在清除重复文件......")
+            os.remove(file_path)
+        sheet_name = ['总表', '神龙', '火凤凰', '小虎队', '神龙-低价']
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
@@ -5050,6 +5056,42 @@ class QueryUpdate(Settings):
         writer.save()
         writer.close()
         print('----已写入excel ')
+
+    # 拒收核实-查询每日新增拒收
+    def jushou_Upload(self, month_last):
+        print('正在查询每日新增拒收信息…………')
+        sql = '''SELECT *
+                FROM (SELECT null id, 下单时间, null 处理日期, 订单编号, null 核实原因, null 具体原因, null 再次克隆下单, null 处理人
+			        FROM  gat_zqsb g
+			        WHERE g.`年月` >= '{0}' AND g.`最终状态` = '拒收'
+                ) s
+                WHERE s.`订单编号` NOT IN (SELECT 订单编号 FROM 拒收核实_copy1);'''.format(month_last)
+        sql = '''SELECT null id, null 处理日期, 下单时间, 订单编号, null 核实原因, null 具体原因, null 再次克隆下单, null 处理人
+			    FROM  gat_zqsb g
+			    WHERE g.`年月` >= '{0}' AND g.`最终状态` = '拒收';'''.format(month_last)
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        try:
+            df.to_sql('dim_wl', con=self.engine1, index=False, if_exists='replace')
+            sql = 'REPLACE INTO 拒收核实_copy1 SELECT *, NOW() 记录时间 FROM dim_wl; '.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=5000)
+        except Exception as e:
+            print('插入失败：', str(Exception) + str(e))
+        print('写入完成…………')
+
+        # try:
+        #     sql = '''update 拒收核实_copy1 a, dim_wl b
+        #                         set a.`处理日期`=b.`处理日期`,
+        #                             a.`订单编号`=b.`订单编号`,
+        # 		                    a.`核实原因`=b.`核实原因` ,
+        # 		                    a.`具体原因`=b.`具体原因`,
+        # 		                    a.`再次克隆下单`=b.`再次克隆下单`,
+        # 		                    a.`处理人`=b.`处理人`
+        # 		                where a.`订单编号`=b.`订单编号`;'''.format(team)
+        #     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        # except Exception as e:
+        #     print('插入失败：', str(Exception) + str(e))
+        # print('----更新完成----')
+
 
 if __name__ == '__main__':
     m = QueryUpdate()
@@ -5079,12 +5121,14 @@ if __name__ == '__main__':
     m.readFormHost(team, write, last_time)      #  更新签收表---港澳台（一）
 
     m.gat_new(team, month_last, month_yesterday)          #  获取-签收率-报表
-    m.qsb_new(team, '2021-09-01')                             #  获取-每日-报表
-    m.EportOrderBook(team, month_last, month_yesterday)                #  导出-总的-签收表
-    m.jushou()                                                           #  拒收核实-查询需要的产品id
+    m.qsb_new(team, month_last)                           #  获取-每日-报表
+    m.EportOrderBook(team, month_last, month_yesterday)   #  导出-总的-签收表
+    m.jushou()                                            #  拒收核实-查询需要的产品id
+    # m.jushou_Upload('202103')                                     #  拒收核实-查询每日新增拒收
 
     # m.address_repot(team)                       #  获取-地区签收率-报表
      # 停用备用使用
     # m.EportOrder(team)       #  导出需要更新的签收表
     # m.qsb_report(team, '2021-06-26', '2021-05-26')
     print('耗时：', datetime.datetime.now() - start)
+    win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)

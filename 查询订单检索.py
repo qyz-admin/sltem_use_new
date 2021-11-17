@@ -85,7 +85,7 @@ class QueryTwo(Settings):
         req_url = req['data']
         loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
         # print(loginTmpCode)
-        # print('+++已获取loginTmpCode值+++')
+        print('+++已获取loginTmpCode值+++')
 
         time.sleep(1)
         # print('第二阶段请求-登录页面......')
@@ -106,6 +106,7 @@ class QueryTwo(Settings):
         # print('第三阶段请求-dingtalk服务器......')
         # print('（一）加载dingtalk_service跳转页面......')
         url = req.text
+        print(url)
         data = {'tmpCode': loginTmpCode,
                 'system': 1,
                 'url': '',
@@ -557,10 +558,11 @@ class QueryTwo(Settings):
         print('******首次查询成功******')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         max_count = req['data']['count']
-        print("查询单量： " + max_count + " 条")
+        print(max_count)
         if max_count > 500:
             in_count = math.ceil(max_count/500)
-            dlist = []
+            print()
+            dlist = [in_count]
             n = 1
             while n < in_count:  # 这里用到了一个while循环，穿越过来的
                 n = n + 1
@@ -601,6 +603,7 @@ class QueryTwo(Settings):
         ordersdict = []
         try:
             for result in req['data']['list']:
+                # print(result)
                 result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
                 result['saleName'] = 0
                 result['productId'] = 0
@@ -650,7 +653,7 @@ class QueryTwo(Settings):
         return df
 
 if __name__ == '__main__':
-    select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
+    # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
     m = QueryTwo('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
@@ -662,6 +665,7 @@ if __name__ == '__main__':
     # 2、按时间查询状态
     # m.order_TimeQuery('2021-11-01', '2021-11-09')
 
+    select = 1                                  # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     print(select)
     if int(select) == 1:
         print("正在按订单查询+++")
@@ -671,7 +675,7 @@ if __name__ == '__main__':
     elif int(select) == 2:
         print("正在按时间查询+++")
         timeStart = '2021-11-01'
-        timeEnd = '2021-11-01'
+        timeEnd = '2021-11-15'
         m.order_TimeQuery(timeStart, timeEnd)
 
     print('查询耗时：', datetime.datetime.now() - start)
