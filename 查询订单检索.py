@@ -12,6 +12,7 @@ from queue import Queue
 from dateutil.relativedelta import relativedelta
 from threading import Thread #  使用 threading 模块创建线程
 import pandas.io.formats.excel
+import win32api,win32con
 import math
 from sqlalchemy import create_engine
 from settings import Settings
@@ -71,31 +72,43 @@ class QueryTwo(Settings):
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
-                'araToken': '0#19171628645731266586976965831628645747396525G1E2B0816DEBF96BC4199761B6A1F3C0FCD91FB',
+                'araToken': '0#19171637113286760562035374011637113328282492GA55B0D00FCAA0C9E721E02A14F2047C84A3DC7',
                 'araScene': 'login',
                 'captchaImgCode': '',
                 'captchaSessionId': '',
                 'type': 'h5'}
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Origin': 'https://login.dingtalk.com',
                     'Referer': 'https://login.dingtalk.com/'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         req = req.json()
         # print(req)
-        req_url = req['data']
-        loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
-        # print(loginTmpCode)
-        print('+++已获取loginTmpCode值+++')
+        if 'data' in req.keys():
+            try:
+                req_url = req['data']
+                loginTmpCode = req_url.split('loginTmpCode=')[1]  # 获取loginTmpCode值
+            except Exception as e:
+                print('重新启动： 3分钟后', str(Exception) + str(e))
+                time.sleep(300)
+                self._online()
+        elif 'message' in req.keys():
+            info = req['message']
+            win32api.MessageBox(0, "登录失败: " + info, "错误 提醒", win32con.MB_ICONSTOP)
+            sys.exit()
+        else:
+            print('请检查失败原因：', str(req))
+            win32api.MessageBox(0, "请检查失败原因: 是否触发了验证码； 或者3分钟后再尝试登录！！！", "错误 提醒", win32con.MB_ICONSTOP)
+            sys.exit()
 
         time.sleep(1)
         # print('第二阶段请求-登录页面......')
-        url = r'http://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html'
+        url = r'https://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html'
         data = {'tmpCode': loginTmpCode,
-                'system': 1,
+                'system': 18,
                 'url': '',
                 'ticker': '',
                 'companyId': 1}
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Origin': 'https://login.dingtalk.com',
                     'Referer': 'http://gsso.giikin.com/admin/login/logout.html'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
@@ -106,33 +119,39 @@ class QueryTwo(Settings):
         # print('第三阶段请求-dingtalk服务器......')
         # print('（一）加载dingtalk_service跳转页面......')
         url = req.text
-        print(url)
         data = {'tmpCode': loginTmpCode,
                 'system': 1,
                 'url': '',
                 'ticker': '',
                 'companyId': 1}
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False)
         # print(req.headers)
         gimp = req.headers['Location']
-        # print('+++已获取跳转页面+++')
+        # print('+++已获取跳转页面： ' + gimp)
         time.sleep(1)
         # print('（二）请求dingtalk_service的cookie值......')
         url = gimp
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        # print(req)
+        # print(req.headers)
+        index = req.headers['Location']
+
+        time.sleep(1)
+        # print('（三）请求dingtalk_service的cookie值......')
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gsso.giikin.com/'}
+        req = self.session.get(url=index, headers=r_header, allow_redirects=False)
         # print('+++已获取cookie值+++')
 
         time.sleep(1)
         # print('第四阶段页面-重定向跳转中......')
         # print('（一）加载chooselogin.html页面......')
-        url = r'http://gsso.giikin.com/admin/login_by_dingtalk/chooselogin.html'
+        url = r'https://gsso.giikin.com/admin/login_by_dingtalk/chooselogin.html'
         data = {'user_id': 1343}
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': gimp,
                     'Origin': 'http://gsso.giikin.com'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
@@ -142,28 +161,40 @@ class QueryTwo(Settings):
         time.sleep(1)
         # print('（二）加载gimp.giikin.com页面......')
         url = index
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': index}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req.headers)
         index2 = req.headers['Location']
+        index2 = index2.replace(':443/', '')
+        # print(index2)
         # print('+++已获取index.html页面')
 
         time.sleep(1)
+        url = index2
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': index2}
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        # print(req.headers)
+        index2 = req.headers['Location']
+        # print(index2)
+
+        time.sleep(1)
         # print('（三）加载index.html页面......')
-        url = 'http://gimp.giikin.com/' + index2
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+        url = 'https://gimp.giikin.com/' + index2
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req.headers)
         index_system = req.headers['Location']
         # print('+++已获取index.html?_system=18正式页面')
+        # print(990008888888888888)
 
         time.sleep(1)
         # print('第五阶段正式页面-重定向跳转中......')
         # print('（一）加载index.html?_system页面......')
         url = index_system
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req.headers)
@@ -172,12 +203,25 @@ class QueryTwo(Settings):
         time.sleep(1)
         # print('（二）加载index.html?_ticker=页面......')
         url = index_system2
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req)
         # print(req.headers)
+        index_system3 = req.headers['Location']
+        index_system3 = index_system3.replace(':443/', '')
+        # print(index_system3)
+
+        time.sleep(1)
+        # print('（三）加载index.html?_ticker=页面......')
+        url = index_system3
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gsso.giikin.com/'}
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        print(req)
+        print(req.headers)
         print('++++++已成功登录++++++')
+        print('*' * 50)
 
     # 获取签收表内容
     def readFormHost(self, team, searchType):

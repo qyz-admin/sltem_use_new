@@ -418,7 +418,7 @@ if __name__ == '__main__':
 
     # upload = '查询-订单号'
     upload = '查询-运单号'
-    # m.readFormHost(upload)
+    m.readFormHost(upload)
 
 
     m.trans_way_cost_new(team)  # 同产品下的规格运费查询

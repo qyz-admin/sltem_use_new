@@ -191,6 +191,65 @@ class MysqlControl(Settings):
             print('插入失败：', str(Exception) + str(e))
         print('物流信息更新完成…………')
 
+    def update_gk_sign_rate(self):  # 更新产品签收率列表
+        print('正在获取产品签收率的历史信息…………')
+        # sql = '''SELECT * FROM  gk_stat_sign_rate;'''
+        sql = '''SELECT a.id,
+                        goods_id,
+                        dim_area.`name` AS area_id,
+                        dim_currency_lang.pname AS currency_id,
+                        cod_order_count,
+                        cod_order_sign_count,
+                        cod_sign_rate,
+                        online_order_count,
+                        online_order_sign_count,
+                        online_sign_rate,
+                        avg_sign_rate,
+                        sign_rate_last_month,
+                        finish_rate,
+                        data_rq,
+                        update_time
+                FROM  gk_stat_sign_rate a
+                    left join dim_area ON dim_area.id = a.area_id
+                    left join dim_currency_lang ON dim_currency_lang.id = a.currency_id
+                WHERE dim_area.name IN ("神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队", "火凤凰-港台(繁体)", "神龙-低价")'''
+        df = pd.read_sql_query(sql=sql, con=self.engine2)
+        # df['data_rq'] = df['data_rq'].fillna(value=datetime.datetime(1990, 1, 1, 0, 0))
+        df['data_rq'] = df['data_rq'].replace(to_replace='', value=datetime.datetime(1990, 1, 1, 0, 0))
+        df.to_sql('gk_stat_cache', con=self.engine1, index=False, if_exists='replace')
+        try:
+            print('正在更新中…………')
+            sql = '''REPLACE INTO gk_stat_sign_rate SELECT *, NOW() 获取时间 FROM gk_stat_cache;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=5000)
+        except Exception as e:
+            print('插入失败：', str(Exception) + str(e))
+        print('历史产品签收率更新完成…………')
+
+        print('正在获取产品签收率的预测信息…………')
+        # sql = '''SELECT * FROM  gk_bi_estimate_goods;'''
+        sql = '''SELECT a.id,
+			            dim_area.`name` AS area_id,
+			            dim_currency_lang.pname AS currency_id,
+			            goods_id,
+			            sign_rate,
+			            create_time,
+			            update_time
+                FROM  gk_bi_estimate_goods a
+		            left join dim_area ON dim_area.id = a.area_id
+		            left join dim_currency_lang ON dim_currency_lang.id = a.currency_id
+                WHERE dim_area.name IN ("神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队", "火凤凰-港台(繁体)", "神龙-低价");'''
+        df = pd.read_sql_query(sql=sql, con=self.engine2)
+        df.to_sql('gk_stat_cache', con=self.engine1, index=False, if_exists='replace')
+        try:
+            print('正在更新中…………')
+            sql = '''REPLACE INTO gk_bi_estimate_goods SELECT *, NOW() 获取时间 FROM gk_stat_cache;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=5000)
+        except Exception as e:
+            print('插入失败：', str(Exception) + str(e))
+        print('预测产品签收率更新完成…………')
+
+
+
     def creatMyOrderSl(self, team):  # 最近五天的全部订单信息
         match = {'slgat': '"神龙家族-港澳台"',
                  'slgat_hfh': '"火凤凰-港澳台"',
@@ -2922,6 +2981,7 @@ if __name__ == '__main__':
 
     # 更新产品id的列表
     m.update_gk_product()
+    m.update_gk_sign_rate()
     # m.qsb_report('gat')
 
     # 测试物流时效

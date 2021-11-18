@@ -8,6 +8,9 @@ import math
 import requests
 import json
 import sys
+import tkinter
+import tkinter.messagebox #弹窗库
+import win32api,win32con
 from queue import Queue
 from dateutil.relativedelta import relativedelta
 from threading import Thread #  使用 threading 模块创建线程
@@ -81,9 +84,23 @@ class QueryTwo(Settings):
                     'Referer': 'https://login.dingtalk.com/'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         req = req.json()
-        # print(req)
-        req_url = req['data']
-        loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
+        print(req)
+        if 'data' in req.keys():
+            try:
+                req_url = req['data']
+                loginTmpCode = req_url.split('loginTmpCode=')[1]  # 获取loginTmpCode值
+            except Exception as e:
+                print('重新启动： 3分钟后', str(Exception) + str(e))
+                time.sleep(300)
+                self._online()
+        elif 'message' in req.keys():
+            info = req['message']
+            win32api.MessageBox(0, "登录失败: " + info, "错误 提醒", win32con.MB_ICONSTOP)
+            sys.exit()
+        else:
+            print('请检查失败原因：', str(req))
+            win32api.MessageBox(0, "请检查失败原因: 是否触发了验证码； 或者3分钟后再尝试登录！！！", "错误 提醒", win32con.MB_ICONSTOP)
+            sys.exit()
         # print(loginTmpCode)
         # print('+++已获取loginTmpCode值+++')
 

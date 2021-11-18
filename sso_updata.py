@@ -11,6 +11,7 @@ from queue import Queue
 from dateutil.relativedelta import relativedelta
 from threading import Thread #  使用 threading 模块创建线程
 import pandas.io.formats.excel
+import win32api,win32con
 
 from sqlalchemy import create_engine
 from settings import Settings
@@ -83,9 +84,25 @@ class QueryTwo(Settings):
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         req = req.json()
         # print(req)
-        req_url = req['data']
-        loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
+        # req_url = req['data']
+        # loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
         # print('+++已获取loginTmpCode值: ' + loginTmpCode)
+        if 'data' in req.keys():
+            try:
+                req_url = req['data']
+                loginTmpCode = req_url.split('loginTmpCode=')[1]  # 获取loginTmpCode值
+            except Exception as e:
+                print('重新启动： 3分钟后', str(Exception) + str(e))
+                time.sleep(300)
+                self._online()
+        elif 'message' in req.keys():
+            info = req['message']
+            win32api.MessageBox(0, "登录失败: " + info, "错误 提醒", win32con.MB_ICONSTOP)
+            sys.exit()
+        else:
+            print('请检查失败原因：', str(req))
+            win32api.MessageBox(0, "请检查失败原因: 是否触发了验证码； 或者3分钟后再尝试登录！！！", "错误 提醒", win32con.MB_ICONSTOP)
+            sys.exit()
 
         time.sleep(1)
         # print('第二阶段请求-登录页面......')
@@ -153,7 +170,8 @@ class QueryTwo(Settings):
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req.headers)
         index2 = req.headers['Location']
-        # index2 = 'portal/index/index.html'
+        index2 = index2.replace(':443/', '')
+        # print(index2)
         # print('+++已获取index.html页面')
 
         time.sleep(1)
@@ -174,6 +192,7 @@ class QueryTwo(Settings):
         # print(req.headers)
         index_system = req.headers['Location']
         # print('+++已获取index.html?_system=18正式页面')
+        # print(990008888888888888)
 
         time.sleep(1)
         # print('第五阶段正式页面-重定向跳转中......')
@@ -192,6 +211,18 @@ class QueryTwo(Settings):
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req)
+        # print(req.headers)
+        index_system3 = req.headers['Location']
+        index_system3 = index_system3.replace(':443/', '')
+        # print(index_system3)
+
+        time.sleep(1)
+        # print('（三）加载index.html?_ticker=页面......')
+        url = index_system3
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gsso.giikin.com/'}
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        print(req)
         print(req.headers)
         print('++++++已成功登录++++++')
         print('*' * 50)
@@ -682,7 +713,7 @@ class QueryTwo(Settings):
     def orderInfoQuery(self, ord, searchType, team, team2):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
         data = {'page': 1, 'pageSize': 500,
@@ -875,7 +906,7 @@ if __name__ == '__main__':
         yesterday = str(day) + ' 23:59:59'
         last_month = str(day)
         print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
-        # m.orderInfo(searchType, team, team2, last_month)
+        m.orderInfo(searchType, team, team2, last_month)
 
     # m.orderInfoQuery('GP210619103223PGNXK7', '订单号', 'gat_order_list', 'gat_order_list')  # 进入订单检索界面
     # print('更新耗时：', datetime.datetime.now() - start)
