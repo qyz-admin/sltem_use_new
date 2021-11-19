@@ -707,10 +707,10 @@ class QueryTwo(Settings):
             ord = ', '.join(orderId[n:n + 500])
             # print(ord)
             n = n + 500
-            self.orderInfoQuery(ord, searchType, team, team2)
+            self.orderInfoQuery(ord, searchType, team, team2, last_month)
         print('单日查询耗时：', datetime.datetime.now() - start)
 
-    def orderInfoQuery(self, ord, searchType, team, team2):  # 进入订单检索界面
+    def orderInfoQuery(self, ord, searchType, team, team2, last_month):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
