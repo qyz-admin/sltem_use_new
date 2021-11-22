@@ -73,7 +73,7 @@ class QueryTwo(Settings):
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
-                'araToken': '0#19171637113286760562035374011637113328282492GA55B0D00FCAA0C9E721E02A14F2047C84A3DC7',
+                'araToken': '0#19171637544299948385570258461637545377418833G01447E2DCD07109775CD567044AE05FC09628C',
                 'araScene': 'login',
                 'captchaImgCode': '',
                 'captchaSessionId': '',
@@ -87,6 +87,7 @@ class QueryTwo(Settings):
         # req_url = req['data']
         # loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
         # print('+++已获取loginTmpCode值: ' + loginTmpCode)
+        print(datetime.datetime.now())
         if 'data' in req.keys():
             try:
                 req_url = req['data']
@@ -170,22 +171,29 @@ class QueryTwo(Settings):
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req.headers)
         index2 = req.headers['Location']
-        index2 = index2.replace(':443/', '')
+        # print(99)
         # print(index2)
         # print('+++已获取index.html页面')
 
-        time.sleep(1)
-        url = index2
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
-                    'Referer': index2}
-        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        # print(req.headers)
-        index2 = req.headers['Location']
+        # 跳转使用-暂停
+        # index2 = index2.replace(':443/', '')
         # print(index2)
+        # time.sleep(1)
+        # url = index2
+        # r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+        #             'Referer': index2}
+        # req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        # index2 = req.headers['Location']
+        # print(index2)
+        # 跳转使用-暂停
+
 
         time.sleep(1)
         # print('（三）加载index.html页面......')
-        url = 'https://gimp.giikin.com/' + index2
+        url = 'https://gimp.giikin.com' + index2
+        # url = 'https://gimp.giikin.com/portal/index/index.html'
+        print(url)
+        print(8080)
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
@@ -205,6 +213,8 @@ class QueryTwo(Settings):
         index_system2 = req.headers['Location']
         # print('+++已获取index.html?_ticker=页面......')
         time.sleep(1)
+
+        # 跳转使用-暂停
         # print('（二）加载index.html?_ticker=页面......')
         url = index_system2
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -213,8 +223,11 @@ class QueryTwo(Settings):
         # print(req)
         # print(req.headers)
         index_system3 = req.headers['Location']
-        index_system3 = index_system3.replace(':443/', '')
+        print(808080)
         # print(index_system3)
+        index_system3 = index_system3.replace(':443', '')
+        print(index_system3)
+        # 跳转使用-暂停
 
         time.sleep(1)
         # print('（三）加载index.html?_ticker=页面......')

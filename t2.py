@@ -105,7 +105,7 @@ for dir in dirs:
 print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
-m.creatMyOrderSl(team)  # 最近五天的全部订单信息
+# m.creatMyOrderSl(team)  # 最近五天的全部订单信息
 
 print('------------更新部分：---------------------')
 if team in ('ga99t', 'slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'sl_rb'):

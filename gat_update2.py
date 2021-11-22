@@ -224,7 +224,7 @@ class QueryUpdate(Settings):
                             null 包裹重量,null 包裹体积,null 邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, null 签收表订单编号, null 签收表运单编号,
                             null 原运单号, b.物流状态 签收表物流状态,null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, null 添加物流单号时间,省洲,数量
                         FROM {0}_order_list a
-                            LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} WHERE {0}.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
+                            LEFT JOIN gat_wl_data b ON a.`运单编号` = b.`运单编号`
                             LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
                             LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
                         WHERE a.日期 >= '{2}' AND a.日期 <= '{3}'
@@ -6087,10 +6087,8 @@ class QueryUpdate(Settings):
                                 concat(ROUND(SUM(IF(年月 = 202111 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202111,1,0)) * 100,2),'%') as 11总计签收,
                                 concat(ROUND(SUM(IF(年月 = 202111 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202111 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 11完成签收,
                                 concat(ROUND(SUM(IF(年月 = 202111 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202111,1,0)) * 100,2),'%') as 11完成占比  
-                        FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                FROM gat_zqsb cc where cc.`运单编号` is not null 
-                             )  cx
+                        FROM gat_zqsb_cache cx
+                        where cx.`运单编号` is not null 
                         GROUP BY cx.家族,cx.币种,cx.产品id
                         WITH ROLLUP 
                     ) s

@@ -972,7 +972,7 @@ class MysqlControl(Settings):
                         包裹重量,包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
                         b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态, b.添加时间, a.成本价, a.物流花费, a.打包花费, a.其它花费, a.添加物流单号时间,省洲,数量
                     FROM {0}_order_list a
-                        LEFT JOIN (SELECT * FROM {1} WHERE id IN (SELECT MAX(id) FROM {1} WHERE {1}.添加时间 > '{2}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
+                        LEFT JOIN gat_wl_data b ON a.`运单编号` = b.`运单编号`
                         LEFT JOIN {1}_logisitis_match c ON b.物流状态 = c.签收表物流状态
                         LEFT JOIN {1}_return d ON a.订单编号 = d.订单编号
                     WHERE a.日期 >= '{3}' AND a.日期 <= '{4}'
