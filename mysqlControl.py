@@ -284,9 +284,9 @@ class MysqlControl(Settings):
             print(end)
         else:
             # 11-12月的
-            begin = datetime.date(2021, 10, 1)
+            begin = datetime.date(2021, 4, 1)
             print(begin)
-            end = datetime.date(2021, 11, 13)
+            end = datetime.date(2021, 11, 24)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -622,9 +622,8 @@ class MysqlControl(Settings):
                             a.addtime 下单时间,
                             a.verity_time 审核时间,
                             a.delivery_time 仓储扫描时间,
-                            a.online_time 上线时间,
                             IF(a.finish_status=0,'未收款',IF(a.finish_status=2,'收款',IF(a.finish_status=4,'退款',a.finish_status))) 完结状态,
-                            a.endtime 完结状态时间,
+                            a.endtime 完结状态时间,   
                             a.salesRMB 价格RMB,
                             intervals.intervals 价格区间,
                             null 成本价,
@@ -640,7 +639,15 @@ class MysqlControl(Settings):
                             null 审单类型,
                             a.del_reason 删除原因,
                             a.question_reason 问题原因,
-                            null 下单人
+                            null 下单人,
+                            a.stock_type 下架类型,
+                            a.lower_time 下架时间,
+                            a.tihuo_time 物流提货时间,
+                            a.fahuo_time 物流发货时间,
+                            a.online_time 上线时间,
+                            a.guonei_time 国内清关时间,
+                            a.mudidi_time 目的清关时间,
+                            a.receipt_time 回款时间
                     FROM gk_order a
                             left join dim_area ON dim_area.id = a.area_id
                             left join dim_payment ON dim_payment.id = a.payment_id
