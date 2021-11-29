@@ -232,7 +232,7 @@ class QueryUpdate(Settings):
                         ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             print('正在写入---' + match[team] + ' ---临时缓存…………')  # 备用临时缓存表
-            df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace')
+            df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=5000)
             print('正在写入excel…………')
             df = df[['日期', '团队', '币种', '订单编号', '电话号码', '运单编号', '出货时间', '物流状态', '物流状态代码', '状态时间', '上线时间',
                      '系统订单状态', '系统物流状态', '最终状态', '是否改派', '物流方式', '物流名称', '签收表物流状态', '付款方式', '产品id', '产品名称',
@@ -282,7 +282,7 @@ class QueryUpdate(Settings):
             tem2 = tem.split('|')[1]
             sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace')
+            df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace', chunksize=5000)
             df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]),
                         sheet_name=match[tem2], index=False)
             print(tem2 + '----已写入excel')

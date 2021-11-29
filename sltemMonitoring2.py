@@ -159,7 +159,7 @@ class SltemMonitoring(Settings):
                     ORDER BY a.`下单时间`;'''.format(match[team])
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('----写入中......')
-        df.to_sql('qsb_缓存_month', con=self.engine1, index=False, if_exists='replace', chunksize=1000)
+        df.to_sql('qsb_缓存_month', con=self.engine1, index=False, if_exists='replace', chunksize=5000)
         print('写入缓存耗时：', datetime.datetime.now() - start)
 
     # 获取每月正常使用的时间（二）
@@ -789,8 +789,8 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2021.10.27'
-    now_month = '2021.11.27'
+    last_month = '2021.10.29'
+    now_month = '2021.11.29'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-低价']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传

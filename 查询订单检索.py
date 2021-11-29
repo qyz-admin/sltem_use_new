@@ -16,21 +16,24 @@ import win32api,win32con
 import math
 from sqlalchemy import create_engine
 from settings import Settings
+from settings_sso import Settings_sso
 from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
 
 
 # -*- coding:utf-8 -*-
-class QueryTwo(Settings):
+class QueryTwo(Settings, Settings_sso):
     def __init__(self, userMobile, password):
         Settings.__init__(self)
+        Settings_sso.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
         self.userMobile = userMobile
         self.password = password
         # self._online()
-        self._online_Two()
+        # self._online_Two()
+        self.sso_online_Two()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -402,6 +405,7 @@ class QueryTwo(Settings):
         print('++++++已成功登录++++++')
         print('*' * 50)
     def _online_Two(self):  # 登录系统保持会话状态
+        print(datetime.datetime.now())
         print('正在登录后台系统中......')
         # print('第一阶段获取-钉钉用户信息......')
         url = r'https://login.dingtalk.com/login/login_with_pwd'
@@ -424,7 +428,6 @@ class QueryTwo(Settings):
         # req_url = req['data']
         # loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
         # print('+++已获取loginTmpCode值: ' + loginTmpCode)
-        print(datetime.datetime.now())
         if 'data' in req.keys():
             try:
                 req_url = req['data']
