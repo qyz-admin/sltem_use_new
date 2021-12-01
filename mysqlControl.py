@@ -76,7 +76,7 @@ class MysqlControl(Settings):
             sql = 'INSERT IGNORE INTO {}({}, 添加时间) SELECT *, NOW() 添加时间 FROM tem; '.format(team, columns)
             # sql = 'INSERT IGNORE INTO {}_copy({}, 添加时间) SELECT *, NOW() 添加时间 FROM tem; '.format(team, columns)
         try:
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('插入失败：', str(Exception) + str(e))
 
@@ -92,14 +92,14 @@ class MysqlControl(Settings):
 											WHERE gat_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
 											);'''
         print('正在清除港澳台-总表的可能删除了的订单…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         sql = '''DELETE FROM slsc_zqsb
                         WHERE slsc_zqsb.`订单编号` IN (SELECT 订单编号
         											FROM slsc_order_list 
         											WHERE slsc_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
         											);'''
         print('正在清除品牌-总表的可能删除了的订单…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
 
         (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1))
         yy = int((datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y'))
@@ -1097,7 +1097,7 @@ class MysqlControl(Settings):
             											WHERE gat_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
             											);'''
             print('正在清除港澳台-总表的可能删除了的订单…………')
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=5000)
             sql = '''SELECT 年月, 旬, 日期, 团队, 币种, null 区域, null 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
@@ -1189,7 +1189,7 @@ class MysqlControl(Settings):
             sql = 'REPLACE INTO {0}_zqsb_rb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)
         else:
             sql = 'REPLACE INTO {0}_zqsb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('----已写入' + match[team] + '全部签收表中')
 
         # 商城订单的获取---暂时使用的

@@ -244,7 +244,7 @@ class QueryTwo(Settings):
     def _online_Two(self):  # 登录系统保持会话状态
         print(datetime.datetime.now())
         print('正在登录后台系统中......')
-        print('一、获取-钉钉用户信息......')
+        # print('一、获取-钉钉用户信息......')
         url = r'https://login.dingtalk.com/login/login_with_pwd'
         data = {'mobile': self.userMobile,
                 'pwd': self.password,
@@ -280,10 +280,10 @@ class QueryTwo(Settings):
             print('请检查失败原因：', str(req))
             win32api.MessageBox(0, "请检查失败原因: 是否触发了验证码； 或者3分钟后再尝试登录！！！", "错误 提醒", win32con.MB_ICONSTOP)
             sys.exit()
-        print('******已获取loginTmpCode值: ' + str(loginTmpCode))
+        # print('******已获取loginTmpCode值: ' + str(loginTmpCode))
 
         time.sleep(1)
-        print('二、请求-后台登录页面......')
+        # print('二、请求-后台登录页面......')
         url = r'https://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html'
         data = {'tmpCode': loginTmpCode,
                 'system': 18,
@@ -295,10 +295,10 @@ class QueryTwo(Settings):
                     'Referer': 'http://gsso.giikin.com/admin/login/logout.html'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         # print(req.text)
-        print('******请求登录页面url成功： ' + str(req.text))
+        # print('******请求登录页面url成功： ' + str(req.text))
 
         time.sleep(1)
-        print('三、dingtalk_service服务器......')
+        # print('三、dingtalk_service服务器......')
         # print('（一）加载dingtalk_service跳转页面......')
         url = req.text
         data = {'tmpCode': loginTmpCode,
@@ -311,7 +311,7 @@ class QueryTwo(Settings):
         req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False)
         # print(req.headers)
         gimp = req.headers['Location']
-        print('******已获取跳转页面： ' + str(gimp))
+        # print('******已获取跳转页面： ' + str(gimp))
         time.sleep(1)
         # print('（二）请求dingtalk_service的cookie值......')
         url = gimp
@@ -401,10 +401,10 @@ class QueryTwo(Settings):
         # print(req)
         # print(req.headers)
         index_system3 = req.headers['Location']
-        print(808080)
+        # print(808080)
         # print(index_system3)
         index_system3 = index_system3.replace(':443', '')
-        print(index_system3)
+        # print(index_system3)
         # 跳转使用-暂停
 
         time.sleep(1)
@@ -413,10 +413,10 @@ class QueryTwo(Settings):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        print(req)
-        print(req.headers)
+        # print(req)
+        # print(req.headers)
 
-        print(990099900)
+        # print(990099900)
         time.sleep(1)
         # print('（三）加载index.html?_ticker=页面......')
         url = req.headers['Location']
@@ -424,22 +424,22 @@ class QueryTwo(Settings):
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         index = req.headers['Location']
-        print(req)
-        print(req.headers)
+        # print(req)
+        # print(req.headers)
 
         time.sleep(1)
-        print('（三）加载index.html页面......')
+        # print('（三）加载index.html页面......')
         url = 'https://gimp.giikin.com' + index
         # url = 'https://gimp.giikin.com/portal/index/index.html'
-        print(url)
-        print(8080)
+        # print(url)
+        # print(8080)
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        print(req.headers)
+        # print(req.headers)
         index_system = req.headers['Location']
-        print('+++已获取index.html?_system=18正式页面')
-        print(7070)
+        # print('+++已获取index.html?_system=18正式页面')
+        # print(7070)
 
         time.sleep(1)
         # print('（三）加载index.html?_ticker=页面......')
@@ -447,8 +447,8 @@ class QueryTwo(Settings):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        print(req)
-        print(req.headers)
+        # print(req)
+        # print(req.headers)
 
         time.sleep(1)
         # print('（三）加载index.html?_ticker=页面......')
@@ -456,9 +456,9 @@ class QueryTwo(Settings):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        print(6060)
-        print(req)
-        print(req.headers)
+        # print(6060)
+        # print(req)
+        # print(req.headers)
 
         time.sleep(1)
         # print('（三）加载index.html?_ticker=页面......')
@@ -466,9 +466,9 @@ class QueryTwo(Settings):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        print(5050)
-        print(req)
-        print(req.headers)
+        # print(5050)
+        # print(req)
+        # print(req.headers)
 
         print('++++++已成功登录++++++')
         print('*' * 50)
@@ -1224,15 +1224,24 @@ class QueryTwo(Settings):
         count = 0
         try:
             for result in req['data']['list']:
+                # print(result)
+                # print(result['specs'])
+                # print(result['orderNumber'])
                 # 添加新的字典键-值对，为下面的重新赋值用
-                result['saleId'] = 0
-                result['saleProduct'] = 0
-                result['productId'] = 0
-                result['spec'] = 0
-                result['saleId'] = result['specs'][0]['saleId']
-                result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
-                result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
-                result['spec'] = result['specs'][0]['spec']
+                if result['specs'] != '':
+                    result['saleId'] = 0
+                    result['saleProduct'] = 0
+                    result['productId'] = 0
+                    result['spec'] = 0
+                    result['saleId'] = result['specs'][0]['saleId']
+                    result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
+                    result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+                    result['spec'] = result['specs'][0]['spec']
+                else:
+                    result['saleId'] = 0
+                    result['saleProduct'] = 0
+                    result['productId'] = 0
+                    result['spec'] = 0
                 quest = ''
                 for re in result['questionReason']:
                     quest = quest + ';' + re
@@ -1269,7 +1278,7 @@ class QueryTwo(Settings):
                        'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime', 'finishTime',
                        'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'questionReason', 'service']]
             print(df)
-            print('正在更新临时表中......')
+            # print('正在更新临时表中......')
             df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
             sql = '''SELECT DATE(h.addTime) 日期,
             				    IF(h.`currency` = '日币', '日本', IF(h.`currency` = '泰铢', '泰国', IF(h.`currency` = '港币', '香港', IF(h.`currency` = '台币', '台湾', IF(h.`currency` = '韩元', '韩国', h.`currency`))))) 币种,

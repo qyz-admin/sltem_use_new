@@ -97,12 +97,9 @@ class QueryUpdate(Settings):
                 elif '压单反馈' in dir and startday in dir:
                     print(filePath)
                     wb_data = '压单反馈'
-                elif '核实出的拒收原因' in dir:
-                    print(filePath)
-                    wb_data = '拒收核实'
                 elif '需核实拒收' in dir:
                     print(filePath)
-                    wb_data = '拒收核实_copy1'
+                    wb_data = '拒收核实'
                 if wb_data is None:
                     print('***不符合上传格式，跳过此表！！！')
                     pass
@@ -143,18 +140,6 @@ class QueryUpdate(Settings):
                             db = db[(db['币种'].str.contains('台币|港币'))]
                         elif wb_data == '拒收核实':
                             team = '拒收核实'
-                            db = db[['处理日期', '订单编号', '核实原因', '具体原因', '再次下单', '处理人']]
-
-                        elif wb_data == '拒收核实_copy1':
-                            team = '拒收核实_copy1'
-                            person = None
-                            if '贵敏' in filePath:
-                                person = '蔡贵敏'
-                            elif '利英' in filePath:
-                                person = '蔡利英'
-                            elif '慧霞' in filePath:
-                                person = '刘慧霞'
-                            db.insert(0, '处理人', person)
                             db = db[['处理日期', '订单编号', '核实原因', '具体原因', '再次克隆下单', '处理人']]
 
                         elif wb_data == '压单反馈':
@@ -172,7 +157,7 @@ class QueryUpdate(Settings):
                             if wb_data in ('换货表', '退货表', '工单收集表'):
                                 db.to_sql(wb_data, con=self.engine1, index=False, if_exists='replace')
                                 print('++++成功导入: ' + wb_data + '表')
-                            elif wb_data == '拒收核实_copy1':
+                            elif wb_data == '拒收核实':
                                 self.jushou_write(db, wb_data)
                             else:
                                 print('++++正在导入：' + sht.name + ' 表； 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
@@ -296,17 +281,20 @@ class QueryUpdate(Settings):
         else:
             return None, None  # 注意返回值和需要接收的返回值的对等
     def jushou_write(self, db, wb_data):    # 更新-总表(地区签收率使用)
+        columns = list(db)
+        columns = ', '.join(columns)
         try:
             print('正在导入缓存表......')
             db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             print('正在更新总表中......')
-            sql = '''update {0} a, customer b
-                            set a.`处理日期`= IF(b.`处理日期` = '', NULL, b.`处理日期`),
-                                a.`核实原因`= IF(b.`核实原因` = '', NULL, b.`核实原因`),
-                                a.`具体原因`= IF(b.`具体原因` = '', NULL, b.`具体原因`),
-                                a.`再次克隆下单`= IF(b.`再次克隆下单` = '', NULL, b.`再次克隆下单`),
-                                a.`处理人`= IF(b.`处理人` = '', NULL, b.`处理人`)
-                    where a.`订单编号`= b.`订单编号`;'''.format(wb_data)
+            sql = 'REPLACE INTO {}({}, 记录时间) SELECT *, NOW() 记录时间 FROM customer; '.format(wb_data, columns)
+            # sql = '''update {0} a, customer b
+            #                 set a.`处理日期`= IF(b.`处理日期` = '', NULL, b.`处理日期`),
+            #                     a.`核实原因`= IF(b.`核实原因` = '', NULL, b.`核实原因`),
+            #                     a.`具体原因`= IF(b.`具体原因` = '', NULL, b.`具体原因`),
+            #                     a.`再次克隆下单`= IF(b.`再次克隆下单` = '', NULL, b.`再次克隆下单`),
+            #                     a.`处理人`= IF(b.`处理人` = '', NULL, b.`处理人`)
+            #         where a.`订单编号`= b.`订单编号`;'''.format(wb_data)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
