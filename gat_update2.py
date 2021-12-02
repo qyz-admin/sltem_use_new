@@ -8659,15 +8659,15 @@ if __name__ == '__main__':
         month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
     else:
         month_last = '2021-10-01'
-        month_yesterday = '2021-12-01'
+        month_yesterday = '2021-11-30'
 
     last_time = '2021-01-01'
     write = '本期'
     m.readFormHost(team, write, last_time)      #  更新签收表---港澳台（一）
 
-    # m.gat_new(team, month_last, month_yesterday)        #  获取-签收率-报表
-    # m.qsb_new(team, '2021-10-01')                       #  获取-每日-报表
-    # m.EportOrderBook(team, month_last, month_yesterday) #  导出-总的-签收表
+    m.gat_new(team, month_last, month_yesterday)        #  获取-签收率-报表
+    m.qsb_new(team, '2021-10-01')                       #  获取-每日-报表
+    m.EportOrderBook(team, month_last, month_yesterday) #  导出-总的-签收表
     m.jushou()                                            #  拒收核实-查询需要的产品id
 
 

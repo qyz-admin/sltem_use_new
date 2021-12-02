@@ -680,26 +680,24 @@ class SltemMonitoring(Settings):
             filePath = 'F:\\查询\\品牌监控\\{} {} 监控表.xlsx'.format(today, team)
         elif "神龙" in team or "火凤凰" in team or "小虎队" in team:
             filePath = 'F:\\查询\\港台监控\\{} {} 监控表.xlsx'.format(today, team)
-        if os.path.exists(filePath):  # 判断是否有需要的表格
+        if os.path.exists(filePath):                            # 判断是否有需要的表格，进行初始化创建
             print("正在清除重复文件......")
             os.remove(filePath)
-        else:  # 判断是否无需要的表格，进行初始化创建
-            print("正在创建文件......")
-            df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-            df0.to_excel(filePath, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-            filePath = filePath
+        print("正在创建文件......")
+        df0 = pd.DataFrame([])                                  # 创建空的dataframe数据框
+        df0.to_excel(filePath, index=False)                     # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         print('正在写入excel…………')
-        writer = pd.ExcelWriter(filePath, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(filePath)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        writer = pd.ExcelWriter(filePath, engine='openpyxl')    # 初始化写入对象
+        book = load_workbook(filePath)                          # 可以向不同的sheet写入数据（对现有工作表的追加）
+        writer.book = book                                      # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
         for i in range(len(listTValue)):
             listTValue[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i] + team, index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        if 'Sheet1' in book.sheetnames:                         # 删除新建文档时的第一个工作表
             del book['Sheet1']
         writer.save()
         writer.close()
         print('正在运行宏…………')
-        app = xl.App(visible=False, add_book=False)  # 运行宏调整
+        app = xl.App(visible=False, add_book=False)             # 运行宏调整
         app.display_alerts = False
         wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
         wbsht1 = app.books.open(filePath)

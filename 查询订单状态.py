@@ -335,10 +335,10 @@ class QueryUpdate(Settings):
         match = {'gat': '港台', 'slsc': '品牌'}
         output = datetime.datetime.now().strftime('%m.%d')
         month_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        # month_yesterday = '2021-09-28'
+        month_yesterday = '2021-12-01'
         print(month_yesterday)
         month_now = (datetime.datetime.now()).strftime('%Y%m')
-        # month_now = '202110'
+        month_now = '202111'
         print(month_now)
 
         sql = '''SELECT * 
