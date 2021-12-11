@@ -242,6 +242,7 @@ class QueryTwo(Settings):
         print('++++++已成功登录++++++')
         print('*' * 50)
     def _online_Two(self):  # 登录系统保持会话状态
+        print('*' * 50)
         print(datetime.datetime.now())
         print('正在登录后台系统中......')
         # print('一、获取-钉钉用户信息......')
