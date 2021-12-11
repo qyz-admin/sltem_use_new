@@ -14,7 +14,7 @@ class Settings_sso():
     def sso_online_Two(self):  # 登录系统保持会话状态
         print(datetime.datetime.now())
         print('正在登录后台系统中......')
-        print('一、获取-钉钉用户信息......')
+        # print('一、获取-钉钉用户信息......')
         url = r'https://login.dingtalk.com/login/login_with_pwd'
         data = {'mobile': self.userMobile,
                 'pwd': self.password,
@@ -50,10 +50,10 @@ class Settings_sso():
             print('请检查失败原因：', str(req))
             win32api.MessageBox(0, "请检查失败原因: 是否触发了验证码； 或者3分钟后再尝试登录！！！", "错误 提醒", win32con.MB_ICONSTOP)
             sys.exit()
-        print('******已获取loginTmpCode值: ' + str(loginTmpCode))
+        # print('******已获取loginTmpCode值: ' + str(loginTmpCode))
 
         time.sleep(1)
-        print('二、请求-后台登录页面......')
+        # print('二、请求-后台登录页面......')
         url = r'https://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html'
         data = {'tmpCode': loginTmpCode,
                 'system': 18,
@@ -65,10 +65,10 @@ class Settings_sso():
                     'Referer': 'http://gsso.giikin.com/admin/login/logout.html'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         # print(req.text)
-        print('******获取登录页面url成功： /oapi.dingtalk.com/connect/oauth2/sns_authorize?')
+        # print('******获取登录页面url成功： /oapi.dingtalk.com/connect/oauth2/sns_authorize?')
 
         time.sleep(1)
-        print('三、dingtalk_service服务器......')
+        # print('三、dingtalk_service服务器......')
         url = req.text
         data = {'tmpCode': loginTmpCode,
                 'system': 1,
@@ -81,7 +81,7 @@ class Settings_sso():
         gimp = req.headers['Location']
 
         time.sleep(1)
-        print('（3.1）加载： ' + str(gimp))
+        # print('（3.1）加载： ' + str(gimp))
         url = gimp
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
@@ -92,7 +92,7 @@ class Settings_sso():
         # print(index_system3)
 
         time.sleep(1)
-        print('（3.2）再次加载/dingtalk_service/getunionidbytempcode?code=页面......')
+        # print('（3.2）再次加载/dingtalk_service/getunionidbytempcode?code=页面......')
         url = index_system3
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
@@ -100,7 +100,7 @@ class Settings_sso():
         # print(req)
         # print(req.headers)
 
-        print('（3.3）加载//gimp.giikin.com 页面......')
+        # print('（3.3）加载//gimp.giikin.com 页面......')
         # print(990099900)
         time.sleep(1)
         url = req.headers['Location']
@@ -112,7 +112,7 @@ class Settings_sso():
         # print(req.headers)
 
         time.sleep(1)
-        print('四、加载/gimp.giikin.com/portal/index/index.html 页面......')
+        # print('四、加载/gimp.giikin.com/portal/index/index.html 页面......')
         url = 'https://gimp.giikin.com' + index
         # print(url)
         # print(8080)
@@ -124,7 +124,7 @@ class Settings_sso():
         # print(7070)
 
         time.sleep(1)
-        print('（4.1）加载index.html?_system=18页面......')
+        # print('（4.1）加载index.html?_system=18页面......')
         url = index_system
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
@@ -133,7 +133,7 @@ class Settings_sso():
         # print(req.headers)
 
         time.sleep(1)
-        print('（4.2）加载/gimp.giikin.com/portal/index/index.html?_ticker=页面......')
+        # print('（4.2）加载/gimp.giikin.com/portal/index/index.html?_ticker=页面......')
         url = req.headers['Location']
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
@@ -143,7 +143,7 @@ class Settings_sso():
         # print(req.headers)
 
         time.sleep(1)
-        print('（4.3）加载/gimp.giikin.com:443/portal/index/index.html页面......')
+        # print('（4.3）加载/gimp.giikin.com:443/portal/index/index.html页面......')
         url = req.headers['Location']
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}

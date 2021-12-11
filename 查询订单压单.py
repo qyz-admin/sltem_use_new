@@ -15,20 +15,23 @@ import pandas.io.formats.excel
 
 from sqlalchemy import create_engine
 from settings import Settings
+from settings_sso import Settings_sso
 from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
 
 
 # -*- coding:utf-8 -*-
-class QueryTwo(Settings):
+class QueryTwo(Settings, Settings_sso):
     def __init__(self, userMobile, password):
         Settings.__init__(self)
+        Settings_sso.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
         self.userMobile = userMobile
         self.password = password
-        self._online()
+        # self._online()
+        self.sso_online_Two()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -182,10 +185,11 @@ class QueryTwo(Settings):
     def orderInfoQuery(self):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'http://gwms.giikin.cn/order/pressure/index'
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-                    'origin': 'http://gwms.giikin.cn',
-                    'Referer': 'http://gwms.giikin.cn/order/pressure/index'}
-        data = {'selectStr': '1=1 and oc.currency_id= "1"',
+        url = r'http://gwms-v3.giikin.cn/order/pressure/index'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'http://gwms-v3.giikin.cn',
+                    'Referer': 'ttp://gwms-v3.giikin.cn/order/pressure/index'}
+        data = {'selectStr': '1=1',
                 'page': '1',
                 'limit': 500,
                 'startDate': '',

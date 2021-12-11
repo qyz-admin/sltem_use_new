@@ -97,9 +97,12 @@ class QueryUpdate(Settings):
                 elif '压单反馈' in dir and startday in dir:
                     print(filePath)
                     wb_data = '压单反馈'
-                elif '需核实拒收' in dir:
+                elif '需核实拒收-每日上传' in dir:
                     print(filePath)
                     wb_data = '拒收核实'
+                elif '利英' in dir or '慧霞' in dir or '贵敏' in dir:
+                    print(filePath)
+                    wb_data = '需核实拒收_缓存每日'
                 if wb_data is None:
                     print('***不符合上传格式，跳过此表！！！')
                     pass
@@ -138,9 +141,13 @@ class QueryUpdate(Settings):
                                     '提交形式', '提交时间', '同步模块', '模块进展', '登记人', '币种', '数量']]
                             db['币种'] = db['币种'].astype(str)
                             db = db[(db['币种'].str.contains('台币|港币'))]
+
                         elif wb_data == '拒收核实':
                             team = '拒收核实'
                             db = db[['处理日期', '订单编号', '核实原因', '具体原因', '再次克隆下单', '处理人']]
+                        elif wb_data == '需核实拒收_缓存每日':
+                            team = '需核实拒收_缓存每日'
+                            db = db[['订单编号']]
 
                         elif wb_data == '压单反馈':
                             team = '压单反馈'
@@ -152,7 +159,7 @@ class QueryUpdate(Settings):
                             if team == '采购异常':
                                 db = db[(db['币种'].str.contains('台币|港币'))]
                                 db.drop(labels=['币种'], axis=1, inplace=True)
-                            print('正在导入的数据库表：' + str(team))             # 类型错误:只能连接str(不是“列表”)到str
+                            print('    导入的数据库表：' + str(team))             # 类型错误:只能连接str(不是“列表”)到str
                         if db is not None and len(db) > 0:
                             if wb_data in ('换货表', '退货表', '工单收集表'):
                                 db.to_sql(wb_data, con=self.engine1, index=False, if_exists='replace')
@@ -166,7 +173,7 @@ class QueryUpdate(Settings):
                                 columns = list(db.columns)
                                 columns = ','.join(columns)
                                 sql = '''REPLACE INTO {}({}, 记录时间) SELECT *, NOW() 记录时间 FROM customer;'''.format(team, columns)
-                                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=2000)
+                                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                                 print('++++：' + sht.name + '表--->>>更新成功')
                         else:
                             print('----------数据为空导入失败：' + sht.name + ' 表；')
@@ -270,6 +277,9 @@ class QueryUpdate(Settings):
                         unnecessary += 1
         # print(df)
         # print(columns)
+        df['订单编号'] = df['订单编号'].fillna(value='null')
+        df = df[~df['订单编号'].isin(['null'])]
+        # print(df['订单编号'])
         if necessary >= 4:
             df.columns = columns
             df.drop(labels=needDrop, axis=1, inplace=True)
@@ -1120,6 +1130,129 @@ class QueryUpdate(Settings):
         #     print('运行失败：', str(Exception) + str(e))
         print('----已写入excel ')
 
+    # 拒收核实-查询需要的产品id
+    def jushou(self):
+        print('正在查询需核实订单…………')
+        listT = []  # 查询sql的结果 存放池
+        sql = '''SELECT *
+                FROM (SELECT g.*,c.`家族`,c.`月份`,c.`拒收`
+			            FROM  需核实拒收_每日新增订单 g
+			            LEFT JOIN (SELECT *
+								 FROM(SELECT IFNULL(s1.家族, '合计') 家族, IFNULL(s1.地区, '合计') 地区, IFNULL(s1.月份, '合计') 月份,
+											IFNULL(s1.产品id, '合计') 产品id,
+											IFNULL(s1.产品名称, '合计') 产品名称,
+											IFNULL(s1.父级分类, '合计') 父级分类,
+											IFNULL(s1.二级分类, '合计') 二级分类,
+											SUM(s1.已签收) as 已签收,
+											SUM(s1.拒收) as 拒收,
+											SUM(s1.已退货) as 已退货,
+											SUM(s1.已完成) as 已完成,
+						                    SUM(s1.总订单) as 总订单,
+						                    concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.已完成),0) * 100,2),'%') as 完成签收,
+						                    concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.总订单),0) * 100,2),'%') as 总计签收,
+						                    concat(ROUND(IFNULL(SUM(s1.已完成) / SUM(s1.总订单),0) * 100,2),'%') as 完成占比,
+						                    concat(ROUND(IFNULL(SUM(s1.已退货) / SUM(s1.总订单),0) * 100,2),'%') as 退货率,
+						                    concat(ROUND(IFNULL(SUM(s1.拒收) / SUM(s1.已完成),0) * 100,2),'%') as 拒收率
+                                    FROM(SELECT IFNULL(cx.`家族`, '合计') 家族, IFNULL(cx.币种, '合计') 地区, IFNULL(cx.`年月`, '合计') 月份,
+						                        IFNULL(cx.产品id, '合计') 产品id,
+						                        IFNULL(cx.产品名称, '合计') 产品名称,
+						                        IFNULL(cx.父级分类, '合计') 父级分类,
+						                        IFNULL(cx.二级分类, '合计') 二级分类,
+						                        COUNT(cx.`订单编号`) as 总订单,
+						                        SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
+						                        SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+						                        SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
+						                        SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成		
+		                                FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族
+                                            FROM gat_zqsb cc 
+					                        WHERE cc.年月 >=  DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') AND cc.`币种` = '台湾' AND cc.`运单编号` is not null
+		                                ) cx
+                                        GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
+                                    ) s1
+                                    GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
+                                    WITH ROLLUP 
+                                ) s 
+                                HAVING s.月份 != '合计' AND s.产品id != '合计' AND s.`总订单` >= '100' AND s.`拒收` >= '1'
+                                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','红杉','金狮','合计'),
+                                FIELD(s.`地区`,'台湾','香港','合计'),
+                                FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'),'合计'),
+                                FIELD(s.`产品id`,'合计'),
+                                s.拒收 DESC
+			            ) c ON g.`团队` = c.`家族` AND g.`产品Id` =c.`产品Id`
+                ) s WHERE s.`家族` is not null;'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df)
+        print('正在查询两月拒收订单…………')
+        sql2 = '''SELECT * FROM 需核实拒收_获取最近两个月订单;'''
+        df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
+        listT.append(df2)
+        print('正在查询两月拒收产品id…………')
+        sql3 = '''SELECT *
+								 FROM(SELECT IFNULL(s1.家族, '合计') 家族, IFNULL(s1.地区, '合计') 地区, IFNULL(s1.月份, '合计') 月份,
+											IFNULL(s1.产品id, '合计') 产品id,
+											IFNULL(s1.产品名称, '合计') 产品名称,
+											IFNULL(s1.父级分类, '合计') 父级分类,
+											IFNULL(s1.二级分类, '合计') 二级分类,
+											SUM(s1.已签收) as 已签收,
+											SUM(s1.拒收) as 拒收,
+											SUM(s1.已退货) as 已退货,
+											SUM(s1.已完成) as 已完成,
+						                    SUM(s1.总订单) as 总订单,
+						                    concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.已完成),0) * 100,2),'%') as 完成签收,
+						                    concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.总订单),0) * 100,2),'%') as 总计签收,
+						                    concat(ROUND(IFNULL(SUM(s1.已完成) / SUM(s1.总订单),0) * 100,2),'%') as 完成占比,
+						                    concat(ROUND(IFNULL(SUM(s1.已退货) / SUM(s1.总订单),0) * 100,2),'%') as 退货率,
+						                    concat(ROUND(IFNULL(SUM(s1.拒收) / SUM(s1.已完成),0) * 100,2),'%') as 拒收率
+                                    FROM(SELECT IFNULL(cx.`家族`, '合计') 家族, IFNULL(cx.币种, '合计') 地区, IFNULL(cx.`年月`, '合计') 月份,
+						                        IFNULL(cx.产品id, '合计') 产品id,
+						                        IFNULL(cx.产品名称, '合计') 产品名称,
+						                        IFNULL(cx.父级分类, '合计') 父级分类,
+						                        IFNULL(cx.二级分类, '合计') 二级分类,
+						                        COUNT(cx.`订单编号`) as 总订单,
+						                        SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
+						                        SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+						                        SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
+						                        SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成		
+		                                FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族
+                                            FROM gat_zqsb cc 
+					                        WHERE cc.年月 >=  DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') AND cc.`币种` = '台湾' AND cc.`运单编号` is not null
+		                                ) cx
+                                        GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
+                                    ) s1
+                                    GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
+                                    WITH ROLLUP 
+                                ) s 
+                                HAVING s.月份 != '合计' AND s.产品id != '合计' AND s.`总订单` >= '100' AND s.`拒收` >= '1'
+                                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','红杉','金狮','合计'),
+                                FIELD(s.`地区`,'台湾','香港','合计'),
+                                FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'),'合计'),
+                                FIELD(s.`产品id`,'合计'),
+                                s.拒收 DESC;'''
+        df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
+        listT.append(df3)
+        print('正在查询需核实拒收_每日新增订单…………')
+        sql4 = '''SELECT * FROM 需核实拒收_每日新增订单;'''
+        df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
+        listT.append(df4)
+        print('正在写入excel…………')
+        today = datetime.date.today().strftime('%m.%d')
+        file_path = 'G:\\输出文件\\{} 需核实拒收-每日数据源.xlsx'.format(today)
+        if os.path.exists(file_path):  # 判断是否有需要的表格
+            print("正在清除重复文件......")
+            os.remove(file_path)
+        sheet_name = ['查询', '两月拒收', '两月拒收产品id', '每日新增订单']
+        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        for i in range(len(listT)):
+            listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            del book['Sheet1']
+        writer.save()
+        writer.close()
+        print('----已写入excel ')
 
 if __name__ == '__main__':
     m = QueryUpdate()
@@ -1127,19 +1260,35 @@ if __name__ == '__main__':
     # -----------------------------------------------手动查询状态运行（一）-----------------------------------------
     # m.readFormHost('202110')                   # 读取需要的工作表内容（工单、退货、换补发； 系统问题件、物流问题件、物流客诉件； 系统采购异常； 压单反馈表）
     # m.writeSql()                               # 获取工单和退换货的客服处理记录
+    '''
+        1、 上传文件；  读取需要的工作表内容（工单、退货、换补发； 系统问题件、物流问题件、物流客诉件； 系统采购异常； 压单反馈表）
+        2、 上传文件-按日期；            
+        3、 获取工单和退换货的客服处理记录；
+        4、 拒收核实-查询需要的产品id；  获取前 记得上传发过的核实表和返回的核实表；已经客诉件和问题件表
+    '''
+    select = 4
+    if int(select) == 1:
+        m.readFormHost('202110')
 
+    elif int(select) == 2:
+        begin = datetime.date(2021, 12, 1)  # 压单反馈上传使用
+        print(begin)
+        end = datetime.date(2021, 12, 2)
+        print(end)
+        for i in range((end - begin).days):  # 按天循环获取订单状态
+            day = begin + datetime.timedelta(days=i)
+            upload = str(day)
+            startday = str(day).replace('-', '')
+            print(startday)
+            m.readFormHost(startday)
 
+    elif int(select) == 3:
+        m.writeSql()
 
-    begin = datetime.date(2021, 10, 1)       # 压单反馈上传使用
-    print(begin)
-    end = datetime.date(2021, 10, 2)
-    print(end)
-    for i in range((end - begin).days):  # 按天循环获取订单状态
-        day = begin + datetime.timedelta(days=i)
-        upload = str(day)
-        startday = str(day).replace('-', '')
-        print(startday)
-        m.readFormHost(startday)
+    elif int(select) == 4:
+        m.readFormHost('202110')
+        m.jushou()
+
 
 
     print('输出耗时：', datetime.datetime.now() - start)

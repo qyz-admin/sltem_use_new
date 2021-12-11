@@ -335,10 +335,10 @@ class QueryUpdate(Settings):
         match = {'gat': '港台', 'slsc': '品牌'}
         output = datetime.datetime.now().strftime('%m.%d')
         month_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        month_yesterday = '2021-12-01'
+        # month_yesterday = '2021-12-01'
         print(month_yesterday)
         month_now = (datetime.datetime.now()).strftime('%Y%m')
-        month_now = '202111'
+        # month_now = '202111'
         print(month_now)
 
         sql = '''SELECT * 
@@ -420,7 +420,8 @@ if __name__ == '__main__':
     upload = '查询-运单号'
     # m.readFormHost(upload)
 
-
     m.trans_way_cost_new(team)  # 同产品下的规格运费查询
+
+
     print('输出耗时：', datetime.datetime.now() - start)
     win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)

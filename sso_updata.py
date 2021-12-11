@@ -1167,8 +1167,7 @@ class QueryTwo(Settings):
 
     # 更新团队订单明细（新后台的获取）
     def orderInfo(self, searchType, team, team2, last_month):  # 进入订单检索界面，
-        print('>>>>>>正式查询中<<<<<<')
-        print('正在获取需要订单信息......')
+        # print('正在获取需要订单信息......')
         start = datetime.datetime.now()
         sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` = '{1}';'''.format(team, last_month)
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -1178,7 +1177,7 @@ class QueryTwo(Settings):
             # sys.exit()
             return
         orderId = list(ordersDict['订单编号'])
-        print('获取耗时：', datetime.datetime.now() - start)
+        # print('获取耗时：', datetime.datetime.now() - start)
         max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
         n = 0
         while n < max_count:        # 这里用到了一个while循环，穿越过来的
@@ -1225,7 +1224,6 @@ class QueryTwo(Settings):
         try:
             for result in req['data']['list']:
                 # print(result)
-                # print(result['specs'])
                 # print(result['orderNumber'])
                 # 添加新的字典键-值对，为下面的重新赋值用
                 if result['specs'] != '':
@@ -1237,27 +1235,19 @@ class QueryTwo(Settings):
                     result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
                     result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
                     result['spec'] = result['specs'][0]['spec']
-                else:
-                    result['saleId'] = 0
-                    result['saleProduct'] = 0
-                    result['productId'] = 0
-                    result['spec'] = 0
-                quest = ''
-                for re in result['questionReason']:
-                    quest = quest + ';' + re
-                result['questionReason'] = quest
-                delr = ''
-                for re in result['delReason']:
-                    delr = delr + ';' + re
-                result['delReason'] = delr
-                auto = ''
-                for re in result['autoVerify']:
-                    auto = auto + ';' + re
-                result['autoVerify'] = auto
-                ordersDict.append(result)
-            #     self.q.put(result)
-            # for i in range(len(req['data']['list'])):
-            #     ordersDict.append(self.q.get())
+                    quest = ''
+                    for re in result['questionReason']:
+                        quest = quest + ';' + re
+                    result['questionReason'] = quest
+                    delr = ''
+                    for re in result['delReason']:
+                        delr = delr + ';' + re
+                    result['delReason'] = delr
+                    auto = ''
+                    for re in result['autoVerify']:
+                        auto = auto + ';' + re
+                    result['autoVerify'] = auto
+                    ordersDict.append(result)
             data = pd.json_normalize(ordersDict)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
@@ -1275,7 +1265,7 @@ class QueryTwo(Settings):
         print('正在写入缓存中......')
         try:
             df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId', 'spec', 'quantity',
-                       'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime', 'finishTime',
+                       'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime', 'finishTime', 'cloneUser',
                        'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'questionReason', 'service']]
             print(df)
             # print('正在更新临时表中......')
@@ -1306,7 +1296,8 @@ class QueryTwo(Settings):
             				    h.`autoVerify` 审单类型,
             				    h.`delReason` 删除原因,
             				    h.`questionReason` 问题原因,
-            				    h.`service` 下单人
+            				    h.`service` 下单人,
+            				    h.`cloneUser` 克隆人
                             FROM d1_cpy h
                                 LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
                                 LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -1335,16 +1326,16 @@ class QueryTwo(Settings):
                                 a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`),
                                 a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`),
                                 a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
-                                a.`审单类型`= IF(b.`审单类型` = '', NULL, IF(b.`审单类型` like '%自动审单通过%','是','否')),
+                                a.`审单类型`= IF(b.`审单类型` = '', NULL, IF(b.`审单类型` like '%自动审单%','是','否')),
                                 a.`删除原因`= IF(b.`删除原因` = '', NULL,  b.`删除原因`),
                                 a.`问题原因`= IF(b.`问题原因` = '', NULL,  b.`问题原因`),
-                                a.`下单人`= IF(b.`下单人` = '', NULL,  b.`下单人`)
+                                a.`下单人`= IF(b.`下单人` = '', NULL,  b.`下单人`),
+                                a.`克隆人`= IF(b.`克隆人` = '', NULL,  b.`克隆人`)
                     where a.`订单编号`=b.`订单编号`;'''.format(team2)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
-        print('++++++本批次更新成功+++++++')
-        print('************************************************************')
+        print('*************************本批次更新成功***********************************')
 
 if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510', 1343)

@@ -118,7 +118,7 @@ class QueryUpdate(Settings):
                                 a.`价格`= IF(b.`价格` = '', NULL, b.`价格`),
                                 a.`价格RMB`= IF(b.`价格RMB` = '', NULL, b.`价格RMB`)
                     where a.`订单编号`= b.`订单编号`;'''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
@@ -139,7 +139,7 @@ class QueryUpdate(Settings):
         		                    a.`父级分类`= IF(b.`父级分类` = '', NULL, b.`父级分类`),
         		                    a.`二级分类`= IF(b.`二级分类` = '', NULL, b.`二级分类`)
         		                where a.`订单编号`= b.`订单编号`;'''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('正在更新总表中......')
             sql = '''update {0}_zqsb a, gat_update b
                                             set a.`运单编号`= IF(b.`运单编号` = '', NULL, b.`运单编号`),
@@ -155,7 +155,7 @@ class QueryUpdate(Settings):
                     		                    a.`父级分类`= IF(b.`父级分类` = '', NULL, b.`父级分类`),
                     		                    a.`二级分类`= IF(b.`二级分类` = '', NULL, b.`二级分类`)
                     		                where a.`订单编号`= b.`订单编号`;'''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
@@ -184,7 +184,7 @@ class QueryUpdate(Settings):
                         a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
                         a.`三级分类`= IF(b.`third_cate` = '', a.`三级分类`, b.`third_cate`)
                 where a.`订单编号`= b.`订单编号`;'''.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('更新完成+++')
 
         print('正在检查产品id为空的信息---')
@@ -201,7 +201,7 @@ class QueryUpdate(Settings):
                         set a.`产品id`= IF(b.`product_id` = '',a.`产品id`, b.`product_id`),
                             a.`产品名称`= IF(b.`product_name` = '',a.`产品名称`, b.`product_name`)
                 where a.`订单编号`= b.`订单编号`;'''.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('更新完成+++')
 
         if team in ('gat'):
@@ -209,7 +209,7 @@ class QueryUpdate(Settings):
                     WHERE gat_zqsb.`订单编号` IN (SELECT 订单编号 FROM gat_order_list 
                                                 WHERE gat_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'));'''
             print('正在清除港澳台-总表的可能删除了的订单…………')
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('正在获取---' + match[team] + '---更新数据内容…………')
             sql = '''SELECT 年月, 旬, 日期, 团队, 币种, null 区域, 订单来源, a.订单编号, 电话号码, a.运单编号,
                             IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
@@ -276,13 +276,12 @@ class QueryUpdate(Settings):
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入---' + match[team] + ' ---临时缓存…………')             # 备用临时缓存表
         df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace')
-
         for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-小虎队"|slgat_jp', '"神龙-低价"|slgat_low'):
             tem1 = tem.split('|')[0]
             tem2 = tem.split('|')[1]
             sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace', chunksize=5000)
+            df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
             df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]),
                         sheet_name=match[tem2], index=False)
             print(tem2 + '----已写入excel')
@@ -298,7 +297,7 @@ class QueryUpdate(Settings):
             df.to_sql('gat_update_cp', con=self.engine1, index=False, if_exists='replace')
             print('正在转存数据中......')
             sql = '''REPLACE INTO qsb_{0} SELECT * FROM gat_update_cp; '''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('转存失败：', str(Exception) + str(e))
         print('转存成功…………')
@@ -5529,18 +5528,18 @@ class QueryUpdate(Settings):
             								WHERE gat_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
             								);'''
         print('正在清除总表的可能删除了的订单…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
         sql = '''DELETE FROM gat_zqsb gz 
                 WHERE gz.`系统订单状态` = '已转采购' and gz.`是否改派` = '改派' and gz.`审核时间` >= '{0} 00:00:00' AND gz.`日期` >= '{1}';'''.format(month_now, month_last)
         print('正在清除不参与计算的今日改派订单…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
         sql = '''UPDATE gat_zqsb d
                 SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', d.`物流方式`) )
                 WHERE d.`是否改派` ='直发';'''
         print('正在修改-直发的物流渠道…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         sql = '''UPDATE gat_zqsb d
                 SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
                                 IF(d.`物流方式` LIKE '香港-立邦%','香港-立邦-改派',
@@ -5554,7 +5553,7 @@ class QueryUpdate(Settings):
     							IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', d.`物流方式`)))  )  )  )  )  )  )  )
                 WHERE d.`是否改派` ='改派';'''
         print('正在修改-改派的物流渠道…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
         filePath = []
         listT = []  # 查询sql的结果 存放池
@@ -6135,18 +6134,6 @@ class QueryUpdate(Settings):
                                 IFNULL(cx.产品名称, '总计') 产品名称,
                                 IFNULL(cx.父级分类, '总计') 父级分类,
                                 COUNT(cx.`订单编号`) as 总单量,
-                            SUM(IF(年月 = 202104,1,0)) as 04总单量,
-                                concat(ROUND(SUM(IF(年月 = 202104 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202104,1,0)) * 100,2),'%') as 04总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202104 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202104 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 04完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202104 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202104,1,0)) * 100,2),'%') as 04完成占比,
-                            SUM(IF(年月 = 202105,1,0)) as 05总单量,
-                                concat(ROUND(SUM(IF(年月 = 202105 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202105,1,0)) * 100,2),'%') as 05总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202105 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202105 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 05完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202105 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202105,1,0)) * 100,2),'%') as 05完成占比,
-                            SUM(IF(年月 = 202106,1,0)) as 06总单量,
-                                concat(ROUND(SUM(IF(年月 = 202106 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202106,1,0)) * 100,2),'%') as 06总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202106 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202106 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 06完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202106 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202106,1,0)) * 100,2),'%') as 06完成占比,        
                             SUM(IF(年月 = 202107,1,0)) as 07总单量,
                                 concat(ROUND(SUM(IF(年月 = 202107 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202107,1,0)) * 100,2),'%') as 07总计签收,
                                 concat(ROUND(SUM(IF(年月 = 202107 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202107 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 07完成签收,
@@ -6166,7 +6153,11 @@ class QueryUpdate(Settings):
                             SUM(IF(年月 = 202111,1,0)) as 11总单量,
                                 concat(ROUND(SUM(IF(年月 = 202111 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202111,1,0)) * 100,2),'%') as 11总计签收,
                                 concat(ROUND(SUM(IF(年月 = 202111 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202111 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 11完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202111 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202111,1,0)) * 100,2),'%') as 11完成占比  
+                                concat(ROUND(SUM(IF(年月 = 202111 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202111,1,0)) * 100,2),'%') as 11完成占比,
+                            SUM(IF(年月 = 202112,1,0)) as 12总单量,
+                                concat(ROUND(SUM(IF(年月 = 202112 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202112,1,0)) * 100,2),'%') as 12总计签收,
+                                concat(ROUND(SUM(IF(年月 = 202112 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202112 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 12完成签收,
+                                concat(ROUND(SUM(IF(年月 = 202112 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202112,1,0)) * 100,2),'%') as 12完成占比
                         FROM gat_zqsb_cache cx
                         where cx.`运单编号` is not null 
                         GROUP BY cx.家族,cx.币种,cx.产品id
@@ -6429,18 +6420,18 @@ class QueryUpdate(Settings):
             								WHERE gat_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
             								);'''
         print('正在清除总表的可能删除了的订单…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
         sql = '''DELETE FROM gat_zqsb gz 
                 WHERE gz.`系统订单状态` = '已转采购' and gz.`是否改派` = '改派' and gz.`审核时间` >= '{0} 00:00:00' AND gz.`日期` >= '{1}';'''.format(month_now, month_last)
         print('正在清除不参与计算的今日改派订单…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
         sql = '''UPDATE gat_zqsb d
                 SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', d.`物流方式`) )
                 WHERE d.`是否改派` ='直发';'''
         print('正在修改-直发的物流渠道…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         sql = '''UPDATE gat_zqsb d
                 SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
                                 IF(d.`物流方式` LIKE '香港-立邦%','香港-立邦-改派',
@@ -7334,12 +7325,12 @@ class QueryUpdate(Settings):
             sql = '''update {0}_order_list a, gat_update b
                             set a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`)
         		            where a.`订单编号`= b.`订单编号`;'''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('正在更新总表中......')
             sql = '''update {0}_zqsb a, gat_update b
                             set a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`)
                     		where a.`订单编号`= b.`订单编号`;'''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
@@ -7552,7 +7543,7 @@ class QueryUpdate(Settings):
             df.to_sql('gat_update_cp', con=self.engine1, index=False, if_exists='replace')
             print('正在数据添加中......')
             sql = '''REPLACE INTO qsb_{0} SELECT * FROM gat_update_cp; '''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
@@ -8523,14 +8514,8 @@ class QueryUpdate(Settings):
 
     # 拒收核实-查询需要的产品id
     def jushou(self):
-        print('正在查询核实拒收-需要的订单信息…………')
+        print('正在查询需核实订单…………')
         listT = []  # 查询sql的结果 存放池
-        # sql = '''SELECT *
-        #         FROM (SELECT g.*,c.`家族`,c.`月份`,c.`拒收`
-        # 			    FROM  需核实拒收_每日新增订单 g
-        # 			    LEFT JOIN 需核实拒收_每日产品id c ON g.`团队` = c.`家族` AND g.`产品id` = c.`产品id`
-        #         ) s
-        #         WHERE s.`家族` is not null;'''
         sql = '''SELECT *
                 FROM (SELECT g.*,c.`家族`,c.`月份`,c.`拒收`
 			            FROM  需核实拒收_每日新增订单 g
@@ -8579,14 +8564,65 @@ class QueryUpdate(Settings):
                 ) s WHERE s.`家族` is not null;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         listT.append(df)
-
+        print('正在查询两月拒收订单…………')
+        sql2 = '''SELECT * FROM 需核实拒收_获取最近两个月订单;'''
+        df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
+        listT.append(df2)
+        print('正在查询两月拒收产品id…………')
+        sql3 = '''SELECT *
+								 FROM(SELECT IFNULL(s1.家族, '合计') 家族, IFNULL(s1.地区, '合计') 地区, IFNULL(s1.月份, '合计') 月份,
+											IFNULL(s1.产品id, '合计') 产品id,
+											IFNULL(s1.产品名称, '合计') 产品名称,
+											IFNULL(s1.父级分类, '合计') 父级分类,
+											IFNULL(s1.二级分类, '合计') 二级分类,
+											SUM(s1.已签收) as 已签收,
+											SUM(s1.拒收) as 拒收,
+											SUM(s1.已退货) as 已退货,
+											SUM(s1.已完成) as 已完成,
+						                    SUM(s1.总订单) as 总订单,
+						                    concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.已完成),0) * 100,2),'%') as 完成签收,
+						                    concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.总订单),0) * 100,2),'%') as 总计签收,
+						                    concat(ROUND(IFNULL(SUM(s1.已完成) / SUM(s1.总订单),0) * 100,2),'%') as 完成占比,
+						                    concat(ROUND(IFNULL(SUM(s1.已退货) / SUM(s1.总订单),0) * 100,2),'%') as 退货率,
+						                    concat(ROUND(IFNULL(SUM(s1.拒收) / SUM(s1.已完成),0) * 100,2),'%') as 拒收率
+                                    FROM(SELECT IFNULL(cx.`家族`, '合计') 家族, IFNULL(cx.币种, '合计') 地区, IFNULL(cx.`年月`, '合计') 月份,
+						                        IFNULL(cx.产品id, '合计') 产品id,
+						                        IFNULL(cx.产品名称, '合计') 产品名称,
+						                        IFNULL(cx.父级分类, '合计') 父级分类,
+						                        IFNULL(cx.二级分类, '合计') 二级分类,
+						                        COUNT(cx.`订单编号`) as 总订单,
+						                        SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
+						                        SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+						                        SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
+						                        SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成		
+		                                FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族
+                                            FROM gat_zqsb cc 
+					                        WHERE cc.年月 >=  DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') AND cc.`币种` = '台湾' AND cc.`运单编号` is not null
+		                                ) cx
+                                        GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
+                                    ) s1
+                                    GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
+                                    WITH ROLLUP 
+                                ) s 
+                                HAVING s.月份 != '合计' AND s.产品id != '合计' AND s.`总订单` >= '100' AND s.`拒收` >= '1'
+                                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','红杉','金狮','合计'),
+                                FIELD(s.`地区`,'台湾','香港','合计'),
+                                FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'),'合计'),
+                                FIELD(s.`产品id`,'合计'),
+                                s.拒收 DESC;'''
+        df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
+        listT.append(df3)
+        print('正在查询需核实拒收_每日新增订单…………')
+        sql4 = '''SELECT * FROM 需核实拒收_每日新增订单;'''
+        df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
+        listT.append(df4)
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%m.%d')
         file_path = 'G:\\输出文件\\{} 需核实拒收-每日数据源.xlsx'.format(today)
         if os.path.exists(file_path):  # 判断是否有需要的表格
             print("正在清除重复文件......")
             os.remove(file_path)
-        sheet_name = ['查询']
+        sheet_name = ['查询', '两月拒收', '两月拒收产品id', '每日新增订单']
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
@@ -8618,7 +8654,7 @@ class QueryUpdate(Settings):
             print('写入中+++')
             df.to_sql('dim_wl', con=self.engine1, index=False, if_exists='replace')
             sql = 'REPLACE INTO 拒收核实_cy({}, 记录时间) SELECT *, NOW() 记录时间 FROM dim_wl; '.format(columns)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=5000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('插入失败：', str(Exception) + str(e))
         print('写入完成…………')
@@ -8654,24 +8690,26 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    if team == 'ga9t':
+    if team == 'gat':
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+        month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
     else:
         month_last = '2021-10-01'
+        month_old = '2021-10-01'
         month_yesterday = '2021-11-30'
 
     last_time = '2021-01-01'
     write = '本期'
-    m.readFormHost(team, write, last_time)      #  更新签收表---港澳台（一）
+    m.readFormHost(team, write, last_time)                              #  更新签收表---港澳台（一）
 
-    m.gat_new(team, month_last, month_yesterday)        #  获取-签收率-报表
-    m.qsb_new(team, '2021-10-01')                       #  获取-每日-报表
-    m.EportOrderBook(team, month_last, month_yesterday) #  导出-总的-签收表
-    m.jushou()                                            #  拒收核实-查询需要的产品id
+    m.gat_new(team, month_last, month_yesterday)                  #  获取-签收率-报表
+    m.qsb_new(team, month_old)                                    #  获取-每日-报表
+    m.EportOrderBook(team, month_last, month_yesterday)       #  导出-总的-签收表
 
-
+    # m.jushou()                                            #  拒收核实-查询需要的产品id
     # m.address_repot(team)                       #  获取-地区签收率-报表
+
      # 停用备用使用
     # m.jushou_Upload('202103')                           #  拒收核实-查询每日新增拒收停用
     # m.EportOrder(team)       #  导出需要更新的签收表

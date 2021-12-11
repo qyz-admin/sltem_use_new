@@ -92,14 +92,14 @@ class MysqlControl(Settings):
 											WHERE gat_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
 											);'''
         print('正在清除港澳台-总表的可能删除了的订单…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         sql = '''DELETE FROM slsc_zqsb
                         WHERE slsc_zqsb.`订单编号` IN (SELECT 订单编号
         											FROM slsc_order_list 
         											WHERE slsc_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
         											);'''
         print('正在清除品牌-总表的可能删除了的订单…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
         (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1))
         yy = int((datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y'))
@@ -140,44 +140,44 @@ class MysqlControl(Settings):
             try:
                 print('正在更新中…………')
                 sql = 'REPLACE INTO dim_product SELECT *, NOW() 更新时间 FROM tem_product; '
-                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             except Exception as e:
                 print('插入失败：', str(Exception) + str(e))
             print('港澳台产品信息更新完成…………')
 
-            sql = '''SELECT id,
-				            rq,
-                            product_id,
-				            product_name,
-				            cate_id,
-				            second_cate_id,
-				            third_cate_id,
-				            null seller_id,
-				            null selector,
-				            null buyer_id,
-				            price,
-				            gs.`status`,
-				            id sale_id
-            		    FROM gk_sale gs
-            		    WHERE gs.rq = '{0}';'''.format(month_last)
-            print('正在获取 ' + month_last + ' 号以后的产品详情…………')
-            df = pd.read_sql_query(sql=sql, con=self.engine20)
-            print('正在写入产品缓存中…………')
-            df.to_sql('tem_product', con=self.engine1, index=False, if_exists='replace')
-            try:
-                print('正在更新中…………')
-                sql = 'REPLACE INTO dim_product SELECT *, NOW() 更新时间 FROM tem_product; '
-                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
-            except Exception as e:
-                print('插入失败：', str(Exception) + str(e))
-            print('日本产品信息更新完成…………')
-        try:
-            print('正在更新中…………')
-            sql = 'REPLACE INTO dim_product_slsc SELECT *  FROM dim_product WHERE id IN (SELECT MAX(id) FROM dim_product  GROUP BY product_id);'
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
-        except Exception as e:
-            print('插入失败：', str(Exception) + str(e))
-        print('商城信息更新完成…………')
+            # sql = '''SELECT id,
+			# 	            rq,
+            #                 product_id,
+			# 	            product_name,
+			# 	            cate_id,
+			# 	            second_cate_id,
+			# 	            third_cate_id,
+			# 	            null seller_id,
+			# 	            null selector,
+			# 	            null buyer_id,
+			# 	            price,
+			# 	            gs.`status`,
+			# 	            id sale_id
+            # 		    FROM gk_sale gs
+            # 		    WHERE gs.rq = '{0}';'''.format(month_last)
+            # print('正在获取 ' + month_last + ' 号以后的产品详情…………')
+            # df = pd.read_sql_query(sql=sql, con=self.engine20)
+            # print('正在写入产品缓存中…………')
+            # df.to_sql('tem_product', con=self.engine1, index=False, if_exists='replace')
+            # try:
+            #     print('正在更新中…………')
+            #     sql = 'REPLACE INTO dim_product SELECT *, NOW() 更新时间 FROM tem_product; '
+            #     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            # except Exception as e:
+            #     print('插入失败：', str(Exception) + str(e))
+            # print('日本产品信息更新完成…………')
+        # try:
+        #     print('正在更新中…………')
+        #     sql = 'REPLACE INTO dim_product_slsc SELECT *  FROM dim_product WHERE id IN (SELECT MAX(id) FROM dim_product  GROUP BY product_id);'
+        #     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        # except Exception as e:
+        #     print('插入失败：', str(Exception) + str(e))
+        # print('商城信息更新完成…………')
 
         print('正在获取物流信息中…………')
         try:
@@ -186,7 +186,7 @@ class MysqlControl(Settings):
             df.to_sql('tem_product', con=self.engine1, index=False, if_exists='replace')
             print('正在更新中…………')
             sql = 'REPLACE INTO dim_trans_way SELECT * FROM tem_product; '
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('插入失败：', str(Exception) + str(e))
         print('物流信息更新完成…………')
@@ -220,7 +220,7 @@ class MysqlControl(Settings):
         try:
             print('正在更新中…………')
             sql = '''REPLACE INTO gk_stat_sign_rate SELECT *, NOW() 获取时间 FROM gk_stat_cache;'''
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=5000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('插入失败：', str(Exception) + str(e))
         print('历史产品签收率更新完成…………')
@@ -243,7 +243,7 @@ class MysqlControl(Settings):
         try:
             print('正在更新中…………')
             sql = '''REPLACE INTO gk_bi_estimate_goods SELECT *, NOW() 获取时间 FROM gk_stat_cache;'''
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=5000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('插入失败：', str(Exception) + str(e))
         print('预测产品签收率更新完成…………')
@@ -640,6 +640,7 @@ class MysqlControl(Settings):
                             a.del_reason 删除原因,
                             a.question_reason 问题原因,
                             null 下单人,
+                            null 克隆人,
                             a.stock_type 下架类型,
                             a.lower_time 下架时间,
                             a.tihuo_time 物流提货时间,
@@ -674,7 +675,7 @@ class MysqlControl(Settings):
             try:
                 df.to_sql('sl_order', con=self.engine1, index=False, if_exists='replace')
                 sql = 'REPLACE INTO {}_order_list SELECT *, NOW() 记录时间 FROM sl_order; '.format(team)
-                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             except Exception as e:
                 print('插入失败：', str(Exception) + str(e))
             print('写入完成…………')
@@ -889,7 +890,7 @@ class MysqlControl(Settings):
 		                    a.`完结状态时间`=b.`完结状态时间`,
 		                    a.`省洲`=b.`省洲`
 		                where a.`订单编号`=b.`订单编号`;'''.format(team)
-                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             except Exception as e:
                 print('插入失败：', str(Exception) + str(e))
             print('----更新完成----')
@@ -959,7 +960,7 @@ class MysqlControl(Settings):
             		    set a.`产品id`= IF(b.`product_id` = '',a.`产品id`, b.`product_id`),
             		        a.`产品名称`= IF(b.`product_name` = '',a.`产品名称`, b.`product_name`)
             			where a.`订单编号`= b.`订单编号`;'''.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('更新完成+++')
 
         token = 'fc246aa95068f486c7d11368d12e0dbb'  # 补充查询产品信息需要
@@ -1069,7 +1070,7 @@ class MysqlControl(Settings):
             # print('正在获取台湾的物流信息......')
             sql = '''REPLACE INTO slsc SELECT null,订单编号,原运单号,运单编号,出货时间,物流状态,状态时间,航班时间,清关时间,上线时间,更新时间 添加时间 
                     FROM gat WHERE gat.`添加时间` = '{0} 00:00:00';'''.format(month_yesterday)
-            # df = pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            # df = pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
@@ -1097,7 +1098,7 @@ class MysqlControl(Settings):
             											WHERE gat_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
             											);'''
             print('正在清除港澳台-总表的可能删除了的订单…………')
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=5000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             sql = '''SELECT 年月, 旬, 日期, 团队, 币种, null 区域, null 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
