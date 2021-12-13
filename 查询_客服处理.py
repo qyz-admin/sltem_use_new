@@ -1135,7 +1135,7 @@ class QueryUpdate(Settings):
         print('正在查询需核实订单…………')
         listT = []  # 查询sql的结果 存放池
         sql = '''SELECT *
-                FROM (SELECT g.*,c.`家族`,c.`月份`,c.`拒收`
+                FROM (SELECT g.*,c.`家族`,c.`月份`,c.`拒收`,c.`总订单`,c.`退货率`,c.`拒收率`
 			            FROM  需核实拒收_每日新增订单 g
 			            LEFT JOIN (SELECT *
 								 FROM(SELECT IFNULL(s1.家族, '合计') 家族, IFNULL(s1.地区, '合计') 地区, IFNULL(s1.月份, '合计') 月份,
@@ -1172,13 +1172,13 @@ class QueryUpdate(Settings):
                                     GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                     WITH ROLLUP 
                                 ) s 
-                                HAVING s.月份 != '合计' AND s.产品id != '合计' AND s.`总订单` >= '100' AND s.`拒收` >= '1'
+                                HAVING s.月份 != '合计' AND s.产品id != '合计' AND s.`拒收` >= '1'
                                 ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','红杉','金狮','合计'),
                                 FIELD(s.`地区`,'台湾','香港','合计'),
                                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'),'合计'),
                                 FIELD(s.`产品id`,'合计'),
                                 s.拒收 DESC
-			            ) c ON g.`团队` = c.`家族` AND g.`产品Id` =c.`产品Id`
+			            ) c ON g.`团队` = c.`家族` AND EXTRACT(YEAR_MONTH FROM g.`下单时间`) = c.`月份` AND g.`产品Id` =c.`产品Id`
                 ) s WHERE s.`家族` is not null;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         listT.append(df)
@@ -1222,7 +1222,7 @@ class QueryUpdate(Settings):
                                     GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                     WITH ROLLUP 
                                 ) s 
-                                HAVING s.月份 != '合计' AND s.产品id != '合计' AND s.`总订单` >= '100' AND s.`拒收` >= '1'
+                                HAVING s.月份 != '合计' AND s.产品id != '合计' AND s.`拒收` >= '1'
                                 ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','红杉','金狮','合计'),
                                 FIELD(s.`地区`,'台湾','香港','合计'),
                                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'),'合计'),
@@ -1264,7 +1264,7 @@ if __name__ == '__main__':
         1、 上传文件；  读取需要的工作表内容（工单、退货、换补发； 系统问题件、物流问题件、物流客诉件； 系统采购异常； 压单反馈表）
         2、 上传文件-按日期；            
         3、 获取工单和退换货的客服处理记录；
-        4、 拒收核实-查询需要的产品id；  获取前 记得上传发过的核实表和返回的核实表；已经客诉件和问题件表
+        4、 拒收核实-查询需要的产品id；  获取前 记得上传发过的核实表和返回的核实表；以及客诉件和问题件表
     '''
     select = 4
     if int(select) == 1:
