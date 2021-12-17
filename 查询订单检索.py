@@ -28,7 +28,7 @@ class QueryTwo(Settings, Settings_sso):
         Settings.__init__(self)
         Settings_sso.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
-        self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
+        self.q = Queue(maxsize=10)  # 多线程调用的函数不能用return返回值，用来保存返回值
         self.userMobile = userMobile
         self.password = password
         self.sso_online_Two()
@@ -143,7 +143,6 @@ class QueryTwo(Settings, Settings_sso):
                 try:
                     db = None
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
-                    print(db.columns)
                     columns_value = list(db.columns)  # 获取数据的标题名，转为列表
                     if '订单号' in columns_value:
                         db.rename(columns={'订单号': '订单编号'}, inplace=True)
@@ -153,64 +152,51 @@ class QueryTwo(Settings, Settings_sso):
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
-                    print('++++正在导入更新：' + sht.name + ' 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                    print('++++正在查询：' + sht.name + ' 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
                     self.cs_InfoQuery(db, searchType)
                 else:
                     print('----------数据为空导入失败：' + sht.name)
             wb.close()
         app.quit()
     def cs_InfoQuery(self, db, searchType):  # 调用多线程
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         orderId = list(db['订单编号'])
         max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
-        n = 0
-        print('主线程开始执行……………………')
-        threads = []  # 多线程用线程池--
-        while n < max_count:  # 这里用到了一个while循环，穿越过来的
-            ord = ', '.join(orderId[n:n + 500])
-            n = n + 500
-            threads.append(Thread(target=self.orderInfoQuery, args=(ord, searchType)))  # -----也即是子线程
-            print('子线程分配完成++++++')
-        if threads:  # 当所有的线程都分配完成之后，通过调用每个线程的start()方法再让他们开始。
-            print(len(threads))
+        if max_count > 500:
+            ord = ', '.join(orderId[0:500])
+            # df = self.cs_orderInfoQuery(ord, searchType)
+            self.cs_orderInfoQuery(ord, searchType)
+            df = self.q.get()
+            print(df)
+            print(99)
+            # self.q.join()
+            print('主线程开始执行……………………')
+            threads = []  # 多线程用线程池--
+            n = 0
+            count = 1
+            while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
+                n = n + 500
+                ord = ','.join(orderId[n:n + 500])
+                print(str(count) + '次')
+                # threads.append(Thread(target=self.cs_orderInfoQuery, args=(ord, searchType)))  # -----也即是子线程
+                t = Thread(target=self.cs_orderInfoQuery, args=(ord, searchType))  # -----也即是子线程
+                threads.append(t)
+                t.start()
+                count = count + 1
             for th in threads:
-                th.start()  # print ("开启子线程…………")
-            for th in threads:
-                th.join()  # print ("退出子线程")
+                th.join()
             print('主线程执行结束---------')
             dlist = []
-            print(self.q.qsize())
-            for i in range(len(threads)):  # print(i)
-                if not self.q.empty():
-                    print(self.q.get())
-                    dlist.append(self.q.get(block=False))
-                    print(11)
-                else:
-                    print('取出失败---：', str(Exception))
-            print('-----执行结束---------')
-            df1 = dlist[0]
-            df2 = dlist[1:]
-            dp = df1.append(df2, ignore_index=True)
+            for j in range(self.q.qsize()):
+                dlist.append(self.q.get())
+            print(dlist)
+            print('正在写入......')
+            dp = df.append(dlist, ignore_index=True)
             print(dp)
         else:
-            print("没有需要运行子线程！！！")
-
-        # print('主线程执行结束---------')
-        # dlist = []
-        # print(9)
-        # for i in range(len(threads)):  # print(i)
-        #     try:
-        #         print(self.q.get())
-        #         dlist.append(self.q.get())
-        #     except Exception as e:
-        #         print('取出失败---：', str(Exception) + str(e))
-        # print('-----执行结束---------')
-        # print('查询耗时：', datetime.datetime.now() - start)
-        # pf = pd.DataFrame(list(dlist))  # 将字典列表转换为DataFrame
-        # print(pf)
-        # print(1)
-        # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        # dp = dlist[0].append(dlist[1:], ignore_index=True)
-        # dp.to_excel('H:\\桌面\\test\\订单查询{}.xlsx'.format(rq), sheet_name='查询', index=False)
+            ord = ','.join(orderId[0:max_count])
+            df = self.cs_orderInfoQuery(ord, searchType)
+        dp.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
     def cs_orderInfoQuery(self, ord, searchType):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
@@ -238,23 +224,24 @@ class QueryTwo(Settings, Settings_sso):
                    'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
-        # print(req.text)
-        print('+++已成功发送请求......')
-        print('正在处理json数据转化为dataframe…………')
+        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
-        # print(req)
-        ordersDict = []
+        ordersdict = []
+        # print('正在处理json数据转化为dataframe…………')
         try:
             for result in req['data']['list']:
-                # 添加新的字典键-值对，为下面的重新赋值用
-                result['saleId'] = 0
-                result['saleProduct'] = 0
+                result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
+                result['saleName'] = 0
                 result['productId'] = 0
+                result['saleProduct'] = 0
                 result['spec'] = 0
+                result['chooser'] = 0
                 result['saleId'] = result['specs'][0]['saleId']
-                result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
+                result['saleName'] = result['specs'][0]['saleName']
                 result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+                result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
                 result['spec'] = result['specs'][0]['spec']
+                result['chooser'] = result['specs'][0]['chooser']
                 quest = ''
                 for re in result['questionReason']:
                     quest = quest + ';' + re
@@ -267,17 +254,27 @@ class QueryTwo(Settings, Settings_sso):
                 for re in result['autoVerify']:
                     auto = auto + ';' + re
                 result['autoVerify'] = auto
-                ordersDict.append(result)
+                ordersdict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
-            self.orderInfoQuery(ord, searchType)
-        data = pd.json_normalize(ordersDict)
+        data = pd.json_normalize(ordersdict)
+        df = None
         try:
-            self.q.put(data)
+            df = data[['orderNumber', 'currency', 'area', 'productId', 'saleProduct', 'saleName', 'spec',
+                    'shipInfo.shipName', 'shipInfo.shipPhone', 'percent', 'phoneLength', 'shipInfo.shipAddress',
+                    'amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime',
+                    'logisticsName', 'dpeStyle', 'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName',
+                    'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime',
+                    'finishTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer',
+                    'autoVerify', 'cloneUser', 'isClone', 'warehouse', 'smsStatus', 'logisticsControl',
+                    'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName', 'update_time']]
+            # print(df)
+            self.q.put(df)
         except Exception as e:
-            print('放入失败---：', str(Exception) + str(e))
-        # return data
-
+            print('------查询为空')
+        print('++++++本批次查询成功+++++++')
+        print('*' * 50)
+        # return df
 
     # 一、订单——查询更新（新后台的获取）
     def orderInfoQuery(self, ord, searchType):  # 进入订单检索界面
@@ -394,18 +391,24 @@ class QueryTwo(Settings, Settings_sso):
         ordersdict = []
         try:
             for result in req['data']['list']:
-                result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
-                result['saleName'] = 0
-                result['productId'] = 0
-                result['saleProduct'] = 0
-                result['spec'] = 0
-                result['chooser'] = 0
-                result['saleId'] = result['specs'][0]['saleId']
-                result['saleName'] = result['specs'][0]['saleName']
-                result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
-                result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
-                result['spec'] = result['specs'][0]['spec']
-                result['chooser'] = result['specs'][0]['chooser']
+                if result['specs'] != '':
+                    result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
+                    result['saleName'] = 0
+                    result['productId'] = 0
+                    result['saleProduct'] = 0
+                    result['spec'] = 0
+                    result['chooser'] = 0
+                    result['saleId'] = result['specs'][0]['saleId']
+                    result['saleName'] = result['specs'][0]['saleName']
+                    result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+                    result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
+                    result['spec'] = result['specs'][0]['spec']
+                    result['chooser'] = result['specs'][0]['chooser']
+                else:
+                    result['saleId'] = ''
+                    result['saleProduct'] = ''
+                    result['productId'] = ''
+                    result['spec'] = ''
                 quest = ''
                 for re in result['questionReason']:
                     quest = quest + ';' + re
@@ -430,12 +433,12 @@ class QueryTwo(Settings, Settings_sso):
                     'logisticsName', 'dpeStyle', 'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName',
                     'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime',
                     'finishTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer',
-                    'autoVerify', 'cloneUser', 'isClone', 'warehouse', 'smsStatus', 'logisticsControl',
+                    'autoVerify', 'autoVerifyTip', 'cloneUser', 'isClone', 'warehouse', 'smsStatus', 'logisticsControl',
                     'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName', 'update_time']]
             df.columns = ['订单编号', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '拉黑率', '电话长度',
                           '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
                           '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
-                          '完成时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
+                          '完成时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
                           '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间']
         except Exception as e:
             print('------查询为空')
@@ -445,10 +448,10 @@ class QueryTwo(Settings, Settings_sso):
         print(max_count)
         if max_count > 500:
             in_count = math.ceil(max_count/500)
-            print()
-            dlist = [in_count]
+            dlist = []
             n = 1
             while n < in_count:  # 这里用到了一个while循环，穿越过来的
+                print('剩余查询次数' + str(in_count - n))
                 n = n + 1
                 data = self._timeQuery(timeStart, timeEnd, n)
                 dlist.append(data)
@@ -461,7 +464,7 @@ class QueryTwo(Settings, Settings_sso):
             print('查询已导出+++')
 
     def _timeQuery(self, timeStart, timeEnd, n):  # 进入订单检索界面
-        print('......正在查询信息中......')
+        # print('......正在查询信息中......')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'origin': 'https: // gimp.giikin.com',
@@ -482,24 +485,29 @@ class QueryTwo(Settings, Settings_sso):
                    'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
-        print('......已成功发送请求......')
+        # print('......已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersdict = []
         try:
             for result in req['data']['list']:
-                # print(result)
-                result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
-                result['saleName'] = 0
-                result['productId'] = 0
-                result['saleProduct'] = 0
-                result['spec'] = 0
-                result['chooser'] = 0
-                result['saleId'] = result['specs'][0]['saleId']
-                result['saleName'] = result['specs'][0]['saleName']
-                result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
-                result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
-                result['spec'] = result['specs'][0]['spec']
-                result['chooser'] = result['specs'][0]['chooser']
+                if result['specs'] != '':
+                    result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
+                    result['saleName'] = 0
+                    result['productId'] = 0
+                    result['saleProduct'] = 0
+                    result['spec'] = 0
+                    result['chooser'] = 0
+                    result['saleId'] = result['specs'][0]['saleId']
+                    result['saleName'] = result['specs'][0]['saleName']
+                    result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+                    result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
+                    result['spec'] = result['specs'][0]['spec']
+                    result['chooser'] = result['specs'][0]['chooser']
+                else:
+                    result['saleId'] = ''
+                    result['saleProduct'] = ''
+                    result['productId'] = ''
+                    result['spec'] = ''
                 quest = ''
                 for re in result['questionReason']:
                     quest = quest + ';' + re
@@ -524,12 +532,12 @@ class QueryTwo(Settings, Settings_sso):
                     'logisticsName', 'dpeStyle', 'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName',
                     'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime',
                     'finishTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer',
-                    'autoVerify', 'cloneUser', 'isClone', 'warehouse', 'smsStatus', 'logisticsControl',
+                    'autoVerify', 'autoVerifyTip', 'cloneUser', 'isClone', 'warehouse', 'smsStatus', 'logisticsControl',
                     'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName', 'update_time']]
             df.columns = ['订单编号', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '拉黑率', '电话长度',
                           '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
                           '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
-                          '完成时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
+                          '完成时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
                           '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间']
         except Exception as e:
             print('------查询为空')
@@ -557,8 +565,8 @@ if __name__ == '__main__':
         m.readFormHost(team, searchType)        # 导入；，更新--->>数据更新切换
     elif int(select) == 2:
         print("2-->>> 正在按时间查询+++")
-        timeStart = '2021-09-01'
-        timeEnd = '2021-10-31'
+        timeStart = '2021-11-18'
+        timeEnd = '2021-11-19'
         m.order_TimeQuery(timeStart, timeEnd)
 
     print('查询耗时：', datetime.datetime.now() - start)

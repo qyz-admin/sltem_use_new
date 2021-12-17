@@ -219,10 +219,9 @@ class QueryUpdate(Settings):
                             IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
                             IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
                             IF(是否改派='二次改派', '改派', 是否改派) 是否改派,
-                            物流方式,物流名称,null 运输方式,null 货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
-                            二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,null 价格区间,
-                            null 包裹重量,null 包裹体积,null 邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, null 签收表订单编号, null 签收表运单编号,
-                            null 原运单号, b.物流状态 签收表物流状态,null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, null 添加物流单号时间,省洲,数量
+                            物流方式,物流名称,null 运输方式,null 货物类型,是否低价,付款方式,产品id,产品名称,父级分类, 二级分类,三级分类, 下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB, null 价格区间, null 包裹重量, null 包裹体积,null 邮编, 
+                            IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, null 签收表订单编号, null 签收表运单编号, null 原运单号, b.物流状态 签收表物流状态, null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, null 添加物流单号时间,
+                            省洲,数量, a.下架时间, a.物流提货时间, a.完结状态, a.回款时间
                         FROM {0}_order_list a
                             LEFT JOIN gat_wl_data b ON a.`运单编号` = b.`运单编号`
                             LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
@@ -275,22 +274,22 @@ class QueryUpdate(Settings):
         sql = '''SELECT * FROM {0}_zqsb a WHERE a.日期 >= '{1}' AND a.日期 <= '{2}' ORDER BY a.`下单时间`;'''.format(team, month_last, month_yesterday)     # 港台查询函数导出
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入---' + match[team] + ' ---临时缓存…………')             # 备用临时缓存表
-        df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace')
+        df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
         for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-小虎队"|slgat_jp', '"神龙-低价"|slgat_low'):
             tem1 = tem.split('|')[0]
             tem2 = tem.split('|')[1]
             sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
+            # df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
             df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]),
                         sheet_name=match[tem2], index=False)
             print(tem2 + '----已写入excel')
-            print('正在打印' + match[tem2] + ' 物流时效…………')
+            # print('正在打印' + match[tem2] + ' 物流时效…………')
             # self.m.data_wl(tem2)
         try:
             print('正在转存中' + month_yesterday + '最近两个月的订单......')
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 订单来源, 订单编号, 出货时间, IF(`状态时间` = '',NULL,状态时间) as 状态时间, 上线时间, 最终状态,是否改派,物流方式,
-                            产品id,父级分类,二级分类,三级分类,下单时间, 审核时间,仓储扫描时间,完结状态时间,价格RMB, curdate() 记录时间
+                            产品id,父级分类,二级分类,三级分类,下单时间, 审核时间,仓储扫描时间,下架时间, 物流提货时间, 完结状态, 完结状态时间,回款时间, 价格RMB, curdate() 记录时间
                     FROM d1_{0} a WHERE a.`运单编号` is not null ;'''.format(team)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             print('正在添加缓存中......')
@@ -7488,10 +7487,12 @@ class QueryUpdate(Settings):
                                         GROUP BY cx.`币种`,cx.`年月`, cx.`是否改派`, cx.`省洲`
                                         ORDER BY cx.`币种`,cx.`年月`, cx.`是否改派` DESC,总订单 DESC
                                 ) s1
-                                GROUP BY s1.`币种`, s1.`年月`, s1.`是否改派`, s1.`省洲`
+                            --    GROUP BY s1.`币种`, s1.`年月`, s1.`是否改派`, s1.`省洲`
+                                GROUP BY s1.`币种`, s1.`年月`, s1.`省洲`
                                 with rollup
                             ) s2
-                            GROUP BY s2.`币种`, s2.`年月`, s2.`是否改派`, s2.`省洲`
+                         --   GROUP BY s2.`币种`, s2.`年月`, s2.`是否改派`, s2.`省洲`
+                            GROUP BY s2.`币种`, s2.`年月`, s2.`省洲`
                             HAVING s2.年月 <> '合计'
                 ORDER BY FIELD(s2.`币种`,'台湾','香港','合计'),
                         s2.`年月`,
@@ -8695,8 +8696,8 @@ if __name__ == '__main__':
         month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
     else:
-        month_last = '2021-10-01'
-        month_old = '2021-10-01'
+        month_last = '2021-11-01'
+        month_old = '2021-11-30'
         month_yesterday = '2021-11-30'
 
     last_time = '2021-01-01'
@@ -8708,7 +8709,7 @@ if __name__ == '__main__':
     m.EportOrderBook(team, month_last, month_yesterday)       #  导出-总的-签收表
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id
-    # m.address_repot(team)                       #  获取-地区签收率-报表
+    # m.address_repot(team, month_last, month_yesterday)                       #  获取-地区签收率-报表
 
      # 停用备用使用
     # m.jushou_Upload('202103')                           #  拒收核实-查询每日新增拒收停用

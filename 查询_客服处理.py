@@ -1230,17 +1230,18 @@ class QueryUpdate(Settings):
                                 s.拒收 DESC;'''
         df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
         listT.append(df3)
-        print('正在查询需核实拒收_每日新增订单…………')
-        sql4 = '''SELECT * FROM 需核实拒收_每日新增订单;'''
-        df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
-        listT.append(df4)
+        # print('正在查询需核实拒收_每日新增订单…………')
+        # sql4 = '''SELECT * FROM 需核实拒收_每日新增订单;'''
+        # df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
+        # listT.append(df4)
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%m.%d')
         file_path = 'G:\\输出文件\\{} 需核实拒收-每日数据源.xlsx'.format(today)
         if os.path.exists(file_path):  # 判断是否有需要的表格
             print("正在清除重复文件......")
             os.remove(file_path)
-        sheet_name = ['查询', '两月拒收', '两月拒收产品id', '每日新增订单']
+        # sheet_name = ['查询', '两月拒收', '两月拒收产品id', '每日新增订单']
+        sheet_name = ['查询', '两月拒收', '两月拒收产品id']
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
@@ -1266,7 +1267,7 @@ if __name__ == '__main__':
         3、 获取工单和退换货的客服处理记录；
         4、 拒收核实-查询需要的产品id；  获取前 记得上传发过的核实表和返回的核实表；以及客诉件和问题件表
     '''
-    select = 4
+    select = 1
     if int(select) == 1:
         m.readFormHost('202110')
 
@@ -1292,3 +1293,23 @@ if __name__ == '__main__':
 
 
     print('输出耗时：', datetime.datetime.now() - start)
+
+
+
+    print(999999999999999)
+    begin = datetime.date(2021, 11, 1)       # 1、手动设置时间；若无法查询，切换代理和直连的网络
+    print(begin)
+    end = datetime.date(2021, 12, 14)
+    print(end)
+    print(datetime.datetime.now())
+    for i in range((end - begin).days):  # 按天循环获取订单状态
+    # for i in range((end - begin).days / 5):  # 按天循环获取订单状态
+        print(i)
+        last_month = begin + datetime.timedelta(days=5 * i)
+        now_month = begin + datetime.timedelta(days=(i+1) * 5)
+        if end >= now_month:
+            print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
+        else:
+            now_month = last_month + datetime.timedelta(days=(end - last_month).days)
+            print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
+            break

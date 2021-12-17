@@ -366,6 +366,7 @@ class QueryUpdate(Settings):
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df = df[['年月', '团队',  '日期', '币种', '订单编号', '数量', '电话号码', '运单编号', '是否改派', '物流方式', '商品id', '产品id', '产品名称',
                  '价格', '仓储扫描时间', '完结状态', '物流花费', '包裹体积', '规格中文', '产品量', '包裹重量',  'MIN(包裹重量)', '差量']]
+        df = df.loc[df["币种"] == "台湾"]
         print('正在写入excel…………')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         df.to_excel('G:\\输出文件\\{} 运费总直发-查询{}.xlsx'.format(output, rq),

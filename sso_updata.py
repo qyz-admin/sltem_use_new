@@ -12,7 +12,7 @@ from dateutil.relativedelta import relativedelta
 from threading import Thread #  使用 threading 模块创建线程
 import pandas.io.formats.excel
 import win32api,win32con
-
+import math
 from sqlalchemy import create_engine
 from settings import Settings
 from emailControl import EmailControl
@@ -1166,17 +1166,17 @@ class QueryTwo(Settings):
         print('单日查询耗时：', datetime.datetime.now() - start)
 
 
-    # 更新团队订单明细（新后台的获取）
+    # 更新团队订单明细（新后台的获取  方法一的更新）
     def orderInfo(self, searchType, team, team2, last_month):  # 进入订单检索界面，
         # print('正在获取需要订单信息......')
         start = datetime.datetime.now()
         sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` = '{1}';'''.format(team, last_month)
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
-        print(ordersDict['订单编号'][0])
         if ordersDict.empty:
             print('无需要更新订单信息！！！')
             # sys.exit()
             return
+        print(ordersDict['订单编号'][0])
         orderId = list(ordersDict['订单编号'])
         # print('获取耗时：', datetime.datetime.now() - start)
         max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
@@ -1187,8 +1187,263 @@ class QueryTwo(Settings):
             n = n + 500
             self.orderInfoQuery(ord, searchType, team, team2, last_month)
         print('单日查询耗时：', datetime.datetime.now() - start)
-
     def orderInfoQuery(self, ord, searchType, team, team2, last_month):  # 进入订单检索界面
+        print('+++正在查询订单信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'page': 1, 'pageSize': 500,
+                'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None,
+                'type': None, 'collId': None, 'isClone': None,
+                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '',
+                'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
+                'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
+                'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None,
+                'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
+                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None}
+        if searchType == '订单号':
+            data.update({'orderPrefix': ord,
+                         'shippingNumber': None})
+        elif searchType == '运单号':
+            data.update({'order_number': None,
+                         'shippingNumber': ord})
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print(req.text)
+        # print('+++已成功发送请求......')
+        # print('正在处理json数据转化为dataframe…………')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        ordersDict = []
+        count = 0
+        try:
+            for result in req['data']['list']:
+                # print(result)
+                # print(result['orderNumber'])
+                # 添加新的字典键-值对，为下面的重新赋值用
+                if result['specs'] != '':
+                    result['saleId'] = 0
+                    result['saleProduct'] = 0
+                    result['productId'] = 0
+                    result['spec'] = 0
+                    result['saleId'] = result['specs'][0]['saleId']
+                    result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
+                    result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+                    result['spec'] = result['specs'][0]['spec']
+                else:
+                    result['saleId'] = ''
+                    result['saleProduct'] = ''
+                    result['productId'] = ''
+                    result['spec'] = ''
+                quest = ''
+                for re in result['questionReason']:
+                    quest = quest + ';' + re
+                result['questionReason'] = quest
+                delr = ''
+                for re in result['delReason']:
+                    delr = delr + ';' + re
+                result['delReason'] = delr
+                auto = ''
+                for re in result['autoVerify']:
+                    auto = auto + ';' + re
+                result['autoVerify'] = auto
+                ordersDict.append(result)
+            data = pd.json_normalize(ordersDict)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+            count = count + 1
+            time.sleep(10)
+            python = sys.executable
+            os.execl(python, python, 't2.py', * sys.argv)
+            if count == 3:
+                print('--->>>重启失败： 需手动重新启动！！！')
+                pass
+        # print('正在写入缓存中......')
+        try:
+            df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId', 'spec', 'quantity',
+                       'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime', 'finishTime', 'stateTime', 'logisticsUpdateTime',
+                       'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'questionReason', 'service']]
+            print(df)
+            # print('正在更新临时表中......')
+            df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
+            sql = '''SELECT DATE(h.addTime) 日期,
+            				    IF(h.`currency` = '日币', '日本', IF(h.`currency` = '泰铢', '泰国', IF(h.`currency` = '港币', '香港', IF(h.`currency` = '台币', '台湾', IF(h.`currency` = '韩元', '韩国', h.`currency`))))) 币种,
+            				    h.orderNumber 订单编号,
+            				    h.quantity 数量,
+            				    h.`shipInfo.shipPhone` 电话号码,
+            				    h.wayBillNumber 运单编号,
+            				    h.orderStatus 系统订单状态,
+            				    IF(h.`logisticsStatus` in ('发货中'), null, h.`logisticsStatus`) 系统物流状态,
+            				    IF(h.`reassignmentTypeName` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
+            				    TRIM(h.logisticsName) 物流方式,
+            				    dim_trans_way.simple_name 物流名称,
+            				    IF(h.`dpeStyle` = 'P 普通货', 'P', IF(h.`dpeStyle` = 'T 特殊货', 'T', h.`dpeStyle`)) 货物类型,
+            				    h.`saleId` 商品id,
+            				    h.`productId` 产品id,
+            		            h.`saleProduct` 产品名称,
+            				    h.verifyTime 审核时间,
+            				    h.transferTime 转采购时间,
+            				    h.onlineTime 上线时间,
+            				    h.deliveryTime 仓储扫描时间,
+            				    h.finishTime 完结状态时间,
+            				    h.logisticsUpdateTime 物流更新时间,
+            				    h.stateTime 状态时间,
+            				    h.`weight` 包裹重量,
+                                h.`shipInfo.shipState` 省洲,
+            				    h.`spec` 规格中文,
+            				    h.`autoVerify` 审单类型,
+            				    h.`delReason` 删除原因,
+            				    h.`questionReason` 问题原因,
+            				    h.`service` 下单人,
+            				    h.`cloneUser` 克隆人
+                            FROM d1_cpy h
+                                LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
+                                LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
+                                LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = TRIM(h.logisticsName);'''.format(team)
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            df.to_sql('d1_cpy_cp', con=self.engine1, index=False, if_exists='replace')
+            print('正在更新表总表中......')
+            sql = '''update {0} a, d1_cpy_cp b
+                            set a.`币种`= b.`币种`,
+                                a.`数量`= b.`数量`,
+                                a.`电话号码`= b.`电话号码` ,
+                                a.`运单编号`= IF(b.`运单编号` = '', NULL, b.`运单编号`),
+                                a.`系统订单状态`= IF(b.`系统订单状态` = '', NULL, b.`系统订单状态`),
+                                a.`系统物流状态`= IF(b.`系统物流状态` = '', NULL, b.`系统物流状态`),
+                                a.`是否改派`= b.`是否改派`,
+                                a.`物流方式`= IF(b.`物流方式` = '',NULL, b.`物流方式`),
+                                a.`物流名称`= IF(b.`物流名称` = '', NULL, b.`物流名称`),
+                                a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),
+                                a.`商品id`= IF(b.`商品id` = '', NULL, b.`商品id`),
+                                a.`产品id`= IF(b.`产品id` = '', NULL, b.`产品id`),
+                                a.`产品名称`= IF(b.`产品名称` = '', NULL, b.`产品名称`),
+                                a.`审核时间`= IF(b.`审核时间` = '', NULL, b.`审核时间`),
+                                a.`上线时间`= IF(b.`上线时间` = '' or b.`上线时间` = '0000-00-00 00:00:00' , NULL, b.`上线时间`),
+                                a.`仓储扫描时间`= IF(b.`仓储扫描时间` = '', NULL, b.`仓储扫描时间`),
+                                a.`完结状态时间`= IF(b.`状态时间` = '', IF(b.`物流更新时间` = '', IF(b.`完结状态时间` = '', NULL, b.`完结状态时间`), b.`物流更新时间`), b.`状态时间`),
+                                a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`),
+                                a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`),
+                                a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
+                                a.`审单类型`= IF(b.`审单类型` = '', NULL, IF(b.`审单类型` like '%自动审单%','是','否')),
+                                a.`删除原因`= IF(b.`删除原因` = '', NULL,  b.`删除原因`),
+                                a.`问题原因`= IF(b.`问题原因` = '', NULL,  b.`问题原因`),
+                                a.`下单人`= IF(b.`下单人` = '', NULL,  b.`下单人`),
+                                a.`克隆人`= IF(b.`克隆人` = '', NULL,  b.`克隆人`)
+                    where a.`订单编号`=b.`订单编号`;'''.format(team2)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        except Exception as e:
+            print('更新失败：', str(Exception) + str(e))
+        print('*************************本批次更新成功***********************************')
+
+
+    # 更新团队订单明细（新后台的获取  方法二的更新）
+    def orderInfo_th(self, searchType, team, team2, last_month, now_month):  # 进入订单检索界面，
+        # print('正在获取需要订单信息......')
+        start = datetime.datetime.now()
+        sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` >= '{1}' and  sl.`日期` <'{2}';'''.format(team, last_month, now_month)
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        if ordersDict.empty:
+            print('无需要更新订单信息！！！')
+            # sys.exit()
+            return
+        print(ordersDict)
+        print(ordersDict['订单编号'][0])
+        orderId = list(ordersDict['订单编号'])
+        # print('获取耗时：', datetime.datetime.now() - start)
+        max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
+        if max_count > 500:
+            in_count = math.ceil(max_count / 500)
+            ord = ', '.join(orderId[0:500])
+            df = self.orderInfoQuery_th(ord, searchType)
+            dlist = []
+            n = 0
+            t = 1
+            while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
+                print('剩余查询次数 : ' + str(in_count - t))
+                n = n + 500
+                t = t + 1
+                ord = ','.join(orderId[n:n + 500])
+                data = self.orderInfoQuery_th(ord, searchType)
+                dlist.append(data)
+            print('正在写入......')
+            dp = df.append(dlist, ignore_index=True)
+        else:
+            ord = ','.join(orderId[0:max_count])
+            dp = self.orderInfoQuery_th(ord, searchType)
+        print('正在更新临时表中......')
+        dp.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
+        sql = '''SELECT DATE(h.addTime) 日期,
+        				    IF(h.`currency` = '日币', '日本', IF(h.`currency` = '泰铢', '泰国', IF(h.`currency` = '港币', '香港', IF(h.`currency` = '台币', '台湾', IF(h.`currency` = '韩元', '韩国', h.`currency`))))) 币种,
+        				    h.orderNumber 订单编号,
+        				    h.quantity 数量,
+        				    h.`shipInfo.shipPhone` 电话号码,
+        				    h.wayBillNumber 运单编号,
+        				    h.orderStatus 系统订单状态,
+        				    IF(h.`logisticsStatus` in ('发货中'), null, h.`logisticsStatus`) 系统物流状态,
+        				    IF(h.`reassignmentTypeName` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
+        				    TRIM(h.logisticsName) 物流方式,
+        				    dim_trans_way.simple_name 物流名称,
+        				    IF(h.`dpeStyle` = 'P 普通货', 'P', IF(h.`dpeStyle` = 'T 特殊货', 'T', h.`dpeStyle`)) 货物类型,
+        				    h.`saleId` 商品id,
+        				    h.`productId` 产品id,
+        		            h.`saleProduct` 产品名称,
+        				    h.verifyTime 审核时间,
+        				    h.transferTime 转采购时间,
+        				    h.onlineTime 上线时间,
+        				    h.deliveryTime 仓储扫描时间,
+        				    h.finishTime 完结状态时间,
+        				    h.`weight` 包裹重量,
+                            h.`shipInfo.shipState` 省洲,
+        				    h.`spec` 规格中文,
+        				    h.`autoVerify` 审单类型,
+        				    h.`delReason` 删除原因,
+        				    h.`questionReason` 问题原因,
+        				    h.`service` 下单人,
+        				    h.`cloneUser` 克隆人
+                        FROM d1_cpy h
+                            LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
+                            LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
+                            LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = TRIM(h.logisticsName);'''.format(team)
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        df.to_sql('d1_cpy_cp', con=self.engine1, index=False, if_exists='replace')
+        print('正在更新表总表中......')
+        sql = '''update {0} a, d1_cpy_cp b
+                        set a.`币种`= b.`币种`,
+                            a.`数量`= b.`数量`,
+                            a.`电话号码`= b.`电话号码` ,
+                            a.`运单编号`= IF(b.`运单编号` = '', NULL, b.`运单编号`),
+                            a.`系统订单状态`= IF(b.`系统订单状态` = '', NULL, b.`系统订单状态`),
+                            a.`系统物流状态`= IF(b.`系统物流状态` = '', NULL, b.`系统物流状态`),
+                            a.`是否改派`= b.`是否改派`,
+                            a.`物流方式`= IF(b.`物流方式` = '',NULL, b.`物流方式`),
+                            a.`物流名称`= IF(b.`物流名称` = '', NULL, b.`物流名称`),
+                            a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),
+                            a.`商品id`= IF(b.`商品id` = '', NULL, b.`商品id`),
+                            a.`产品id`= IF(b.`产品id` = '', NULL, b.`产品id`),
+                            a.`产品名称`= IF(b.`产品名称` = '', NULL, b.`产品名称`),
+                            a.`审核时间`= IF(b.`审核时间` = '', NULL, b.`审核时间`),
+                            a.`上线时间`= IF(b.`上线时间` = '' or b.`上线时间` = '0000-00-00 00:00:00' , NULL, b.`上线时间`),
+                            a.`仓储扫描时间`= IF(b.`仓储扫描时间` = '', NULL, b.`仓储扫描时间`),
+                            a.`完结状态时间`= IF(b.`完结状态时间` = '', NULL, b.`完结状态时间`),
+                            a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`),
+                            a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`),
+                            a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
+                            a.`审单类型`= IF(b.`审单类型` = '', NULL, IF(b.`审单类型` like '%自动审单%','是','否')),
+                            a.`删除原因`= IF(b.`删除原因` = '', NULL,  b.`删除原因`),
+                            a.`问题原因`= IF(b.`问题原因` = '', NULL,  b.`问题原因`),
+                            a.`下单人`= IF(b.`下单人` = '', NULL,  b.`下单人`),
+                            a.`克隆人`= IF(b.`克隆人` = '', NULL,  b.`克隆人`)
+                where a.`订单编号`=b.`订单编号`;'''.format(team2)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=20000)
+        print('单日查询耗时：', datetime.datetime.now() - start)
+        print('*************************本批次查询成功***********************************')
+
+    def orderInfoQuery_th(self, ord, searchType):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -1253,90 +1508,22 @@ class QueryTwo(Settings):
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
             count = count + 1
-            time.sleep(30)
-            # self.orderInfoQuery(ord, searchType, team, team2)
-            print(searchType)
-            print(team)
-            print(team2)
-            print(last_month)
-            self.orderInfo(searchType, team, team2, last_month)
+            time.sleep(10)
+            python = sys.executable
+            os.execl(python, python, 't2.py', * sys.argv)
             if count == 3:
                 print('--->>>重启失败： 需手动重新启动！！！')
                 pass
-        print('正在写入缓存中......')
+        # print('正在写入缓存中......')
         try:
             df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId', 'spec', 'quantity',
                        'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime', 'finishTime', 'cloneUser',
                        'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'questionReason', 'service']]
             print(df)
-            # print('正在更新临时表中......')
-            df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
-            sql = '''SELECT DATE(h.addTime) 日期,
-            				    IF(h.`currency` = '日币', '日本', IF(h.`currency` = '泰铢', '泰国', IF(h.`currency` = '港币', '香港', IF(h.`currency` = '台币', '台湾', IF(h.`currency` = '韩元', '韩国', h.`currency`))))) 币种,
-            				    h.orderNumber 订单编号,
-            				    h.quantity 数量,
-            				    h.`shipInfo.shipPhone` 电话号码,
-            				    h.wayBillNumber 运单编号,
-            				    h.orderStatus 系统订单状态,
-            				    IF(h.`logisticsStatus` in ('发货中'), null, h.`logisticsStatus`) 系统物流状态,
-            				    IF(h.`reassignmentTypeName` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
-            				    TRIM(h.logisticsName) 物流方式,
-            				    dim_trans_way.simple_name 物流名称,
-            				    IF(h.`dpeStyle` = 'P 普通货', 'P', IF(h.`dpeStyle` = 'T 特殊货', 'T', h.`dpeStyle`)) 货物类型,
-            				    h.`saleId` 商品id,
-            				    h.`productId` 产品id,
-            		            h.`saleProduct` 产品名称,
-            				    h.verifyTime 审核时间,
-            				    h.transferTime 转采购时间,
-            				    h.onlineTime 上线时间,
-            				    h.deliveryTime 仓储扫描时间,
-            				    h.finishTime 完结状态时间,
-            				    h.`weight` 包裹重量,
-                                h.`shipInfo.shipState` 省洲,
-            				    h.`spec` 规格中文,
-            				    h.`autoVerify` 审单类型,
-            				    h.`delReason` 删除原因,
-            				    h.`questionReason` 问题原因,
-            				    h.`service` 下单人,
-            				    h.`cloneUser` 克隆人
-                            FROM d1_cpy h
-                                LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
-                                LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
-                                LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = TRIM(h.logisticsName);'''.format(team)
-            df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_sql('d1_cpy_cp', con=self.engine1, index=False, if_exists='replace')
-            print('正在更新表总表中......')
-            sql = '''update {0} a, d1_cpy_cp b
-                            set a.`币种`= b.`币种`,
-                                a.`数量`= b.`数量`,
-                                a.`电话号码`= b.`电话号码` ,
-                                a.`运单编号`= IF(b.`运单编号` = '', NULL, b.`运单编号`),
-                                a.`系统订单状态`= IF(b.`系统订单状态` = '', NULL, b.`系统订单状态`),
-                                a.`系统物流状态`= IF(b.`系统物流状态` = '', NULL, b.`系统物流状态`),
-                                a.`是否改派`= b.`是否改派`,
-                                a.`物流方式`= IF(b.`物流方式` = '',NULL, b.`物流方式`),
-                                a.`物流名称`= IF(b.`物流名称` = '', NULL, b.`物流名称`),
-                                a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),
-                                a.`商品id`= IF(b.`商品id` = '', NULL, b.`商品id`),
-                                a.`产品id`= IF(b.`产品id` = '', NULL, b.`产品id`),
-                                a.`产品名称`= IF(b.`产品名称` = '', NULL, b.`产品名称`),
-                                a.`审核时间`= IF(b.`审核时间` = '', NULL, b.`审核时间`),
-                                a.`上线时间`= IF(b.`上线时间` = '' or b.`上线时间` = '0000-00-00 00:00:00' , NULL, b.`上线时间`),
-                                a.`仓储扫描时间`= IF(b.`仓储扫描时间` = '', NULL, b.`仓储扫描时间`),
-                                a.`完结状态时间`= IF(b.`完结状态时间` = '', NULL, b.`完结状态时间`),
-                                a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`),
-                                a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`),
-                                a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
-                                a.`审单类型`= IF(b.`审单类型` = '', NULL, IF(b.`审单类型` like '%自动审单%','是','否')),
-                                a.`删除原因`= IF(b.`删除原因` = '', NULL,  b.`删除原因`),
-                                a.`问题原因`= IF(b.`问题原因` = '', NULL,  b.`问题原因`),
-                                a.`下单人`= IF(b.`下单人` = '', NULL,  b.`下单人`),
-                                a.`克隆人`= IF(b.`克隆人` = '', NULL,  b.`克隆人`)
-                    where a.`订单编号`=b.`订单编号`;'''.format(team2)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:
-            print('更新失败：', str(Exception) + str(e))
-        print('*************************本批次更新成功***********************************')
+            print('查询失败：', str(Exception) + str(e))
+        print('*************************单次查询成功***********************************')
+        return df
 
 if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510', 1343)
@@ -1361,9 +1548,9 @@ if __name__ == '__main__':
     #   台湾token, 日本token, 新马token：  f5dc2a3134c17a2e970977232e1aae9b
     #   泰国token： 83583b29fc24ec0529082ff7928246a6
 
-    begin = datetime.date(2021, 10, 15)       # 1、手动设置时间；若无法查询，切换代理和直连的网络
+    begin = datetime.date(2021, 10, 1)       # 1、手动设置时间；若无法查询，切换代理和直连的网络
     print(begin)
-    end = datetime.date(2021, 10, 16)
+    end = datetime.date(2021, 10, 31)
     print(end)
     # yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 2、自动设置时间
     # mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
@@ -1380,12 +1567,27 @@ if __name__ == '__main__':
     team2 = 'gat_order_list'    # 更新单号表
     searchType = '订单号'  # 运单号，订单号   查询切换
     print('++++++正在获取 ' + match1[team] + ' 信息++++++')
+    # for i in range((end - begin).days):  # 按天循环获取订单状态
+    #     day = begin + datetime.timedelta(days=i)
+    #     yesterday = str(day) + ' 23:59:59'
+    #     last_month = str(day)
+    #     now_month = str(day)
+    #     print('正在更新 ' + match1[team] + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
+    #     m.orderInfo(searchType, team, team2, last_month)
+
+
     for i in range((end - begin).days):  # 按天循环获取订单状态
-        day = begin + datetime.timedelta(days=i)
-        yesterday = str(day) + ' 23:59:59'
-        last_month = str(day)
-        print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
-        m.orderInfo(searchType, team, team2, last_month)
+        print(i)
+        last_month = begin + datetime.timedelta(days=5 * i)
+        now_month = begin + datetime.timedelta(days=(i+1) * 5)
+        if end >= now_month:
+            print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
+            m.orderInfo_th(searchType, team, team2, last_month, now_month)
+        else:
+            now_month = last_month + datetime.timedelta(days=(end - last_month).days)
+            print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
+            m.orderInfo_th(searchType, team, team2, last_month, now_month)
+            break
 
     # m.orderInfoQuery('GP210619103223PGNXK7', '订单号', 'gat_order_list', 'gat_order_list')  # 进入订单检索界面
     # print('更新耗时：', datetime.datetime.now() - start)

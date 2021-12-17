@@ -35,7 +35,7 @@ match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台
 说明：  日本 需整理的表：1、吉客印神龙直发签收表=密码：‘JKTSL’>(明细再copy保存；改派明细不需要);2、直发签收表>(明细再copy保存；3、状态更新需要copy保存);
 '''
 # 初始化时间设置
-if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat', 'sl_rb'):
+if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'ga9t', 'sl_rb'):
     # 更新时间
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
@@ -53,13 +53,13 @@ if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat', 'sl_rb'):
     print(month_begin)
 else:
     # 更新时间
-    begin = datetime.date(2021, 11, 2)
+    begin = datetime.date(2021, 11, 1)
     print(begin)
-    end = datetime.date(2021, 11, 3)
+    end = datetime.date(2021, 12, 7)
     print(end)
     # 导出时间
     month_last = '2021-11-01'
-    month_yesterday = '2021-12-16'
+    month_yesterday = '2021-12-07'
     month_begin = '2021-10-01'
 
 # 库的引用
@@ -105,7 +105,7 @@ for dir in dirs:
 print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
-m.creatMyOrderSl(team)  # 最近五天的全部订单信息
+# m.creatMyOrderSl(team)  # 最近五天的全部订单信息
 
 print('------------更新部分：---------------------')
 if team in ('ga99t', 'slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'sl_rb'):
@@ -122,21 +122,29 @@ elif team in ('gat'):
     print('++++++正在获取 ' + match1[team] + ' 信息++++++')
     tem = '{0}_order_list'.format(team)     # 获取单号表
     tem2 = '{0}_order_list'.format(team)    # 更新单号表
-    # print('正在更新 昨日 的最新订单信息......')
-    # last_month = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-    # sso.orderInfo('订单号', tem, tem2, last_month)
+    searchType = '订单号'
+    print('正在更新 >>>昨日<<< 的最新订单信息......')
+    last_month = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+    now_month = (datetime.datetime.now()).strftime('%Y-%m-%d')
+    sso.orderInfo_th(searchType, tem, tem2, last_month, now_month)
+
     for i in range((end - begin).days):  # 按天循环获取订单状态
-        day = begin + datetime.timedelta(days=i)
-        yesterday = str(day) + ' 23:59:59'
-        last_month = str(day)
-        print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
-        searchType = '订单号'      # 运单号，订单号   查询切换
-        sso.orderInfo(searchType, tem, tem2, last_month)
+        print(i)
+        last_month = begin + datetime.timedelta(days=5 * i)
+        now_month = begin + datetime.timedelta(days=(i+1) * 5)
+        if end >= now_month:
+            print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
+            sso.orderInfo_th(searchType, tem, tem2, last_month, now_month)
+        else:
+            now_month = last_month + datetime.timedelta(days=(end - last_month).days)
+            print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
+            sso.orderInfo_th(searchType, tem, tem2, last_month, now_month)
+            break
     print('更新耗时：', datetime.datetime.now() - start)
 
     print('------------导出部分：---------------------')
     # m.connectOrder(team, month_last, month_yesterday, month_begin)  # 最近两个月的订单信息导出
-    qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
+    # qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
     print('输出耗时：', datetime.datetime.now() - start)
 
 
