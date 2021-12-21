@@ -1267,7 +1267,7 @@ if __name__ == '__main__':
         3、 获取工单和退换货的客服处理记录；
         4、 拒收核实-查询需要的产品id；  获取前 记得上传发过的核实表和返回的核实表；以及客诉件和问题件表
     '''
-    select = 1
+    select = 4
     if int(select) == 1:
         m.readFormHost('202110')
 
@@ -1296,20 +1296,20 @@ if __name__ == '__main__':
 
 
 
-    print(999999999999999)
-    begin = datetime.date(2021, 11, 1)       # 1、手动设置时间；若无法查询，切换代理和直连的网络
-    print(begin)
-    end = datetime.date(2021, 12, 14)
-    print(end)
-    print(datetime.datetime.now())
-    for i in range((end - begin).days):  # 按天循环获取订单状态
-    # for i in range((end - begin).days / 5):  # 按天循环获取订单状态
-        print(i)
-        last_month = begin + datetime.timedelta(days=5 * i)
-        now_month = begin + datetime.timedelta(days=(i+1) * 5)
-        if end >= now_month:
-            print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
-        else:
-            now_month = last_month + datetime.timedelta(days=(end - last_month).days)
-            print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
-            break
+    # print(999999999999999)
+    # begin = datetime.date(2021, 11, 1)       # 1、手动设置时间；若无法查询，切换代理和直连的网络
+    # print(begin)
+    # end = datetime.date(2021, 12, 14)
+    # print(end)
+    # print(datetime.datetime.now())
+    # for i in range((end - begin).days):  # 按天循环获取订单状态
+    # # for i in range((end - begin).days / 5):  # 按天循环获取订单状态
+    #     print(i)
+    #     last_month = begin + datetime.timedelta(days=5 * i)
+    #     now_month = begin + datetime.timedelta(days=(i+1) * 5)
+    #     if end >= now_month:
+    #         print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
+    #     else:
+    #         now_month = last_month + datetime.timedelta(days=(end - last_month).days)
+    #         print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
+    #         break

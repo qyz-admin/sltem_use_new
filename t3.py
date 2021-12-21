@@ -144,7 +144,7 @@ elif team in ('gat'):
 
     print('------------导出部分：---------------------')
     # m.connectOrder(team, month_last, month_yesterday, month_begin)  # 最近两个月的订单信息导出
-    # qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
+    qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
     print('输出耗时：', datetime.datetime.now() - start)
 
 

@@ -15,7 +15,7 @@ from queue import Queue
 from dateutil.relativedelta import relativedelta
 from threading import Thread #  使用 threading 模块创建线程
 import pandas.io.formats.excel
-
+from settings_sso import Settings_sso
 from sqlalchemy import create_engine
 from settings import Settings
 from emailControl import EmailControl
@@ -24,14 +24,15 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  
 
 
 # -*- coding:utf-8 -*-
-class QueryTwo(Settings):
+class QueryTwo(Settings, Settings_sso):
     def __init__(self, userMobile, password):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
         self.userMobile = userMobile
         self.password = password
-        self._online()
+        # self._online()
+        self.sso_online_Two()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
