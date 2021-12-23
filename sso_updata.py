@@ -1265,9 +1265,10 @@ class QueryTwo(Settings):
                 pass
         # print('正在写入缓存中......')
         try:
-            df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId', 'spec', 'quantity',
-                       'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime', 'finishTime', 'stateTime', 'logisticsUpdateTime',
-                       'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'questionReason', 'service']]
+            df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId',
+                       'spec', 'quantity', 'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime',
+                       'finishTime', 'stateTime', 'logisticsUpdateTime', 'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType',
+                       'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service']]
             print(df)
             # print('正在更新临时表中......')
             df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
@@ -1298,7 +1299,9 @@ class QueryTwo(Settings):
             				    h.`spec` 规格中文,
             				    h.`autoVerify` 审单类型,
             				    h.`delReason` 删除原因,
+            				    h.`delTime` 删除时间,
             				    h.`questionReason` 问题原因,
+            				    h.`questionTime` 问题时间,
             				    h.`service` 下单人,
             				    h.`cloneUser` 克隆人
                             FROM d1_cpy h
@@ -1319,9 +1322,9 @@ class QueryTwo(Settings):
                                 a.`物流方式`= IF(b.`物流方式` = '',NULL, b.`物流方式`),
                                 a.`物流名称`= IF(b.`物流名称` = '', NULL, b.`物流名称`),
                                 a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),
-                                a.`商品id`= IF(b.`商品id` = '', NULL, b.`商品id`),
-                                a.`产品id`= IF(b.`产品id` = '', NULL, b.`产品id`),
-                                a.`产品名称`= IF(b.`产品名称` = '', NULL, b.`产品名称`),
+                                a.`商品id`= IF(b.`商品id` = '', a.`商品id`, b.`商品id`),
+                                a.`产品id`= IF(b.`产品id` = '', a.`产品id`, b.`产品id`),
+                                a.`产品名称`= IF(b.`产品名称` = '', a.`产品名称`, b.`产品名称`),
                                 a.`审核时间`= IF(b.`审核时间` = '', NULL, b.`审核时间`),
                                 a.`上线时间`= IF(b.`上线时间` = '' or b.`上线时间` = '0000-00-00 00:00:00' , NULL, b.`上线时间`),
                                 a.`仓储扫描时间`= IF(b.`仓储扫描时间` = '', NULL, b.`仓储扫描时间`),
@@ -1331,7 +1334,9 @@ class QueryTwo(Settings):
                                 a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
                                 a.`审单类型`= IF(b.`审单类型` = '', NULL, IF(b.`审单类型` like '%自动审单%','是','否')),
                                 a.`删除原因`= IF(b.`删除原因` = '', NULL,  b.`删除原因`),
+                                a.`删除时间`= IF(b.`删除时间` = '', NULL,  b.`删除时间`),
                                 a.`问题原因`= IF(b.`问题原因` = '', NULL,  b.`问题原因`),
+                                a.`问题时间`= IF(b.`问题时间` = '', NULL,  b.`问题时间`),
                                 a.`下单人`= IF(b.`下单人` = '', NULL,  b.`下单人`),
                                 a.`克隆人`= IF(b.`克隆人` = '', NULL,  b.`克隆人`)
                     where a.`订单编号`=b.`订单编号`;'''.format(team2)
@@ -1402,7 +1407,9 @@ class QueryTwo(Settings):
         				    h.`spec` 规格中文,
         				    h.`autoVerify` 审单类型,
         				    h.`delReason` 删除原因,
+        				    h.`delTime` 删除时间,
         				    h.`questionReason` 问题原因,
+        				    h.`questionTime` 问题时间,
         				    h.`service` 下单人,
         				    h.`cloneUser` 克隆人
                         FROM d1_cpy h
@@ -1423,11 +1430,11 @@ class QueryTwo(Settings):
                             a.`物流方式`= IF(b.`物流方式` = '',NULL, b.`物流方式`),
                             a.`物流名称`= IF(b.`物流名称` = '', NULL, b.`物流名称`),
                             a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),
-                            a.`商品id`= IF(b.`商品id` = '', NULL, b.`商品id`),
-                            a.`产品id`= IF(b.`产品id` = '', NULL, b.`产品id`),
-                            a.`产品名称`= IF(b.`产品名称` = '', NULL, b.`产品名称`),
+                            a.`商品id`= IF(b.`商品id` = '', a.`商品id`, b.`商品id`),
+                            a.`产品id`= IF(b.`产品id` = '', a.`产品id`, b.`产品id`),
+                            a.`产品名称`= IF(b.`产品名称` = '', a.`产品名称`, b.`产品名称`),
                             a.`审核时间`= IF(b.`审核时间` = '', NULL, b.`审核时间`),
-                            a.`上线时间`= IF(b.`上线时间` = '' or b.`上线时间` = '0000-00-00 00:00:00' , NULL, b.`上线时间`),
+                            a.`上线时间`= IF(b.`上线时间` = '' or b.`上线时间` = '0000-00-00 00:00:00' , a.`上线时间`, b.`上线时间`),
                             a.`仓储扫描时间`= IF(b.`仓储扫描时间` = '', NULL, b.`仓储扫描时间`),
                             a.`完结状态时间`= IF(b.`完结状态时间` = '', NULL, b.`完结状态时间`),
                             a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`),
@@ -1435,7 +1442,9 @@ class QueryTwo(Settings):
                             a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
                             a.`审单类型`= IF(b.`审单类型` = '', NULL, IF(b.`审单类型` like '%自动审单%','是','否')),
                             a.`删除原因`= IF(b.`删除原因` = '', NULL,  b.`删除原因`),
+                            a.`删除时间`= IF(b.`删除时间` = '', NULL,  b.`删除时间`),
                             a.`问题原因`= IF(b.`问题原因` = '', NULL,  b.`问题原因`),
+                            a.`问题时间`= IF(b.`问题时间` = '', NULL,  b.`问题时间`),
                             a.`下单人`= IF(b.`下单人` = '', NULL,  b.`下单人`),
                             a.`克隆人`= IF(b.`克隆人` = '', NULL,  b.`克隆人`)
                 where a.`订单编号`=b.`订单编号`;'''.format(team2)
@@ -1516,9 +1525,10 @@ class QueryTwo(Settings):
                 pass
         # print('正在写入缓存中......')
         try:
-            df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId', 'spec', 'quantity',
-                       'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime', 'finishTime', 'cloneUser',
-                       'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'questionReason', 'service']]
+            df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId',
+                       'spec', 'quantity', 'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime',
+                       'finishTime', 'stateTime', 'logisticsUpdateTime', 'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType',
+                       'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service']]
             print(df)
         except Exception as e:
             print('查询失败：', str(Exception) + str(e))

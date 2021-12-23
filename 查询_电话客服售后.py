@@ -180,28 +180,20 @@ class QueryTwo(Settings, Settings_sso):
         # print(req)
         # print(req.headers)
         print('++++++已成功登录++++++')
-    # 获取签收表内容-停用
-    def readInfo(self, team, last_month):
+
+
+    # 获取查询时间
+    def readInfo(self, team):
         print('>>>>>>正式查询中<<<<<<')
         print('正在获取需要订单信息......')
         start = datetime.datetime.now()
-        sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`处理时间` = '{1}';'''.format(team, last_month)
-        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
-        print(ordersDict['订单编号'][0])
-        if ordersDict.empty:
-            print('无需要更新订单信息！！！')
-            # sys.exit()
-            return
-        orderId = list(ordersDict['订单编号'])
-        print('获取耗时：', datetime.datetime.now() - start)
-        max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
-        n = 0
-        while n < max_count:        # 这里用到了一个while循环，穿越过来的
-            ord = ', '.join(orderId[n:n + 500])
-            # print(ord)
-            n = n + 500
-            self.orderInfoQuery(ord, team)
-        print('单日查询耗时：', datetime.datetime.now() - start)
+        sql = '''SELECT DISTINCT 处理时间 FROM {0} d GROUP BY 处理时间 ORDER BY 处理时间 DESC'''.format(team)
+        rq = pd.read_sql_query(sql=sql, con=self.engine1)
+        rq = pd.to_datetime(rq['处理时间'][0])
+        last_time = (rq + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        print('起止时间：' + last_time + ' - ' + now_time)
+        return last_time, now_time
 
     # 查询更新（新后台的获取-物流问题件）
     def waybill_InfoQuery(self, timeStart, timeEnd):  # 进入订单检索界面
@@ -222,7 +214,6 @@ class QueryTwo(Settings, Settings_sso):
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         max_count = req['data']['count']
-        # print(req)
         ordersDict = []
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
@@ -231,13 +222,16 @@ class QueryTwo(Settings, Settings_sso):
                 result['result_reson'] = ''
                 result['result_info'] = ''
                 if '拒收' in result['dealContent']:
-                    result['result_reson'] = result['dealContent'].split()[1]
-                    result['result_info'] = result['dealContent'].split()[2]
+                    if len(result['dealContent'].split()) > 2:
+                        result['result_info'] = result['dealContent'].split()[2]
+                    if len(result['dealContent'].split()) > 1:
+                        result['result_reson'] = result['dealContent'].split()[1]
                     result['dealContent'] = result['dealContent'].split()[0]
                 if result['traceRecord'] != '':
                     result['deal_time'] = result['traceRecord'].split()[0]
                 if result['traceUserName'] != '':
                     result['traceUserName'] = result['traceUserName'].replace('客服：', '')
+                result['dealContent'] = result['dealContent'].strip()
                 ordersDict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
@@ -248,9 +242,6 @@ class QueryTwo(Settings, Settings_sso):
                      'gift_reissue_order_number', 'update_time']]
         df.columns = ['订单编号', '币种', '订单金额', '客户姓名', '客户电话', '客户地址', '送达时间', '导入时间', '最新处理状态', '最新处理结果',
                         '处理时间', '拒收原因', '具体原因', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态', '赠品补发订单编号', '更新时间']
-        # df['处理人'] = (data['处理人'].replace('客服：', '')).copy()
-        # df['处理人'] = data['处理人'].replace('客服：', '')
-        df['最新处理结果'] = df['最新处理结果'].str.strip()
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         print(max_count)
@@ -265,11 +256,16 @@ class QueryTwo(Settings, Settings_sso):
                 dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
             print('正在写入......')
+            dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         else:
             print('正在写入......')
+            df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             df.to_excel('G:\\输出文件\\物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-        # return data
+        sql = '''REPLACE INTO 物流问题件(处理时间,物流反馈时间,处理人,订单编号,处理结果, 拒收原因, 记录时间) 
+                SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,最新处理结果 AS 处理结果, 拒收原因, NOW() 记录时间 
+                FROM customer'''
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('写入成功......')
         print('*' * 50)
     def _waybillInfoQuery(self, timeStart, timeEnd, n):  # 进入物流问题件界面
@@ -296,25 +292,26 @@ class QueryTwo(Settings, Settings_sso):
                 result['result_reson'] = ''
                 result['result_info'] = ''
                 if '拒收' in result['dealContent']:
-                    result['result_reson'] = result['dealContent'].split()[1]
-                    result['result_info'] = result['dealContent'].split()[2]
+                    if len(result['dealContent'].split()) > 2:
+                        result['result_info'] = result['dealContent'].split()[2]
+                    if len(result['dealContent'].split()) > 1:
+                        result['result_reson'] = result['dealContent'].split()[1]
                     result['dealContent'] = result['dealContent'].split()[0]
                 if result['traceRecord'] != '':
                     result['deal_time'] = result['traceRecord'].split()[0]
                 if result['traceUserName'] != '':
                     result['traceUserName'] = result['traceUserName'].replace('客服：', '')
+                result['dealContent'] = result['dealContent'].strip()
                 ordersDict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
         data = pd.json_normalize(ordersDict)
-        print(data)
-        data = data[['order_number',  'currency', 'amount', 'customer_name', 'customer_mobile', 'arrived_address', 'arrived_time', 'create_time', 'deal_time', 'dealStatus', 'dealContent',
-                    'result_reson', 'result_info', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus',
-                    'gift_reissue_order_number', 'update_time']]
+        data = data[['order_number',  'currency', 'amount', 'customer_name', 'customer_mobile', 'arrived_address',
+                     'arrived_time', 'create_time', 'deal_time', 'dealStatus', 'dealContent', 'result_reson',
+                     'result_info',  'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus',
+                     'gift_reissue_order_number', 'update_time']]
         data.columns = ['订单编号', '币种', '订单金额', '客户姓名', '客户电话', '客户地址', '送达时间', '导入时间', '处理时间', '最新处理状态', '最新处理结果',
                         '拒收原因', '具体原因', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态', '赠品补发订单编号', '更新时间']
-        # data['处理人'] = (data['处理人'].replace('客服：', '')).copy()
-        data['最新处理结果'] = (data['最新处理结果'].str.strip()).copy()
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
         return data
@@ -328,7 +325,7 @@ class QueryTwo(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
-        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': '40,41', 'question_type': None, 'critical': None, 'read_status': None,
+        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': '41', 'question_type': None, 'critical': None, 'read_status': None,
                 'operator_type': None, 'operator': None, 'create_time': None, 'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'is_gift_reissue': None,
                 'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': 1, 'pageSize': 90}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
@@ -346,11 +343,18 @@ class QueryTwo(Settings, Settings_sso):
                 result['deal_time'] = ''
                 result['result_reson'] = ''
                 result['result_info'] = ''
-                if '拒收' in result['dealContent']:
-                    result['result_reson'] = result['dealContent'].split()[1]
-                    result['result_info'] = result['dealContent'].split()[2]
-                    result['dealContent'] = result['dealContent'].split()[0]
+                result['result_content'] = ''
+                if len(result['dealContent'].split()) > 3:
+                    result['result_reson'] = result['dealContent'].split()[3]       # 具体原因
+                if len(result['dealContent'].split()) > 2:
+                    result['result_info'] = result['dealContent'].split()[2]        # 客诉原因
+                if len(result['dealContent'].split()) > 1:
+                    result['result_content'] = result['dealContent'].split()[1]     # 处理内容
+                result['dealContent'] = result['dealContent'].split()[0]            # 最新处理结果
+
                 if result['traceRecord'] != '':
+                    if ';' in result['dealContent']:
+                        result['deal_time'] = (result['traceRecord'].split(";")[1]).split()[0]
                     result['deal_time'] = result['traceRecord'].split()[0]
                 if result['traceUserName'] != '':
                     result['traceUserName'] = result['traceUserName'].replace('客服：', '')
@@ -361,13 +365,11 @@ class QueryTwo(Settings, Settings_sso):
         data = pd.json_normalize(ordersDict)
         print(data)
         df = data[['order_number',  'currency', 'amount', 'customer_name', 'customer_mobile', 'arrived_address', 'arrived_time', 'create_time', 'dealStatus', 'dealContent',
-                     'deal_time', 'result_reson', 'result_info', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus',
-                     'gift_reissue_order_number', 'update_time']]
+                   'deal_time', 'result_content', 'result_info', 'result_reson', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus',
+                   'gift_reissue_order_number', 'update_time']]
         df.columns = ['订单编号', '币种', '订单金额', '客户姓名', '客户电话', '客户地址', '送达时间', '导入时间', '最新处理状态', '最新处理结果',
-                        '处理时间', '拒收原因', '具体原因', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态', '赠品补发订单编号', '更新时间']
-        # df['处理人'] = (data['处理人'].replace('客服：', '')).copy()
-        # df['处理人'] = data['处理人'].replace('客服：', '')
-        # df['最新处理结果'] = (df['最新处理结果'].str.strip()).copy()
+                      '处理时间', '处理内容', '客诉原因', '具体原因', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态',
+                      '赠品补发订单编号', '更新时间']
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         print(max_count)
@@ -382,11 +384,16 @@ class QueryTwo(Settings, Settings_sso):
                 dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
             print('正在写入......')
+            dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\物流客诉件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         else:
             print('正在写入......')
+            df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             df.to_excel('G:\\输出文件\\物流客诉件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-        # return data
+        sql = '''REPLACE INTO 物流客诉件(处理时间,物流反馈时间,处理人,订单编号,处理方案, 处理结果, 客诉原因, 记录时间) 
+                SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,最新处理结果 AS 处理方案, 处理内容 AS 处理结果, 客诉原因, NOW() 记录时间 
+                FROM customer'''
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('写入成功......')
         print('*' * 50)
     def _waybill_Query(self, timeStart, timeEnd, n):  # 进入物流问题件界面
@@ -395,7 +402,7 @@ class QueryTwo(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
-        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': '40,41', 'question_type': None, 'critical': None, 'read_status': None,
+        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': '41', 'question_type': None, 'critical': None, 'read_status': None,
                 'operator_type': None, 'operator': None, 'create_time': None, 'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'is_gift_reissue': None,
                 'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': n, 'pageSize': 90}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
@@ -411,11 +418,18 @@ class QueryTwo(Settings, Settings_sso):
                 result['deal_time'] = ''
                 result['result_reson'] = ''
                 result['result_info'] = ''
-                if '拒收' in result['dealContent']:
-                    result['result_reson'] = result['dealContent'].split()[1]
-                    result['result_info'] = result['dealContent'].split()[2]
-                    result['dealContent'] = result['dealContent'].split()[0]
+                result['result_content'] = ''
+                if len(result['dealContent'].split()) > 3:
+                    result['result_reson'] = result['dealContent'].split()[3]       # 具体原因
+                if len(result['dealContent'].split()) > 2:
+                    result['result_info'] = result['dealContent'].split()[2]        # 客诉原因
+                if len(result['dealContent'].split()) > 1:
+                    result['result_content'] = result['dealContent'].split()[1]     # 处理内容
+                result['dealContent'] = result['dealContent'].split()[0]            # 最新处理结果
+
                 if result['traceRecord'] != '':
+                    if ';' in result['dealContent']:
+                        result['deal_time'] = (result['traceRecord'].split(";")[1]).split()[0]
                     result['deal_time'] = result['traceRecord'].split()[0]
                 if result['traceUserName'] != '':
                     result['traceUserName'] = result['traceUserName'].replace('客服：', '')
@@ -425,58 +439,46 @@ class QueryTwo(Settings, Settings_sso):
             print('转化失败： 重新获取中', str(Exception) + str(e))
         data = pd.json_normalize(ordersDict)
         print(data)
-        data = data[['order_number',  'currency', 'amount', 'customer_name', 'customer_mobile', 'arrived_address', 'arrived_time', 'create_time', 'deal_time', 'dealStatus', 'dealContent',
-                    'result_reson', 'result_info', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus',
-                    'gift_reissue_order_number', 'update_time']]
-        data.columns = ['订单编号', '币种', '订单金额', '客户姓名', '客户电话', '客户地址', '送达时间', '导入时间', '处理时间', '最新处理状态', '最新处理结果',
-                        '拒收原因', '具体原因', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态', '赠品补发订单编号', '更新时间']
-        # data['处理人'] = (data['处理人'].replace('客服：', '')).copy()
-        # data['最新处理结果'] = (data['最新处理结果'].str.strip()).copy()
+        data = data[['order_number',  'currency', 'amount', 'customer_name', 'customer_mobile', 'arrived_address', 'arrived_time', 'create_time', 'dealStatus', 'dealContent',
+                   'deal_time', 'result_content', 'result_info', 'result_reson', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus',
+                   'gift_reissue_order_number', 'update_time']]
+        data.columns = ['订单编号', '币种', '订单金额', '客户姓名', '客户电话', '客户地址', '送达时间', '导入时间', '最新处理状态', '最新处理结果',
+                      '处理时间', '处理内容', '客诉原因', '具体原因', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态',
+                      '赠品补发订单编号', '更新时间']
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
         return data
 
+
     # 查询更新（新后台的获取-采购问题件）
-    def sale_Query(self, timeStart, timeEnd):  # 进入物流客诉件界面
+    def sale_Query(self, timeStart, timeEnd):  # 进入采购问题件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('+++正在查询信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.afterSale&action=getPurchaseAbnormalList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
-        data = {'page': 1, 'pageSize': 90, 'userId': None, 'dealUser': None, 'currencyId': None, 'orderNumber': None,
-                'productId': None, 'timeStart': None, 'timeEnd': None, 'add_time_start': '2021-12-01', 'add_time_end': '2021-12-20',
-                'orderType': None, 'lastProcess': None, 'logisticsStatus': None, 'update_time_start': None,
-                'update_time_end': None, '_user': 1343, }
+        data = {'page': 1, 'pageSize': 90, 'areaId': None, 'userId': None, 'dealUser': None, 'currencyId': None, 'orderNumber': None,
+                'productId': None, 'timeStart': None, 'timeEnd': None, 'add_time_start': None, 'add_time_end': None,
+                'orderType': None, 'lastProcess': None, 'logisticsStatus': '2021-12-20', 'update_time_start': '2021-12-20',
+                'update_time_end': None}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
         # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
+        max_count = req['data']['total']
         print(req)
         ordersDict = []
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
-                result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
-                result['deal_time'] = ''
-                result['result_reson'] = ''
-                result['result_info'] = ''
-                if '拒收' in result['dealContent']:
-                    result['result_reson'] = result['dealContent'].split()[1]
-                    result['result_info'] = result['dealContent'].split()[2]
-                    result['dealContent'] = result['dealContent'].split()[0]
-                if result['traceRecord'] != '':
-                    result['deal_time'] = result['traceRecord'].split()[0]
-                if result['traceUserName'] != '':
-                    result['traceUserName'] = result['traceUserName'].replace('客服：', '')
-                result['dealContent'] = result['dealContent'].strip()
                 ordersDict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
         data = pd.json_normalize(ordersDict)
         print(data)
-        df = data[['order_number',  'currency', 'amount', 'customer_name', 'customer_mobile', 'arrived_address', 'arrived_time', 'create_time', 'dealStatus', 'dealContent',
+        df = data[['orderNumber',  'create_time', 'dealTime', 'dealName', 'dealProcess', 'arrived_address', 'arrived_time', 'create_time', 'dealStatus', 'dealContent',
                      'deal_time', 'result_reson', 'result_info', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus',
                      'gift_reissue_order_number', 'update_time']]
         df.columns = ['订单编号', '币种', '订单金额', '客户姓名', '客户电话', '客户地址', '送达时间', '导入时间', '最新处理状态', '最新处理结果',
@@ -510,12 +512,36 @@ if __name__ == '__main__':
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
+    select = 5                                  # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
+    if int(select) == 1:
+        timeStart, timeEnd = m.readInfo('物流问题件')
+        m.waybill_InfoQuery(timeStart, timeEnd)                 # 查询更新-物流问题件
+    elif int(select) == 2:
+        timeStart, timeEnd = m.readInfo('物流客诉件')
+        m.waybill_Query(timeStart, timeEnd)                      # 查询更新-物流客诉件
+    elif int(select) == 3:
+        timeStart, timeEnd = m.readInfo('采购异常')
+        m.waybill_Query(timeStart, timeEnd)                     # 查询更新-物流客诉件
 
-    # m.waybill_InfoQuery('2021-12-21', '2021-12-21')         # 查询更新-物流问题件
+    elif int(select) == 4:
+        timeStart, timeEnd = m.readInfo('物流问题件')
+        m.waybill_InfoQuery(timeStart, timeEnd)                 # 查询更新-物流问题件
 
-    m.waybill_Query('2021-12-21', '2021-12-21')             # 查询更新-物流客诉件
+        timeStart, timeEnd = m.readInfo('物流客诉件')
+        m.waybill_Query(timeStart, timeEnd)                      # 查询更新-物流客诉件
 
-    m.sale_Query('2021-12-21', '2021-12-21')             # 查询更新-采购问题件
+        timeStart, timeEnd = m.readInfo('采购异常')
+        m.waybill_Query(timeStart, timeEnd)                     # 查询更新-物流客诉件
+
+
+
+    # timeStart, timeEnd = m.readInfo('物流问题件')
+
+    # m.waybill_InfoQuery('2021-12-01', '2021-12-21')         # 查询更新-物流问题件
+
+    # m.waybill_Query('2021-12-01', '2021-12-21')             # 查询更新-物流客诉件
+
+    m.sale_Query('2021-12-20', '2021-12-21')             # 查询更新-采购问题件
 
 
 
