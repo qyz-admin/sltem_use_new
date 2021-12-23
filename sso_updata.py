@@ -1174,16 +1174,13 @@ class QueryTwo(Settings):
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
         if ordersDict.empty:
             print('无需要更新订单信息！！！')
-            # sys.exit()
             return
         print(ordersDict['订单编号'][0])
         orderId = list(ordersDict['订单编号'])
-        # print('获取耗时：', datetime.datetime.now() - start)
         max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
         n = 0
         while n < max_count:        # 这里用到了一个while循环，穿越过来的
             ord = ', '.join(orderId[n:n + 500])
-            # print(ord)
             n = n + 500
             self.orderInfoQuery(ord, searchType, team, team2, last_month)
         print('单日查询耗时：', datetime.datetime.now() - start)
@@ -1500,19 +1497,24 @@ class QueryTwo(Settings):
                     result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
                     result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
                     result['spec'] = result['specs'][0]['spec']
-                    quest = ''
-                    for re in result['questionReason']:
-                        quest = quest + ';' + re
-                    result['questionReason'] = quest
-                    delr = ''
-                    for re in result['delReason']:
-                        delr = delr + ';' + re
-                    result['delReason'] = delr
-                    auto = ''
-                    for re in result['autoVerify']:
-                        auto = auto + ';' + re
-                    result['autoVerify'] = auto
-                    ordersDict.append(result)
+                else:
+                    result['saleId'] = ''
+                    result['saleProduct'] = ''
+                    result['productId'] = ''
+                    result['spec'] = ''
+                quest = ''
+                for re in result['questionReason']:
+                    quest = quest + ';' + re
+                result['questionReason'] = quest
+                delr = ''
+                for re in result['delReason']:
+                    delr = delr + ';' + re
+                result['delReason'] = delr
+                auto = ''
+                for re in result['autoVerify']:
+                    auto = auto + ';' + re
+                result['autoVerify'] = auto
+                ordersDict.append(result)
             data = pd.json_normalize(ordersDict)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))

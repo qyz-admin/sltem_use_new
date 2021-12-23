@@ -460,8 +460,8 @@ class QueryTwo(Settings, Settings_sso):
                     'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
         data = {'page': 1, 'pageSize': 90, 'areaId': None, 'userId': None, 'dealUser': None, 'currencyId': None, 'orderNumber': None,
                 'productId': None, 'timeStart': None, 'timeEnd': None, 'add_time_start': None, 'add_time_end': None,
-                'orderType': None, 'lastProcess': None, 'logisticsStatus': '2021-12-20', 'update_time_start': '2021-12-20',
-                'update_time_end': None}
+                'orderType': None, 'lastProcess': None, 'logisticsStatus': None, 'update_time_start': timeStart,
+                'update_time_end': timeEnd}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
         # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -469,23 +469,17 @@ class QueryTwo(Settings, Settings_sso):
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         max_count = req['data']['total']
-        print(req)
         ordersDict = []
         try:
-            for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
+            for result in req['data']['data']:  # 添加新的字典键-值对，为下面的重新赋值用
                 ordersDict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
         data = pd.json_normalize(ordersDict)
         print(data)
-        df = data[['orderNumber',  'create_time', 'dealTime', 'dealName', 'dealProcess', 'arrived_address', 'arrived_time', 'create_time', 'dealStatus', 'dealContent',
-                     'deal_time', 'result_reson', 'result_info', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus',
-                     'gift_reissue_order_number', 'update_time']]
-        df.columns = ['订单编号', '币种', '订单金额', '客户姓名', '客户电话', '客户地址', '送达时间', '导入时间', '最新处理状态', '最新处理结果',
-                        '处理时间', '拒收原因', '具体原因', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态', '赠品补发订单编号', '更新时间']
-        # df['处理人'] = (data['处理人'].replace('客服：', '')).copy()
-        # df['处理人'] = data['处理人'].replace('客服：', '')
-        # df['最新处理结果'] = (df['最新处理结果'].str.strip()).copy()
+        data = data[(data['currencyName'].str.contains('台币|港币', na=False))]
+        df = data[['orderNumber',  'create_time', 'dealTime', 'dealName', 'dealProcess', 'description']]
+        df.columns = ['订单编号', '反馈时间', '处理时间', '处理人', '处理结果', '取消原因']
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         print(max_count)
@@ -496,16 +490,53 @@ class QueryTwo(Settings, Settings_sso):
             while n < in_count:  # 这里用到了一个while循环，穿越过来的
                 print('剩余查询次数' + str(in_count - n))
                 n = n + 1
-                data = self._waybill_Query(timeStart, timeEnd, n)
+                data = self._sale_Query(timeStart, timeEnd, n)
                 dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
             print('正在写入......')
-            dp.to_excel('G:\\输出文件\\物流客诉件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            dp.to_excel('G:\\输出文件\\采购问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         else:
             print('正在写入......')
-            df.to_excel('G:\\输出文件\\物流客诉件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-        # return data
+            df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            df.to_excel('G:\\输出文件\\采购问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        sql = '''REPLACE INTO 采购异常(订单编号,处理结果,反馈时间,处理时间,取消原因, 处理人, 记录时间) 
+                SELECT 订单编号,处理结果,反馈时间,处理时间,取消原因, 处理人,NOW() 记录时间 
+                FROM customer'''
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        print('写入成功......')
         print('*' * 50)
+    def _sale_Query(self, timeStart, timeEnd, n):  # 进入物流问题件界面
+        print('+++正在查询第 ' + str(n) + ' 页信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.afterSale&action=getPurchaseAbnormalList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
+        data = {'page': n, 'pageSize': 90, 'areaId': None, 'userId': None, 'dealUser': None, 'currencyId': None, 'orderNumber': None,
+                'productId': None, 'timeStart': None, 'timeEnd': None, 'add_time_start': None, 'add_time_end': None,
+                'orderType': None, 'lastProcess': None, 'logisticsStatus': None, 'update_time_start': timeStart,
+                'update_time_end': timeEnd}
+        proxy = '47.75.114.218:10020'  # 使用代理服务器
+        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        ordersDict = []
+        try:
+            for result in req['data']['data']:  # 添加新的字典键-值对，为下面的重新赋值用
+                ordersDict.append(result)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        data = pd.json_normalize(ordersDict)
+        # print(data)
+        data = data[(data['currencyName'].str.contains('台币|港币', na=False))]
+        df = data[['orderNumber',  'create_time', 'dealTime', 'dealName', 'dealProcess', 'description']]
+        df.columns = ['订单编号', '反馈时间', '处理时间', '处理人', '处理结果', '取消原因']
+        print('++++++本批次查询成功+++++++')
+        print('*' * 50)
+        return df
+
 
 if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')
@@ -521,7 +552,7 @@ if __name__ == '__main__':
         m.waybill_Query(timeStart, timeEnd)                      # 查询更新-物流客诉件
     elif int(select) == 3:
         timeStart, timeEnd = m.readInfo('采购异常')
-        m.waybill_Query(timeStart, timeEnd)                     # 查询更新-物流客诉件
+        m.sale_Query(timeStart, timeEnd)                     # 查询更新-物流客诉件
 
     elif int(select) == 4:
         timeStart, timeEnd = m.readInfo('物流问题件')
@@ -531,17 +562,17 @@ if __name__ == '__main__':
         m.waybill_Query(timeStart, timeEnd)                      # 查询更新-物流客诉件
 
         timeStart, timeEnd = m.readInfo('采购异常')
-        m.waybill_Query(timeStart, timeEnd)                     # 查询更新-物流客诉件
+        m.sale_Query(timeStart, timeEnd)                     # 查询更新-物流客诉件
 
 
 
     # timeStart, timeEnd = m.readInfo('物流问题件')
 
-    # m.waybill_InfoQuery('2021-12-01', '2021-12-21')         # 查询更新-物流问题件
+    m.waybill_InfoQuery('2021-12-22', '2021-12-22')         # 查询更新-物流问题件
 
-    # m.waybill_Query('2021-12-01', '2021-12-21')             # 查询更新-物流客诉件
+    # m.waybill_Query('2021-12-22', '2021-12-22')             # 查询更新-物流客诉件
 
-    m.sale_Query('2021-12-20', '2021-12-21')             # 查询更新-采购问题件
+    # m.sale_Query('2021-12-22', '2021-12-22')             # 查询更新-采购问题件
 
 
 
