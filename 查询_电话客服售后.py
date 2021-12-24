@@ -392,7 +392,7 @@ class QueryTwo(Settings, Settings_sso):
             df.to_excel('G:\\输出文件\\物流客诉件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         sql = '''REPLACE INTO 物流客诉件(处理时间,物流反馈时间,处理人,订单编号,处理方案, 处理结果, 客诉原因, 记录时间) 
                 SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,最新处理结果 AS 处理方案, 处理内容 AS 处理结果, 客诉原因, NOW() 记录时间 
-                FROM customer'''
+                FROM customer;'''
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('写入成功......')
         print('*' * 50)
@@ -450,7 +450,7 @@ class QueryTwo(Settings, Settings_sso):
         return data
 
 
-    # 查询更新（新后台的获取-采购问题件）
+    # 查询更新（新后台的获取-采购问题件）（一、简单查询）
     def sale_Query(self, timeStart, timeEnd):  # 进入采购问题件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('+++正在查询信息中')
@@ -500,8 +500,8 @@ class QueryTwo(Settings, Settings_sso):
             print('正在写入......')
             df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             df.to_excel('G:\\输出文件\\采购问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-        sql = '''REPLACE INTO 采购异常(订单编号,处理结果,反馈时间,处理时间,取消原因, 处理人, 记录时间) 
-                SELECT 订单编号,处理结果,反馈时间,处理时间,取消原因, 处理人,NOW() 记录时间 
+        sql = '''REPLACE INTO 采购异常(订单编号,处理结果,反馈时间,处理时间,取消原因, 处理人, 电话联系人, 联系时间,记录时间) 
+                SELECT 订单编号,处理结果,反馈时间,处理时间,取消原因, 处理人,null 电话联系人, null 联系时间, NOW() 记录时间 
                 FROM customer'''
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('写入成功......')
@@ -537,13 +537,84 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
         return df
 
+    # 查询更新（新后台的获取-采购问题件）(二、补充查询)
+    def sale_Query_info(self, timeStart, timeEnd):  # 进入采购问题件界面--明细查询
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('正在获取 补充订单信息......')
+        start = datetime.datetime.now()
+        sql = '''SELECT id,`订单编号`  FROM 采购异常 sl WHERE DATE(sl.`处理时间`) BETWEEN '{0}' AND '{1}';'''.format(timeStart, timeEnd)
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        if ordersDict.empty:
+            print('无需要更新订单信息！！！')
+            return
+        print(ordersDict['订单编号'][0])
+        df = self._sale_Query_info(ordersDict['订单编号'][0])
+        order_list = list(ordersDict['订单编号'])
+        max_count = len(order_list)    # 使用len()获取列表的长度，上节学的
+        if max_count > 1:
+            dlist = []
+            for ord in order_list:
+                print(ord)
+                data = self._sale_Query_info(ord)
+                dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+        else:
+            dp = df
+        print('正在写入......')
+        dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+        dp.to_excel('G:\\输出文件\\采购问题件-查询-副本{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        sql = '''update 采购异常 a, customer b
+                    set a.`电话联系人`= b.`name`,
+                        a.`联系时间`= IF( b.`addTime` = '', a.`联系时间`,  b.`addTime`)
+                where a.`订单编号`=b.`orderNumber`;'''
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        print('查询耗时：', datetime.datetime.now() - start)
+    def _sale_Query_info(self, ord):  # 进入采购问题件界面--明细查询
+        url = r'https://gimp.giikin.com/service?service=gorder.afterSale&action=abnormalDisposeLog'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/purchaseFeedback'}
+        data = {'orderNumber': ord}
+        proxy = '47.75.114.218:10020'  # 使用代理服务器
+        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        data_count = req['data']
+        # print(data_count)
+        print(len(data_count))
+        orders_dict = {}
+        try:
+            if len(data_count) > 2:
+                orders_dict = req['data'][1]
+            elif len(data_count) == 2:
+                orders_dict = req['data'][0]
+            else:
+                orders_dict['id'] = ''
+                orders_dict['content'] = ''
+                orders_dict['orderNumber'] = req['data'][0]['orderNumber']
+                orders_dict['userId'] = ''
+                orders_dict['addTime'] = ''
+                orders_dict['name'] = ''
+                orders_dict['avatar'] = ''
+                orders_dict['roleName'] = ''
+                orders_dict['dealProcess'] = ''
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        data = pd.json_normalize(orders_dict)
+        print(data)
+        print('++++++本次 查询成功+++++++')
+        print('*' * 50)
+        return data
+
 
 if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
-    select = 4                                  # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
+    select = 5                                  # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     if int(select) == 1:
         timeStart, timeEnd = m.readInfo('物流问题件')
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
@@ -552,7 +623,8 @@ if __name__ == '__main__':
         m.waybill_Query(timeStart, timeEnd)                      # 查询更新-物流客诉件
     elif int(select) == 3:
         timeStart, timeEnd = m.readInfo('采购异常')
-        m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件
+        m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
+        m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件(二、补充查询)
 
     elif int(select) == 4:
         timeStart, timeEnd = m.readInfo('物流问题件')
@@ -562,7 +634,8 @@ if __name__ == '__main__':
         m.waybill_Query(timeStart, timeEnd)                      # 查询更新-物流客诉件
 
         timeStart, timeEnd = m.readInfo('采购异常')
-        m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件
+        m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
+        m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件(二、补充查询)
 
 
 
@@ -572,9 +645,10 @@ if __name__ == '__main__':
 
     # m.waybill_Query('2021-12-22', '2021-12-22')             # 查询更新-物流客诉件
 
-    # m.sale_Query('2021-12-22', '2021-12-22')             # 查询更新-采购问题件
+    # m.sale_Query('2021-12-01', '2021-12-24')                    # 查询更新-采购问题件（一、简单查询）
+    # m.sale_Query_info('2021-12-23', '2021-12-24')             # 查询更新-采购问题件 (二、补充查询)
 
-
+    # m._sale_Query_info('NR112180927421695')
 
 
     print('查询耗时：', datetime.datetime.now() - start)
