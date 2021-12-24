@@ -808,47 +808,52 @@ class MysqlControl(Settings):
                             AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
                 df = pd.read_sql_query(sql=sql, con=self.engine4)
             elif team in ('gat'):
-                sql = '''SELECT DISTINCT a.id,
-                                a.rq 日期,
-                                dim_currency_lang.pname 币种,
-                                a.order_number 订单编号,
-                                a.qty 数量,
-                                a.ship_phone 电话号码,
-                                UPPER(a.waybill_number) 运单编号,
-                                a.order_status 系统订单状态id,
-                                IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
-                                IF(a.second=0,'直发','改派') 是否改派,
-                                dim_trans_way.all_name 物流方式,
-                                dim_trans_way.simple_name 物流名称,
-                                a.sale_id 商品id,
-                                a.product_id 产品id,
-             		            gk_sale.product_name 产品名称,
-                                dim_cate.ppname 父级分类,
-                                dim_cate.pname 二级分类,
-                                dim_cate.name 三级分类,
-                                dim_payment.pay_name 付款方式,
-                                a.amount 价格,
-                                a.logistics_type 货物类型,
-                                a.verity_time 审核时间,
-                                a.delivery_time 仓储扫描时间,
-                                a.online_time 上线时间,
-                                IF(a.finish_status=0,'未收款',IF(a.finish_status=2,'收款',IF(a.finish_status=4,'退款',a.finish_status))) 完结状态,
-                                a.endtime 完结状态时间,
-                                a.salesRMB 价格RMB,
-                                a.logistics_cost 物流花费,
-                                a.weight 包裹重量,
-                                a.ship_state 省洲
-                        FROM gk_order a
-                                left join dim_area ON dim_area.id = a.area_id
-                                left join dim_payment on dim_payment.id = a.payment_id
-                                LEFT JOIN gk_sale ON gk_sale.id = a.sale_id
-                 		--	    left join (SELECT * FROM gk_sale WHERE id IN (SELECT MAX(id) FROM gk_sale GROUP BY product_id ) ORDER BY id) gs ON gs.product_id = a.product_id
-                                left join dim_trans_way on dim_trans_way.id = a.logistics_id
-                                left join dim_cate on dim_cate.id = a.third_cate_id
-                        --      left join intervals on intervals.id = a.intervals
-                                left join dim_currency_lang on dim_currency_lang.id = a.currency_lang_id
-                        WHERE a.rq = '{0}' AND a.rq <= '{1}'
-                            AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
+                sql = '''SELECT a.id,
+                                            a.rq 日期,
+                                            dim_currency_lang.pname 币种,
+                                            a.order_number 订单编号,
+                                            a.qty 数量,
+                                            a.ship_phone 电话号码,
+                                            UPPER(a.waybill_number) 运单编号,
+                                            a.order_status 系统订单状态id,
+                                            IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
+                                            IF(a.second=0,'直发','改派') 是否改派,
+                                            dim_trans_way.all_name 物流方式,
+                                            dim_trans_way.simple_name 物流名称,
+                                            a.logistics_type 货物类型,
+                                            a.sale_id 商品id,
+                                            a.product_id 产品id,
+                             		        gk_sale.product_name 产品名称,
+                                            a.amount 价格,
+                                            a.verity_time 审核时间,
+                                            a.delivery_time 仓储扫描时间,
+                                            IF(a.finish_status=0,'未收款',IF(a.finish_status=2,'收款',IF(a.finish_status=4,'退款',a.finish_status))) 完结状态,
+                                            a.endtime 完结状态时间,   
+                                            a.salesRMB 价格RMB,
+                                            a.logistics_cost 物流花费,
+                                            a.other_fee 其它花费,
+                                            a.weight 包裹重量,
+                                            a.turn_purchase_time 添加物流单号时间,
+                                            a.del_reason 删除原因,
+                                            a.question_reason 问题原因,
+                                            a.stock_type 下架类型,
+                                            a.lower_time 下架时间,
+                                            a.tihuo_time 物流提货时间,
+                                            a.fahuo_time 物流发货时间,
+                                            a.online_time 上线时间,
+                                            a.guonei_time 国内清关时间,
+                                            a.mudidi_time 目的清关时间,
+                                            a.receipt_time 回款时间,
+                                            a.ip IP
+                                    FROM gk_order a
+                                            left join dim_area ON dim_area.id = a.area_id
+                                            left join dim_payment ON dim_payment.id = a.payment_id
+                	                        LEFT JOIN gk_sale ON gk_sale.id = a.sale_id
+                                            left join dim_trans_way ON dim_trans_way.id = a.logistics_id
+                                            left join dim_cate ON dim_cate.id = a.third_cate_id
+                                            left join intervals ON intervals.id = a.intervals
+                                            left join dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
+                                    WHERE  a.rq = '{0}' AND a.rq <= '{1}' AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
                 df = pd.read_sql_query(sql=sql, con=self.engine2)
             sql = 'SELECT * FROM dim_order_status;'
             df1 = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -877,21 +882,23 @@ class MysqlControl(Settings):
 		                    a.`商品id`=b.`商品id`,
 		                    a.`产品id`=b.`产品id`,
 		                    a.`产品名称`=b.`产品名称`,
-		                    a.`父级分类`=b.`父级分类`,
-		                    a.`二级分类`=b.`二级分类`,
-		                    a.`三级分类`=b.`三级分类`,
-		                    a.`付款方式`=b.`付款方式`,
 		                    a.`价格`=b.`价格`,
-		                    a.`货物类型`=b.`货物类型`,
 		                    a.`审核时间`=b.`审核时间`,
 		                    a.`仓储扫描时间`=b.`仓储扫描时间`,
-		                    a.`上线时间`=b.`上线时间`,
 		                    a.`完结状态`=b.`完结状态`,
+		                    a.`完结状态时间`=b.`完结状态时间`,
 		                    a.`价格RMB`=b.`价格RMB`,
 		                    a.`物流花费`=b.`物流花费`,
 		                    a.`包裹重量`=b.`包裹重量`,
-		                    a.`完结状态时间`=b.`完结状态时间`,
-		                    a.`省洲`=b.`省洲`
+		                    a.`添加物流单号时间`=b.`添加物流单号时间`,
+		                    a.`下架类型`=b.`下架类型`,
+		                    a.`下架时间`=b.`下架时间`,
+		                    a.`物流提货时间`=b.`物流提货时间`,
+		                    a.`物流发货时间`=b.`物流发货时间`,
+		                    a.`上线时间`=b.`上线时间`,
+		                    a.`国内清关时间`=b.`国内清关时间`,
+		                    a.`目的清关时间`=b.`目的清关时间`,
+		                    a.`回款时间`=b.`回款时间`
 		                where a.`订单编号`=b.`订单编号`;'''.format(team)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             except Exception as e:

@@ -543,32 +543,32 @@ if __name__ == '__main__':
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
-    select = 5                                  # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
+    select = 4                                  # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     if int(select) == 1:
         timeStart, timeEnd = m.readInfo('物流问题件')
-        m.waybill_InfoQuery(timeStart, timeEnd)                 # 查询更新-物流问题件
+        m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
     elif int(select) == 2:
         timeStart, timeEnd = m.readInfo('物流客诉件')
         m.waybill_Query(timeStart, timeEnd)                      # 查询更新-物流客诉件
     elif int(select) == 3:
         timeStart, timeEnd = m.readInfo('采购异常')
-        m.sale_Query(timeStart, timeEnd)                     # 查询更新-物流客诉件
+        m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件
 
     elif int(select) == 4:
         timeStart, timeEnd = m.readInfo('物流问题件')
-        m.waybill_InfoQuery(timeStart, timeEnd)                 # 查询更新-物流问题件
+        m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
 
         timeStart, timeEnd = m.readInfo('物流客诉件')
         m.waybill_Query(timeStart, timeEnd)                      # 查询更新-物流客诉件
 
         timeStart, timeEnd = m.readInfo('采购异常')
-        m.sale_Query(timeStart, timeEnd)                     # 查询更新-物流客诉件
+        m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件
 
 
 
     # timeStart, timeEnd = m.readInfo('物流问题件')
 
-    m.waybill_InfoQuery('2021-12-22', '2021-12-22')         # 查询更新-物流问题件
+    # m.waybill_InfoQuery('2021-12-22', '2021-12-22')         # 查询更新-物流问题件
 
     # m.waybill_Query('2021-12-22', '2021-12-22')             # 查询更新-物流客诉件
 

@@ -220,7 +220,7 @@ class QueryUpdate(Settings):
                             IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
                             IF(是否改派='二次改派', '改派', 是否改派) 是否改派,
                             物流方式,物流名称,null 运输方式,null 货物类型,是否低价,付款方式,产品id,产品名称,父级分类, 二级分类,三级分类, 下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB, null 价格区间, null 包裹重量, null 包裹体积,null 邮编, 
-                            IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, null 签收表订单编号, null 签收表运单编号, null 原运单号, b.物流状态 签收表物流状态, null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, null 添加物流单号时间,
+                            IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, null 签收表订单编号, null 签收表运单编号, null 原运单号, b.物流状态 签收表物流状态, null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, 添加物流单号时间,
                             省洲,数量, a.下架时间, a.物流提货时间, a.完结状态, a.回款时间
                         FROM {0}_order_list a
                             LEFT JOIN gat_wl_data b ON a.`运单编号` = b.`运单编号`
@@ -235,7 +235,7 @@ class QueryUpdate(Settings):
             print('正在写入excel…………')
             df = df[['日期', '团队', '币种', '订单编号', '电话号码', '运单编号', '出货时间', '物流状态', '物流状态代码', '状态时间', '上线时间',
                      '系统订单状态', '系统物流状态', '最终状态', '是否改派', '物流方式', '物流名称', '签收表物流状态', '付款方式', '产品id', '产品名称',
-                     '父级分类', '二级分类', '下单时间', '审核时间', '仓储扫描时间', '完结状态时间']]
+                     '父级分类', '二级分类', '下单时间', '审核时间', '添加物流单号时间', '仓储扫描时间', '完结状态时间']]
             df.to_excel('G:\\输出文件\\{} {} 更新-签收表.xlsx'.format(today, match[team]),
                         sheet_name=match[team], index=False)
             print('----已写入excel')
@@ -304,6 +304,7 @@ class QueryUpdate(Settings):
 
     # 新版签收率-报表(自己看的) - 单量计算
     def gat_new(self, team, month_last, month_yesterday):  # 报表各团队近两个月的物流数据
+        month_now = datetime.datetime.now().strftime('%Y-%m-%d')
         match = {'gat': '港台'}
         emailAdd = {'台湾': 'giikinliujun@163.com',
                     '香港': 'giikinliujun@163.com',
@@ -316,6 +317,25 @@ class QueryUpdate(Settings):
         #     month_yesterday = '2021-09-30'
         print(month_last)
         print(month_yesterday)
+        sql = '''UPDATE gat_zqsb d
+                        SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', d.`物流方式`) )
+                        WHERE d.`是否改派` ='直发';'''
+        print('正在修改-直发的物流渠道…………')
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        sql = '''UPDATE gat_zqsb d
+                        SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
+                                        IF(d.`物流方式` LIKE '香港-立邦%','香港-立邦-改派',
+            							IF(d.`物流方式` LIKE '香港-易速配%','香港-易速配-改派',
+            							IF(d.`物流方式` LIKE '台湾-立邦普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-大黄蜂普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-森鸿-新竹%','森鸿',
+            							IF(d.`物流方式` LIKE '台湾-天马-顺丰%','天马顺丰',
+            							IF(d.`物流方式` LIKE '台湾-天马-新竹%' OR d.`物流方式` LIKE '台湾-天马-711%','天马新竹',
+            							IF(d.`物流方式` LIKE '台湾-天马-黑猫%','天马黑猫',
+            							IF(d.`物流方式` LIKE '台湾-易速配-龟山%' OR d.`物流方式` LIKE '台湾-易速配-新竹%' OR d.`物流方式` = '易速配','龟山',
+            							IF(d.`物流方式` LIKE '台湾-速派-新竹%' OR d.`物流方式` LIKE '台湾-速派-711超商%','速派',
+            							IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', d.`物流方式`)))  )  )  )  )  )  )  )
+                        WHERE d.`是否改派` ='改派';'''
+        print('正在修改-改派的物流渠道…………')
+
         filePath = []
         listT = []  # 查询sql的结果 存放池
         print('正在获取---' + match[team] + '---签收率…………')
