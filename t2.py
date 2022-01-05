@@ -35,32 +35,29 @@ match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台
 说明：  日本 需整理的表：1、吉客印神龙直发签收表=密码：‘JKTSL’>(明细再copy保存；改派明细不需要);2、直发签收表>(明细再copy保存；3、状态更新需要copy保存);
 '''
 # 初始化时间设置
-if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'ga9t', 'sl_rb'):
+if team in ('gat', 'slsc', 'sl_rb'):
     # 更新时间
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
     begin = datetime.date(yy, mm, 1)
-    print(begin)
     yy2 = int(datetime.datetime.now().strftime('%Y'))
     mm2 = int(datetime.datetime.now().strftime('%m'))
     dd2 = int(datetime.datetime.now().strftime('%d'))
     end = datetime.date(yy2, mm2, dd2)
-    print(end)
     # 导出时间
     month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
     month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
-    print(month_begin)
 else:
     # 更新时间3
-    begin = datetime.date(2021, 1, 1)
-    print(begin)
-    end = datetime.date(2021, 11, 1)
-    print(end)
+    begin = datetime.date(2021, 11, 1)
+    end = datetime.date(2022, 1, 5)
     # 导出时间
-    month_last = '2021-01-01'
-    month_yesterday = '2021-11-01'
-    month_begin = '2021-01-01'
+    month_last = '2021-12-01'
+    month_yesterday = '2022-01-05'
+    month_begin = '2021-11-01'
+print('****** 更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
+print('****** 导出起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 
 # 库的引用
 path = match[team]
@@ -105,13 +102,13 @@ for dir in dirs:
 print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
-m.creatMyOrderSlTWO(team, begin, end)   # 最近两个月的 部分内容 更新信息
-m.creatMyOrderSl(team)  # 最近五天的全部订单信息
+m.creatMyOrderSlTWO(team, begin, end)                       # 最近两个月的 部分内容 更新信息
+m.creatMyOrderSl(team)                                      # 最近五天的全部订单信息
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 
 print('------------更新部分：---------------------')
-if team in ('ga99t', 'slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'sl_rb'):
-    m.creatMyOrderSlTWO(team, begin, end)   # 最近两个月的更新订单信息
+if team in ('ga99t', 'slsc', 'sl_rb'):
+    m.creatMyOrderSlTWO(team, begin, end)                           # 最近两个月的更新订单信息
     print('处理耗时：', datetime.datetime.now() - start)
     print('------------导出部分：---------------------')
     m.connectOrder(team, month_last, month_yesterday, month_begin)  # 最近两个月的订单信息导出
@@ -126,12 +123,12 @@ elif team in ('gat'):
     # print('正在更新 昨日 的最新订单信息......')
     # last_month = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
     # sso.orderInfo('订单号', tem, tem2, last_month)
-    for i in range((end - begin).days):  # 按天循环获取订单状态
+    for i in range((end - begin).days):                     # 按天循环获取订单状态
         day = begin + datetime.timedelta(days=i)
         yesterday = str(day) + ' 23:59:59'
         last_month = str(day)
         print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
-        searchType = '订单号'      # 运单号，订单号   查询切换
+        searchType = '订单号'                              # 运单号，订单号   查询切换
         sso.orderInfo(searchType, tem, tem2, last_month)
     print('更新耗时：', datetime.datetime.now() - start)
 

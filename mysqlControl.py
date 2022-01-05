@@ -274,7 +274,7 @@ class MysqlControl(Settings):
             yy = int((rq - datetime.timedelta(days=4)).strftime('%Y'))
             mm = int((rq - datetime.timedelta(days=4)).strftime('%m'))
             dd = int((rq - datetime.timedelta(days=4)).strftime('%d'))
-            print(dd)
+            # print(dd)
             begin = datetime.date(yy, mm, dd)
             print(begin)
             yy2 = int(datetime.datetime.now().strftime('%Y'))
@@ -284,9 +284,9 @@ class MysqlControl(Settings):
             print(end)
         else:
             # 11-12月的
-            begin = datetime.date(2021, 4, 1)
+            begin = datetime.date(2021, 2, 1)
             print(begin)
-            end = datetime.date(2021, 11, 24)
+            end = datetime.date(2021, 3, 1)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -941,7 +941,7 @@ class MysqlControl(Settings):
                     FROM {0}_order_list sl
                     WHERE sl.`日期`> '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
 			        ) s
-                LEFT JOIN (SELECT MAX(id),product_id,`name`,third_cate_id  FROM dim_product GROUP BY product_id ) dp ON  dp.product_id = s.`产品id`
+                LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
                 LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''.format(team, month_begin)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
@@ -961,7 +961,7 @@ class MysqlControl(Settings):
                     FROM {0}_order_list sl
                     WHERE sl.`日期`> '{1}' AND (sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
 			        ) s
-                LEFT JOIN (SELECT MAX(id),product_id,`name`,third_cate_id  FROM dim_product GROUP BY product_id ) dp ON dp.product_id = s.`产品id`;'''.format(
+                LEFT JOIN dim_product_gat dp ON dp.product_id = s.`产品id`;'''.format(
             team, month_begin)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')

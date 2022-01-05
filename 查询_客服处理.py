@@ -100,7 +100,7 @@ class QueryUpdate(Settings):
                 elif '需核实拒收-每日上传' in dir:
                     print(filePath)
                     wb_data = '拒收核实'
-                elif '利英' in dir or '慧霞' in dir or '贵敏' in dir:
+                elif '利英' in dir or '慧霞' in dir or '贵敏' in dir or '嘉仪' in dir:
                     print(filePath)
                     wb_data = '需核实拒收_缓存每日'
                 if wb_data is None:

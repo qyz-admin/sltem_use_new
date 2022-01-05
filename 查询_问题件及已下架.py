@@ -14,12 +14,14 @@ from threading import Thread #  使用 threading 模块创建线程
 import pandas.io.formats.excel
 import zhconv          # transform2_zh_hant：转为繁体;transform2_zh_hans：转为简体
 
+from mysqlControl import MysqlControl
 from sqlalchemy import create_engine
 from settings import Settings
 from settings_sso import Settings_sso
 from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
+from 查询订单已下架 import QueryTwoLower
 
 
 # -*- coding:utf-8 -*-
@@ -53,6 +55,7 @@ class QueryTwo(Settings, Settings_sso):
                                                                                     self.mysql3['port'],
                                                                                     self.mysql3['datebase']))
         self.e = EmailControl()
+        self.my = MysqlControl()
     def reSetEngine(self):
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -192,7 +195,7 @@ class QueryTwo(Settings, Settings_sso):
         rq = pd.to_datetime(rq['处理时间'][0])
         last_time = (rq + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        print('起止时间：' + last_time + ' - ' + now_time)
+        print('起止时间：' + team + last_time + ' - ' + now_time)
         return last_time, now_time
 
     # 查询更新（新后台的获取-物流问题件）
@@ -501,7 +504,7 @@ class QueryTwo(Settings, Settings_sso):
             df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             df.to_excel('G:\\输出文件\\采购问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         sql = '''REPLACE INTO 采购异常(订单编号,处理结果,反馈时间,处理时间,取消原因, 处理人, 电话联系人, 联系时间,记录时间) 
-                SELECT 订单编号,处理结果,反馈时间,处理时间,取消原因, 处理人,null 电话联系人, null 联系时间, NOW() 记录时间 
+                SELECT 订单编号,处理结果,反馈时间,处理时间,取消原因, 处理人, null 电话联系人, null 联系时间, NOW() 记录时间 
                 FROM customer'''
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('写入成功......')
@@ -608,47 +611,72 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
         return data
 
-
 if __name__ == '__main__':
+    '''
+    # -----------------------------------------------自动获取 问题件 状态运行（一）-----------------------------------------
+    # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
+    '''
+    '''
+    已下架获取内容 仓库和对应库存类型
+    sku  stock_type =1
+    组合 stock_type =2
+    混合 stock_type =3
+    龟山易速配 whid = 70
+    速派八股仓 whid =95
+    天马新竹仓 whid =102
+    立邦香港顺丰 whid =117
+    香港易速配 whid =134
+    龟山-神龙备货 whid =166
+    龟山-火凤凰备货 whid =198
+    天马顺丰仓 whid =204
+    '''
     m = QueryTwo('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
-    match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
-    # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
-    select = 5                                  # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
+
+    select = 4
     if int(select) == 1:
         timeStart, timeEnd = m.readInfo('物流问题件')
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
     elif int(select) == 2:
         timeStart, timeEnd = m.readInfo('物流客诉件')
-        m.waybill_Query(timeStart, timeEnd)                      # 查询更新-物流客诉件
+        m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
     elif int(select) == 3:
         timeStart, timeEnd = m.readInfo('采购异常')
         m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
-        m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件(二、补充查询)
+        m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
 
     elif int(select) == 4:
         timeStart, timeEnd = m.readInfo('物流问题件')
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
 
         timeStart, timeEnd = m.readInfo('物流客诉件')
-        m.waybill_Query(timeStart, timeEnd)                      # 查询更新-物流客诉件
+        m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
 
         timeStart, timeEnd = m.readInfo('采购异常')
         m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
-        m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件(二、补充查询)
+        m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
 
+    '''
+    # -----------------------------------------------自动获取 已下架 状态运行（二）-----------------------------------------
+    '''
+    lw = QueryTwoLower('+86-18538110674', 'qyz04163510')
+    start: datetime = datetime.datetime.now()
+    lw.order_lower('2021-12-31', '2022-01-01', '自动')
 
+    '''
+    # -----------------------------------------------自动获取 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------
+    '''
+    m.my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
+    m.my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
 
+    # -----------------------------------------------测试部分-----------------------------------------
     # timeStart, timeEnd = m.readInfo('物流问题件')
 
     # m.waybill_InfoQuery('2021-12-22', '2021-12-22')         # 查询更新-物流问题件
-
     # m.waybill_Query('2021-12-22', '2021-12-22')             # 查询更新-物流客诉件
 
-    # m.sale_Query('2021-12-01', '2021-12-24')                    # 查询更新-采购问题件（一、简单查询）
-    # m.sale_Query_info('2021-12-23', '2021-12-24')             # 查询更新-采购问题件 (二、补充查询)
+    # m.sale_Query('2021-07-01', '2021-12-01')                    # 查询更新-采购问题件（一、简单查询）
+    # m.sale_Query_info('2021-07-01', '2021-12-01')             # 查询更新-采购问题件 (二、补充查询)
 
     # m._sale_Query_info('NR112180927421695')
-
-
     print('查询耗时：', datetime.datetime.now() - start)

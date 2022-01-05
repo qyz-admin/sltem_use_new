@@ -174,7 +174,7 @@ class QueryUpdate(Settings):
                         FROM {0}_order_list sl
                         WHERE sl.`日期`> '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
                      ) s
-                LEFT JOIN (SELECT MAX(id),product_id,`name`,third_cate_id  FROM dim_product GROUP BY product_id ) dp ON  dp.product_id = s.`产品id`
+                LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
                 LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''.format(team, month_begin)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
@@ -193,7 +193,7 @@ class QueryUpdate(Settings):
                         FROM {0}_order_list sl
                         WHERE sl.`日期`> '{1}' AND (sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
                     ) s
-                LEFT JOIN (SELECT MAX(id),product_id,`name`,third_cate_id  FROM dim_product GROUP BY product_id ) dp ON dp.product_id = s.`产品id`;'''.format(team, month_begin)
+                LEFT JOIN dim_product_gat dp ON dp.product_id = s.`产品id`;'''.format(team, month_begin)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
         print('正在更新产品详情…………')
@@ -235,9 +235,8 @@ class QueryUpdate(Settings):
             print('正在写入excel…………')
             df = df[['日期', '团队', '币种', '订单编号', '电话号码', '运单编号', '出货时间', '物流状态', '物流状态代码', '状态时间', '上线时间',
                      '系统订单状态', '系统物流状态', '最终状态', '是否改派', '物流方式', '物流名称', '签收表物流状态', '付款方式', '产品id', '产品名称',
-                     '父级分类', '二级分类', '下单时间', '审核时间', '添加物流单号时间', '仓储扫描时间', '完结状态时间']]
-            df.to_excel('G:\\输出文件\\{} {} 更新-签收表.xlsx'.format(today, match[team]),
-                        sheet_name=match[team], index=False)
+                     '父级分类', '二级分类', '下单时间', '审核时间', '仓储扫描时间', '完结状态时间']]
+            df.to_excel('G:\\输出文件\\{} {} 更新-签收表.xlsx'.format(today, match[team]), sheet_name=match[team], index=False)
             print('----已写入excel')
         print('正在写入' + match[team] + ' 全部签收表中…………')
         sql = 'REPLACE INTO {0}_zqsb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)
@@ -247,6 +246,16 @@ class QueryUpdate(Settings):
                    and gz.`审核时间` >= '{0} 00:00:00' AND gz.`日期` >= '{1}';'''.format(month_yesterday, month_last)
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('已清除不参与计算的今日改派订单…………')
+
+        print('正在查询改派未发货订单…………')
+        sql = '''SELECT xj.*, '未发货' AS 状态
+                FROM 已下架表  xj
+                LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
+                WHERE xj.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) AND xj.币种 = '台币' AND (最终状态 = '未发货' or 最终状态 IS NULL);'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        df.to_excel('G:\\输出文件\\{} 改派未发货.xlsx'.format(today), sheet_name='台湾', index=False)
+        print('----已写入excel')
+
     # 导出总的签收表---各家族-港澳台(三)
     def EportOrderBook(self, team, month_last, month_yesterday):
         today = datetime.date.today().strftime('%Y.%m.%d')
@@ -335,6 +344,7 @@ class QueryUpdate(Settings):
             							IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', d.`物流方式`)))  )  )  )  )  )  )  )
                         WHERE d.`是否改派` ='改派';'''
         print('正在修改-改派的物流渠道…………')
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
         filePath = []
         listT = []  # 查询sql的结果 存放池
@@ -6176,7 +6186,11 @@ class QueryUpdate(Settings):
                             SUM(IF(年月 = 202112,1,0)) as 12总单量,
                                 concat(ROUND(SUM(IF(年月 = 202112 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202112,1,0)) * 100,2),'%') as 12总计签收,
                                 concat(ROUND(SUM(IF(年月 = 202112 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202112 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 12完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202112 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202112,1,0)) * 100,2),'%') as 12完成占比
+                                concat(ROUND(SUM(IF(年月 = 202112 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202112,1,0)) * 100,2),'%') as 12完成占比,
+                            SUM(IF(年月 = 202201,1,0)) as 01总单量,
+                                concat(ROUND(SUM(IF(年月 = 202201 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202201,1,0)) * 100,2),'%') as 01总计签收,
+                                concat(ROUND(SUM(IF(年月 = 202201 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202201 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 01完成签收,
+                                concat(ROUND(SUM(IF(年月 = 202201 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202201,1,0)) * 100,2),'%') as 01完成占比
                         FROM gat_zqsb_cache cx
                         where cx.`运单编号` is not null 
                         GROUP BY cx.家族,cx.币种,cx.产品id
@@ -8717,8 +8731,8 @@ if __name__ == '__main__':
         month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
     else:
         month_last = '2021-11-01'
-        month_old = '2021-11-30'
-        month_yesterday = '2021-11-30'
+        month_old = '2021-12-31'
+        month_yesterday = '2021-12-31'
 
     last_time = '2021-01-01'
     write = '本期'
