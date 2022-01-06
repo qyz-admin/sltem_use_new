@@ -1182,9 +1182,9 @@ class QueryTwo(Settings):
         while n < max_count:        # 这里用到了一个while循环，穿越过来的
             ord = ', '.join(orderId[n:n + 500])
             n = n + 500
-            self.orderInfoQuery(ord, searchType, team, team2, last_month)
+            self.orderInfoQuery(ord, searchType, team, team2)
         print('单日查询耗时：', datetime.datetime.now() - start)
-    def orderInfoQuery(self, ord, searchType, team, team2, last_month):  # 进入订单检索界面
+    def orderInfoQuery(self, ord, searchType, team, team2):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -1221,9 +1221,10 @@ class QueryTwo(Settings):
         try:
             for result in req['data']['list']:
                 # print(result)
-                # print(result['orderNumber'])
+                # print(result['specs'])
                 # 添加新的字典键-值对，为下面的重新赋值用
-                if result['specs'] != '':
+                # 添加新的字典键-值对，为下面的重新赋值用
+                if result['specs'] != []:
                     result['saleId'] = 0
                     result['saleProduct'] = 0
                     result['productId'] = 0
@@ -1488,7 +1489,7 @@ class QueryTwo(Settings):
                 # print(result)
                 # print(result['orderNumber'])
                 # 添加新的字典键-值对，为下面的重新赋值用
-                if result['specs'] != '':
+                if result['specs'] != []:
                     result['saleId'] = 0
                     result['saleProduct'] = 0
                     result['productId'] = 0
@@ -1579,13 +1580,13 @@ if __name__ == '__main__':
     team2 = 'gat_order_list'    # 更新单号表
     searchType = '订单号'  # 运单号，订单号   查询切换
     print('++++++正在获取 ' + match1[team] + ' 信息++++++')
-    # for i in range((end - begin).days):  # 按天循环获取订单状态
-    #     day = begin + datetime.timedelta(days=i)
-    #     yesterday = str(day) + ' 23:59:59'
-    #     last_month = str(day)
-    #     now_month = str(day)
-    #     print('正在更新 ' + match1[team] + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
-    #     m.orderInfo(searchType, team, team2, last_month)
+    for i in range((end - begin).days):  # 按天循环获取订单状态
+        day = begin + datetime.timedelta(days=i)
+        yesterday = str(day) + ' 23:59:59'
+        last_month = str(day)
+        now_month = str(day)
+        print('正在更新 ' + match1[team] + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
+        # m.orderInfo(searchType, team, team2, last_month)
 
 
     for i in range((end - begin).days):  # 按天循环获取订单状态
@@ -1594,12 +1595,13 @@ if __name__ == '__main__':
         now_month = begin + datetime.timedelta(days=(i+1) * 5)
         if end >= now_month:
             print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
-            m.orderInfo_th(searchType, team, team2, last_month, now_month)
+            # m.orderInfo_th(searchType, team, team2, last_month, now_month)
         else:
             now_month = last_month + datetime.timedelta(days=(end - last_month).days)
             print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
-            m.orderInfo_th(searchType, team, team2, last_month, now_month)
+            # m.orderInfo_th(searchType, team, team2, last_month, now_month)
             break
 
-    # m.orderInfoQuery('GP210619103223PGNXK7', '订单号', 'gat_order_list', 'gat_order_list')  # 进入订单检索界面
+    m.orderInfoQuery('NR112151454534728', '订单号', 'gat_order_list', 'gat_order_list')  # 进入订单检索界面
+
     # print('更新耗时：', datetime.datetime.now() - start)

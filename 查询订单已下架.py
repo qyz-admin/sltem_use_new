@@ -224,6 +224,7 @@ class QueryTwoLower(Settings, Settings_sso):
 
 
     def order_lower(self, timeStart, timeEnd, auto_time):  # 进入已下架界面
+        start: datetime = datetime.datetime.now()
         team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓']
         # team_whid = ['天马顺丰仓']
         team_stock_type = [1, 2]
@@ -298,22 +299,25 @@ class QueryTwoLower(Settings, Settings_sso):
             try:
                 for result in req['data']:              # 添加新的字典键-值对，为下面的重新赋值
                     result['count_time'] = timeEnd
-                    if '龟山易速配' in result['whid']:
-                        result['waill_name'] = '龟山'
-                    elif '速派八股仓' in result['whid']:
-                        result['waill_name'] = '速派'
-                    elif '天马新竹仓' in result['whid']:
-                        result['waill_name'] = '天马新竹'
-                    elif '立邦香港顺丰' in result['whid']:
-                        result['waill_name'] = '立邦'
-                    elif '香港易速配' in result['whid']:
-                        result['waill_name'] = '易速配'
-                    elif '龟山-神龙备货' in result['whid']:
+                    if type_name == 'SKU库存':
                         result['waill_name'] = '龟山备货'
-                    elif '龟山-火凤凰备货' in result['whid']:
-                        result['waill_name'] = '龟山备货'
-                    elif '天马顺丰仓' in result['whid']:
-                        result['waill_name'] = '天马顺丰'
+                    else:
+                        if '龟山易速配' in result['whid']:
+                            result['waill_name'] = '龟山'
+                        elif '速派八股仓' in result['whid']:
+                            result['waill_name'] = '速派'
+                        elif '天马新竹仓' in result['whid']:
+                            result['waill_name'] = '天马新竹'
+                        elif '立邦香港顺丰' in result['whid']:
+                            result['waill_name'] = '立邦'
+                        elif '香港易速配' in result['whid']:
+                            result['waill_name'] = '易速配'
+                        elif '神龙备货' in result['whid']:
+                            result['waill_name'] = '龟山备货'
+                        elif '火凤凰备货' in result['whid']:
+                            result['waill_name'] = '龟山备货'
+                        elif '天马顺丰仓' in result['whid']:
+                            result['waill_name'] = '天马顺丰'
                     # print(result)
                     ordersDict.append(result)
             except Exception as e:

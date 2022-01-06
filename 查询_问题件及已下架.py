@@ -655,6 +655,7 @@ if __name__ == '__main__':
         timeStart, timeEnd = m.readInfo('采购异常')
         m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
         m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
+    print('查询耗时：', datetime.datetime.now() - start)
 
     '''
     # -----------------------------------------------自动获取 已下架 状态运行（二）-----------------------------------------
@@ -662,6 +663,7 @@ if __name__ == '__main__':
     lw = QueryTwoLower('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
     lw.order_lower('2021-12-31', '2022-01-01', '自动')
+    print('查询耗时：', datetime.datetime.now() - start)
 
     '''
     # -----------------------------------------------自动获取 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------
