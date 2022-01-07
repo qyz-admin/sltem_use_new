@@ -266,14 +266,17 @@ class QueryUpdate(Settings):
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('已清除不参与计算的今日改派订单…………')
 
-        print('正在查询改派未发货订单…………')
+        print('*******正在查询改派未发货订单…………')
         sql = '''SELECT xj.*, '未发货' AS 状态
                 FROM 已下架表  xj
                 LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
-                WHERE xj.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) AND xj.币种 = '台币' AND (最终状态 = '未发货' or 最终状态 IS NULL);'''
+			    LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
+                WHERE xj.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) 
+                    AND xj.币种 = '台币' AND (最终状态 = '未发货' or 最终状态 IS NULL)  
+                    AND  gs.系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单') or gs.系统订单状态 IS NULL;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_excel('G:\\输出文件\\{} 改派未发货.xlsx'.format(today), sheet_name='台湾', index=False)
-        print('----已写入excel')
+        print('******----已写入excel******')
 
     # 导出总的签收表---各家族-港澳台(三)
     def EportOrderBook(self, team, month_last, month_yesterday):
@@ -8739,7 +8742,7 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    if team == 'ga9t':
+    if team == 'gat':
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')

@@ -346,7 +346,10 @@ class QueryTwoLower(Settings, Settings_sso):
         sql = '''SELECT xj.*, '未发货' AS 状态
                 FROM 已下架表  xj
                 LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
-                WHERE xj.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) AND xj.币种 = '台币' AND (最终状态 = '未发货' or 最终状态 IS NULL);'''
+			    LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
+                WHERE xj.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) 
+					AND xj.币种 = '台币' AND (最终状态 = '未发货' or 最终状态 IS NULL)  
+					AND  gs.系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单') or gs.系统订单状态 IS NULL;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         listT.append(df)
         print('正在写入excel…………')

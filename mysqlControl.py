@@ -284,9 +284,9 @@ class MysqlControl(Settings):
             print(end)
         else:
             # 11-12月的
-            begin = datetime.date(2021, 12, 1)
+            begin = datetime.date(2021, 2, 28)
             print(begin)
-            end = datetime.date(2022, 1, 6)
+            end = datetime.date(2021, 4, 1)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)

@@ -230,9 +230,9 @@ class QueryTwo(Settings, Settings_sso):
                     if len(result['dealContent'].split()) > 1:
                         result['result_reson'] = result['dealContent'].split()[1]
                     result['dealContent'] = result['dealContent'].split()[0]
-                if result['traceRecord'] != '':
+                if result['traceRecord'] != '' or result['traceRecord'] != []:
                     result['deal_time'] = result['traceRecord'].split()[0]
-                if result['traceUserName'] != '':
+                if result['traceUserName'] != '' or result['traceUserName'] != []:
                     result['traceUserName'] = result['traceUserName'].replace('客服：', '')
                 result['dealContent'] = result['dealContent'].strip()
                 ordersDict.append(result)
@@ -300,9 +300,9 @@ class QueryTwo(Settings, Settings_sso):
                     if len(result['dealContent'].split()) > 1:
                         result['result_reson'] = result['dealContent'].split()[1]
                     result['dealContent'] = result['dealContent'].split()[0]
-                if result['traceRecord'] != '':
+                if result['traceRecord'] != '' or result['traceRecord'] != []:
                     result['deal_time'] = result['traceRecord'].split()[0]
-                if result['traceUserName'] != '':
+                if result['traceUserName'] != '' or result['traceUserName'] != []:
                     result['traceUserName'] = result['traceUserName'].replace('客服：', '')
                 result['dealContent'] = result['dealContent'].strip()
                 ordersDict.append(result)
@@ -343,26 +343,61 @@ class QueryTwo(Settings, Settings_sso):
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
-                result['deal_time'] = ''
-                result['result_reson'] = ''
-                result['result_info'] = ''
-                result['result_content'] = ''
-                if len(result['dealContent'].split()) > 3:
-                    result['result_reson'] = result['dealContent'].split()[3]       # 具体原因
-                if len(result['dealContent'].split()) > 2:
-                    result['result_info'] = result['dealContent'].split()[2]        # 客诉原因
-                if len(result['dealContent'].split()) > 1:
-                    result['result_content'] = result['dealContent'].split()[1]     # 处理内容
-                result['dealContent'] = result['dealContent'].split()[0]            # 最新处理结果
+                if ';' in result['traceRecord']:
+                    trace_Record = result['traceRecord'].split(";")
+                    for record in trace_Record:
+                        # result['order_number'] = ''
+                        # result['currency'] = ''
+                        # result['amount'] = ''
+                        # result['customer_name'] = ''
+                        # result['customer_mobile'] = ''
+                        # result['arrived_address'] = ''
+                        # result['arrived_time'] = ''
+                        # result['create_time'] = ''
+                        # result['dealStatus'] = ''
+                        # result['dealContent'] = ''
+                        # result['questionTypeName'] = ''
+                        # result['question_desc'] = ''
+                        # result['traceRecord'] = ''
+                        # result['traceUserName'] = ''
+                        # result['giftStatus'] = ''
+                        # result['gift_reissue_order_number'] = ''
+                        # result['update_time'] = ''
 
-                if result['traceRecord'] != '':
-                    if ';' in result['dealContent']:
-                        result['deal_time'] = (result['traceRecord'].split(";")[1]).split()[0]
-                    result['deal_time'] = result['traceRecord'].split()[0]
-                if result['traceUserName'] != '':
-                    result['traceUserName'] = result['traceUserName'].replace('客服：', '')
-                result['dealContent'] = result['dealContent'].strip()
-                ordersDict.append(result)
+                        result['deal_time'] = ''
+                        result['result_reson'] = ''
+                        result['result_info'] = ''
+                        result['result_content'] = ''
+
+                        result['deal_time'] = record.split()[0]
+                        if len(record.split("处理结果：")[1].split()) > 3:
+                            result['result_reson'] = record.split("处理结果：")[1].split()[3]       # 具体原因
+                        if len(record.split("处理结果：")[1].split()) > 2:
+                            result['result_info'] = record.split("处理结果：")[1].split()[2]        # 客诉原因
+                        if len(record.split("处理结果：")[1].split()) > 1:
+                            result['result_content'] = record.split("处理结果：")[1].split()[1]     # 处理内容
+                        result['dealContent'] = record.split("处理结果：")[1].split()[0]            # 最新处理结果
+                        result['traceUserName'] = (record.split("#处理结果：")[0].split())[2]
+                        ordersDict.append(result.copy())    # append()方法只是将字典的地址存到list中，而键赋值的方式就是修改地址，所以才导致覆盖的问题;  使用copy() 或者 deepcopy()  当字典中存在list的时候需要使用deepcopy()
+                else:
+                    result['deal_time'] = ''
+                    result['result_reson'] = ''
+                    result['result_info'] = ''
+                    result['result_content'] = ''
+                    if len(result['dealContent'].split()) > 3:
+                        result['result_reson'] = result['dealContent'].split()[3]       # 具体原因
+                    if len(result['dealContent'].split()) > 2:
+                        result['result_info'] = result['dealContent'].split()[2]        # 客诉原因
+                    if len(result['dealContent'].split()) > 1:
+                        result['result_content'] = result['dealContent'].split()[1]     # 处理内容
+                    result['dealContent'] = result['dealContent'].split()[0]            # 最新处理结果
+
+                    if result['traceRecord'] != '' or result['traceRecord'] != []:
+                        result['deal_time'] = result['traceRecord'].split()[0]
+                    if result['traceUserName'] != '' or result['traceUserName'] != []:
+                        result['traceUserName'] = result['traceUserName'].replace('客服：', '')
+                    result['dealContent'] = result['dealContent'].strip()
+                    ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
         data = pd.json_normalize(ordersDict)
@@ -387,10 +422,12 @@ class QueryTwo(Settings, Settings_sso):
                 dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
             print('正在写入......')
+            dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏', na=False))]
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\物流客诉件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         else:
             print('正在写入......')
+            df = df[(df['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏', na=False))]
             df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             df.to_excel('G:\\输出文件\\物流客诉件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         sql = '''REPLACE INTO 物流客诉件(处理时间,物流反馈时间,处理人,订单编号,处理方案, 处理结果, 客诉原因, 记录时间) 
@@ -417,27 +454,44 @@ class QueryTwo(Settings, Settings_sso):
         ordersDict = []
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
+                print(result['order_number'])
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
-                result['deal_time'] = ''
-                result['result_reson'] = ''
-                result['result_info'] = ''
-                result['result_content'] = ''
-                if len(result['dealContent'].split()) > 3:
-                    result['result_reson'] = result['dealContent'].split()[3]       # 具体原因
-                if len(result['dealContent'].split()) > 2:
-                    result['result_info'] = result['dealContent'].split()[2]        # 客诉原因
-                if len(result['dealContent'].split()) > 1:
-                    result['result_content'] = result['dealContent'].split()[1]     # 处理内容
-                result['dealContent'] = result['dealContent'].split()[0]            # 最新处理结果
+                if ';' in result['traceRecord']:
+                    trace_Record = result['traceRecord'].split(";")
+                    for record in trace_Record:
+                        result['deal_time'] = ''
+                        result['result_reson'] = ''
+                        result['result_info'] = ''
+                        result['result_content'] = ''
+                        result['deal_time'] = record.split()[0]
+                        if len(record.split("处理结果：")[1].split()) > 3:
+                            result['result_reson'] = record.split("处理结果：")[1].split()[3]       # 具体原因
+                        if len(record.split("处理结果：")[1].split()) > 2:
+                            result['result_info'] = record.split("处理结果：")[1].split()[2]        # 客诉原因
+                        if len(record.split("处理结果：")[1].split()) > 1:
+                            result['result_content'] = record.split("处理结果：")[1].split()[1]     # 处理内容
+                        result['dealContent'] = record.split("处理结果：")[1].split()[0]            # 最新处理结果
+                        result['traceUserName'] = (record.split("#处理结果：")[0].split())[2]
+                        ordersDict.append(result.copy())    # append()方法只是将字典的地址存到list中，而键赋值的方式就是修改地址，所以才导致覆盖的问题;  使用copy() 或者 deepcopy()  当字典中存在list的时候需要使用deepcopy()
+                else:
+                    result['deal_time'] = ''
+                    result['result_reson'] = ''
+                    result['result_info'] = ''
+                    result['result_content'] = ''
+                    if len(result['dealContent'].split()) > 3:
+                        result['result_reson'] = result['dealContent'].split()[3]       # 具体原因
+                    if len(result['dealContent'].split()) > 2:
+                        result['result_info'] = result['dealContent'].split()[2]        # 客诉原因
+                    if len(result['dealContent'].split()) > 1:
+                        result['result_content'] = result['dealContent'].split()[1]     # 处理内容
+                    result['dealContent'] = result['dealContent'].split()[0]            # 最新处理结果
 
-                if result['traceRecord'] != '':
-                    if ';' in result['dealContent']:
-                        result['deal_time'] = (result['traceRecord'].split(";")[1]).split()[0]
-                    result['deal_time'] = result['traceRecord'].split()[0]
-                if result['traceUserName'] != '':
-                    result['traceUserName'] = result['traceUserName'].replace('客服：', '')
-                result['dealContent'] = result['dealContent'].strip()
-                ordersDict.append(result)
+                    if result['traceRecord'] != '' or result['traceRecord'] != []:
+                        result['deal_time'] = result['traceRecord'].split()[0]
+                    if result['traceUserName'] != '' or result['traceUserName'] != []:
+                        result['traceUserName'] = result['traceUserName'].replace('客服：', '')
+                    result['dealContent'] = result['dealContent'].strip()
+                    ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
         data = pd.json_normalize(ordersDict)
@@ -675,7 +729,7 @@ if __name__ == '__main__':
     # timeStart, timeEnd = m.readInfo('物流问题件')
 
     # m.waybill_InfoQuery('2021-12-22', '2021-12-22')         # 查询更新-物流问题件
-    # m.waybill_Query('2021-12-22', '2021-12-22')             # 查询更新-物流客诉件
+    # m.waybill_Query('2021-11-10', '2022-01-05')             # 查询更新-物流客诉件
 
     # m.sale_Query('2021-07-01', '2021-12-01')                    # 查询更新-采购问题件（一、简单查询）
     # m.sale_Query_info('2021-07-01', '2021-12-01')             # 查询更新-采购问题件 (二、补充查询)
