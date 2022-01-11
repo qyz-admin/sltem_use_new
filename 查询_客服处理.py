@@ -371,7 +371,7 @@ class QueryUpdate(Settings):
                 UNION all 
                 (SELECT 年月,IF(币种 = '台湾','台币','港币') 币种, 团队,产品id,产品名称,COUNT(订单编号) as 单量,SUM(数量) as 商品数量
                     FROM {1} d
-                    WHERE d.`年月` ='{0}' and d.`币种` = '台湾' and d.`团队` LIKE '神龙-低价%'
+                    WHERE d.`年月` ='{0}' and d.`币种` = '台湾' and d.`团队` LIKE '神龙-运营1组%'
                     GROUP BY d.`年月`,d.`币种`,d.`团队`, d.`产品id`
                     ORDER BY 单量 DESC
                     LIMIT 10) 
@@ -427,7 +427,7 @@ class QueryUpdate(Settings):
                 UNION all 
                 (SELECT 年月,IF(币种 = '台湾','台币','港币') 币种, 团队,产品id,产品名称,COUNT(订单编号) as 单量,SUM(数量) as 商品数量
                     FROM {1} d
-                    WHERE d.`年月` ='{0}' and d.`币种` = '香港' and d.`团队` LIKE '神龙-低价%'
+                    WHERE d.`年月` ='{0}' and d.`币种` = '香港' and d.`团队` LIKE '神龙-运营1组%'
                     GROUP BY d.`年月`,d.`币种`,d.`团队`, d.`产品id`
                     ORDER BY 单量 DESC
                     LIMIT 10)				
@@ -1173,7 +1173,7 @@ class QueryUpdate(Settings):
                                     WITH ROLLUP 
                                 ) s 
                                 HAVING s.月份 != '合计' AND s.产品id != '合计' AND s.`拒收` >= '1'
-                                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','红杉','金狮','合计'),
+                                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-运营1组','红杉','金狮','合计'),
                                 FIELD(s.`地区`,'台湾','香港','合计'),
                                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'),'合计'),
                                 FIELD(s.`产品id`,'合计'),
@@ -1223,7 +1223,7 @@ class QueryUpdate(Settings):
                                     WITH ROLLUP 
                                 ) s 
                                 HAVING s.月份 != '合计' AND s.产品id != '合计' AND s.`拒收` >= '1'
-                                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','红杉','金狮','合计'),
+                                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-运营1组','红杉','金狮','合计'),
                                 FIELD(s.`地区`,'台湾','香港','合计'),
                                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'),'合计'),
                                 FIELD(s.`产品id`,'合计'),

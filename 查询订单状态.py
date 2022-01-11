@@ -408,18 +408,19 @@ class QueryUpdate(Settings):
 if __name__ == '__main__':
     m = QueryUpdate()
     start: datetime = datetime.datetime.now()
+    week: datetime = datetime.datetime.now()
     match1 = {'slgat': '神龙-港台',
               'slgat_hfh': '火凤凰-港台',
               'slgat_hs': '红杉-港台',
               'slgat_js': '金狮-港台',
               'gat': '港台'}
     team = 'gat'
-    # -----------------------------------------------手动查询状态运行（一）-----------------------------------------
-    # m.trans_way_cost(team)  # 同产品下的规格运费查询
-
+    # -----------------------------------------------手动查询状态运行（一）----------------------------------------
     # upload = '查询-订单号'
-    upload = '查询-运单号'
-    m.readFormHost(upload)
+    # m.trans_way_cost(team)  # 同产品下的规格运费查询
+    if week.isoweekday() == 1 or week.isoweekday() == 3 or week.isoweekday() == 5:
+        upload = '查询-运单号'
+        m.readFormHost(upload)
 
     m.trans_way_cost_new(team)  # 同产品下的规格运费查询
 
