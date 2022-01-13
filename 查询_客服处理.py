@@ -1267,14 +1267,14 @@ if __name__ == '__main__':
         3、 获取工单和退换货的客服处理记录；
         4、 拒收核实-查询需要的产品id；  获取前 记得上传发过的核实表和返回的核实表；以及客诉件和问题件表
     '''
-    select = 1
+    select = 2
     if int(select) == 1:
         m.readFormHost('202110')
 
     elif int(select) == 2:
         begin = datetime.date(2021, 12, 1)  # 压单反馈上传使用
         print(begin)
-        end = datetime.date(2021, 12, 2)
+        end = datetime.date(2021, 12, 31)
         print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)

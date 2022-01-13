@@ -206,7 +206,7 @@ class QueryTwo(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerQuestion'}
-        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'gift_reissue_order_number': None, 'is_gift_reissue': None, 'order_trace_id': 62,
+        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'gift_reissue_order_number': None, 'is_gift_reissue': None, 'order_trace_id': None,
                 'question_type': None, 'critical': None, 'read_status': None, 'operator_type': None, 'operator': None, 'create_time': None,
                 'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'is_collection': None, 'logistics_status': None, 'user_id': None,
                 'page': 1, 'pageSize': 90}
@@ -221,6 +221,7 @@ class QueryTwo(Settings, Settings_sso):
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
+                result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
                 if ';' in result['traceRecord']:
                     trace_record = result['traceRecord'].split(";")
                     for record in trace_record:
@@ -301,7 +302,7 @@ class QueryTwo(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerQuestion'}
-        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'gift_reissue_order_number': None, 'is_gift_reissue': None, 'order_trace_id': 62,
+        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'gift_reissue_order_number': None, 'is_gift_reissue': None, 'order_trace_id': None,
                 'question_type': None, 'critical': None, 'read_status': None, 'operator_type': None, 'operator': None, 'create_time': None,
                 'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'is_collection': None, 'logistics_status': None, 'user_id': None,
                 'page': n, 'pageSize': 90}
@@ -315,6 +316,7 @@ class QueryTwo(Settings, Settings_sso):
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
+                result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
                 if ';' in result['traceRecord']:
                     trace_record = result['traceRecord'].split(";")
                     for record in trace_record:
@@ -369,7 +371,7 @@ class QueryTwo(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
-        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': '41', 'question_type': None, 'critical': None, 'read_status': None,
+        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': None, 'question_type': None, 'critical': None, 'read_status': None,
                 'operator_type': None, 'operator': None, 'create_time': None, 'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'is_gift_reissue': None,
                 'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': 1, 'pageSize': 90}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
@@ -384,6 +386,7 @@ class QueryTwo(Settings, Settings_sso):
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
+                result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
                 if ';' in result['traceRecord']:
                     trace_record = result['traceRecord'].split(";")
                     for record in trace_record:
@@ -454,8 +457,8 @@ class QueryTwo(Settings, Settings_sso):
         dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞', na=False))]
         dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
         dp.to_excel('G:\\输出文件\\物流客诉件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-        sql = '''REPLACE INTO 物流客诉件(处理时间,物流反馈时间,处理人,订单编号,处理方案, 处理结果, 客诉原因, 记录时间) 
-                SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,最新处理结果 AS 处理方案, 处理内容 AS 处理结果, 客诉原因, NOW() 记录时间 
+        sql = '''REPLACE INTO 物流客诉件(处理时间,物流反馈时间,处理人,订单编号,处理方案, 处理结果, 客诉原因, 赠品补发订单编号,记录时间) 
+                SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,最新处理结果 AS 处理方案, 处理内容 AS 处理结果, 客诉原因, 赠品补发订单编号, NOW() 记录时间 
                 FROM customer;'''
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('写入成功......')
@@ -466,7 +469,7 @@ class QueryTwo(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
-        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': '41', 'question_type': None, 'critical': None, 'read_status': None,
+        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': None, 'question_type': None, 'critical': None, 'read_status': None,
                 'operator_type': None, 'operator': None, 'create_time': None, 'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'is_gift_reissue': None,
                 'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': n, 'pageSize': 90}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
@@ -479,6 +482,7 @@ class QueryTwo(Settings, Settings_sso):
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
+                result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
                 if ';' in result['traceRecord']:
                     trace_record = result['traceRecord'].split(";")
                     for record in trace_record:
@@ -795,6 +799,7 @@ class QueryTwo(Settings, Settings_sso):
         orders_dict = []    # 数据的列表
         try:
             for ord in order_dict:  # 添加新的字典键-值对，为下面的重新赋值用
+                ord['content'] = zhconv.convert(ord['content'], 'zh-hans')
                 orders_dict.append(ord.copy())
                 data = pd.json_normalize(ord)
                 dp = data[['orderNumber', 'content', 'addTime', 'addTime', 'name', 'dealProcess']]
@@ -848,6 +853,7 @@ if __name__ == '__main__':
 
     elif int(select) == 4:
         timeStart, timeEnd = m.readInfo('物流问题件')
+        m.waybill_InfoQuery('2021-12-01', '2021-12-01')                   # 查询更新-物流问题件
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
 
         timeStart, timeEnd = m.readInfo('物流客诉件')
@@ -876,11 +882,10 @@ if __name__ == '__main__':
     # -----------------------------------------------测试部分-----------------------------------------
     # timeStart, timeEnd = m.readInfo('物流问题件')
 
-    # m.waybill_InfoQuery('2021-12-01', '2022-01-09')         # 查询更新-物流问题件
-    # m.waybill_Query('2021-12-01', '2022-01-09')             # 查询更新-物流客诉件
+    m.waybill_InfoQuery('2021-12-01', '2022-01-12')         # 查询更新-物流问题件
+    # m.waybill_Query('2021-12-01', '2022-01-11')             # 查询更新-物流客诉件
 
-    m.ssale_Query('2021-12-01', '2022-01-11')                    # 查询更新-采购问题件（一、简单查询）
-    # m.ssale_Query('2022-01-07', '2022-01-08')                    # 查询更新-采购问题件（一、简单查询）
+    # m.ssale_Query('2021-12-01', '2022-01-12')                    # 查询更新-采购问题件（一、简单查询）
     # m.sale_Query_info('2021-07-01', '2021-12-01')             # 查询更新-采购问题件 (二、补充查询)
 
     # m._sale_Query_info('NR112180927421695')

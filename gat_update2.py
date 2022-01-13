@@ -177,34 +177,39 @@ class QueryUpdate(Settings):
                 LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
                 LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''.format(team, month_begin)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
-        df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
-        print('正在更新父级分类的详情…………')
-        sql = '''update {0}_order_list a, tem_product_id b
-                    set a.`父级分类`= IF(b.`cate` = '', a.`父级分类`, b.`cate`),
-                        a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
-                        a.`三级分类`= IF(b.`third_cate` = '', a.`三级分类`, b.`third_cate`)
-                where a.`订单编号`= b.`订单编号`;'''.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        print('更新完成+++')
+        if df.empty:
+            print('已完成第一次检查父级分类; 没有为空的信息………… ')
+        else:
+            print('正在更新父级分类的详情…………')
+            df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
+            sql = '''update {0}_order_list a, tem_product_id b
+                        set a.`父级分类`= IF(b.`cate` = '', a.`父级分类`, b.`cate`),
+                            a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
+                            a.`三级分类`= IF(b.`third_cate` = '', a.`三级分类`, b.`third_cate`)
+                    where a.`订单编号`= b.`订单编号`;'''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('更新完成+++')
 
-        print('正在第二次检查父级分类为空的信息---')
-        sql = '''SELECT 订单编号,商品id,dp.`product_id`, dp.`name` product_name, dp.third_cate_id, dc.`ppname` cate, dc.`pname` second_cate, dc.`name` third_cate
-                FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-                        FROM gat_order_list sl
-                        WHERE sl.`日期`> '2021-12-01' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
-                     ) s
-                LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
-                LEFT JOIN (SELECT * FROM dim_cate GROUP BY pid ) dc ON  dc.pid = dp.second_cate_id;'''.format(team, month_begin)
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
-        print('正在更新父级分类的详情…………')
-        sql = '''update {0}_order_list a, tem_product_id b
-                    set a.`父级分类`= IF(b.`cate` = '', a.`父级分类`, b.`cate`),
-                        a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
-                        a.`三级分类`= IF(b.`third_cate` = '', a.`三级分类`, b.`third_cate`)
-                where a.`订单编号`= b.`订单编号`;'''.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        print('更新完成+++')
+            print('正在第二次检查父级分类为空的信息---')
+            sql = '''SELECT 订单编号,商品id,dp.`product_id`, dp.`name` product_name, dp.third_cate_id, dc.`ppname` cate, dc.`pname` second_cate, dc.`name` third_cate
+                    FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
+                            FROM gat_order_list sl
+                            WHERE sl.`日期`> '2021-12-01' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+                         ) s
+                    LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
+                    LEFT JOIN (SELECT * FROM dim_cate GROUP BY pid ) dc ON  dc.pid = dp.second_cate_id;'''.format(team,month_begin)
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            if df.empty:
+                print('已完成第二次检查父级分类; 没有为空的信息………… ')
+            else:
+                print('正在更新父级分类的详情…………')
+                sql = '''update {0}_order_list a, tem_product_id b
+                            set a.`父级分类`= IF(b.`cate` = '', a.`父级分类`, b.`cate`),
+                                a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
+                                a.`三级分类`= IF(b.`third_cate` = '', a.`三级分类`, b.`third_cate`)
+                        where a.`订单编号`= b.`订单编号`;'''.format(team)
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                print('更新完成+++')
 
         print('正在检查产品id为空的信息---')
         sql = '''SELECT 订单编号,商品id,dp.product_id, dp.`name` product_name, dp.third_cate_id
@@ -214,14 +219,28 @@ class QueryUpdate(Settings):
                     ) s
                 LEFT JOIN dim_product_gat dp ON dp.product_id = s.`产品id`;'''.format(team, month_begin)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
-        df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
-        print('正在更新产品详情…………')
-        sql = '''update {0}_order_list a, tem_product_id b
+        if df.empty:
+            print('已完成第一次检查产品id; 没有为空的信息………… ')
+        else:
+            print('正在更新产品详情…………')
+            df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
+            sql = '''update {0}_order_list a, tem_product_id b
                         set a.`产品id`= IF(b.`product_id` = '',a.`产品id`, b.`product_id`),
                             a.`产品名称`= IF(b.`product_name` = '',a.`产品名称`, b.`product_name`)
                 where a.`订单编号`= b.`订单编号`;'''.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        print('更新完成+++')
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('更新完成+++')
+
+        sql = '''SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
+                FROM gat_order_list sl
+                WHERE sl.`日期`> '2021-12-01' 
+                    AND (sl.`父级分类` IS NULL or sl.`父级分类`= '' OR sl.`产品名称` IS NULL or sl.`产品名称`= '') 
+                    AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'));'''.format(team, month_begin)
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        if ordersDict.empty:
+            print(' ****** 没有要补充的信息; 检查完成 ****** ')
+        else:
+            print('！！！ 请再次补充缺少的数据！！！')
 
         if team in ('gat'):
             sql = '''DELETE FROM gat_zqsb
@@ -273,8 +292,10 @@ class QueryUpdate(Settings):
 			    LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
                 WHERE xj.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) 
                     AND xj.币种 = '台币' AND (最终状态 = '未发货' or 最终状态 IS NULL)  
-                    AND  gs.系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单') or gs.系统订单状态 IS NULL;'''
+                    AND  gs.系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单') or gs.系统订单状态 IS NULL
+                ORDER BY FIELD(物流渠道,'龟山','龟山备货','天马顺丰','天马新竹','速派','立邦');'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
+        df = df.loc[df["币种"] == "台币"]
         df.to_excel('G:\\输出文件\\{} 改派未发货.xlsx'.format(today), sheet_name='台湾', index=False)
         print('******----已写入excel******')
 
@@ -299,39 +320,129 @@ class QueryUpdate(Settings):
         # else:
         #     month_last = '2021-08-01'
         #     month_yesterday = '2021-10-01'
-        print(month_last)
-        print(month_yesterday)
-        print('正在获取---' + match[team] + ' ---全部数据内容…………')
-        sql = '''SELECT * FROM {0}_zqsb a WHERE a.日期 >= '{1}' AND a.日期 <= '{2}' ORDER BY a.`下单时间`;'''.format(team, month_last, month_yesterday)     # 港台查询函数导出
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        print('正在写入---' + match[team] + ' ---临时缓存…………')             # 备用临时缓存表
-        df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
-        for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-小虎队"|slgat_jp', '"神龙-运营1组"|slgat_run'):
-            tem1 = tem.split('|')[0]
-            tem2 = tem.split('|')[1]
-            sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)
-            df = pd.read_sql_query(sql=sql, con=self.engine1)
-            # df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
-            df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]),
-                        sheet_name=match[tem2], index=False)
-            print(tem2 + '----已写入excel')
-            # print('正在打印' + match[tem2] + ' 物流时效…………')
-            # self.m.data_wl(tem2)
-        try:
-            print('正在转存中' + month_yesterday + '最近两个月的订单......')
-            sql = '''SELECT 年月, 旬, 日期, 团队,币种, 订单来源, 订单编号, 出货时间, IF(`状态时间` = '',NULL,状态时间) as 状态时间, 上线时间, 最终状态,是否改派,物流方式,
-                            产品id,父级分类,二级分类,三级分类,下单时间, 审核时间,仓储扫描时间,下架时间, 物流提货时间, 完结状态, 完结状态时间,回款时间, 价格RMB, curdate() 记录时间
-                    FROM d1_{0} a WHERE a.`运单编号` is not null ;'''.format(team)
-            df = pd.read_sql_query(sql=sql, con=self.engine1)
-            print('正在添加缓存中......')
-            df.to_sql('gat_update_cp', con=self.engine1, index=False, if_exists='replace')
-            print('正在转存数据中......')
-            sql = '''REPLACE INTO qsb_{0} SELECT * FROM gat_update_cp; '''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        except Exception as e:
-            print('转存失败：', str(Exception) + str(e))
-        print('转存成功…………')
 
+        # print(month_last)
+        # print(month_yesterday)
+        # print('正在获取---' + match[team] + ' ---全部数据内容…………')
+        # sql = '''SELECT * FROM {0}_zqsb a WHERE a.日期 >= '{1}' AND a.日期 <= '{2}' ORDER BY a.`下单时间`;'''.format(team, month_last, month_yesterday)     # 港台查询函数导出
+        # df = pd.read_sql_query(sql=sql, con=self.engine1)
+        # print('正在写入---' + match[team] + ' ---临时缓存…………')             # 备用临时缓存表
+        # df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
+        # for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-小虎队"|slgat_jp', '"神龙-运营1组"|slgat_run'):
+        #     tem1 = tem.split('|')[0]
+        #     tem2 = tem.split('|')[1]
+        #     sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)
+        #     df = pd.read_sql_query(sql=sql, con=self.engine1)
+        #     # df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
+        #     df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]), sheet_name=match[tem2], index=False)
+        #     print(tem2 + '----已写入excel')
+        #     # print('正在打印' + match[tem2] + ' 物流时效…………')
+        #     # self.m.data_wl(tem2)
+        # try:
+        #     print('正在转存中' + month_yesterday + '最近两个月的订单......')
+        #     sql = '''SELECT 年月, 旬, 日期, 团队,币种, 订单来源, 订单编号, 出货时间, IF(`状态时间` = '',NULL,状态时间) as 状态时间, 上线时间, 最终状态,是否改派,物流方式,
+        #                     产品id,父级分类,二级分类,三级分类,下单时间, 审核时间,仓储扫描时间,下架时间, 物流提货时间, 完结状态, 完结状态时间,回款时间, 价格RMB, curdate() 记录时间
+        #             FROM d1_{0} a WHERE a.`运单编号` is not null ;'''.format(team)
+        #     df = pd.read_sql_query(sql=sql, con=self.engine1)
+        #     print('正在添加缓存中......')
+        #     df.to_sql('gat_update_cp', con=self.engine1, index=False, if_exists='replace')
+        #     print('正在转存数据中......')
+        #     sql = '''REPLACE INTO qsb_{0} SELECT * FROM gat_update_cp; '''.format(team)
+        #     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        # except Exception as e:
+        #     print('转存失败：', str(Exception) + str(e))
+        # print('转存成功…………')
+
+        print('正在获取预估签收率的数据......')
+        week: datetime = datetime.datetime.now()
+        if week.isoweekday() == 2 or week.isoweekday() == 4:
+            time_path: datetime = datetime.datetime.now()
+            mkpath = "F:\\神龙签收率\\预估签收率\\" + time_path.strftime('%m.%d')
+            isExists = os.path.exists(mkpath)
+            if not isExists:
+                os.makedirs(mkpath)
+            else:
+                print(mkpath + ' 目录已存在')
+            file_path = mkpath + '\\{} 预测_产品签收率_使用版.xlsx'.format(time_path.strftime('%m.%d'))
+            sql = '''SELECT 团队 AS 家族, 币种, 产品id, 产品名称, 
+			                concat(ROUND(产品金额团队占比* 100,2),'%') AS 产品金额团队占比, 最近3天单量,
+			                concat(ROUND(IF(历史平均 = 0 OR 历史平均 IS NULL,预测, 历史平均)* 100,2),'%') AS '预测签收',
+			                concat(ROUND(IF(历史平均 = 0 OR 历史平均 IS NULL,产品金额团队占比 * 预测影响, 产品金额团队占比 * 历史平均影响)* 100,2),'%') AS '预测签收影响',
+			                IF(历史平均 = 0 OR 历史平均 IS NULL,'预测取值', '历史取值') AS 取值,
+			                concat(ROUND(目标签收率* 100,2),'%') AS 目标签收率
+                    FROM(SELECT s.团队, s.币种, s.产品id, s.产品名称, 
+			                    本月单量, ROUND(总金额) AS 总金额, ROUND(签收金额) AS 签收金额, ROUND(拒收金额) AS 拒收金额, ROUND(完成金额) AS 完成金额,
+			                    concat(ROUND(签收金额 / 总金额 * 100,2),'%') AS 金额签收率,
+			                    concat(ROUND(签收金额 / 完成金额 * 100,2),'%') AS 金额完成签收,
+			                    concat(ROUND(完成金额 / 总金额 * 100,2),'%') AS 金额完成比,
+			                    总金额 / 团队金额 AS 产品金额团队占比,
+			                    最近单量 AS 最近3天单量,
+			                    avg_sign_rate AS 历史平均,
+			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '台湾',(avg_sign_rate-0.81),
+			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '香港',(avg_sign_rate-0.89) ,
+			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '台湾',(avg_sign_rate-0.86),
+			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '香港',(avg_sign_rate-0.89), 
+			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '台湾',(avg_sign_rate-0.86), 
+			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '香港',(avg_sign_rate-0.88), NULL)))))) AS 历史平均影响, 
+			                    sign_rate AS 预测, 
+			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '台湾',(sign_rate-0.81),
+			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '香港',(sign_rate-0.89) ,
+			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '台湾',(sign_rate-0.86),
+			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '香港',(sign_rate-0.89), 
+			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '台湾',(sign_rate-0.86), 
+			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '香港',(sign_rate-0.88), NULL)))))) AS 预测影响,
+			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '台湾',0.81,
+			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '香港',0.89,
+			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '台湾',0.86,
+			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '香港',0.89, 
+			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '台湾',0.86, 
+			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '香港',0.88, NULL)))))) AS 目标签收率
+                        FROM (SELECT cc.`团队`, cc.`币种`, cc.`产品id`, cc.`产品名称`, cc.`三级分类`,
+						            COUNT(订单编号) AS 本月单量,
+						            SUM(`价格RMB`) AS 总金额,
+						            SUM(IF(最终状态 = "已签收",价格RMB,0)) as 签收金额,
+						            SUM(IF(最终状态 = "拒收",价格RMB,0)) as 拒收金额,
+						            SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),价格RMB,0)) as 完成金额						
+			                FROM gat_zqsb cc
+			                where cc.年月 = DATE_FORMAT(curdate(),'%Y%m')
+			                GROUP BY cc.`团队`, cc.`币种`, cc.`产品id`
+                        ) s
+                        LEFT JOIN 
+                        (   SELECT cc.`团队`, cc.`币种`, SUM(`价格RMB`) AS 团队金额
+	                        FROM gat_zqsb cc
+                            where cc.年月 = DATE_FORMAT(curdate(),'%Y%m')
+	                        GROUP BY cc.`团队`, cc.`币种`
+                        ) s1  ON s.团队 = s1.团队 AND s.币种 = s1.币种
+                        LEFT JOIN
+                        (   SELECT cc.`团队`, cc.`币种`, cc.`产品id`, COUNT(订单编号) AS 最近单量
+	                        FROM gat_zqsb cc
+	                        where cc.日期  BETWEEN DATE_ADD(CURRENT_DATE(), INTERVAL -3 DAY) AND CURDATE()
+	                        GROUP BY cc.`团队`, cc.`币种`, cc.`产品id`
+                        ) s2 ON s.团队 = s2.团队 AND s.币种 = s2.币种 AND s.产品id = s2.产品id
+                        LEFT JOIN
+                        (   SELECT * FROM gk_stat_sign_rate) s3 ON s.团队 = s3.area_id AND s.币种 = s3.currency_id AND s.产品id = s3.goods_id
+                        LEFT JOIN
+                        (   SELECT * FROM gk_bi_estimate_goods) s4 ON s.团队 = s4.area_id AND s.币种 = s4.currency_id AND s.产品id = s4.goods_id
+                    ) z;'''
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            df.to_excel(file_path, sheet_name='使用', index=False)
+            print('输出成功…………')
+            try:
+                print('正在运行 预估签收率 表宏…………')
+                app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
+                app.display_alerts = False
+                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+                wbsht1 = app.books.open(file_path)
+                wbsht.macro('预估签收率修饰_使用')()
+                wbsht1.save()
+                wbsht1.close()
+                wbsht.close()
+                app.quit()
+            except Exception as e:
+                print('运行失败：', str(Exception) + str(e))
+            print('运行成功…………')
+        else:
+            print('今日无需获取预估签收率的数据！！！')
 
     # 新版签收率-报表(自己看的) - 单量计算
     def gat_new(self, team, month_last, month_yesterday):  # 报表各团队近两个月的物流数据
@@ -8755,8 +8866,8 @@ if __name__ == '__main__':
     write = '本期'
     m.readFormHost(team, write, last_time)                              #  更新签收表---港澳台（一）
 
-    m.gat_new(team, month_last, month_yesterday)                  #  获取-签收率-报表
-    m.qsb_new(team, month_old)                                    #  获取-每日-报表
+    # m.gat_new(team, month_last, month_yesterday)                  #  获取-签收率-报表
+    # m.qsb_new(team, month_old)                                    #  获取-每日-报表
     m.EportOrderBook(team, month_last, month_yesterday)       #  导出-总的-签收表
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id
