@@ -21,7 +21,7 @@ from settings_sso import Settings_sso
 from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
-from 查询订单已下架 import QueryTwoLower
+from 查询_已下架_压单 import QueryTwoLower
 
 
 # -*- coding:utf-8 -*-
@@ -33,6 +33,7 @@ class QueryTwo(Settings, Settings_sso):
         self.userMobile = userMobile
         self.password = password
         # self._online()
+
         self.sso_online_Two()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -839,7 +840,7 @@ if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
 
-    select = 5
+    select = 4
     if int(select) == 1:
         timeStart, timeEnd = m.readInfo('物流问题件')
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
@@ -868,21 +869,21 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 已下架 状态运行（二）-----------------------------------------
     '''
-    # lw = QueryTwoLower('+86-18538110674', 'qyz04163510')
-    # start: datetime = datetime.datetime.now()
-    # lw.order_lower('2021-12-31', '2022-01-01', '自动')
-    # print('查询耗时：', datetime.datetime.now() - start)
+    lw = QueryTwoLower('+86-18538110674', 'qyz04163510')
+    start: datetime = datetime.datetime.now()
+    lw.order_lower('2021-12-31', '2022-01-01', '自动')
+    print('查询耗时：', datetime.datetime.now() - start)
 
     '''
     # -----------------------------------------------自动获取 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------
     '''
-    # m.my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
-    # m.my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
+    m.my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
+    m.my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
 
     # -----------------------------------------------测试部分-----------------------------------------
     # timeStart, timeEnd = m.readInfo('物流问题件')
 
-    m.waybill_InfoQuery('2021-12-01', '2022-01-12')         # 查询更新-物流问题件
+    # m.waybill_InfoQuery('2021-12-01', '2022-01-12')         # 查询更新-物流问题件
     # m.waybill_Query('2021-12-01', '2022-01-11')             # 查询更新-物流客诉件
 
     # m.ssale_Query('2021-12-01', '2022-01-12')                    # 查询更新-采购问题件（一、简单查询）

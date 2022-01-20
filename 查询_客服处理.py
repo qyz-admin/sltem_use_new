@@ -61,11 +61,11 @@ class QueryUpdate(Settings):
                                                                                     self.mysql2['datebase']))
 
     # 获取签收表内容---港澳台更新签收总表
-    def readFormHost(self, startday):
-        match = {'换货': '换货表',
-                '退货': '退货表',
-                '工单收集': '工单收集表'}
-        path = r'D:\Users\Administrator\Desktop\需要用到的文件\B客服工作表'
+    def readFormHost(self, startday, team):
+        match = {'拒收核实': r'F:\神龙签收率\(订   单) 拒收原因-核实\(上传)订单客户反馈-核实原因 & 再次克隆下单汇总',
+                 '拒收缓存': r'F:\神龙签收率\(订   单) 拒收原因-核实\每日使用',
+                 '其他': r'D:\Users\Administrator\Desktop\需要用到的文件\B客服工作表'}
+        path = match[team]
         dirs = os.listdir(path=path)
 
         # ---读取execl文件---
@@ -108,6 +108,15 @@ class QueryUpdate(Settings):
                     pass
                 else:
                     self.wbsheetHost(filePath, wb_data)
+
+                excel = win32.gencache.EnsureDispatch('Excel.Application')
+                wb = excel.Workbooks.Open(filePath)
+                file_path = os.path.join(path, "~$ " + dir)
+                wb.SaveAs(file_path, FileFormat=51)  # FileFormat = 51 is for .xlsx extension
+                wb.Close()  # FileFormat = 56 is for .xls extension
+                excel.Application.Quit()
+                os.remove(filePath)
+
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
     def wbsheetHost(self, filePath, wb_data):
@@ -1141,8 +1150,8 @@ class QueryUpdate(Settings):
 								 FROM(SELECT IFNULL(s1.家族, '合计') 家族, IFNULL(s1.地区, '合计') 地区, IFNULL(s1.月份, '合计') 月份,
 											IFNULL(s1.产品id, '合计') 产品id,
 											IFNULL(s1.产品名称, '合计') 产品名称,
-											IFNULL(s1.父级分类, '合计') 父级分类,
-											IFNULL(s1.二级分类, '合计') 二级分类,
+									--		IFNULL(s1.父级分类, '合计') 父级分类,
+									--		IFNULL(s1.二级分类, '合计') 二级分类,
 											SUM(s1.已签收) as 已签收,
 											SUM(s1.拒收) as 拒收,
 											SUM(s1.已退货) as 已退货,
@@ -1191,8 +1200,8 @@ class QueryUpdate(Settings):
 								 FROM(SELECT IFNULL(s1.家族, '合计') 家族, IFNULL(s1.地区, '合计') 地区, IFNULL(s1.月份, '合计') 月份,
 											IFNULL(s1.产品id, '合计') 产品id,
 											IFNULL(s1.产品名称, '合计') 产品名称,
-											IFNULL(s1.父级分类, '合计') 父级分类,
-											IFNULL(s1.二级分类, '合计') 二级分类,
+										--	IFNULL(s1.父级分类, '合计') 父级分类,
+										--	IFNULL(s1.二级分类, '合计') 二级分类,
 											SUM(s1.已签收) as 已签收,
 											SUM(s1.拒收) as 拒收,
 											SUM(s1.已退货) as 已退货,
@@ -1267,11 +1276,15 @@ if __name__ == '__main__':
         3、 获取工单和退换货的客服处理记录；
         4、 拒收核实-查询需要的产品id；  获取前 记得上传发过的核实表和返回的核实表；以及客诉件和问题件表
     '''
-    select = 2
+    select = 1
     if int(select) == 1:
-        m.readFormHost('202110')
+        m.readFormHost('202110', '拒收核实')
+        m.readFormHost('202110', '拒收缓存')
 
     elif int(select) == 2:
+        m.readFormHost('202110', '其他')
+
+    elif int(select) == 3:
         begin = datetime.date(2021, 12, 1)  # 压单反馈上传使用
         print(begin)
         end = datetime.date(2021, 12, 31)
@@ -1281,13 +1294,15 @@ if __name__ == '__main__':
             upload = str(day)
             startday = str(day).replace('-', '')
             print(startday)
-            m.readFormHost(startday)
-
-    elif int(select) == 3:
-        m.writeSql()
+            m.readFormHost(startday, '其他')
 
     elif int(select) == 4:
-        m.readFormHost('202110')
+        m.writeSql()
+
+    elif int(select) == 5:
+        m.readFormHost('202110', '拒收核实')
+        m.readFormHost('202110', '拒收缓存')
+        m.readFormHost('202110', '其他')
         m.jushou()
 
 

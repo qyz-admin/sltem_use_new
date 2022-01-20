@@ -14,21 +14,10 @@ start: datetime = datetime.datetime.now()
 team = 'gat'
 match1 = {'gat': '港台',
           'slsc': '品牌'}
-match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
-         'slgat_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
-         'slgat_hs': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
-         'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
-         'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
-         'slrb_jl': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
-         'slrb_js': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
-         'slrb_hs': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
+match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
          'slsc': r'D:\Users\Administrator\Desktop\需要用到的文件\品牌',
          'gat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
-         'gat_upload': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表 - 单独上传',
-         'sltg': r'D:\Users\Administrator\Desktop\需要用到的文件\A泰国签收表',
-         'slxmt': r'D:\Users\Administrator\Desktop\需要用到的文件\A新马签收表',
-         'slxmt_t': r'D:\Users\Administrator\Desktop\需要用到的文件\A新马签收表',
-         'slxmt_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\A新马签收表'}
+         'gat_upload': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表 - 单独上传'}
 '''    msyql 语法:      show processlist（查看当前进程）;  
                         set global event_scheduler=0;（关闭定时器）;
 备注：  港台 需整理的表：香港立邦>(明细再copy一份保存) ； 台湾龟山改派>(copy保存为xlsx格式);
@@ -49,12 +38,12 @@ if team in ('gat', 'slsc', 'sl_rb'):
     month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
-    # 更新时间3
-    begin = datetime.date(2021, 11, 1)
-    end = datetime.date(2022, 1, 10)
+    # 更新时间
+    begin = datetime.date(2021, 12, 1)
+    end = datetime.date(2022, 2, 1)
     # 导出时间
     month_last = '2021-12-01'
-    month_yesterday = '2022-01-10'
+    month_yesterday = '2022-02-01'
     month_begin = '2021-11-01'
 print('****** 更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 导出起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')

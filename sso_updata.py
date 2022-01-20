@@ -461,12 +461,12 @@ class QueryTwo(Settings):
         # print(req)
         # print(req.headers)
 
-        time.sleep(1)
+        # time.sleep(1)
         # print('（三）加载index.html?_ticker=页面......')
-        url = req.headers['Location']
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
-                    'Referer': 'http://gsso.giikin.com/'}
-        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        # url = req.headers['Location']
+        # r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+        #             'Referer': 'http://gsso.giikin.com/'}
+        # req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(5050)
         # print(req)
         # print(req.headers)

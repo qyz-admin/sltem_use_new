@@ -12,6 +12,8 @@ from queue import Queue
 from dateutil.relativedelta import relativedelta
 from threading import Thread #  使用 threading 模块创建线程
 import pandas.io.formats.excel
+import win32api,win32con
+import win32com.client as win32
 
 from sqlalchemy import create_engine
 from settings import Settings
@@ -180,49 +182,170 @@ class QueryTwoLower(Settings, Settings_sso):
         # print(req.headers)
         print('++++++已成功登录++++++')
 
+    def readFile(self):
+        path = r'F:\神龙签收率\(未发货) 直发-仓库-压单\每日压单核实汇总'
+        dirs = os.listdir(path=path)
+        # ---读取execl文件---
+        for dir in dirs:
+            filePath = os.path.join(path, dir)
+            if dir[:2] != '~$':
+                print(filePath)
+                rq = (dir.split('压单')[0]).strip()
+                rq = datetime.datetime.strptime(rq, '%Y.%m.%d')
+                rq = rq.strftime('%Y.%m.%d')
+                self._readFile(filePath, rq)
+
+                excel = win32.gencache.EnsureDispatch('Excel.Application')
+                wb = excel.Workbooks.Open(filePath)
+                file_path = os.path.join(path, "~$ " + dir)
+                wb.SaveAs(file_path, FileFormat=51)              # FileFormat = 51 is for .xlsx extension
+                wb.Close()                                      # FileFormat = 56 is for .xls extension
+                excel.Application.Quit()
+                os.remove(filePath)
+        print('处理耗时：', datetime.datetime.now() - start)
+    # 工作表的订单信息
+    def _readFile(self, filePath, rq):
+        fileType = os.path.splitext(filePath)[1]
+        app = xlwings.App(visible=False, add_book=False)
+        app.display_alerts = False
+        if 'xls' in fileType:
+            wb = app.books.open(filePath, update_links=False, read_only=True)
+            for sht in wb.sheets:
+                try:
+                    db = None
+                    db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
+                    # print(db.columns)
+                except Exception as e:
+                    print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
+                if db is not None and len(db) > 0:
+                    print('++++正在导入查询：' + sht.name + '表； 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                    db = db[['订单编号', '备注（压单核实是否需要）']]
+                    db.rename(columns={'备注（压单核实是否需要）': '处理结果'}, inplace=True)
+                    db.insert(0, '处理时间', rq)
+                    db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+                    sql = '''update 压单表 a, customer b
+                                set a.`处理时间` = b.`处理时间`,
+		                            a.`处理结果` = b.`处理结果`
+                            where a.`订单编号`= b.`订单编号`;'''
+                    pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                    print('++++成功导入：' + sht.name + '--->>>到压单表')
+                else:
+                    print('----------数据为空导入失败：' + sht.name)
+            wb.close()
+        app.quit()
+
     # 查询压单（仓储的获取）
-    def orderInfoQuery(self, searchType):  # 进入订单检索界面
-        print('+++正在查询订单信息中')
-        url = r'http://gwms.giikin.cn/order/pressure/index'
+    def order_spec(self):  # 进入压单检索界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        timeStart = ((datetime.datetime.now() + datetime.timedelta(days=1)) - relativedelta(months=2)).strftime('%Y-%m-%d')
+        timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
+        print('正在查询 港台 压单订单信息中......')
         url = r'http://gwms-v3.giikin.cn/order/pressure/index'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'http://gwms-v3.giikin.cn',
-                    'Referer': 'ttp://gwms-v3.giikin.cn/order/pressure/index'}
-        data = {'selectStr': '1=1',
-                'page': '1',
+                    'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
+        data = {'page': '1',
                 'limit': 500,
-                'startDate': '',
-                'endDate': ''}
-        if searchType == '台币':
-            data.update({'selectStr': '1=1 and oc.currency_id= "1"'})
-        elif searchType == '港币':
-            data.update({'selectStr': '1=1 and oc.currency_id= "2"'})
+                'startDate': timeStart + ' 00:00:00',
+                'endDate': timeEnd + ' 23:59:59',
+                'selectStr': '1=1'}
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
-        req = json.loads(req.text)  # json类型数据转换为dict字典
-        # print(req)
-        ordersdict = []
-        # print('正在处理json数据转化为dataframe…………')
-        try:
-            for result in req['data']:
-                ordersdict.append(result)
-        except Exception as e:
-            print('转化失败： 重新获取中', str(Exception) + str(e))
-            # time.sleep(10)
-            # self.orderInfoQuery(ord, searchType)
-        #     self.q.put(result)
-        # for i in range(len(req['data']['list'])):
-        #     ordersdict.append(self.q.get())
-        data = pd.json_normalize(ordersdict)
-        print('++++++本批次查询成功+++++++')
+        req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
+        max_count = req['count']
+        print('++++++本次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+        if max_count != [] or max_count != 0:
+            # 首次查询
+            ordersdict = []
+            try:
+                for result in req['data']:
+                    ordersdict.append(result)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            df = pd.json_normalize(ordersdict)
+            # 剩余查询
+            if max_count > 500:
+                in_count = math.ceil(max_count/500)
+                dlist = []
+                n = 1
+                while n < in_count:  # 这里用到了一个while循环，穿越过来的
+                    print('剩余查询次数' + str(in_count - n))
+                    n = n + 1
+                    data = self._order_spec(timeStart, timeEnd, n)                     # 分页获取详情
+                    dlist.append(data)
+                dp = df.append(dlist, ignore_index=True)
+            else:
+                dp = df
+            print('正在写入......')
+            dp = dp[['order_number', 'goods_id', 'goods_name', 'currency_id', 'area_id', 'ydtime', 'purid', 'other_reason', 'buyer', 'intime', 'addtime', 'is_lower', 'below_time', 'cate']]
+            dp.columns = ['订单编号', '产品ID', '产品名称', '币种', '团队', '反馈时间', '压单原因', '其他原因', '采购员', '入库时间', '下单时间', '是否下架', '下架时间', '品类']
+            dp = dp[(dp['币种'].str.contains('港币|台币', na=False))]
+            # print(dp)
+            dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            sql = '''REPLACE INTO 压单表(订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, 下架时间, 处理时间,处理结果,记录时间) 
+                    SELECT 订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, IF(下架时间 = '',NULL,下架时间) 下架时间, NULL 处理时间, NULL 处理结果,NOW() 记录时间 
+                    FROM customer'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('共有 ' + str(len(dp)) + '条 成功写入数据库+++++++')
+
+            print('正在获取 压单反馈 信息中......')
+            time_path: datetime = datetime.datetime.now()
+            mkpath = r"F:\神龙签收率\(未发货) 直发-仓库-压单\\" + time_path.strftime('%m.%d')
+
+            sql = '''SELECT * FROM 压单表 y WHERE y.`是否下架` = '未下架';'''
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            isExists = os.path.exists(mkpath)
+            if not isExists:
+                os.makedirs(mkpath)
+            else:
+                print(mkpath + ' 目录已存在')
+            file_path = mkpath + '\\压单反馈 {0}.xlsx'.format(rq)
+            df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
+            print('输出成功......')
+            print('*' * 50)
+        else:
+            print('****** 没有新增的改派订单！！！')
+            return None
         print('*' * 50)
+    def _order_spec(self, timeStart, timeEnd, n):  # 进入压单检索界面
+        print('+++正在查询订单信息中')
+        url = r'http://gwms-v3.giikin.cn/order/pressure/index'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'http://gwms-v3.giikin.cn',
+                    'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
+        data = {'page': n,
+                'limit': 500,
+                'startDate': timeStart + ' 00:00:00',
+                'endDate': timeEnd + ' 23:59:59',
+                'selectStr': '1=1'}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
+        max_count = req['count']
+        if max_count != [] or max_count != 0:
+            ordersdict = []
+            try:
+                for result in req['data']:
+                    ordersdict.append(result)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            data = pd.json_normalize(ordersdict)
+            # print(data)
+        else:
+            data = None
+            print('****** 没有信息！！！')
         return data
 
 
+    # 进入已下架界面
     def order_lower(self, timeStart, timeEnd, auto_time):  # 进入已下架界面
         start: datetime = datetime.datetime.now()
         team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓']
@@ -275,7 +398,6 @@ class QueryTwoLower(Settings, Settings_sso):
                     print('+++正在查询仓库： ' + tem + '；库存类型:组合库存 信息')
                     self._order_lower_info(match2[tem], 2, timeStart, timeEnd, tem, '组合库存')
         print('查询耗时：', datetime.datetime.now() - start)
-
     def _order_lower_info(self, tem, tem_type, timeStart, timeEnd, tem_name, type_name):  # 进入已下架界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         # print('+++正在查询信息中')
@@ -377,7 +499,11 @@ if __name__ == '__main__':
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
-    m.order_lower('2021-12-31', '2022-01-01', '自动')
+
+    # m.order_lower('2021-12-31', '2022-01-01', '自动')
+    m.readFile()
+    m.order_spec()
+
 
 
     print('查询耗时：', datetime.datetime.now() - start)
