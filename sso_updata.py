@@ -1229,15 +1229,18 @@ class QueryTwo(Settings):
                     result['saleProduct'] = 0
                     result['productId'] = 0
                     result['spec'] = 0
+                    result['chooser'] = 0
                     result['saleId'] = result['specs'][0]['saleId']
                     result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
                     result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
                     result['spec'] = result['specs'][0]['spec']
+                    result['chooser'] = result['specs'][0]['chooser']
                 else:
                     result['saleId'] = ''
                     result['saleProduct'] = ''
                     result['productId'] = ''
                     result['spec'] = ''
+                    result['chooser'] = ''
                 quest = ''
                 for re in result['questionReason']:
                     quest = quest + ';' + re
@@ -1266,7 +1269,7 @@ class QueryTwo(Settings):
             df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId',
                        'spec', 'quantity', 'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime',
                        'finishTime', 'stateTime', 'logisticsUpdateTime', 'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType',
-                       'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service']]
+                       'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser']]
             print(df)
             # print('正在更新临时表中......')
             df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
@@ -1301,7 +1304,8 @@ class QueryTwo(Settings):
             				    h.`questionReason` 问题原因,
             				    h.`questionTime` 问题时间,
             				    h.`service` 下单人,
-            				    h.`cloneUser` 克隆人
+            				    h.`cloneUser` 克隆人,
+            				    h.`chooser` 选品人
                             FROM d1_cpy h
                                 LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
                                 LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -1336,7 +1340,8 @@ class QueryTwo(Settings):
                                 a.`问题原因`= IF(b.`问题原因` = '', NULL,  b.`问题原因`),
                                 a.`问题时间`= IF(b.`问题时间` = '', NULL,  b.`问题时间`),
                                 a.`下单人`= IF(b.`下单人` = '', NULL,  b.`下单人`),
-                                a.`克隆人`= IF(b.`克隆人` = '', NULL,  b.`克隆人`)
+                                a.`克隆人`= IF(b.`克隆人` = '', NULL,  b.`克隆人`),
+                                a.`选品人`= IF(b.`选品人` = '', NULL,  b.`选品人`)
                     where a.`订单编号`=b.`订单编号`;'''.format(team2)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:

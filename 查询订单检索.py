@@ -409,6 +409,7 @@ class QueryTwo(Settings, Settings_sso):
                     result['saleProduct'] = ''
                     result['productId'] = ''
                     result['spec'] = ''
+                    result['chooser'] = ''
                 quest = ''
                 for re in result['questionReason']:
                     quest = quest + ';' + re

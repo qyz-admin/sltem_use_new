@@ -1276,7 +1276,7 @@ if __name__ == '__main__':
         3、 获取工单和退换货的客服处理记录；
         4、 拒收核实-查询需要的产品id；  获取前 记得上传发过的核实表和返回的核实表；以及客诉件和问题件表
     '''
-    select = 1
+    select = 5
     if int(select) == 1:
         m.readFormHost('202110', '拒收核实')
         m.readFormHost('202110', '拒收缓存')
@@ -1328,3 +1328,5 @@ if __name__ == '__main__':
     #         now_month = last_month + datetime.timedelta(days=(end - last_month).days)
     #         print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
     #         break
+
+    # https: // oapi.dingtalk.com / robot / send?access_token = c2c6e41d9e35775b24e2a3867ab977e3b4c14aec14f6f0651866e163390f3a0a

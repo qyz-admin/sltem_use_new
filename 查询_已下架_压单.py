@@ -296,7 +296,7 @@ class QueryTwoLower(Settings, Settings_sso):
             time_path: datetime = datetime.datetime.now()
             mkpath = r"F:\神龙签收率\(未发货) 直发-仓库-压单\\" + time_path.strftime('%m.%d')
 
-            sql = '''SELECT * FROM 压单表 y WHERE y.`是否下架` = '未下架';'''
+            sql = '''SELECT * FROM 压单表 g WHERE g.`记录时间` >= CURDATE();'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             isExists = os.path.exists(mkpath)
             if not isExists:
@@ -501,7 +501,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2021-12-31', '2022-01-01', '自动')
-    m.readFile()
+    # m.readFile()
     m.order_spec()
 
 

@@ -2,8 +2,8 @@ import pandas as pd
 import os
 import datetime
 import xlwings
-import win32api,win32con
-
+import win32api, win32con
+import win32com.client as win32
 import requests
 import json
 import sys
@@ -63,7 +63,10 @@ class QueryUpdate(Settings):
 
     # 获取签收表内容---港澳台更新签收总表
     def readFormHost(self, upload):
-        path = r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表'
+        match = {'查询-运单号': r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表',
+                 '查询运费': r'F:\神龙签收率\运费-核实',
+                 '其他': r'D:\Users\Administrator\Desktop\需要用到的文件\B客服工作表'}
+        path = match[upload]
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -71,6 +74,15 @@ class QueryUpdate(Settings):
             if dir[:2] != '~$':
                 print(filePath)
                 self.wbsheetHost(filePath, upload)
+
+                if upload == '查询运费':
+                    excel = win32.gencache.EnsureDispatch('Excel.Application')
+                    wb = excel.Workbooks.Open(filePath)
+                    file_path = os.path.join(path, "~$ " + dir)
+                    wb.SaveAs(file_path, FileFormat=51)  # FileFormat = 51 is for .xlsx extension
+                    wb.Close()  # FileFormat = 56 is for .xls extension
+                    excel.Application.Quit()
+                    os.remove(filePath)
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
     def wbsheetHost(self, filePath, upload):
@@ -83,17 +95,13 @@ class QueryUpdate(Settings):
                 try:
                     db = None
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
-                    print(db.columns)
+                    # print(db.columns)
                     if upload == '查询-订单号':
-                        columns_value = list(db.columns)  # 获取数据的标题名，转为列表
-                        for column_val in columns_value:
-                            if '订单编号' != column_val:
-                                db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
+                        db = db[['订单编号']]
                     elif upload == '查询-运单号':
-                        columns_value = list(db.columns)
-                        for column_val in columns_value:
-                            if '运单编号' != column_val:
-                                db.drop(labels=[column_val], axis=1, inplace=True)
+                        db = db[['运单编号']]
+                    elif upload == '查询运费':
+                        db = db[['订单编号', '选品人', '备注', '产品id', '规格中文']]
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
@@ -123,6 +131,15 @@ class QueryUpdate(Settings):
                     LEFT JOIN (SELECT * FROM gat WHERE id IN (SELECT MAX(id) FROM gat WHERE gat.添加时间 > '{0} 00:00:00' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
                     LEFT JOIN gat_logisitis_match c ON b.物流状态 = c.签收表物流状态;'''.format(month_begin)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
+        elif upload == '查询运费':
+            dataFrame.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            columns = list(dataFrame.columns)
+            columns = ','.join(columns)
+            sql = '''REPLACE INTO 运费核实({}, 记录时间) SELECT *, NOW() 记录时间 FROM customer;'''.format(columns)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('++++成功导入缓存表')
+            return
+
         print('正在写入excel…………')
         rq = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
         df.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False)
@@ -334,44 +351,94 @@ class QueryUpdate(Settings):
     def trans_way_cost_new(self, team):
         match = {'gat': '港台', 'slsc': '品牌'}
         output = datetime.datetime.now().strftime('%m.%d')
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         month_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         # month_yesterday = '2021-12-01'
         print(month_yesterday)
         month_now = (datetime.datetime.now()).strftime('%Y%m')
         # month_now = '202111'
         print(month_now)
+        listT = []  # 查询sql的结果 存放池
+        print('正在获取 新增的' + match[team] + ' 运费核实…………')
+        sql = '''SELECT *
+                FROM( SELECT * 
+                        FROM ( SELECT *,yu.包裹重量 - yu.`MIN(包裹重量)` as 差量
+        				        FROM ( SELECT 年月,日期,团队,币种,订单编号,数量,电话号码,运单编号,是否改派,物流方式,商品id,ds.产品id,产品名称,价格,下单时间,审核时间,仓储扫描时间,完结状态,完结状态时间,物流花费,包裹重量,包裹体积,ds.规格中文,产品量, 
+        				                    单量,重量小 as 'MIN(包裹重量)', 重量大 as 'MAX(包裹重量)',重量差, 选品人
+        								FROM (SELECT *
+											FROM gat_order_list g
+											WHERE g.年月>= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m')
+								        ) ds
+        								LEFT JOIN (SELECT 产品id, COUNT(订单编号) 产品量
+        											FROM gat_order_list ds
+        											WHERE ds.`日期` = '{0}' AND ds.是否改派 = '直发' AND ds.系统订单状态 IN ('已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)') 
+        											GROUP BY ds.`产品id`
+        								) dds on ds.`产品id` = dds.`产品id`
+        								LEFT JOIN (SELECT 产品id,`规格中文`,COUNT(订单编号) 单量, MIN(包裹重量) as 重量小, MAX(包裹重量) as 重量大,  MAX(包裹重量)-MIN(包裹重量) as 重量差
+        											FROM gat_order_list d 
+        											WHERE d.`年月` >= '{1}' and d.`是否改派` = '直发' AND d.`产品id` <> 0 AND d.`包裹重量` <> 0 AND d.系统订单状态 IN ('已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+        											GROUP BY d.`产品id`,d.`规格中文`
+        											ORDER BY d. 产品id
+        							 ) dds2 on ds.`产品id` = dds2.`产品id` AND ds.`规格中文` = dds2.`规格中文`
+        						WHERE ds.`年月` = '{1}' AND ds.`包裹重量` <> 0 AND ds.`是否改派` = '直发' AND ds.系统订单状态 IN ('已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+        						GROUP BY ds.`订单编号`
+        				        ) yu
+                        ) y
+                        WHERE y.单量 >=2 and y.差量 > 100
+                    ) s
+	            WHERE s.产品id NOT IN ( SELECT  DISTINCT  产品id FROM 运费核实 y);'''.format(month_yesterday, month_now)
+        df1 = pd.read_sql_query(sql=sql, con=self.engine1)
+        df1 = df1[['年月', '团队',  '日期', '币种', '订单编号', '数量', '电话号码', '运单编号', '是否改派', '物流方式', '商品id', '产品id', '产品名称',
+                 '价格', '仓储扫描时间', '完结状态', '物流花费', '包裹体积', '规格中文', '产品量', '包裹重量',  'MIN(包裹重量)', '差量', '选品人']]
+        df1 = df1.loc[df1["币种"] == "台湾"]
+        listT.append(df1)
 
-        sql = '''SELECT * 
-                FROM ( SELECT *,yu.包裹重量 - yu.`MIN(包裹重量)` as 差量,null 选品人
-				        FROM ( SELECT 年月,日期,团队,币种,订单编号,数量,电话号码,运单编号,是否改派,物流方式,商品id,ds.产品id,产品名称,价格,下单时间,审核时间,仓储扫描时间,完结状态,完结状态时间,物流花费,包裹重量,包裹体积,ds.规格中文,产品量,
-                                      单量,重量小 as 'MIN(包裹重量)', 重量大 as 'MAX(包裹重量)',重量差
-								FROM gat_order_list ds
-								LEFT JOIN (SELECT 产品id, COUNT(订单编号) 产品量
-											FROM gat_order_list ds
-											WHERE ds.`日期` = '{0}' AND ds.是否改派 = '直发' AND ds.系统订单状态 IN ('已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)') 
-											GROUP BY ds.`产品id`
-								) dds on ds.`产品id` = dds.`产品id`
-								LEFT JOIN (SELECT 产品id,`规格中文`,COUNT(订单编号) 单量, MIN(包裹重量) as 重量小, MAX(包裹重量) as 重量大,  MAX(包裹重量)-MIN(包裹重量) as 重量差
-											FROM gat_order_list d 
-											WHERE d.`年月` >= '{1}' and d.`是否改派` = '直发' AND d.`产品id` <> 0 AND d.`包裹重量` <> 0 AND d.系统订单状态 IN ('已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-											GROUP BY d.`产品id`,d.`规格中文`
-											ORDER BY d. 产品id
-							 ) dds2 on ds.`产品id` = dds2.`产品id` AND ds.`规格中文` = dds2.`规格中文`
-						WHERE ds.`年月` = '{1}' AND ds.`包裹重量` <> 0 AND ds.`是否改派` = '直发' AND ds.系统订单状态 IN ('已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-						GROUP BY ds.`订单编号`
-				        ) yu
-                ) y
-                WHERE y.单量 >=2 and y.差量 > 100;'''.format(month_yesterday, month_now)
         print('正在获取 ' + match[team] + ' 运费总直发情况…………')
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        df = df[['年月', '团队',  '日期', '币种', '订单编号', '数量', '电话号码', '运单编号', '是否改派', '物流方式', '商品id', '产品id', '产品名称',
-                 '价格', '仓储扫描时间', '完结状态', '物流花费', '包裹体积', '规格中文', '产品量', '包裹重量',  'MIN(包裹重量)', '差量']]
-        df = df.loc[df["币种"] == "台湾"]
+        sql = '''SELECT * 
+                        FROM ( SELECT *,yu.包裹重量 - yu.`MIN(包裹重量)` as 差量
+        				        FROM ( SELECT 年月,日期,团队,币种,订单编号,数量,电话号码,运单编号,是否改派,物流方式,商品id,ds.产品id,产品名称,价格,下单时间,审核时间,仓储扫描时间,完结状态,完结状态时间,物流花费,包裹重量,包裹体积,ds.规格中文,产品量,
+                                              单量,重量小 as 'MIN(包裹重量)', 重量大 as 'MAX(包裹重量)',重量差, 选品人
+        								FROM (SELECT *
+											FROM gat_order_list g
+											WHERE g.年月>= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m')
+								        ) ds
+        								LEFT JOIN (SELECT 产品id, COUNT(订单编号) 产品量
+        											FROM gat_order_list ds
+        											WHERE ds.`日期` = '{0}' AND ds.是否改派 = '直发' AND ds.系统订单状态 IN ('已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)') 
+        											GROUP BY ds.`产品id`
+        								) dds on ds.`产品id` = dds.`产品id`
+        								LEFT JOIN (SELECT 产品id,`规格中文`,COUNT(订单编号) 单量, MIN(包裹重量) as 重量小, MAX(包裹重量) as 重量大,  MAX(包裹重量)-MIN(包裹重量) as 重量差
+        											FROM gat_order_list d 
+        											WHERE d.`年月` >= '{1}' and d.`是否改派` = '直发' AND d.`产品id` <> 0 AND d.`包裹重量` <> 0 AND d.系统订单状态 IN ('已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+        											GROUP BY d.`产品id`,d.`规格中文`
+        											ORDER BY d. 产品id
+        							 ) dds2 on ds.`产品id` = dds2.`产品id` AND ds.`规格中文` = dds2.`规格中文`
+        						WHERE ds.`年月` = '{1}' AND ds.`包裹重量` <> 0 AND ds.`是否改派` = '直发' AND ds.系统订单状态 IN ('已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+        						GROUP BY ds.`订单编号`
+        				        ) yu
+                        ) y
+                        WHERE y.单量 >=2 and y.差量 > 100;'''.format(month_yesterday, month_now)
+        df2 = pd.read_sql_query(sql=sql, con=self.engine1)
+        df2 = df2[['年月', '团队',  '日期', '币种', '订单编号', '数量', '电话号码', '运单编号', '是否改派', '物流方式', '商品id', '产品id', '产品名称',
+                 '价格', '仓储扫描时间', '完结状态', '物流花费', '包裹体积', '规格中文', '产品量', '包裹重量',  'MIN(包裹重量)', '差量', '选品人']]
+        listT.append(df2)
+
         print('正在写入excel…………')
-        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        df.to_excel('G:\\输出文件\\{} 运费总直发-查询{}.xlsx'.format(output, rq),
-                    sheet_name='查询', index=False)
-        print('----已写入excel')
+        file_path = 'G:\\输出文件\\{} 运费总直发-查询{}.xlsx'.format(output, rq)
+        sheet_name = ['运费查询', '运费总']
+        df0 = pd.DataFrame([])                                      # 创建空的dataframe数据框
+        df0.to_excel(file_path, index=False)                        # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        writer = pd.ExcelWriter(file_path, engine='openpyxl')       # 初始化写入对象
+        book = load_workbook(file_path)                             # 可以向不同的sheet写入数据（对现有工作表的追加）
+        writer.book = book                                          # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        for i in range(len(listT)):
+            listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+        if 'Sheet1' in book.sheetnames:                             # 删除新建文档时的第一个工作表
+            del book['Sheet1']
+        writer.save()
+        writer.close()
+        print('----已写入excel ')
+
 
         # sql = '''SELECT *
         #                 FROM ( SELECT *,yu.包裹重量 - yu.`MIN(包裹重量)` as 差量
@@ -422,8 +489,9 @@ if __name__ == '__main__':
         upload = '查询-运单号'
         m.readFormHost(upload)
 
+    m.readFormHost('查询运费')
     m.trans_way_cost_new(team)  # 同产品下的规格运费查询
 
 
     print('输出耗时：', datetime.datetime.now() - start)
-    win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)
+    win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒", win32con.MB_OK)
