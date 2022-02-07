@@ -24,7 +24,7 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
 说明：  日本 需整理的表：1、吉客印神龙直发签收表=密码：‘JKTSL’>(明细再copy保存；改派明细不需要);2、直发签收表>(明细再copy保存；3、状态更新需要copy保存);
 '''
 # 初始化时间设置
-if team in ('gat', 'slsc', 'sl_rb'):
+if team in ('ga9t', 'slsc', 'sl_rb'):
     # 更新时间
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
@@ -39,11 +39,11 @@ if team in ('gat', 'slsc', 'sl_rb'):
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    begin = datetime.date(2022, 1, 1)
-    end = datetime.date(2022, 1, 24)
+    begin = datetime.date(2021, 12, 1)
+    end = datetime.date(2022, 2, 7)
     # 导出时间
-    month_last = '2021-01-01'
-    month_yesterday = '2022-01-24'
+    month_last = '2021-12-01'
+    month_yesterday = '2022-02-07'
     month_begin = '2021-11-01'
 print('****** 更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 导出起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
@@ -96,14 +96,7 @@ m.creatMyOrderSl(team)                                      # 最近五天的全
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 
 print('------------更新部分：---------------------')
-if team in ('ga99t', 'slsc', 'sl_rb'):
-    m.creatMyOrderSlTWO(team, begin, end)                           # 最近两个月的更新订单信息
-    print('处理耗时：', datetime.datetime.now() - start)
-    print('------------导出部分：---------------------')
-    m.connectOrder(team, month_last, month_yesterday, month_begin)  # 最近两个月的订单信息导出
-    print('输出耗时：', datetime.datetime.now() - start)
-
-elif team in ('gat'):
+if team == 'gat':
     sso = QueryTwo('+86-18538110674', 'qyz04163510', '1343')
     print(datetime.datetime.now())
     print('++++++正在获取 ' + match1[team] + ' 信息++++++')
@@ -124,6 +117,15 @@ elif team in ('gat'):
     print('------------导出部分：---------------------')
     # m.connectOrder(team, month_last, month_yesterday, month_begin)  # 最近两个月的订单信息导出
     qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
+    print('输出耗时：', datetime.datetime.now() - start)
+
+
+
+elif team in ('ga99t', 'slsc', 'sl_rb'):
+    m.creatMyOrderSlTWO(team, begin, end)                           # 最近两个月的更新订单信息
+    print('处理耗时：', datetime.datetime.now() - start)
+    print('------------导出部分：---------------------')
+    m.connectOrder(team, month_last, month_yesterday, month_begin)  # 最近两个月的订单信息导出
     print('输出耗时：', datetime.datetime.now() - start)
 
 

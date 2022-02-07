@@ -352,11 +352,12 @@ class QueryUpdate(Settings):
         match = {'gat': '港台', 'slsc': '品牌'}
         output = datetime.datetime.now().strftime('%m.%d')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+
         month_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        # month_yesterday = '2021-12-01'
-        print(month_yesterday)
         month_now = (datetime.datetime.now()).strftime('%Y%m')
-        # month_now = '202111'
+        # month_yesterday = '2021-12-01'
+        # month_now = '202211'
+        print(month_yesterday)
         print(month_now)
         listT = []  # 查询sql的结果 存放池
         print('正在获取 新增的' + match[team] + ' 运费核实…………')
@@ -367,7 +368,7 @@ class QueryUpdate(Settings):
         				                    单量,重量小 as 'MIN(包裹重量)', 重量大 as 'MAX(包裹重量)',重量差, 选品人
         								FROM (SELECT *
 											FROM gat_order_list g
-											WHERE g.年月>= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m')
+											WHERE g.年月>= '{1}'
 								        ) ds
         								LEFT JOIN (SELECT 产品id, COUNT(订单编号) 产品量
         											FROM gat_order_list ds
@@ -376,7 +377,7 @@ class QueryUpdate(Settings):
         								) dds on ds.`产品id` = dds.`产品id`
         								LEFT JOIN (SELECT 产品id,`规格中文`,COUNT(订单编号) 单量, MIN(包裹重量) as 重量小, MAX(包裹重量) as 重量大,  MAX(包裹重量)-MIN(包裹重量) as 重量差
         											FROM gat_order_list d 
-        											WHERE d.`年月` >= '{1}' and d.`是否改派` = '直发' AND d.`产品id` <> 0 AND d.`包裹重量` <> 0 AND d.系统订单状态 IN ('已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+        											WHERE d.`年月` = '{1}' and d.`是否改派` = '直发' AND d.`产品id` <> 0 AND d.`包裹重量` <> 0 AND d.系统订单状态 IN ('已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
         											GROUP BY d.`产品id`,d.`规格中文`
         											ORDER BY d. 产品id
         							 ) dds2 on ds.`产品id` = dds2.`产品id` AND ds.`规格中文` = dds2.`规格中文`
@@ -400,7 +401,7 @@ class QueryUpdate(Settings):
                                               单量,重量小 as 'MIN(包裹重量)', 重量大 as 'MAX(包裹重量)',重量差, 选品人
         								FROM (SELECT *
 											FROM gat_order_list g
-											WHERE g.年月>= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m')
+											WHERE g.年月 = '{1}'
 								        ) ds
         								LEFT JOIN (SELECT 产品id, COUNT(订单编号) 产品量
         											FROM gat_order_list ds
@@ -409,7 +410,7 @@ class QueryUpdate(Settings):
         								) dds on ds.`产品id` = dds.`产品id`
         								LEFT JOIN (SELECT 产品id,`规格中文`,COUNT(订单编号) 单量, MIN(包裹重量) as 重量小, MAX(包裹重量) as 重量大,  MAX(包裹重量)-MIN(包裹重量) as 重量差
         											FROM gat_order_list d 
-        											WHERE d.`年月` >= '{1}' and d.`是否改派` = '直发' AND d.`产品id` <> 0 AND d.`包裹重量` <> 0 AND d.系统订单状态 IN ('已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+        											WHERE d.`年月` = '{1}' and d.`是否改派` = '直发' AND d.`产品id` <> 0 AND d.`包裹重量` <> 0 AND d.系统订单状态 IN ('已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
         											GROUP BY d.`产品id`,d.`规格中文`
         											ORDER BY d. 产品id
         							 ) dds2 on ds.`产品id` = dds2.`产品id` AND ds.`规格中文` = dds2.`规格中文`
@@ -438,7 +439,6 @@ class QueryUpdate(Settings):
         writer.save()
         writer.close()
         print('----已写入excel ')
-
 
         # sql = '''SELECT *
         #                 FROM ( SELECT *,yu.包裹重量 - yu.`MIN(包裹重量)` as 差量

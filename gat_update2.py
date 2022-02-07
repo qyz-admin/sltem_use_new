@@ -261,12 +261,13 @@ class QueryUpdate(Settings):
                             物流方式,物流名称,null 运输方式,null 货物类型,是否低价,付款方式,产品id,产品名称,父级分类, 二级分类,三级分类, 下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB, null 价格区间, null 包裹重量, null 包裹体积,null 邮编, 
                             IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, null 签收表订单编号, null 签收表运单编号, null 原运单号, b.物流状态 签收表物流状态, null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, 添加物流单号时间,
                             省洲,数量, a.下架时间, a.物流提货时间, a.完结状态, a.回款时间
-                        FROM {0}_order_list a
-                            LEFT JOIN gat_wl_data b ON a.`运单编号` = b.`运单编号`
-                            LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
-                            LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
-                        WHERE a.日期 >= '{2}' AND a.日期 <= '{3}'
-                        AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+                        FROM (SELECT * 
+							FROM {0}_order_list g
+							WHERE g.日期 >= '{2}' AND g.日期 <= '{3}' AND g.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+						) a
+                        LEFT JOIN gat_wl_data b ON a.`运单编号` = b.`运单编号`
+                        LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
+                        LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
                         ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             print('正在写入---' + match[team] + ' ---临时缓存…………')  # 备用临时缓存表
@@ -325,9 +326,10 @@ class QueryUpdate(Settings):
         print(month_yesterday)
         print('正在获取---' + match[team] + ' ---全部数据内容…………')
         sql = '''SELECT * FROM {0}_zqsb a WHERE a.日期 >= '{1}' AND a.日期 <= '{2}' ORDER BY a.`下单时间`;'''.format(team, month_last, month_yesterday)     # 港台查询函数导出
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        print('正在写入---' + match[team] + ' ---临时缓存…………')             # 备用临时缓存表
-        df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
+        # df = pd.read_sql_query(sql=sql, con=self.engine1)
+        # print('正在写入---' + match[team] + ' ---临时缓存…………')             # 备用临时缓存表
+        # df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
+
         for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-小虎队"|slgat_jp', '"神龙-运营1组"|slgat_run'):
             tem1 = tem.split('|')[0]
             tem2 = tem.split('|')[1]
@@ -3109,2570 +3111,6 @@ class QueryUpdate(Settings):
         except Exception as e:
             print('运行失败：', str(Exception) + str(e))
         print('----已写入excel ')
-    # 新版签收率-报表(自己看的) - 金额计算
-    def gat_new_money(self, team, month_last, month_yesterday):  # 报表各团队近两个月的物流数据
-        match = {'gat': '港台'}
-        emailAdd = {'台湾': 'giikinliujun@163.com',
-                    '香港': 'giikinliujun@163.com',
-                    '品牌': 'sunyaru@giikin.com'}
-        # if team == 'gat9':
-        #     month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-        #     month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
-        # else:
-        #     month_last = '2021-08-01'
-        #     month_yesterday = '2021-09-30'
-        print(month_last)
-        print(month_yesterday)
-        filePath = []
-        listT = []  # 查询sql的结果 存放池
-        print('正在获取---' + match[team] + '---签收率…………')
-        # 物流分类
-        print('正在获取---物流分类…………')
-        sql0 = '''SELECT s2.家族,s2.币种,s2.年月,s2.是否改派,s2.物流方式,
-						IF(s2.签收=0,NULL,s2.签收) as 签收,
-						IF(s2.拒收=0,NULL,s2.拒收) as 拒收,
-						IF(s2.在途=0,NULL,s2.在途) as 在途,				
-						IF(s2.未发货=0,NULL,s2.未发货) as 未发货,
-						IF(s2.未上线=0,NULL,s2.未上线) as 未上线,
-						IF(s2.已退货=0,NULL,s2.已退货) as 已退货,					
-						IF(s2.理赔=0,NULL,s2.理赔) as 理赔,
-						IF(s2.自发头程丢件=0,NULL,s2.自发头程丢件) as 自发头程丢件,
-						IF(s2.已发货=0,NULL,s2.已发货) as 已发货,
-						IF(s2.已完成=0,NULL,s2.已完成) as 已完成,
-						IF(s2.总订单=0,NULL,s2.总订单) as 全部,					
-                    concat(ROUND(IFNULL(s2.签收 / s2.已完成,0) * 100,2),'%') as 完成签收,
-                        concat(ROUND(IFNULL(s2.签收 / s2.总订单,0) * 100,2),'%') as 总计签收,
-                        concat(ROUND(IFNULL(s2.已完成 / s2.总订单,0) * 100,2),'%') as 完成占比,
-                        concat(ROUND(IFNULL(s2.已完成 / s2.已发货,0) * 100,2),'%') as '已完成/已发货',
-                        concat(ROUND(IFNULL(s2.已退货 / s2.总订单,0) * 100,2),'%') as 退货率,
-                    concat(ROUND(IFNULL(s2.签收金额 / s2.完成金额,0) * 100,2),'%') as '完成签收(金额)',
-                        concat(ROUND(IFNULL(s2.签收金额 / s2.总计金额,0) * 100,2),'%') as '总计签收(金额)',
-                        concat(ROUND(IFNULL(s2.完成金额 / s2.总计金额,0) * 100,2),'%') as '完成占比(金额)',
-                        concat(ROUND(IFNULL(s2.完成金额 / s2.发货金额,0) * 100,2),'%') as '已完成/已发货(金额)',
-                        concat(ROUND(IFNULL(s2.退货金额 / s2.总计金额,0) * 100,2),'%') as '退货率(金额)'
-                FROM ( SELECT IFNULL(s1.币种,'合计') as 币种,
-                            IFNULL(s1.家族,'合计') as 家族,
-                            IFNULL(s1.年月,'合计') as 年月,
-                            IFNULL(s1.是否改派,'合计') as 是否改派,
-                            IFNULL(s1.物流方式,'合计') as 物流方式,
-                            SUM(s1.签收) as 签收,
-                            SUM(s1.拒收) as 拒收,
-                            SUM(s1.在途) as 在途,
-                            SUM(s1.未发货) as 未发货,
-                            SUM(s1.未上线) as 未上线,
-                            SUM(s1.已退货) as 已退货,
-                            SUM(s1.理赔) as 理赔,
-                            SUM(s1.自发头程丢件) as 自发头程丢件,
-                            SUM(s1.已发货) as 已发货,
-                            SUM(s1.已完成) as 已完成,
-                            SUM(s1.总订单) as 总订单,
-                            SUM(s1.签收金额) as 签收金额,
-                            SUM(s1.退货金额) as 退货金额,
-                            SUM(s1.完成金额) as 完成金额,
-                            SUM(s1.发货金额) as 发货金额,
-                            SUM(s1.总计金额) as 总计金额
-                    FROM (SELECT cx.币种 as 币种,cx.家族 as 家族,cx.年月 as 年月,cx.是否改派 as 是否改派,cx.物流方式 as 物流方式,
-                                SUM(IF(最终状态 = "已签收",1,0)) as 签收,
-                                SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
-                                SUM(IF(最终状态 = "在途",1,0)) as 在途,
-                                SUM(IF(最终状态 = "未发货",1,0)) as 未发货,
-                                SUM(IF(最终状态 = "未上线",1,0)) as 未上线,
-                                SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
-                                SUM(IF(最终状态 = "理赔",1,0)) as 理赔,
-                                SUM(IF(最终状态 = "自发头程丢件",1,0)) as 自发头程丢件,
-                                SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
-                                count(订单编号) as 总订单,
-                                count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货,
-                                SUM(IF(最终状态 = "已签收",`价格RMB`,0)) as 签收金额,
-                                SUM(IF(最终状态 = "已退货",`价格RMB`,0)) as 退货金额,
-                                SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),`价格RMB`,0)) as 完成金额,
-                                SUM(`价格RMB`) as 总计金额,
-                                SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
-                            FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
-                            ) cx
-                            GROUP BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`是否改派`, cx.`物流方式`
-                            ORDER BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`是否改派` DESC,总订单 DESC
-                    ) s1
-                    GROUP BY s1.`家族`,s1.`币种`, s1.`年月`, s1.`是否改派`, s1.`物流方式`
-                    with rollup
-                ) s2
-                GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`是否改派`, s2.`物流方式` 
-                HAVING s2.年月 <> '合计'
-    ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
-            FIELD(s2.`币种`,'台湾','香港','合计'),
-            s2.`年月`,
-            FIELD(s2.`是否改派`,'改派','直发','合计'),
-            FIELD(s2.`物流方式`, '台湾-大黄蜂普货头程-森鸿尾程','台湾-大黄蜂普货头程-易速配尾程', '台湾-立邦普货头程-森鸿尾程','台湾-易速配-TW海快','台湾-立邦普货头程-易速配尾程', 
-                                '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
-                                '香港-立邦-顺丰','香港-易速配-顺丰','香港-易速配-顺丰YC', '香港-森鸿-SH渠道','香港-森鸿-顺丰渠道',
-                                '龟山','森鸿','速派','天马顺丰','天马新竹','香港-立邦-改派','香港-森鸿-改派','香港-易速配-改派','合计' ),
-            s2.总订单 DESC;'''.format(team, month_last, month_yesterday)
-        df0 = pd.read_sql_query(sql=sql0, con=self.engine1)
-        listT.append(df0)
-        # 物流分旬
-        print('正在获取---物流分旬…………')
-        sql11 = '''SELECT s2.家族,s2.币种,s2.年月,s2.是否改派,s2.物流方式,s2.旬,
-						IF(s2.签收=0,NULL,s2.签收) as 签收,
-						IF(s2.拒收=0,NULL,s2.拒收) as 拒收,
-						IF(s2.在途=0,NULL,s2.在途) as 在途,				
-						IF(s2.未发货=0,NULL,s2.未发货) as 未发货,
-						IF(s2.未上线=0,NULL,s2.未上线) as 未上线,
-						IF(s2.已退货=0,NULL,s2.已退货) as 已退货,					
-						IF(s2.理赔=0,NULL,s2.理赔) as 理赔,
-						IF(s2.自发头程丢件=0,NULL,s2.自发头程丢件) as 自发头程丢件,
-						IF(s2.已发货=0,NULL,s2.已发货) as 已发货,
-						IF(s2.已完成=0,NULL,s2.已完成) as 已完成,
-						IF(s2.总订单=0,NULL,s2.总订单) as 全部,	
-                    concat(ROUND(IFNULL(s2.签收 / s2.已完成,0) * 100,2),'%') as 完成签收,
-                        concat(ROUND(IFNULL(s2.签收 / s2.总订单,0) * 100,2),'%') as 总计签收,
-                        concat(ROUND(IFNULL(s2.已完成 / s2.总订单,0) * 100,2),'%') as 完成占比,
-                        concat(ROUND(IFNULL(s2.已完成 / s2.已发货,0) * 100,2),'%') as '已完成/已发货',
-                        concat(ROUND(IFNULL(s2.已退货 / s2.总订单,0) * 100,2),'%') as 退货率,
-                        concat(ROUND(IFNULL(s2.已发货 / s2.已发货单量,0) * 100,2),'%') as 已发货占比,
-                        concat(ROUND(IFNULL(s2.已完成 / s2.已完成单量,0) * 100,2),'%') as 已完成占比,
-                        concat(ROUND(IFNULL(s2.总订单 / s2.总订单量,0) * 100,2),'%') as 全部占比,
-                    concat(ROUND(IFNULL(s2.签收金额 / s2.完成金额,0) * 100,2),'%') as '完成签收(金额)',
-                        concat(ROUND(IFNULL(s2.签收金额 / s2.总计金额,0) * 100,2),'%') as '总计签收(金额)',
-                        concat(ROUND(IFNULL(s2.完成金额 / s2.总计金额,0) * 100,2),'%') as '完成占比(金额)',
-                        concat(ROUND(IFNULL(s2.完成金额 / s2.发货金额,0) * 100,2),'%') as '已完成/已发货(金额)',
-                        concat(ROUND(IFNULL(s2.退货金额 / s2.总计金额,0) * 100,2),'%') as '退货率(金额)'    
-                FROM (SELECT IFNULL(s1.币种,'合计') as 币种,
-                            IFNULL(s1.家族,'合计') as 家族,
-                            IFNULL(s1.年月,'合计') as 年月,
-                            IFNULL(s1.是否改派,'合计') as 是否改派,
-                            IFNULL(s1.物流方式,'合计') as 物流方式,
-                            IFNULL(s1.旬,'合计') as 旬,
-                            SUM(s1.签收) as 签收,
-                            SUM(s1.拒收) as 拒收,
-                            SUM(s1.在途) as 在途,
-                            SUM(s1.未发货) as 未发货,
-                            SUM(s1.未上线) as 未上线,
-                            SUM(s1.已退货) as 已退货,
-                            SUM(s1.理赔) as 理赔,
-                            SUM(s1.自发头程丢件) as 自发头程丢件,
-                            SUM(s1.已发货) as 已发货,
-                            SUM(s1.已完成) as 已完成,
-                            SUM(s1.总订单) as 总订单,
-                            s1.总订单量,
-							s1.已发货单量,
-							s1.已完成单量,
-                            SUM(s1.签收金额) as 签收金额,
-                            SUM(s1.退货金额) as 退货金额,
-                            SUM(s1.完成金额) as 完成金额,
-                            SUM(s1.发货金额) as 发货金额,
-                            SUM(s1.总计金额) as 总计金额
-                    FROM (SELECT cx.币种 as 币种,cx.家族 as 家族,cx.年月 as 年月,cx.是否改派 as 是否改派,cx.物流方式 as 物流方式,
-                                IF(cx.旬 =1,'上旬',IF(cx.旬 =2,'中旬',IF(cx.旬 =3,'下旬',cx.旬))) as 旬,
-                                SUM(IF(最终状态 = "已签收",1,0)) as 签收,
-                                SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
-                                SUM(IF(最终状态 = "在途",1,0)) as 在途,
-                                SUM(IF(最终状态 = "未发货",1,0)) as 未发货,
-                                SUM(IF(最终状态 = "未上线",1,0)) as 未上线,
-                                SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
-                                SUM(IF(最终状态 = "理赔",1,0)) as 理赔,
-                                SUM(IF(最终状态 = "自发头程丢件",1,0)) as 自发头程丢件,
-                                SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
-                                count(订单编号) as 总订单,
-								总订单量,
-								已发货单量,
-								已完成单量,
-                                count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货,
-                                SUM(IF(最终状态 = "已签收",`价格RMB`,0)) as 签收金额,
-                                SUM(IF(最终状态 = "已退货",`价格RMB`,0)) as 退货金额,
-                                SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),`价格RMB`,0)) as 完成金额,
-                                SUM(`价格RMB`) as 总计金额,
-                                SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
-                            FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                    FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
-                            ) cx
-                            LEFT JOIN 
-							    (SELECT 币种,家族,年月,物流方式,count(订单编号) as 总订单量, count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货单量, SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成单量
-                                FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
-                                    ) dg  
-								    GROUP BY dg.币种,dg.家族,dg.年月
-                            ) cx2 ON cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族 AND  cx.年月 = cx2.年月
-                            GROUP BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`是否改派`, cx.`物流方式`, cx.`旬`
-                            ORDER BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`是否改派` DESC,总订单 DESC
-                        ) s1
-                        GROUP BY s1.`家族`,s1.`币种`, s1.`年月`, s1.`是否改派`, s1.`物流方式`, s1.`旬`
-                        with rollup
-                    ) s2 
-                    GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`是否改派`, s2.`物流方式`, s2.`旬`
-                    HAVING s2.是否改派 <> '合计'
-        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
-                FIELD(s2.`币种`,'台湾','香港','合计'),
-                s2.`年月`,
-                FIELD(s2.`是否改派`,'改派','直发','合计'),
-                FIELD(s2.`物流方式`,'台湾-大黄蜂普货头程-森鸿尾程','台湾-大黄蜂普货头程-易速配尾程','台湾-立邦普货头程-森鸿尾程','台湾-易速配-TW海快','台湾-立邦普货头程-易速配尾程',
-                        '台湾-森鸿-新竹-自发头程','台湾-速派-711超商','台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
-                        '香港-立邦-顺丰','香港-易速配-顺丰','香港-易速配-顺丰YC','香港-森鸿-SH渠道','香港-森鸿-顺丰渠道','合计'),   
-                FIELD(s2.`旬`,'上旬','中旬','下旬','合计'),
-                s2.总订单 DESC;'''.format(team, month_last, month_yesterday)
-        df11 = pd.read_sql_query(sql=sql11, con=self.engine1)
-        listT.append(df11)
-
-        # 父级分旬
-        print('正在获取---父级分旬…………')
-        sql12 = '''SELECT s2.家族,s2.币种,s2.年月,s2.父级分类,s2.旬,
-						IF(s2.签收=0,NULL,s2.签收) as 签收,
-						IF(s2.拒收=0,NULL,s2.拒收) as 拒收,
-						IF(s2.在途=0,NULL,s2.在途) as 在途,				
-						IF(s2.未发货=0,NULL,s2.未发货) as 未发货,
-						IF(s2.未上线=0,NULL,s2.未上线) as 未上线,
-						IF(s2.已退货=0,NULL,s2.已退货) as 已退货,					
-						IF(s2.理赔=0,NULL,s2.理赔) as 理赔,
-						IF(s2.自发头程丢件=0,NULL,s2.自发头程丢件) as 自发头程丢件,
-						IF(s2.已发货=0,NULL,s2.已发货) as 已发货,
-						IF(s2.已完成=0,NULL,s2.已完成) as 已完成,
-						IF(s2.总订单=0,NULL,s2.总订单) as 全部,	
-                    concat(ROUND(s2.签收 / s2.已完成 * 100,2),'%') as 完成签收,
-                        concat(ROUND(s2.签收 / s2.总订单 * 100,2),'%') as 总计签收,
-                        concat(ROUND(s2.已完成 / s2.总订单 * 100,2),'%') as 完成占比,
-                        concat(ROUND(s2.已完成 / s2.已发货 * 100,2),'%') as '已完成/已发货',
-                        concat(ROUND(s2.已退货 / s2.总订单 * 100,2),'%') as 退货率,
-                        concat(ROUND(IFNULL(s2.已发货 / s2.已发货单量,0) * 100,2),'%') as 已发货占比,
-                        concat(ROUND(IFNULL(s2.已完成 / s2.已完成单量,0) * 100,2),'%') as 已完成占比,
-                        concat(ROUND(IFNULL(s2.总订单 / s2.总订单量,0) * 100,2),'%') as 全部占比,
-					concat(ROUND(s2.签收金额 / s2.完成金额 * 100,2),'%') as '完成签收(金额)',
-						concat(ROUND(s2.签收金额 / s2.总计金额 * 100,2),'%') as '总计签收(金额)',
-						concat(ROUND(s2.完成金额 / s2.总计金额 * 100,2),'%') as '完成占比(金额)',
-						concat(ROUND(s2.完成金额 / s2.发货金额 * 100,2),'%') as '已完成/已发货(金额)',
-						concat(ROUND(s2.退货金额 / s2.总计金额 * 100,2),'%') as '退货率(金额)'
-				 FROM ( SELECT  IFNULL(s1.币种,'合计') as 币种,IFNULL(s1.家族,'合计') as 家族,IFNULL(s1.年月,'合计') as 年月,IFNULL(s1.父级分类,'合计') as 父级分类,IFNULL(s1.旬,'合计') as 旬,
-								SUM(s1.签收) as 签收,
-								SUM(s1.拒收) as 拒收,
-								SUM(s1.在途) as 在途,
-								SUM(s1.未发货) as 未发货,
-								SUM(s1.未上线) as 未上线,
-								SUM(s1.已退货) as 已退货,
-								SUM(s1.理赔) as 理赔,
-								SUM(s1.自发头程丢件) as 自发头程丢件,
-								SUM(s1.已发货) as 已发货,
-								SUM(s1.已完成) as 已完成,
-								SUM(s1.总订单) as 总订单,
-                                s1.总订单量,s1.已发货单量,s1.已完成单量,
-								SUM(s1.签收金额) as 签收金额,
-								SUM(s1.退货金额) as 退货金额,
-								SUM(s1.完成金额) as 完成金额,
-								SUM(s1.发货金额) as 发货金额,
-								SUM(s1.总计金额) as 总计金额
-                        FROM (SELECT cx.币种 as 币种,cx.家族 as 家族,cx.年月 as 年月,cx.父级分类 as 父级分类,IF(cx.旬 =1,'上旬',IF(cx.旬 =2,'中旬',IF(cx.旬 =3,'下旬',cx.旬))) as 旬,
-                                    SUM(IF(最终状态 = "已签收",1,0)) as 签收,
-                                    SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
-                                    SUM(IF(最终状态 = "在途",1,0)) as 在途,
-                                    SUM(IF(最终状态 = "未发货",1,0)) as 未发货,
-                                    SUM(IF(最终状态 = "未上线",1,0)) as 未上线,
-                                    SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
-                                    SUM(IF(最终状态 = "理赔",1,0)) as 理赔,
-                                    SUM(IF(最终状态 = "自发头程丢件",1,0)) as 自发头程丢件,
-                                    SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
-                                    count(订单编号) as 总订单,
-                                    总订单量,已发货单量,已完成单量,
-                                    count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货,
-                                    SUM(IF(最终状态 = "已签收",`价格RMB`,0)) as 签收金额,
-                                    SUM(IF(最终状态 = "已退货",`价格RMB`,0)) as 退货金额,
-                                    SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),`价格RMB`,0)) as 完成金额,
-                                    SUM(`价格RMB`) as 总计金额,
-                                    SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
-                                FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
-                                ) cx
-                                LEFT JOIN 
-							        (SELECT 币种,家族,年月,物流方式,count(订单编号) as 总订单量, count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货单量, SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成单量
-                                    FROM (SELECT *,
-                                                IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                            FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
-                                        ) dg  
-								        GROUP BY dg.币种,dg.家族,dg.年月
-                                ) cx2 ON cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族 AND  cx.年月 = cx2.年月
-                                GROUP BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`父级分类`, cx.`旬`
-                                ORDER BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`父级分类` DESC,总订单 DESC
-                        ) s1
-                        GROUP BY s1.`家族`,s1.`币种`, s1.`年月`, s1.`父级分类`, s1.`旬`
-                        with rollup
-                ) s2 HAVING s2.年月 <> '合计'
-            ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
-                    FIELD(s2.`币种`,'台湾','香港','合计'),
-                    s2.`年月`,
-                    FIELD(s2.父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','合计' ),
-                    FIELD(s2.`旬`,'上旬','中旬','下旬','合计'),
-                    s2.总订单 DESC;'''.format(team, month_last, month_yesterday)
-        df12 = pd.read_sql_query(sql=sql12, con=self.engine1)
-        listT.append(df12)
-        # 二级分旬
-        print('正在获取---二级分旬…………')
-        sql13 = '''SELECT s2.家族,s2.币种,s2.年月,s2.父级分类,s2.二级分类,s2.旬,
-						IF(s2.签收=0,NULL,s2.签收) as 签收,
-						IF(s2.拒收=0,NULL,s2.拒收) as 拒收,
-						IF(s2.在途=0,NULL,s2.在途) as 在途,				
-						IF(s2.未发货=0,NULL,s2.未发货) as 未发货,
-						IF(s2.未上线=0,NULL,s2.未上线) as 未上线,
-						IF(s2.已退货=0,NULL,s2.已退货) as 已退货,					
-						IF(s2.理赔=0,NULL,s2.理赔) as 理赔,
-						IF(s2.自发头程丢件=0,NULL,s2.自发头程丢件) as 自发头程丢件,
-						IF(s2.已发货=0,NULL,s2.已发货) as 已发货,
-						IF(s2.已完成=0,NULL,s2.已完成) as 已完成,
-						IF(s2.总订单=0,NULL,s2.总订单) as 全部,	
-                    concat(ROUND(IFNULL(s2.签收 / s2.已完成,0) * 100,2),'%') as 完成签收,
-                        concat(ROUND(IFNULL(s2.签收 / s2.总订单,0) * 100,2),'%') as 总计签收,
-                        concat(ROUND(IFNULL(s2.已完成 / s2.总订单,0) * 100,2),'%') as 完成占比,
-                        concat(ROUND(IFNULL(s2.已完成 / s2.已发货,0) * 100,2),'%') as '已完成/已发货',
-                        concat(ROUND(IFNULL(s2.已退货 / s2.总订单,0) * 100,2),'%') as 退货率,
-                        concat(ROUND(IFNULL(s2.已发货 / s2.已发货单量,0) * 100,2),'%') as 已发货占比,
-                        concat(ROUND(IFNULL(s2.已完成 / s2.已完成单量,0) * 100,2),'%') as 已完成占比,
-                        concat(ROUND(IFNULL(s2.总订单 / s2.总订单量,0) * 100,2),'%') as 全部占比,
-						concat(ROUND(IFNULL(s2.签收金额 / s2.完成金额,0) * 100,2),'%') as '完成签收(金额)',
-						concat(ROUND(IFNULL(s2.签收金额 / s2.总计金额,0) * 100,2),'%') as '总计签收(金额)',
-						concat(ROUND(IFNULL(s2.完成金额 / s2.总计金额,0) * 100,2),'%') as '完成占比(金额)',
-						concat(ROUND(IFNULL(s2.完成金额 / s2.发货金额,0) * 100,2),'%') as '已完成/已发货(金额)',
-						concat(ROUND(IFNULL(s2.退货金额 / s2.总计金额,0) * 100,2),'%') as '退货率(金额)'
-				 FROM ( SELECT  IFNULL(s1.币种,'合计') as 币种,IFNULL(s1.家族,'合计') as 家族,IFNULL(s1.年月,'合计') as 年月,IFNULL(s1.父级分类,'合计') as 父级分类,IFNULL(s1.二级分类,'合计') as 二级分类,IFNULL(s1.旬,'合计') as 旬,
-								SUM(s1.签收) as 签收,
-								SUM(s1.拒收) as 拒收,
-								SUM(s1.在途) as 在途,
-								SUM(s1.未发货) as 未发货,
-								SUM(s1.未上线) as 未上线,
-								SUM(s1.已退货) as 已退货,
-								SUM(s1.理赔) as 理赔,
-								SUM(s1.自发头程丢件) as 自发头程丢件,
-								SUM(s1.已发货) as 已发货,
-								SUM(s1.已完成) as 已完成,
-								SUM(s1.总订单) as 总订单,
-                                s1.总订单量,s1.已发货单量,s1.已完成单量,
-								SUM(s1.签收金额) as 签收金额,
-								SUM(s1.退货金额) as 退货金额,
-								SUM(s1.完成金额) as 完成金额,
-								SUM(s1.发货金额) as 发货金额,
-								SUM(s1.总计金额) as 总计金额
-                        FROM (SELECT cx.币种 as 币种,cx.家族 as 家族,cx.年月 as 年月,cx.父级分类 as 父级分类,cx.二级分类 as 二级分类,IF(cx.旬 =1,'上旬',IF(cx.旬 =2,'中旬',IF(cx.旬 =3,'下旬',cx.旬))) as 旬,
-                                SUM(IF(最终状态 = "已签收",1,0)) as 签收,
-                                SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
-                                SUM(IF(最终状态 = "在途",1,0)) as 在途,
-                                SUM(IF(最终状态 = "未发货",1,0)) as 未发货,
-                                SUM(IF(最终状态 = "未上线",1,0)) as 未上线,
-                                SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
-                                SUM(IF(最终状态 = "理赔",1,0)) as 理赔,
-                                SUM(IF(最终状态 = "自发头程丢件",1,0)) as 自发头程丢件,
-                                SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
-                                count(订单编号) as 总订单,
-								总订单量,已发货单量,已完成单量,
-                                count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货,
-                                SUM(IF(最终状态 = "已签收",`价格RMB`,0)) as 签收金额,
-                                SUM(IF(最终状态 = "已退货",`价格RMB`,0)) as 退货金额,
-                                SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),`价格RMB`,0)) as 完成金额,
-                                SUM(`价格RMB`) as 总计金额,
-                                SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
-                            FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
-                            ) cx
-                            LEFT JOIN 
-							    (SELECT 币种,家族,年月,物流方式,count(订单编号) as 总订单量, count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货单量, SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成单量
-                                FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
-                                    ) dg  
-								    GROUP BY dg.币种,dg.家族,dg.年月
-                            ) cx2 ON cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族 AND  cx.年月 = cx2.年月
-                            GROUP BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`父级分类`, cx.`二级分类`, cx.`旬`
-                            ORDER BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`父级分类`, cx.`二级分类` DESC,总订单 DESC
-                        ) s1
-                        GROUP BY s1.`家族`,s1.`币种`, s1.`年月`, s1.`父级分类`, s1.`二级分类`, s1.`旬`
-                        with rollup
-                ) s2 HAVING s2.年月 <> '合计'
-        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
-                FIELD(s2.`币种`,'台湾','香港','合计'),
-                s2.`年月`,
-                FIELD(s2.父级分类, '居家百货', '电子电器', '服饰', '医药保健', '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','合计' ),
-                FIELD(s2.二级分类,'个人洗护','皮鞋','日用百货','影音娱乐','家用电器','药品','上衣','下装'
-                            ,'饰品','保健器械','保健食品','彩妆','钱包','休闲运动鞋','内衣','护理护具','凉/拖鞋'
-                            ,'裙子','个护电器','配饰','护肤','布艺家纺','母婴用品','厨房用品','汽车用品','双肩包'
-                            ,'单肩包','手机外设','电脑外设','成人保健','套装','靴子','手表手环','行李箱包','户外运动'
-                            ,'玩具','手表','宠物用品','合计' ),
-                FIELD(s2.`旬`,'上旬','中旬','下旬','合计'),
-                s2.总订单 DESC;'''.format(team, month_last, month_yesterday)
-        df13 = pd.read_sql_query(sql=sql13, con=self.engine1)
-        listT.append(df13)
-
-        # 产品整月 台湾
-        print('正在获取---产品整月 台湾…………')
-        sql14 = '''SELECT *
-                FROM(SELECT IFNULL(s1.家族, '合计') 家族,IFNULL(s1.地区, '合计') 地区,IFNULL(s1.月份, '合计') 月份,
-                            IFNULL(s1.产品id, '合计') 产品id,IFNULL(s1.产品名称, '合计') 产品名称,IFNULL(s1.父级分类, '合计') 父级分类,IFNULL(s1.二级分类, '合计') 二级分类,
-                            SUM(s1.已签收) as 已签收,
-						    SUM(s1.拒收) as 拒收,
-						    SUM(s1.已退货) as 已退货,
-						    SUM(s1.已完成) as 已完成,
-						    SUM(s1.总订单) as 总订单,
-						    concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.已完成),0) * 100,2),'%') as 完成签收,
-						    concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.总订单),0) * 100,2),'%') as 总计签收,
-						    concat(ROUND(IFNULL(SUM(s1.已完成) / SUM(s1.总订单),0) * 100,2),'%') as 完成占比,
-						    concat(ROUND(IFNULL(SUM(s1.已退货) / SUM(s1.总订单),0) * 100,2),'%') as 退货率,
-						    concat(ROUND(IFNULL(SUM(s1.拒收) / SUM(s1.已完成),0) * 100,2),'%') as 拒收率,
-						SUM(s1.大黄蜂已签收) as '台湾-大黄蜂普货头程-森鸿尾程已签收',
-						    SUM(s1.大黄蜂拒收) as '台湾-大黄蜂普货头程-森鸿尾程拒收',
-						    SUM(s1.大黄蜂已退货) as '台湾-大黄蜂普货头程-森鸿尾程已退货',
-						    SUM(s1.大黄蜂已完成) as '台湾-大黄蜂普货头程-森鸿尾程已完成',
-						    SUM(s1.大黄蜂总订单) as '台湾-大黄蜂普货头程-森鸿尾程总订单',
-						    concat(ROUND(SUM(s1.大黄蜂已签收) / SUM(s1.大黄蜂已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程完成签收',
-						    concat(ROUND(SUM(s1.大黄蜂已签收) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程总计签收',
-						    concat(ROUND(SUM(s1.大黄蜂已完成) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程完成占比',
-						    concat(ROUND(SUM(s1.大黄蜂已退货) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程退货率',
-						    concat(ROUND(SUM(s1.大黄蜂拒收) / SUM(s1.大黄蜂已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程拒收率',
-						SUM(s1.大黄蜂易速配已签收) as '台湾-大黄蜂普货头程-易速配尾程已签收',
-						    SUM(s1.大黄蜂易速配拒收) as '台湾-大黄蜂普货头程-易速配尾程拒收',
-						    SUM(s1.大黄蜂易速配已退货) as '台湾-大黄蜂普货头程-易速配尾程已退货',
-						    SUM(s1.大黄蜂易速配已完成) as '台湾-大黄蜂普货头程-易速配尾程已完成',
-						    SUM(s1.大黄蜂易速配总订单) as '台湾-大黄蜂普货头程-易速配尾程总订单',
-						    concat(ROUND(SUM(s1.大黄蜂易速配已签收) / SUM(s1.大黄蜂易速配已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程完成签收',
-						    concat(ROUND(SUM(s1.大黄蜂易速配已签收) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程总计签收',
-						    concat(ROUND(SUM(s1.大黄蜂易速配已完成) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程完成占比',
-						    concat(ROUND(SUM(s1.大黄蜂易速配已退货) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程退货率',
-						    concat(ROUND(SUM(s1.大黄蜂易速配拒收) / SUM(s1.大黄蜂易速配已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程拒收率',
-						SUM(s1.TW海快易速配已签收) as '台湾-易速配-TW海快已签收',
-						    SUM(s1.TW海快易速配拒收) as '台湾-易速配-TW海快拒收',
-						    SUM(s1.TW海快易速配已退货) as '台湾-易速配-TW海快已退货',
-						    SUM(s1.TW海快易速配已完成) as '台湾-易速配-TW海快已完成',
-						    SUM(s1.TW海快易速配总订单) as '台湾-易速配-TW海快总订单',
-						    concat(ROUND(SUM(s1.TW海快易速配已签收) / SUM(s1.TW海快易速配已完成) * 100,2),'%') as '台湾-易速配-TW海快完成签收',
-						    concat(ROUND(SUM(s1.TW海快易速配已签收) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快总计签收',
-						    concat(ROUND(SUM(s1.TW海快易速配已完成) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快完成占比',
-						    concat(ROUND(SUM(s1.TW海快易速配已退货) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快退货率',
-						    concat(ROUND(SUM(s1.TW海快易速配拒收) / SUM(s1.TW海快易速配已完成) * 100,2),'%') as '台湾-易速配-TW海快拒收率',
-						SUM(s1.立邦普货已签收) as '台湾-立邦普货头程-森鸿尾程已签收',
-						    SUM(s1.立邦普货拒收) as '台湾-立邦普货头程-森鸿尾程拒收',
-						    SUM(s1.立邦普货已退货) as '台湾-立邦普货头程-森鸿尾程已退货',
-						    SUM(s1.立邦普货已完成) as '台湾-立邦普货头程-森鸿尾程已完成',
-						    SUM(s1.立邦普货总订单) as '台湾-立邦普货头程-森鸿尾程总订单',
-						    concat(ROUND(SUM(s1.立邦普货已签收) / SUM(s1.立邦普货已完成) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程完成签收',
-						    concat(ROUND(SUM(s1.立邦普货已签收) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程总计签收',
-						    concat(ROUND(SUM(s1.立邦普货已完成) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程完成占比',
-						    concat(ROUND(SUM(s1.立邦普货已退货) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程退货率',
-						    concat(ROUND(SUM(s1.立邦普货拒收) / SUM(s1.立邦普货已完成) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程拒收率',
-						SUM(s1.立邦普货易速配已签收) as '台湾-立邦普货头程-易速配尾程已签收',
-						    SUM(s1.立邦普货易速配拒收) as '台湾-立邦普货头程-易速配尾程拒收',
-						    SUM(s1.立邦普货易速配已退货) as '台湾-立邦普货头程-易速配尾程已退货',
-						    SUM(s1.立邦普货易速配已完成) as '台湾-立邦普货头程-易速配尾程已完成',
-						    SUM(s1.立邦普货易速配总订单) as '台湾-立邦普货头程-易速配尾程总订单',
-						    concat(ROUND(SUM(s1.立邦普货易速配已签收) / SUM(s1.立邦普货易速配已完成) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程完成签收',
-						    concat(ROUND(SUM(s1.立邦普货易速配已签收) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程总计签收',
-						    concat(ROUND(SUM(s1.立邦普货易速配已完成) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程完成占比',
-						    concat(ROUND(SUM(s1.立邦普货易速配已退货) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程退货率',
-						    concat(ROUND(SUM(s1.立邦普货易速配拒收) / SUM(s1.立邦普货易速配已完成) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程拒收率',
-						SUM(s1.森鸿新竹已签收) as '台湾-森鸿-新竹-自发头程已签收',
-						    SUM(s1.森鸿新竹拒收) as '台湾-森鸿-新竹-自发头程拒收',
-						    SUM(s1.森鸿新竹已退货) as '台湾-森鸿-新竹-自发头程已退货',
-						    SUM(s1.森鸿新竹已完成) as '台湾-森鸿-新竹-自发头程已完成',
-						    SUM(s1.森鸿新竹总订单) as '台湾-森鸿-新竹-自发头程总订单',
-						    concat(ROUND(SUM(s1.森鸿新竹已签收) / SUM(s1.森鸿新竹已完成) * 100,2),'%') as '台湾-森鸿-新竹-自发头程完成签收',
-						    concat(ROUND(SUM(s1.森鸿新竹已签收) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程总计签收',
-						    concat(ROUND(SUM(s1.森鸿新竹已完成) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程完成占比',
-						    concat(ROUND(SUM(s1.森鸿新竹已退货) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程退货率',
-						    concat(ROUND(SUM(s1.森鸿新竹拒收) / SUM(s1.森鸿新竹已完成) * 100,2),'%') as '台湾-森鸿-新竹-自发头程拒收率',
-						SUM(s1.速派超商已签收) as '台湾-速派-711超商已签收',
-						    SUM(s1.速派超商拒收) as '台湾-速派-711超商拒收',
-						    SUM(s1.速派超商已退货) as '台湾-速派-711超商已退货',
-						    SUM(s1.速派超商已完成) as '台湾-速派-711超商已完成',
-						    SUM(s1.速派超商总订单) as '台湾-速派-711超商总订单',
-						    concat(ROUND(SUM(s1.速派超商已签收) / SUM(s1.速派超商已完成) * 100,2),'%') as '台湾-速派-711超商完成签收',
-						    concat(ROUND(SUM(s1.速派超商已签收) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商总计签收',
-						    concat(ROUND(SUM(s1.速派超商已完成) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商完成占比',
-						    concat(ROUND(SUM(s1.速派超商已退货) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商退货率',
-						    concat(ROUND(SUM(s1.速派超商拒收) / SUM(s1.速派超商已完成) * 100,2),'%') as '台湾-速派-711超商拒收率',
-						SUM(s1.速派新竹已签收) as '台湾-速派-新竹已签收',
-						    SUM(s1.速派新竹拒收) as '台湾-速派-新竹拒收',
-						    SUM(s1.速派新竹已退货) as '台湾-速派-新竹已退货',
-						    SUM(s1.速派新竹已完成) as '台湾-速派-新竹已完成',
-						    SUM(s1.速派新竹总订单) as '台湾-速派-新竹总订单',
-						    concat(ROUND(SUM(s1.速派新竹已签收) / SUM(s1.速派新竹已完成) * 100,2),'%') as '台湾-速派-新竹完成签收',
-				    		concat(ROUND(SUM(s1.速派新竹已签收) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹总计签收',
-					    	concat(ROUND(SUM(s1.速派新竹已完成) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹完成占比',
-					    	concat(ROUND(SUM(s1.速派新竹已退货) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹退货率',
-					    	concat(ROUND(SUM(s1.速派新竹拒收) / SUM(s1.速派新竹已完成) * 100,2),'%') as '台湾-速派-新竹拒收率',
-						SUM(s1.天马顺丰已签收) as '台湾-天马-顺丰已签收',
-						    SUM(s1.天马顺丰拒收) as '台湾-天马-顺丰拒收',
-					    	SUM(s1.天马顺丰已退货) as '台湾-天马-顺丰已退货',
-					    	SUM(s1.天马顺丰已完成) as '台湾-天马-顺丰已完成',
-					    	SUM(s1.天马顺丰总订单) as '台湾-天马-顺丰总订单',
-					    	concat(ROUND(SUM(s1.天马顺丰已签收) / SUM(s1.天马顺丰已完成) * 100,2),'%') as '台湾-天马-顺丰完成签收',
-					    	concat(ROUND(SUM(s1.天马顺丰已签收) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰总计签收',
-				    		concat(ROUND(SUM(s1.天马顺丰已完成) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰完成占比',
-				    		concat(ROUND(SUM(s1.天马顺丰已退货) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰退货率',
-					    	concat(ROUND(SUM(s1.天马顺丰拒收) / SUM(s1.天马顺丰已完成) * 100,2),'%') as '台湾-天马-顺丰拒收率',
-						SUM(s1.天马新竹已签收) as '台湾-天马-新竹已签收',
-					    	SUM(s1.天马新竹拒收) as '台湾-天马-新竹拒收',
-					    	SUM(s1.天马新竹已退货) as '台湾-天马-新竹已退货',
-					    	SUM(s1.天马新竹已完成) as '台湾-天马-新竹已完成',
-					    	SUM(s1.天马新竹总订单) as '台湾-天马-新竹总订单',
-					    	concat(ROUND(SUM(s1.天马新竹已签收) / SUM(s1.天马新竹已完成) * 100,2),'%') as '台湾-天马-新竹完成签收',
-					    	concat(ROUND(SUM(s1.天马新竹已签收) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹总计签收',
-					    	concat(ROUND(SUM(s1.天马新竹已完成) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹完成占比',
-					    	concat(ROUND(SUM(s1.天马新竹已退货) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹退货率',
-					    	concat(ROUND(SUM(s1.天马新竹拒收) / SUM(s1.天马新竹已完成) * 100,2),'%') as '台湾-天马-新竹拒收率',
-						SUM(s1.天马黑猫已签收) as '台湾-天马-黑猫已签收',
-					    	SUM(s1.天马黑猫拒收) as '台湾-天马-黑猫拒收',
-						    SUM(s1.天马黑猫已退货) as '台湾-天马-黑猫已退货',
-					    	SUM(s1.天马黑猫已完成) as '台湾-天马-黑猫已完成',
-					        SUM(s1.天马黑猫总订单) as '台湾-天马-黑猫总订单',
-					    	concat(ROUND(SUM(s1.天马黑猫已签收) / SUM(s1.天马黑猫已完成) * 100,2),'%') as '台湾-天马-黑猫完成签收',
-					    	concat(ROUND(SUM(s1.天马黑猫已签收) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫总计签收',
-					    	concat(ROUND(SUM(s1.天马黑猫已完成) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫完成占比',
-					    	concat(ROUND(SUM(s1.天马黑猫已退货) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫退货率',
-					    	concat(ROUND(SUM(s1.天马黑猫拒收) / SUM(s1.天马黑猫已完成) * 100,2),'%') as '台湾-天马-黑猫拒收率',
-						SUM(s1.易速配新竹已签收) as '台湾-易速配-新竹已签收',
-					    	SUM(s1.易速配新竹拒收) as '台湾-易速配-新竹拒收',
-					    	SUM(s1.易速配新竹已退货) as '台湾-易速配-新竹已退货',
-					    	SUM(s1.易速配新竹已完成) as '台湾-易速配-新竹已完成',
-					    	SUM(s1.易速配新竹总订单) as '台湾-易速配-新竹总订单',
-					    	concat(ROUND(SUM(s1.易速配新竹已签收) / SUM(s1.易速配新竹已完成) * 100,2),'%') as '台湾-易速配-新竹完成签收',
-					    	concat(ROUND(SUM(s1.易速配新竹已签收) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹总计签收',
-					    	concat(ROUND(SUM(s1.易速配新竹已完成) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹完成占比',
-					    	concat(ROUND(SUM(s1.易速配新竹已退货) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹退货率',
-					    	concat(ROUND(SUM(s1.易速配新竹拒收) / SUM(s1.易速配新竹已完成) * 100,2),'%') as '台湾-易速配-新竹拒收率',
-						SUM(s1.龟山改派已签收) as '龟山改派已签收',
-					    	SUM(s1.龟山改派拒收) as '龟山改派拒收',
-					    	SUM(s1.龟山改派已退货) as '龟山改派已退货',
-					    	SUM(s1.龟山改派已完成) as '龟山改派已完成',
-					    	SUM(s1.龟山改派总订单) as '龟山改派总订单',
-					    	concat(ROUND(SUM(s1.龟山改派已签收) / SUM(s1.龟山改派已完成) * 100,2),'%') as '龟山改派完成签收',
-					    	concat(ROUND(SUM(s1.龟山改派已签收) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派总计签收',
-					    	concat(ROUND(SUM(s1.龟山改派已完成) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派完成占比',
-					    	concat(ROUND(SUM(s1.龟山改派已退货) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派退货率',
-					    	concat(ROUND(SUM(s1.龟山改派拒收) / SUM(s1.龟山改派已完成) * 100,2),'%') as '龟山改派拒收率',
-				    	SUM(s1.森鸿改派已签收) as '森鸿改派已签收',
-					    	SUM(s1.森鸿改派拒收) as '森鸿改派拒收',
-					    	SUM(s1.森鸿改派已退货) as '森鸿改派已退货',
-					    	SUM(s1.森鸿改派已完成) as '森鸿改派已完成',
-					    	SUM(s1.森鸿改派总订单) as '森鸿改派总订单',
-					    	concat(ROUND(SUM(s1.森鸿改派已签收) / SUM(s1.森鸿改派已完成) * 100,2),'%') as '森鸿改派完成签收',
-					    	concat(ROUND(SUM(s1.森鸿改派已签收) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派总计签收',
-					    	concat(ROUND(SUM(s1.森鸿改派已完成) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派完成占比',
-					    	concat(ROUND(SUM(s1.森鸿改派已退货) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派退货率',
-					    	concat(ROUND(SUM(s1.森鸿改派拒收) / SUM(s1.森鸿改派已完成) * 100,2),'%') as '森鸿改派拒收率',
-						SUM(s1.速派改派已签收) as '速派改派已签收',
-					    	SUM(s1.速派改派拒收) as '速派改派拒收',
-					    	SUM(s1.速派改派已退货) as '速派改派已退货',
-					    	SUM(s1.速派改派已完成) as '速派改派已完成',
-					    	SUM(s1.速派改派总订单) as '速派改派总订单',
-					    	concat(ROUND(SUM(s1.速派改派已签收) / SUM(s1.速派改派已完成) * 100,2),'%') as '速派改派完成签收',
-					    	concat(ROUND(SUM(s1.速派改派已签收) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派总计签收',
-					    	concat(ROUND(SUM(s1.速派改派已完成) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派完成占比',
-					    	concat(ROUND(SUM(s1.速派改派已退货) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派退货率',
-					    	concat(ROUND(SUM(s1.速派改派拒收) / SUM(s1.速派改派已完成) * 100,2),'%') as '速派改派拒收率',
-						SUM(s1.天马新竹改派已签收) as '天马新竹改派已签收',
-					    	SUM(s1.天马新竹改派拒收) as '天马新竹改派拒收',
-					    	SUM(s1.天马新竹改派已退货) as '天马新竹改派已退货',
-					    	SUM(s1.天马新竹改派已完成) as '天马新竹改派已完成',
-					    	SUM(s1.天马新竹改派总订单) as '天马新竹改派总订单',
-					    	concat(ROUND(SUM(s1.天马新竹改派已签收) / SUM(s1.天马新竹改派已完成) * 100,2),'%') as '天马新竹改派完成签收',
-					    	concat(ROUND(SUM(s1.天马新竹改派已签收) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派总计签收',
-					    	concat(ROUND(SUM(s1.天马新竹改派已完成) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派完成占比',
-					    	concat(ROUND(SUM(s1.天马新竹改派已退货) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派退货率',
-					    	concat(ROUND(SUM(s1.天马新竹改派拒收) / SUM(s1.天马新竹改派已完成) * 100,2),'%') as '天马新竹改派拒收率',
-						SUM(s1.天马顺丰改派已签收) as '天马顺丰改派已签收',
-					    	SUM(s1.天马顺丰改派拒收) as '天马顺丰改派拒收',
-					    	SUM(s1.天马顺丰改派已退货) as '天马顺丰改派已退货',
-					    	SUM(s1.天马顺丰改派已完成) as '天马顺丰改派已完成',
-					    	SUM(s1.天马顺丰改派总订单) as '天马顺丰改派总订单',
-					    	concat(ROUND(SUM(s1.天马顺丰改派已签收) / SUM(s1.天马顺丰改派已完成) * 100,2),'%') as '天马顺丰改派完成签收',
-					    	concat(ROUND(SUM(s1.天马顺丰改派已签收) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派总计签收',
-					    	concat(ROUND(SUM(s1.天马顺丰改派已完成) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派完成占比',
-					    	concat(ROUND(SUM(s1.天马顺丰改派已退货) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派退货率',
-					    	concat(ROUND(SUM(s1.天马顺丰改派拒收) / SUM(s1.天马顺丰改派已完成) * 100,2),'%') as '天马顺丰改派拒收率'
-                    FROM(SELECT IFNULL(cx.`家族`, '合计') 家族,
-								IFNULL(cx.币种, '合计') 地区,
-								IFNULL(cx.`年月`, '合计') 月份,
-								IFNULL(cx.产品id, '合计') 产品id,
-								IFNULL(cx.产品名称, '合计') 产品名称,
-								IFNULL(cx.父级分类, '合计') 父级分类,
-								IFNULL(cx.二级分类, '合计') 二级分类,
-								COUNT(cx.`订单编号`) as 总订单,
-								SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
-								SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
-								SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
-								SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
-							SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" ,1,0)) AS 大黄蜂总订单,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "已签收",1,0)) as 大黄蜂已签收,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "拒收",1,0)) as 大黄蜂拒收,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "已退货",1,0)) as 大黄蜂已退货,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 大黄蜂已完成,
-							SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" ,1,0)) AS 大黄蜂易速配总订单,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "已签收",1,0)) as 大黄蜂易速配已签收,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "拒收",1,0)) as 大黄蜂易速配拒收,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "已退货",1,0)) as 大黄蜂易速配已退货,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 大黄蜂易速配已完成,
-							SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" ,1,0)) AS TW海快易速配总订单,
-								SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "已签收",1,0)) as TW海快易速配已签收,
-								SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "拒收",1,0)) as TW海快易速配拒收,
-								SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "已退货",1,0)) as TW海快易速配已退货,
-								SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as TW海快易速配已完成,
-							SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" ,1,0)) AS 立邦普货总订单,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "已签收",1,0)) as 立邦普货已签收,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "拒收",1,0)) as 立邦普货拒收,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "已退货",1,0)) as 立邦普货已退货,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦普货已完成,
-							SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" ,1,0)) AS 立邦普货易速配总订单,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "已签收",1,0)) as 立邦普货易速配已签收,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "拒收",1,0)) as 立邦普货易速配拒收,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "已退货",1,0)) as 立邦普货易速配已退货,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦普货易速配已完成,
-							SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" ,1,0)) AS 森鸿新竹总订单,
-								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "已签收",1,0)) as 森鸿新竹已签收,
-								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "拒收",1,0)) as 森鸿新竹拒收,
-								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "已退货",1,0)) as 森鸿新竹已退货,
-								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿新竹已完成,
-							SUM(IF(cx.物流方式 = "台湾-速派-711超商" ,1,0)) AS 速派超商总订单,
-								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "已签收",1,0)) as 速派超商已签收,
-								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "拒收",1,0)) as 速派超商拒收,
-								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "已退货",1,0)) as 速派超商已退货,
-								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派超商已完成,
-							SUM(IF(cx.物流方式 = "台湾-速派-新竹" ,1,0)) AS 速派新竹总订单,
-								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "已签收",1,0)) as 速派新竹已签收,
-								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "拒收",1,0)) as 速派新竹拒收,
-								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "已退货",1,0)) as 速派新竹已退货,
-								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派新竹已完成,
-							SUM(IF(cx.物流方式 = "台湾-天马-顺丰" ,1,0)) AS 天马顺丰总订单,
-								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "已签收",1,0)) as 天马顺丰已签收,
-								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "拒收",1,0)) as 天马顺丰拒收,
-								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰已退货,
-								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰已完成,
-							SUM(IF(cx.物流方式 = "台湾-天马-新竹" ,1,0)) AS 天马新竹总订单,
-								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "已签收",1,0)) as 天马新竹已签收,
-								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "拒收",1,0)) as 天马新竹拒收,
-								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "已退货",1,0)) as 天马新竹已退货,
-								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马新竹已完成,
-							SUM(IF(cx.物流方式 = "台湾-天马-黑猫" ,1,0)) AS 天马黑猫总订单,
-								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "已签收",1,0)) as 天马黑猫已签收,
-								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "拒收",1,0)) as 天马黑猫拒收,
-								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "已退货",1,0)) as 天马黑猫已退货,
-								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马黑猫已完成,
-							SUM(IF(cx.物流方式 = "台湾-易速配-新竹" ,1,0)) AS 易速配新竹总订单,
-								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "已签收",1,0)) as 易速配新竹已签收,
-								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "拒收",1,0)) as 易速配新竹拒收,
-								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "已退货",1,0)) as 易速配新竹已退货,
-								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配新竹已完成,
-							SUM(IF(cx.物流方式 = "龟山" ,1,0)) AS 龟山改派总订单,
-								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已签收",1,0)) as 龟山改派已签收,
-								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "拒收",1,0)) as 龟山改派拒收,
-								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已退货",1,0)) as 龟山改派已退货,
-								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 龟山改派已完成,
-							SUM(IF(cx.物流方式 = "森鸿" ,1,0)) AS 森鸿改派总订单,
-								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "已签收",1,0)) as 森鸿改派已签收,
-								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "拒收",1,0)) as 森鸿改派拒收,
-								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "已退货",1,0)) as 森鸿改派已退货,
-								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿改派已完成,
-							SUM(IF(cx.物流方式 = "速派" ,1,0)) AS 速派改派总订单,
-								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "已签收",1,0)) as 速派改派已签收,
-								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "拒收",1,0)) as 速派改派拒收,
-								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "已退货",1,0)) as 速派改派已退货,
-								SUM(IF(cx.物流方式 = "速派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派改派已完成,
-							SUM(IF(cx.物流方式 = "天马新竹" ,1,0)) AS 天马新竹改派总订单,
-								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "已签收",1,0)) as 天马新竹改派已签收,
-								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "拒收",1,0)) as 天马新竹改派拒收,
-								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "已退货",1,0)) as 天马新竹改派已退货,
-								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马新竹改派已完成,
-							SUM(IF(cx.物流方式 = "天马顺丰" ,1,0)) AS 天马顺丰改派总订单,
-								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已签收",1,0)) as 天马顺丰改派已签收,
-								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "拒收",1,0)) as 天马顺丰改派拒收,
-								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰改派已退货,
-								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰改派已完成
-				            FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
-                            ) cx WHERE cx.`币种` = '台湾'
-                            GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
-                        ) s1
-                        GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
-                        WITH ROLLUP 
-                ) s HAVING s.月份 != '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
-                FIELD(s.`地区`,'台湾','香港','合计'),
-                FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
-                FIELD(s.`产品id`,'合计'),
-                s.总订单 DESC;'''.format(team, month_last, month_yesterday)
-        df14 = pd.read_sql_query(sql=sql14, con=self.engine1)
-        listT.append(df14)
-        # 产品分旬 台湾
-        print('正在获取---产品分旬 台湾…………')
-        sql15 = '''SELECT *
-                    FROM(SELECT IFNULL(s1.家族, '合计') 家族,IFNULL(s1.地区, '合计') 地区,IFNULL(s1.月份, '合计') 月份,IFNULL(s1.旬, '合计') 旬,
-						IFNULL(s1.产品id, '合计') 产品id,IFNULL(s1.产品名称, '合计') 产品名称,IFNULL(s1.父级分类, '合计') 父级分类,IFNULL(s1.二级分类, '合计') 二级分类,
-						SUM(s1.已签收) as 已签收,
-						SUM(s1.拒收) as 拒收,
-						SUM(s1.已退货) as 已退货,
-						SUM(s1.已完成) as 已完成,
-						SUM(s1.总订单) as 总订单,
-						concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.已完成),0) * 100,2),'%') as 完成签收,
-						concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.总订单),0) * 100,2),'%') as 总计签收,
-						concat(ROUND(IFNULL(SUM(s1.已完成) / SUM(s1.总订单),0) * 100,2),'%') as 完成占比,
-						concat(ROUND(IFNULL(SUM(s1.已退货) / SUM(s1.总订单),0) * 100,2),'%') as 退货率,
-						concat(ROUND(IFNULL(SUM(s1.拒收) / SUM(s1.已完成),0) * 100,2),'%') as 拒收率,
-					SUM(s1.大黄蜂已签收) as '台湾-大黄蜂普货头程-森鸿尾程已签收',
-						SUM(s1.大黄蜂拒收) as '台湾-大黄蜂普货头程-森鸿尾程拒收',
-						SUM(s1.大黄蜂已退货) as '台湾-大黄蜂普货头程-森鸿尾程已退货',
-						SUM(s1.大黄蜂已完成) as '台湾-大黄蜂普货头程-森鸿尾程已完成',
-						SUM(s1.大黄蜂总订单) as '台湾-大黄蜂普货头程-森鸿尾程总订单',
-						concat(ROUND(SUM(s1.大黄蜂已签收) / SUM(s1.大黄蜂已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程完成签收',
-						concat(ROUND(SUM(s1.大黄蜂已签收) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程总计签收',
-						concat(ROUND(SUM(s1.大黄蜂已完成) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程完成占比',
-						concat(ROUND(SUM(s1.大黄蜂已退货) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程退货率',
-						concat(ROUND(SUM(s1.大黄蜂拒收) / SUM(s1.大黄蜂已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程拒收率',
-					SUM(s1.大黄蜂易速配已签收) as '台湾-大黄蜂普货头程-易速配尾程已签收',
-						SUM(s1.大黄蜂易速配拒收) as '台湾-大黄蜂普货头程-易速配尾程拒收',
-						SUM(s1.大黄蜂易速配已退货) as '台湾-大黄蜂普货头程-易速配尾程已退货',
-						SUM(s1.大黄蜂易速配已完成) as '台湾-大黄蜂普货头程-易速配尾程已完成',
-						SUM(s1.大黄蜂易速配总订单) as '台湾-大黄蜂普货头程-易速配尾程总订单',
-						concat(ROUND(SUM(s1.大黄蜂易速配已签收) / SUM(s1.大黄蜂易速配已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程完成签收',
-						concat(ROUND(SUM(s1.大黄蜂易速配已签收) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程总计签收',
-						concat(ROUND(SUM(s1.大黄蜂易速配已完成) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程完成占比',
-						concat(ROUND(SUM(s1.大黄蜂易速配已退货) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程退货率',
-						concat(ROUND(SUM(s1.大黄蜂易速配拒收) / SUM(s1.大黄蜂易速配已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程拒收率',
-					SUM(s1.TW海快易速配已签收) as '台湾-易速配-TW海快已签收',
-						SUM(s1.TW海快易速配拒收) as '台湾-易速配-TW海快拒收',
-						SUM(s1.TW海快易速配已退货) as '台湾-易速配-TW海快已退货',
-						SUM(s1.TW海快易速配已完成) as '台湾-易速配-TW海快已完成',
-						SUM(s1.TW海快易速配总订单) as '台湾-易速配-TW海快总订单',
-						concat(ROUND(SUM(s1.TW海快易速配已签收) / SUM(s1.TW海快易速配已完成) * 100,2),'%') as '台湾-易速配-TW海快完成签收',
-						concat(ROUND(SUM(s1.TW海快易速配已签收) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快总计签收',
-						concat(ROUND(SUM(s1.TW海快易速配已完成) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快完成占比',
-						concat(ROUND(SUM(s1.TW海快易速配已退货) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快退货率',
-						concat(ROUND(SUM(s1.TW海快易速配拒收) / SUM(s1.TW海快易速配已完成) * 100,2),'%') as '台湾-易速配-TW海快拒收率',
-					SUM(s1.立邦普货已签收) as '台湾-立邦普货头程-森鸿尾程已签收',
-						SUM(s1.立邦普货拒收) as '台湾-立邦普货头程-森鸿尾程拒收',
-						SUM(s1.立邦普货已退货) as '台湾-立邦普货头程-森鸿尾程已退货',
-						SUM(s1.立邦普货已完成) as '台湾-立邦普货头程-森鸿尾程已完成',
-						SUM(s1.立邦普货总订单) as '台湾-立邦普货头程-森鸿尾程总订单',
-						concat(ROUND(SUM(s1.立邦普货已签收) / SUM(s1.立邦普货已完成) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程完成签收',
-						concat(ROUND(SUM(s1.立邦普货已签收) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程总计签收',
-						concat(ROUND(SUM(s1.立邦普货已完成) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程完成占比',
-						concat(ROUND(SUM(s1.立邦普货已退货) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程退货率',
-						concat(ROUND(SUM(s1.立邦普货拒收) / SUM(s1.立邦普货已完成) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程拒收率',
-					SUM(s1.立邦普货易速配已签收) as '台湾-立邦普货头程-易速配尾程已签收',
-						SUM(s1.立邦普货易速配拒收) as '台湾-立邦普货头程-易速配尾程拒收',
-						SUM(s1.立邦普货易速配已退货) as '台湾-立邦普货头程-易速配尾程已退货',
-						SUM(s1.立邦普货易速配已完成) as '台湾-立邦普货头程-易速配尾程已完成',
-						SUM(s1.立邦普货易速配总订单) as '台湾-立邦普货头程-易速配尾程总订单',
-						concat(ROUND(SUM(s1.立邦普货易速配已签收) / SUM(s1.立邦普货易速配已完成) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程完成签收',
-						concat(ROUND(SUM(s1.立邦普货易速配已签收) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程总计签收',
-						concat(ROUND(SUM(s1.立邦普货易速配已完成) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程完成占比',
-						concat(ROUND(SUM(s1.立邦普货易速配已退货) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程退货率',
-						concat(ROUND(SUM(s1.立邦普货易速配拒收) / SUM(s1.立邦普货易速配已完成) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程拒收率',
-					SUM(s1.森鸿新竹已签收) as '台湾-森鸿-新竹-自发头程已签收',
-						SUM(s1.森鸿新竹拒收) as '台湾-森鸿-新竹-自发头程拒收',
-						SUM(s1.森鸿新竹已退货) as '台湾-森鸿-新竹-自发头程已退货',
-						SUM(s1.森鸿新竹已完成) as '台湾-森鸿-新竹-自发头程已完成',
-						SUM(s1.森鸿新竹总订单) as '台湾-森鸿-新竹-自发头程总订单',
-						concat(ROUND(SUM(s1.森鸿新竹已签收) / SUM(s1.森鸿新竹已完成) * 100,2),'%') as '台湾-森鸿-新竹-自发头程完成签收',
-						concat(ROUND(SUM(s1.森鸿新竹已签收) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程总计签收',
-						concat(ROUND(SUM(s1.森鸿新竹已完成) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程完成占比',
-						concat(ROUND(SUM(s1.森鸿新竹已退货) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程退货率',
-						concat(ROUND(SUM(s1.森鸿新竹拒收) / SUM(s1.森鸿新竹已完成) * 100,2),'%') as '台湾-森鸿-新竹-自发头程拒收率',
-					SUM(s1.速派超商已签收) as '台湾-速派-711超商已签收',
-						SUM(s1.速派超商拒收) as '台湾-速派-711超商拒收',
-						SUM(s1.速派超商已退货) as '台湾-速派-711超商已退货',
-						SUM(s1.速派超商已完成) as '台湾-速派-711超商已完成',
-						SUM(s1.速派超商总订单) as '台湾-速派-711超商总订单',
-						concat(ROUND(SUM(s1.速派超商已签收) / SUM(s1.速派超商已完成) * 100,2),'%') as '台湾-速派-711超商完成签收',
-						concat(ROUND(SUM(s1.速派超商已签收) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商总计签收',
-						concat(ROUND(SUM(s1.速派超商已完成) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商完成占比',
-						concat(ROUND(SUM(s1.速派超商已退货) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商退货率',
-						concat(ROUND(SUM(s1.速派超商拒收) / SUM(s1.速派超商已完成) * 100,2),'%') as '台湾-速派-711超商拒收率',
-					SUM(s1.速派新竹已签收) as '台湾-速派-新竹已签收',
-						SUM(s1.速派新竹拒收) as '台湾-速派-新竹拒收',
-						SUM(s1.速派新竹已退货) as '台湾-速派-新竹已退货',
-						SUM(s1.速派新竹已完成) as '台湾-速派-新竹已完成',
-						SUM(s1.速派新竹总订单) as '台湾-速派-新竹总订单',
-						concat(ROUND(SUM(s1.速派新竹已签收) / SUM(s1.速派新竹已完成) * 100,2),'%') as '台湾-速派-新竹完成签收',
-						concat(ROUND(SUM(s1.速派新竹已签收) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹总计签收',
-						concat(ROUND(SUM(s1.速派新竹已完成) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹完成占比',
-						concat(ROUND(SUM(s1.速派新竹已退货) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹退货率',
-						concat(ROUND(SUM(s1.速派新竹拒收) / SUM(s1.速派新竹已完成) * 100,2),'%') as '台湾-速派-新竹拒收率',
-					SUM(s1.天马顺丰已签收) as '台湾-天马-顺丰已签收',
-						SUM(s1.天马顺丰拒收) as '台湾-天马-顺丰拒收',
-						SUM(s1.天马顺丰已退货) as '台湾-天马-顺丰已退货',
-						SUM(s1.天马顺丰已完成) as '台湾-天马-顺丰已完成',
-						SUM(s1.天马顺丰总订单) as '台湾-天马-顺丰总订单',
-						concat(ROUND(SUM(s1.天马顺丰已签收) / SUM(s1.天马顺丰已完成) * 100,2),'%') as '台湾-天马-顺丰完成签收',
-						concat(ROUND(SUM(s1.天马顺丰已签收) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰总计签收',
-						concat(ROUND(SUM(s1.天马顺丰已完成) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰完成占比',
-						concat(ROUND(SUM(s1.天马顺丰已退货) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰退货率',
-						concat(ROUND(SUM(s1.天马顺丰拒收) / SUM(s1.天马顺丰已完成) * 100,2),'%') as '台湾-天马-顺丰拒收率',
-					SUM(s1.天马新竹已签收) as '台湾-天马-新竹已签收',
-						SUM(s1.天马新竹拒收) as '台湾-天马-新竹拒收',
-						SUM(s1.天马新竹已退货) as '台湾-天马-新竹已退货',
-						SUM(s1.天马新竹已完成) as '台湾-天马-新竹已完成',
-						SUM(s1.天马新竹总订单) as '台湾-天马-新竹总订单',
-						concat(ROUND(SUM(s1.天马新竹已签收) / SUM(s1.天马新竹已完成) * 100,2),'%') as '台湾-天马-新竹完成签收',
-						concat(ROUND(SUM(s1.天马新竹已签收) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹总计签收',
-						concat(ROUND(SUM(s1.天马新竹已完成) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹完成占比',
-						concat(ROUND(SUM(s1.天马新竹已退货) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹退货率',
-						concat(ROUND(SUM(s1.天马新竹拒收) / SUM(s1.天马新竹已完成) * 100,2),'%') as '台湾-天马-新竹拒收率',
-					SUM(s1.天马黑猫已签收) as '台湾-天马-黑猫已签收',
-						SUM(s1.天马黑猫拒收) as '台湾-天马-黑猫拒收',
-						SUM(s1.天马黑猫已退货) as '台湾-天马-黑猫已退货',
-						SUM(s1.天马黑猫已完成) as '台湾-天马-黑猫已完成',
-						SUM(s1.天马黑猫总订单) as '台湾-天马-黑猫总订单',
-						concat(ROUND(SUM(s1.天马黑猫已签收) / SUM(s1.天马黑猫已完成) * 100,2),'%') as '台湾-天马-黑猫完成签收',
-						concat(ROUND(SUM(s1.天马黑猫已签收) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫总计签收',
-						concat(ROUND(SUM(s1.天马黑猫已完成) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫完成占比',
-						concat(ROUND(SUM(s1.天马黑猫已退货) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫退货率',
-						concat(ROUND(SUM(s1.天马黑猫拒收) / SUM(s1.天马黑猫已完成) * 100,2),'%') as '台湾-天马-黑猫拒收率',
-					SUM(s1.易速配新竹已签收) as '台湾-易速配-新竹已签收',
-						SUM(s1.易速配新竹拒收) as '台湾-易速配-新竹拒收',
-						SUM(s1.易速配新竹已退货) as '台湾-易速配-新竹已退货',
-						SUM(s1.易速配新竹已完成) as '台湾-易速配-新竹已完成',
-						SUM(s1.易速配新竹总订单) as '台湾-易速配-新竹总订单',
-						concat(ROUND(SUM(s1.易速配新竹已签收) / SUM(s1.易速配新竹已完成) * 100,2),'%') as '台湾-易速配-新竹完成签收',
-						concat(ROUND(SUM(s1.易速配新竹已签收) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹总计签收',
-						concat(ROUND(SUM(s1.易速配新竹已完成) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹完成占比',
-						concat(ROUND(SUM(s1.易速配新竹已退货) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹退货率',
-						concat(ROUND(SUM(s1.易速配新竹拒收) / SUM(s1.易速配新竹已完成) * 100,2),'%') as '台湾-易速配-新竹拒收率',
-					SUM(s1.龟山改派已签收) as '龟山改派已签收',
-						SUM(s1.龟山改派拒收) as '龟山改派拒收',
-						SUM(s1.龟山改派已退货) as '龟山改派已退货',
-						SUM(s1.龟山改派已完成) as '龟山改派已完成',
-						SUM(s1.龟山改派总订单) as '龟山改派总订单',
-						concat(ROUND(SUM(s1.龟山改派已签收) / SUM(s1.龟山改派已完成) * 100,2),'%') as '龟山改派完成签收',
-						concat(ROUND(SUM(s1.龟山改派已签收) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派总计签收',
-						concat(ROUND(SUM(s1.龟山改派已完成) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派完成占比',
-						concat(ROUND(SUM(s1.龟山改派已退货) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派退货率',
-						concat(ROUND(SUM(s1.龟山改派拒收) / SUM(s1.龟山改派已完成) * 100,2),'%') as '龟山改派拒收率',
-					SUM(s1.森鸿改派已签收) as '森鸿改派已签收',
-						SUM(s1.森鸿改派拒收) as '森鸿改派拒收',
-						SUM(s1.森鸿改派已退货) as '森鸿改派已退货',
-						SUM(s1.森鸿改派已完成) as '森鸿改派已完成',
-						SUM(s1.森鸿改派总订单) as '森鸿改派总订单',
-						concat(ROUND(SUM(s1.森鸿改派已签收) / SUM(s1.森鸿改派已完成) * 100,2),'%') as '森鸿改派完成签收',
-						concat(ROUND(SUM(s1.森鸿改派已签收) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派总计签收',
-						concat(ROUND(SUM(s1.森鸿改派已完成) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派完成占比',
-						concat(ROUND(SUM(s1.森鸿改派已退货) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派退货率',
-						concat(ROUND(SUM(s1.森鸿改派拒收) / SUM(s1.森鸿改派已完成) * 100,2),'%') as '森鸿改派拒收率',
-					SUM(s1.速派改派已签收) as '速派改派已签收',
-						SUM(s1.速派改派拒收) as '速派改派拒收',
-						SUM(s1.速派改派已退货) as '速派改派已退货',
-						SUM(s1.速派改派已完成) as '速派改派已完成',
-						SUM(s1.速派改派总订单) as '速派改派总订单',
-						concat(ROUND(SUM(s1.速派改派已签收) / SUM(s1.速派改派已完成) * 100,2),'%') as '速派改派完成签收',
-						concat(ROUND(SUM(s1.速派改派已签收) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派总计签收',
-						concat(ROUND(SUM(s1.速派改派已完成) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派完成占比',
-						concat(ROUND(SUM(s1.速派改派已退货) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派退货率',
-						concat(ROUND(SUM(s1.速派改派拒收) / SUM(s1.速派改派已完成) * 100,2),'%') as '速派改派拒收率',
-					SUM(s1.天马新竹改派已签收) as '天马新竹改派已签收',
-						SUM(s1.天马新竹改派拒收) as '天马新竹改派拒收',
-						SUM(s1.天马新竹改派已退货) as '天马新竹改派已退货',
-						SUM(s1.天马新竹改派已完成) as '天马新竹改派已完成',
-						SUM(s1.天马新竹改派总订单) as '天马新竹改派总订单',
-						concat(ROUND(SUM(s1.天马新竹改派已签收) / SUM(s1.天马新竹改派已完成) * 100,2),'%') as '天马新竹改派完成签收',
-						concat(ROUND(SUM(s1.天马新竹改派已签收) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派总计签收',
-						concat(ROUND(SUM(s1.天马新竹改派已完成) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派完成占比',
-						concat(ROUND(SUM(s1.天马新竹改派已退货) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派退货率',
-						concat(ROUND(SUM(s1.天马新竹改派拒收) / SUM(s1.天马新竹改派已完成) * 100,2),'%') as '天马新竹改派拒收率',
-					SUM(s1.天马顺丰改派已签收) as '天马顺丰改派已签收',
-						SUM(s1.天马顺丰改派拒收) as '天马顺丰改派拒收',
-						SUM(s1.天马顺丰改派已退货) as '天马顺丰改派已退货',
-						SUM(s1.天马顺丰改派已完成) as '天马顺丰改派已完成',
-						SUM(s1.天马顺丰改派总订单) as '天马顺丰改派总订单',
-						concat(ROUND(SUM(s1.天马顺丰改派已签收) / SUM(s1.天马顺丰改派已完成) * 100,2),'%') as '天马顺丰改派完成签收',
-						concat(ROUND(SUM(s1.天马顺丰改派已签收) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派总计签收',
-						concat(ROUND(SUM(s1.天马顺丰改派已完成) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派完成占比',
-						concat(ROUND(SUM(s1.天马顺丰改派已退货) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派退货率',
-						concat(ROUND(SUM(s1.天马顺丰改派拒收) / SUM(s1.天马顺丰改派已完成) * 100,2),'%') as '天马顺丰改派拒收率'
-                FROM(SELECT IFNULL(cx.`家族`, '合计') 家族,
-								IFNULL(cx.币种, '合计') 地区,
-								IFNULL(cx.`年月`, '合计') 月份,
-								IF(cx.旬 =1,'上旬',IF(cx.旬 =2,'中旬',IF(cx.旬 =3,'下旬',cx.旬))) as 旬,
-								IFNULL(cx.产品id, '合计') 产品id,
-								IFNULL(cx.产品名称, '合计') 产品名称,
-								IFNULL(cx.父级分类, '合计') 父级分类,
-								IFNULL(cx.二级分类, '合计') 二级分类,
-								COUNT(cx.`订单编号`) as 总订单,
-								SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
-								SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
-								SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
-								SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
-							SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" ,1,0)) AS 大黄蜂总订单,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "已签收",1,0)) as 大黄蜂已签收,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "拒收",1,0)) as 大黄蜂拒收,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "已退货",1,0)) as 大黄蜂已退货,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 大黄蜂已完成,
-							SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" ,1,0)) AS 大黄蜂易速配总订单,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "已签收",1,0)) as 大黄蜂易速配已签收,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "拒收",1,0)) as 大黄蜂易速配拒收,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "已退货",1,0)) as 大黄蜂易速配已退货,
-								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 大黄蜂易速配已完成,
-							SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" ,1,0)) AS TW海快易速配总订单,
-								SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "已签收",1,0)) as TW海快易速配已签收,
-								SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "拒收",1,0)) as TW海快易速配拒收,
-								SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "已退货",1,0)) as TW海快易速配已退货,
-								SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as TW海快易速配已完成,
-							SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" ,1,0)) AS 立邦普货总订单,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "已签收",1,0)) as 立邦普货已签收,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "拒收",1,0)) as 立邦普货拒收,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "已退货",1,0)) as 立邦普货已退货,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦普货已完成,
-							SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" ,1,0)) AS 立邦普货易速配总订单,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "已签收",1,0)) as 立邦普货易速配已签收,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "拒收",1,0)) as 立邦普货易速配拒收,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "已退货",1,0)) as 立邦普货易速配已退货,
-								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦普货易速配已完成,
-							SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" ,1,0)) AS 森鸿新竹总订单,
-								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "已签收",1,0)) as 森鸿新竹已签收,
-								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "拒收",1,0)) as 森鸿新竹拒收,
-								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "已退货",1,0)) as 森鸿新竹已退货,
-								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿新竹已完成,
-							SUM(IF(cx.物流方式 = "台湾-速派-711超商" ,1,0)) AS 速派超商总订单,
-								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "已签收",1,0)) as 速派超商已签收,
-								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "拒收",1,0)) as 速派超商拒收,
-								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "已退货",1,0)) as 速派超商已退货,
-								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派超商已完成,
-							SUM(IF(cx.物流方式 = "台湾-速派-新竹" ,1,0)) AS 速派新竹总订单,
-								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "已签收",1,0)) as 速派新竹已签收,
-								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "拒收",1,0)) as 速派新竹拒收,
-								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "已退货",1,0)) as 速派新竹已退货,
-								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派新竹已完成,
-							SUM(IF(cx.物流方式 = "台湾-天马-顺丰" ,1,0)) AS 天马顺丰总订单,
-								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "已签收",1,0)) as 天马顺丰已签收,
-								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "拒收",1,0)) as 天马顺丰拒收,
-								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰已退货,
-								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰已完成,
-							SUM(IF(cx.物流方式 = "台湾-天马-新竹" ,1,0)) AS 天马新竹总订单,
-								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "已签收",1,0)) as 天马新竹已签收,
-								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "拒收",1,0)) as 天马新竹拒收,
-								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "已退货",1,0)) as 天马新竹已退货,
-								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马新竹已完成,
-							SUM(IF(cx.物流方式 = "台湾-天马-黑猫" ,1,0)) AS 天马黑猫总订单,
-								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "已签收",1,0)) as 天马黑猫已签收,
-								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "拒收",1,0)) as 天马黑猫拒收,
-								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "已退货",1,0)) as 天马黑猫已退货,
-								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马黑猫已完成,
-							SUM(IF(cx.物流方式 = "台湾-易速配-新竹" ,1,0)) AS 易速配新竹总订单,
-								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "已签收",1,0)) as 易速配新竹已签收,
-								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "拒收",1,0)) as 易速配新竹拒收,
-								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "已退货",1,0)) as 易速配新竹已退货,
-								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配新竹已完成,
-							SUM(IF(cx.物流方式 = "龟山" ,1,0)) AS 龟山改派总订单,
-								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已签收",1,0)) as 龟山改派已签收,
-								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "拒收",1,0)) as 龟山改派拒收,
-								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已退货",1,0)) as 龟山改派已退货,
-								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 龟山改派已完成,
-							SUM(IF(cx.物流方式 = "森鸿" ,1,0)) AS 森鸿改派总订单,
-								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "已签收",1,0)) as 森鸿改派已签收,
-								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "拒收",1,0)) as 森鸿改派拒收,
-								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "已退货",1,0)) as 森鸿改派已退货,
-								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿改派已完成,
-							SUM(IF(cx.物流方式 = "速派" ,1,0)) AS 速派改派总订单,
-								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "已签收",1,0)) as 速派改派已签收,
-								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "拒收",1,0)) as 速派改派拒收,
-								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "已退货",1,0)) as 速派改派已退货,
-								SUM(IF(cx.物流方式 = "速派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派改派已完成,
-							SUM(IF(cx.物流方式 = "天马新竹" ,1,0)) AS 天马新竹改派总订单,
-								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "已签收",1,0)) as 天马新竹改派已签收,
-								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "拒收",1,0)) as 天马新竹改派拒收,
-								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "已退货",1,0)) as 天马新竹改派已退货,
-								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马新竹改派已完成,
-							SUM(IF(cx.物流方式 = "天马顺丰" ,1,0)) AS 天马顺丰改派总订单,
-								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已签收",1,0)) as 天马顺丰改派已签收,
-								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "拒收",1,0)) as 天马顺丰改派拒收,
-								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰改派已退货,
-								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰改派已完成
-				        FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
-                        ) cx WHERE cx.`币种` = '台湾'
-                    GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
-                    ) s1
-                GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
-                WITH ROLLUP 
-            ) s HAVING s.旬 != '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
-                FIELD(s.`地区`,'台湾','香港','合计'),
-                FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
-                FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
-                FIELD(s.`产品id`,'合计'),
-                s.总订单 DESC;'''.format(team, month_last, month_yesterday)
-        df15 = pd.read_sql_query(sql=sql15, con=self.engine1)
-        listT.append(df15)
-
-        # 产品整月 香港
-        print('正在获取---产品整月 香港…………')
-        sql16 = '''SELECT *
-                    FROM(SELECT IFNULL(s1.家族, '合计') 家族,
-                                IFNULL(s1.地区, '合计') 地区,
-                                IFNULL(s1.月份, '合计') 月份,
-                        IFNULL(s1.产品id, '合计') 产品id,
-                        IFNULL(s1.产品名称, '合计') 产品名称,
-                        IFNULL(s1.父级分类, '合计') 父级分类,
-                        IFNULL(s1.二级分类, '合计') 二级分类,
-						SUM(s1.已签收) as 已签收,
-						SUM(s1.拒收) as 拒收,
-						SUM(s1.已退货) as 已退货,
-						SUM(s1.已完成) as 已完成,
-						SUM(s1.总订单) as 总订单,
-						concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.已完成),0) * 100,2),'%') as 完成签收,
-						concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.总订单),0) * 100,2),'%') as 总计签收,
-						concat(ROUND(IFNULL(SUM(s1.已完成) / SUM(s1.总订单),0) * 100,2),'%') as 完成占比,
-						concat(ROUND(IFNULL(SUM(s1.已退货) / SUM(s1.总订单),0) * 100,2),'%') as 退货率,
-						concat(ROUND(IFNULL(SUM(s1.拒收) / SUM(s1.已完成),0) * 100,2),'%') as 拒收率,
-					SUM(s1.立邦顺丰已签收) as '香港-立邦-顺丰已签收',
-						SUM(s1.立邦顺丰拒收) as '香港-立邦-顺丰拒收',
-						SUM(s1.立邦顺丰已退货) as '香港-立邦-顺丰已退货',
-						SUM(s1.立邦顺丰已完成) as '香港-立邦-顺丰已完成',
-						SUM(s1.立邦顺丰总订单) as '香港-立邦-顺丰总订单',
-						concat(ROUND(SUM(s1.立邦顺丰已签收) / SUM(s1.立邦顺丰已完成) * 100,2),'%') as '香港-立邦-顺丰完成签收',
-						concat(ROUND(SUM(s1.立邦顺丰已签收) / SUM(s1.立邦顺丰总订单) * 100,2),'%') as '香港-立邦-顺丰总计签收',
-						concat(ROUND(SUM(s1.立邦顺丰已完成) / SUM(s1.立邦顺丰总订单) * 100,2),'%') as '香港-立邦-顺丰完成占比',
-						concat(ROUND(SUM(s1.立邦顺丰已退货) / SUM(s1.立邦顺丰总订单) * 100,2),'%') as '香港-立邦-顺丰退货率',
-						concat(ROUND(SUM(s1.立邦顺丰拒收) / SUM(s1.立邦顺丰已完成) * 100,2),'%') as '香港-立邦-顺丰拒收率',
-					SUM(s1.易速配顺丰已签收) as '香港-易速配-顺丰已签收',
-						SUM(s1.易速配顺丰拒收) as '香港-易速配-顺丰拒收',
-						SUM(s1.易速配顺丰已退货) as '香港-易速配-顺丰已退货',
-						SUM(s1.易速配顺丰已完成) as '香港-易速配-顺丰已完成',
-						SUM(s1.易速配顺丰总订单) as '香港-易速配-顺丰总订单',
-						concat(ROUND(SUM(s1.易速配顺丰已签收) / SUM(s1.易速配顺丰已完成) * 100,2),'%') as '香港-易速配-顺丰完成签收',
-						concat(ROUND(SUM(s1.易速配顺丰已签收) / SUM(s1.易速配顺丰总订单) * 100,2),'%') as '香港-易速配-顺丰总计签收',
-						concat(ROUND(SUM(s1.易速配顺丰已完成) / SUM(s1.易速配顺丰总订单) * 100,2),'%') as '香港-易速配-顺丰完成占比',
-						concat(ROUND(SUM(s1.易速配顺丰已退货) / SUM(s1.易速配顺丰总订单) * 100,2),'%') as '香港-易速配-顺丰退货率',
-						concat(ROUND(SUM(s1.易速配顺丰拒收) / SUM(s1.易速配顺丰已完成) * 100,2),'%') as '香港-易速配-顺丰拒收率',
-					SUM(s1.森鸿SH已签收) as '香港-森鸿-SH渠道已签收',
-						SUM(s1.森鸿SH拒收) as '香港-森鸿-SH渠道拒收',
-						SUM(s1.森鸿SH已退货) as '香港-森鸿-SH渠道已退货',
-						SUM(s1.森鸿SH已完成) as '香港-森鸿-SH渠道已完成',
-						SUM(s1.森鸿SH总订单) as '香港-森鸿-SH渠道总订单',
-						concat(ROUND(SUM(s1.森鸿SH已签收) / SUM(s1.森鸿SH已完成) * 100,2),'%') as '香港-森鸿-SH渠道完成签收',
-						concat(ROUND(SUM(s1.森鸿SH已签收) / SUM(s1.森鸿SH总订单) * 100,2),'%') as '香港-森鸿-SH渠道总计签收',
-						concat(ROUND(SUM(s1.森鸿SH已完成) / SUM(s1.森鸿SH总订单) * 100,2),'%') as '香港-森鸿-SH渠道完成占比',
-						concat(ROUND(SUM(s1.森鸿SH已退货) / SUM(s1.森鸿SH总订单) * 100,2),'%') as '香港-森鸿-SH渠道退货率',
-						concat(ROUND(SUM(s1.森鸿SH拒收) / SUM(s1.森鸿SH已完成) * 100,2),'%') as '香港-森鸿-SH渠道拒收率',
-					SUM(s1.森鸿顺丰已签收) as '香港-森鸿-顺丰渠道已签收',
-						SUM(s1.森鸿顺丰拒收) as '香港-森鸿-顺丰渠道拒收',
-						SUM(s1.森鸿顺丰已退货) as '香港-森鸿-顺丰渠道已退货',
-						SUM(s1.森鸿顺丰已完成) as '香港-森鸿-顺丰渠道已完成',
-						SUM(s1.森鸿顺丰总订单) as '香港-森鸿-顺丰渠道总订单',
-						concat(ROUND(SUM(s1.森鸿顺丰已签收) / SUM(s1.森鸿顺丰已完成) * 100,2),'%') as '香港-森鸿-顺丰渠道完成签收',
-						concat(ROUND(SUM(s1.森鸿顺丰已签收) / SUM(s1.森鸿顺丰总订单) * 100,2),'%') as '香港-森鸿-顺丰渠道总计签收',
-						concat(ROUND(SUM(s1.森鸿顺丰已完成) / SUM(s1.森鸿顺丰总订单) * 100,2),'%') as '香港-森鸿-顺丰渠道完成占比',
-						concat(ROUND(SUM(s1.森鸿顺丰已退货) / SUM(s1.森鸿顺丰总订单) * 100,2),'%') as '香港-森鸿-顺丰渠道退货率',
-						concat(ROUND(SUM(s1.森鸿顺丰拒收) / SUM(s1.森鸿顺丰已完成) * 100,2),'%') as '香港-森鸿-顺丰渠道拒收率',
-					SUM(s1.立邦改派已签收) as '香港-立邦-改派已签收',
-						SUM(s1.立邦改派拒收) as '香港-立邦-改派拒收',
-						SUM(s1.立邦改派已退货) as '香港-立邦-改派已退货',
-						SUM(s1.立邦改派已完成) as '香港-立邦-改派已完成',
-						SUM(s1.立邦改派总订单) as '香港-立邦-改派总订单',
-						concat(ROUND(SUM(s1.立邦改派已签收) / SUM(s1.立邦改派已完成) * 100,2),'%') as '香港-立邦-改派完成签收',
-						concat(ROUND(SUM(s1.立邦改派已签收) / SUM(s1.立邦改派总订单) * 100,2),'%') as '香港-立邦-改派总计签收',
-						concat(ROUND(SUM(s1.立邦改派已完成) / SUM(s1.立邦改派总订单) * 100,2),'%') as '香港-立邦-改派完成占比',
-						concat(ROUND(SUM(s1.立邦改派已退货) / SUM(s1.立邦改派总订单) * 100,2),'%') as '香港-立邦-改派退货率',
-						concat(ROUND(SUM(s1.立邦改派拒收) / SUM(s1.立邦改派已完成) * 100,2),'%') as '香港-立邦-改派拒收率',
-					SUM(s1.易速配改派已签收) as '香港-易速配-改派已签收',
-						SUM(s1.易速配改派拒收) as '香港-易速配-改派拒收',
-						SUM(s1.易速配改派已退货) as '香港-易速配-改派已退货',
-						SUM(s1.易速配改派已完成) as '香港-易速配-改派已完成',
-						SUM(s1.易速配改派总订单) as '香港-易速配-改派总订单',
-						concat(ROUND(SUM(s1.易速配改派已签收) / SUM(s1.易速配改派已完成) * 100,2),'%') as '香港-易速配-改派完成签收',
-						concat(ROUND(SUM(s1.易速配改派已签收) / SUM(s1.易速配改派总订单) * 100,2),'%') as '香港-易速配-改派总计签收',
-						concat(ROUND(SUM(s1.易速配改派已完成) / SUM(s1.易速配改派总订单) * 100,2),'%') as '香港-易速配-改派完成占比',
-						concat(ROUND(SUM(s1.易速配改派已退货) / SUM(s1.易速配改派总订单) * 100,2),'%') as '香港-易速配-改派退货率',
-						concat(ROUND(SUM(s1.易速配改派拒收) / SUM(s1.易速配改派已完成) * 100,2),'%') as '香港-易速配-改派拒收率'
-		            FROM(SELECT IFNULL(cx.`家族`, '合计') 家族,
-								IFNULL(cx.币种, '合计') 地区,
-								IFNULL(cx.`年月`, '合计') 月份,
-								IFNULL(cx.产品id, '合计') 产品id,
-								IFNULL(cx.产品名称, '合计') 产品名称,
-								IFNULL(cx.父级分类, '合计') 父级分类,
-								IFNULL(cx.二级分类, '合计') 二级分类,
-								COUNT(cx.`订单编号`) as 总订单,
-								SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
-								SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
-								SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
-								SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
-							SUM(IF(cx.物流方式 = "香港-立邦-顺丰" ,1,0)) AS 立邦顺丰总订单,
-								SUM(IF(cx.物流方式 = "香港-立邦-顺丰" AND 最终状态 = "已签收",1,0)) as 立邦顺丰已签收,
-								SUM(IF(cx.物流方式 = "香港-立邦-顺丰" AND 最终状态 = "拒收",1,0)) as 立邦顺丰拒收,
-								SUM(IF(cx.物流方式 = "香港-立邦-顺丰" AND 最终状态 = "已退货",1,0)) as 立邦顺丰已退货,
-								SUM(IF(cx.物流方式 = "香港-立邦-顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦顺丰已完成,
-							SUM(IF(cx.物流方式 = "香港-易速配-顺丰" ,1,0)) AS 易速配顺丰总订单,
-								SUM(IF(cx.物流方式 = "香港-易速配-顺丰" AND 最终状态 = "已签收",1,0)) as 易速配顺丰已签收,
-								SUM(IF(cx.物流方式 = "香港-易速配-顺丰" AND 最终状态 = "拒收",1,0)) as 易速配顺丰拒收,
-								SUM(IF(cx.物流方式 = "香港-易速配-顺丰" AND 最终状态 = "已退货",1,0)) as 易速配顺丰已退货,
-								SUM(IF(cx.物流方式 = "香港-易速配-顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配顺丰已完成,
-							SUM(IF(cx.物流方式 = "香港-森鸿-SH渠道" ,1,0)) AS 森鸿SH总订单,
-								SUM(IF(cx.物流方式 = "香港-森鸿-SH渠道" AND 最终状态 = "已签收",1,0)) as 森鸿SH已签收,
-								SUM(IF(cx.物流方式 = "香港-森鸿-SH渠道" AND 最终状态 = "拒收",1,0)) as 森鸿SH拒收,
-								SUM(IF(cx.物流方式 = "香港-森鸿-SH渠道" AND 最终状态 = "已退货",1,0)) as 森鸿SH已退货,
-								SUM(IF(cx.物流方式 = "香港-森鸿-SH渠道" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿SH已完成,
-							SUM(IF(cx.物流方式 = "香港-森鸿-顺丰渠道" ,1,0)) AS 森鸿顺丰总订单,
-								SUM(IF(cx.物流方式 = "香港-森鸿-顺丰渠道" AND 最终状态 = "已签收",1,0)) as 森鸿顺丰已签收,
-								SUM(IF(cx.物流方式 = "香港-森鸿-顺丰渠道" AND 最终状态 = "拒收",1,0)) as 森鸿顺丰拒收,
-								SUM(IF(cx.物流方式 = "香港-森鸿-顺丰渠道" AND 最终状态 = "已退货",1,0)) as 森鸿顺丰已退货,
-								SUM(IF(cx.物流方式 = "香港-森鸿-顺丰渠道" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿顺丰已完成,
-							SUM(IF(cx.物流方式 = "香港-立邦-改派" ,1,0)) AS 立邦改派总订单,
-								SUM(IF(cx.物流方式 = "香港-立邦-改派" AND 最终状态 = "已签收",1,0)) as 立邦改派已签收,
-								SUM(IF(cx.物流方式 = "香港-立邦-改派" AND 最终状态 = "拒收",1,0)) as 立邦改派拒收,
-								SUM(IF(cx.物流方式 = "香港-立邦-改派" AND 最终状态 = "已退货",1,0)) as 立邦改派已退货,
-								SUM(IF(cx.物流方式 = "香港-立邦-改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦改派已完成,
-							SUM(IF(cx.物流方式 = "香港-易速配-改派" ,1,0)) AS 易速配改派总订单,
-								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 = "已签收",1,0)) as 易速配改派已签收,
-								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 = "拒收",1,0)) as 易速配改派拒收,
-								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 = "已退货",1,0)) as 易速配改派已退货,
-								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配改派已完成
-				            FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
-                            ) cx WHERE cx.`币种` = '香港'
-                            GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
-                        ) s1
-                        GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
-                        WITH ROLLUP 
-                    ) s HAVING s.月份 != '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
-                FIELD(s.`地区`,'台湾','香港','合计'),
-                FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
-                FIELD(s.`产品id`,'合计'),
-                s.总订单 DESC;'''.format(team, month_last, month_yesterday)
-        df16 = pd.read_sql_query(sql=sql16, con=self.engine1)
-        listT.append(df16)
-        # 产品分旬 香港
-        print('正在获取---产品分旬 香港…………')
-        sql17 = '''SELECT *
-                    FROM(SELECT 
-						IFNULL(s1.家族, '合计') 家族,
-						IFNULL(s1.地区, '合计') 地区,
-						IFNULL(s1.月份, '合计') 月份,
-						IFNULL(s1.旬, '合计') 旬,
-						IFNULL(s1.产品id, '合计') 产品id,
-						IFNULL(s1.产品名称, '合计') 产品名称,
-						IFNULL(s1.父级分类, '合计') 父级分类,
-						IFNULL(s1.二级分类, '合计') 二级分类,
-					SUM(s1.已签收) as 已签收,
-						SUM(s1.拒收) as 拒收,
-						SUM(s1.已退货) as 已退货,
-						SUM(s1.已完成) as 已完成,
-						SUM(s1.总订单) as 总订单,
-						concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.已完成),0) * 100,2),'%') as 完成签收,
-						concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.总订单),0) * 100,2),'%') as 总计签收,
-						concat(ROUND(IFNULL(SUM(s1.已完成) / SUM(s1.总订单),0) * 100,2),'%') as 完成占比,
-						concat(ROUND(IFNULL(SUM(s1.已退货) / SUM(s1.总订单),0) * 100,2),'%') as 退货率,
-						concat(ROUND(IFNULL(SUM(s1.拒收) / SUM(s1.已完成),0) * 100,2),'%') as 拒收率,
-					SUM(s1.立邦顺丰已签收) as '香港-立邦-顺丰已签收',
-						SUM(s1.立邦顺丰拒收) as '香港-立邦-顺丰拒收',
-						SUM(s1.立邦顺丰已退货) as '香港-立邦-顺丰已退货',
-						SUM(s1.立邦顺丰已完成) as '香港-立邦-顺丰已完成',
-						SUM(s1.立邦顺丰总订单) as '香港-立邦-顺丰总订单',
-						concat(ROUND(SUM(s1.立邦顺丰已签收) / SUM(s1.立邦顺丰已完成) * 100,2),'%') as '香港-立邦-顺丰完成签收',
-						concat(ROUND(SUM(s1.立邦顺丰已签收) / SUM(s1.立邦顺丰总订单) * 100,2),'%') as '香港-立邦-顺丰总计签收',
-						concat(ROUND(SUM(s1.立邦顺丰已完成) / SUM(s1.立邦顺丰总订单) * 100,2),'%') as '香港-立邦-顺丰完成占比',
-						concat(ROUND(SUM(s1.立邦顺丰已退货) / SUM(s1.立邦顺丰总订单) * 100,2),'%') as '香港-立邦-顺丰退货率',
-						concat(ROUND(SUM(s1.立邦顺丰拒收) / SUM(s1.立邦顺丰已完成) * 100,2),'%') as '香港-立邦-顺丰拒收率',
-					SUM(s1.易速配顺丰已签收) as '香港-易速配-顺丰已签收',
-						SUM(s1.易速配顺丰拒收) as '香港-易速配-顺丰拒收',
-						SUM(s1.易速配顺丰已退货) as '香港-易速配-顺丰已退货',
-						SUM(s1.易速配顺丰已完成) as '香港-易速配-顺丰已完成',
-						SUM(s1.易速配顺丰总订单) as '香港-易速配-顺丰总订单',
-						concat(ROUND(SUM(s1.易速配顺丰已签收) / SUM(s1.易速配顺丰已完成) * 100,2),'%') as '香港-易速配-顺丰完成签收',
-						concat(ROUND(SUM(s1.易速配顺丰已签收) / SUM(s1.易速配顺丰总订单) * 100,2),'%') as '香港-易速配-顺丰总计签收',
-						concat(ROUND(SUM(s1.易速配顺丰已完成) / SUM(s1.易速配顺丰总订单) * 100,2),'%') as '香港-易速配-顺丰完成占比',
-						concat(ROUND(SUM(s1.易速配顺丰已退货) / SUM(s1.易速配顺丰总订单) * 100,2),'%') as '香港-易速配-顺丰退货率',
-						concat(ROUND(SUM(s1.易速配顺丰拒收) / SUM(s1.易速配顺丰已完成) * 100,2),'%') as '香港-易速配-顺丰拒收率',
-					SUM(s1.森鸿SH已签收) as '香港-森鸿-SH渠道已签收',
-						SUM(s1.森鸿SH拒收) as '香港-森鸿-SH渠道拒收',
-						SUM(s1.森鸿SH已退货) as '香港-森鸿-SH渠道已退货',
-						SUM(s1.森鸿SH已完成) as '香港-森鸿-SH渠道已完成',
-						SUM(s1.森鸿SH总订单) as '香港-森鸿-SH渠道总订单',
-						concat(ROUND(SUM(s1.森鸿SH已签收) / SUM(s1.森鸿SH已完成) * 100,2),'%') as '香港-森鸿-SH渠道完成签收',
-						concat(ROUND(SUM(s1.森鸿SH已签收) / SUM(s1.森鸿SH总订单) * 100,2),'%') as '香港-森鸿-SH渠道总计签收',
-						concat(ROUND(SUM(s1.森鸿SH已完成) / SUM(s1.森鸿SH总订单) * 100,2),'%') as '香港-森鸿-SH渠道完成占比',
-						concat(ROUND(SUM(s1.森鸿SH已退货) / SUM(s1.森鸿SH总订单) * 100,2),'%') as '香港-森鸿-SH渠道退货率',
-						concat(ROUND(SUM(s1.森鸿SH拒收) / SUM(s1.森鸿SH已完成) * 100,2),'%') as '香港-森鸿-SH渠道拒收率',
-					SUM(s1.森鸿顺丰已签收) as '香港-森鸿-顺丰渠道已签收',
-						SUM(s1.森鸿顺丰拒收) as '香港-森鸿-顺丰渠道拒收',
-						SUM(s1.森鸿顺丰已退货) as '香港-森鸿-顺丰渠道已退货',
-						SUM(s1.森鸿顺丰已完成) as '香港-森鸿-顺丰渠道已完成',
-						SUM(s1.森鸿顺丰总订单) as '香港-森鸿-顺丰渠道总订单',
-						concat(ROUND(SUM(s1.森鸿顺丰已签收) / SUM(s1.森鸿顺丰已完成) * 100,2),'%') as '香港-森鸿-顺丰渠道完成签收',
-						concat(ROUND(SUM(s1.森鸿顺丰已签收) / SUM(s1.森鸿顺丰总订单) * 100,2),'%') as '香港-森鸿-顺丰渠道总计签收',
-						concat(ROUND(SUM(s1.森鸿顺丰已完成) / SUM(s1.森鸿顺丰总订单) * 100,2),'%') as '香港-森鸿-顺丰渠道完成占比',
-						concat(ROUND(SUM(s1.森鸿顺丰已退货) / SUM(s1.森鸿顺丰总订单) * 100,2),'%') as '香港-森鸿-顺丰渠道退货率',
-						concat(ROUND(SUM(s1.森鸿顺丰拒收) / SUM(s1.森鸿顺丰已完成) * 100,2),'%') as '香港-森鸿-顺丰渠道拒收率',
-					SUM(s1.立邦改派已签收) as '香港-立邦-改派已签收',
-						SUM(s1.立邦改派拒收) as '香港-立邦-改派拒收',
-						SUM(s1.立邦改派已退货) as '香港-立邦-改派已退货',
-						SUM(s1.立邦改派已完成) as '香港-立邦-改派已完成',
-						SUM(s1.立邦改派总订单) as '香港-立邦-改派总订单',
-						concat(ROUND(SUM(s1.立邦改派已签收) / SUM(s1.立邦改派已完成) * 100,2),'%') as '香港-立邦-改派完成签收',
-						concat(ROUND(SUM(s1.立邦改派已签收) / SUM(s1.立邦改派总订单) * 100,2),'%') as '香港-立邦-改派总计签收',
-						concat(ROUND(SUM(s1.立邦改派已完成) / SUM(s1.立邦改派总订单) * 100,2),'%') as '香港-立邦-改派完成占比',
-						concat(ROUND(SUM(s1.立邦改派已退货) / SUM(s1.立邦改派总订单) * 100,2),'%') as '香港-立邦-改派退货率',
-						concat(ROUND(SUM(s1.立邦改派拒收) / SUM(s1.立邦改派已完成) * 100,2),'%') as '香港-立邦-改派拒收率',
-					SUM(s1.易速配改派已签收) as '香港-易速配-改派已签收',
-						SUM(s1.易速配改派拒收) as '香港-易速配-改派拒收',
-						SUM(s1.易速配改派已退货) as '香港-易速配-改派已退货',
-						SUM(s1.易速配改派已完成) as '香港-易速配-改派已完成',
-						SUM(s1.易速配改派总订单) as '香港-易速配-改派总订单',
-						concat(ROUND(SUM(s1.易速配改派已签收) / SUM(s1.易速配改派已完成) * 100,2),'%') as '香港-易速配-改派完成签收',
-						concat(ROUND(SUM(s1.易速配改派已签收) / SUM(s1.易速配改派总订单) * 100,2),'%') as '香港-易速配-改派总计签收',
-						concat(ROUND(SUM(s1.易速配改派已完成) / SUM(s1.易速配改派总订单) * 100,2),'%') as '香港-易速配-改派完成占比',
-						concat(ROUND(SUM(s1.易速配改派已退货) / SUM(s1.易速配改派总订单) * 100,2),'%') as '香港-易速配-改派退货率',
-						concat(ROUND(SUM(s1.易速配改派拒收) / SUM(s1.易速配改派已完成) * 100,2),'%') as '香港-易速配-改派拒收率'
-		            FROM(SELECT IFNULL(cx.`家族`, '合计') 家族,
-								IFNULL(cx.币种, '合计') 地区,
-								IFNULL(cx.`年月`, '合计') 月份,
-								IF(cx.旬 =1,'上旬',IF(cx.旬 =2,'中旬',IF(cx.旬 =3,'下旬',cx.旬))) as 旬,
-								IFNULL(cx.产品id, '合计') 产品id,
-								IFNULL(cx.产品名称, '合计') 产品名称,
-								IFNULL(cx.父级分类, '合计') 父级分类,
-								IFNULL(cx.二级分类, '合计') 二级分类,
-								COUNT(cx.`订单编号`) as 总订单,
-								SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
-								SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
-								SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
-								SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
-							SUM(IF(cx.物流方式 = "香港-立邦-顺丰" ,1,0)) AS 立邦顺丰总订单,
-								SUM(IF(cx.物流方式 = "香港-立邦-顺丰" AND 最终状态 = "已签收",1,0)) as 立邦顺丰已签收,
-								SUM(IF(cx.物流方式 = "香港-立邦-顺丰" AND 最终状态 = "拒收",1,0)) as 立邦顺丰拒收,
-								SUM(IF(cx.物流方式 = "香港-立邦-顺丰" AND 最终状态 = "已退货",1,0)) as 立邦顺丰已退货,
-								SUM(IF(cx.物流方式 = "香港-立邦-顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦顺丰已完成,
-							SUM(IF(cx.物流方式 = "香港-易速配-顺丰" ,1,0)) AS 易速配顺丰总订单,
-								SUM(IF(cx.物流方式 = "香港-易速配-顺丰" AND 最终状态 = "已签收",1,0)) as 易速配顺丰已签收,
-								SUM(IF(cx.物流方式 = "香港-易速配-顺丰" AND 最终状态 = "拒收",1,0)) as 易速配顺丰拒收,
-								SUM(IF(cx.物流方式 = "香港-易速配-顺丰" AND 最终状态 = "已退货",1,0)) as 易速配顺丰已退货,
-								SUM(IF(cx.物流方式 = "香港-易速配-顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配顺丰已完成,
-							SUM(IF(cx.物流方式 = "香港-森鸿-SH渠道" ,1,0)) AS 森鸿SH总订单,
-								SUM(IF(cx.物流方式 = "香港-森鸿-SH渠道" AND 最终状态 = "已签收",1,0)) as 森鸿SH已签收,
-								SUM(IF(cx.物流方式 = "香港-森鸿-SH渠道" AND 最终状态 = "拒收",1,0)) as 森鸿SH拒收,
-								SUM(IF(cx.物流方式 = "香港-森鸿-SH渠道" AND 最终状态 = "已退货",1,0)) as 森鸿SH已退货,
-								SUM(IF(cx.物流方式 = "香港-森鸿-SH渠道" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿SH已完成,
-							SUM(IF(cx.物流方式 = "香港-森鸿-顺丰渠道" ,1,0)) AS 森鸿顺丰总订单,
-								SUM(IF(cx.物流方式 = "香港-森鸿-顺丰渠道" AND 最终状态 = "已签收",1,0)) as 森鸿顺丰已签收,
-								SUM(IF(cx.物流方式 = "香港-森鸿-顺丰渠道" AND 最终状态 = "拒收",1,0)) as 森鸿顺丰拒收,
-								SUM(IF(cx.物流方式 = "香港-森鸿-顺丰渠道" AND 最终状态 = "已退货",1,0)) as 森鸿顺丰已退货,
-								SUM(IF(cx.物流方式 = "香港-森鸿-顺丰渠道" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿顺丰已完成,
-							SUM(IF(cx.物流方式 = "香港-立邦-改派" ,1,0)) AS 立邦改派总订单,
-								SUM(IF(cx.物流方式 = "香港-立邦-改派" AND 最终状态 = "已签收",1,0)) as 立邦改派已签收,
-								SUM(IF(cx.物流方式 = "香港-立邦-改派" AND 最终状态 = "拒收",1,0)) as 立邦改派拒收,
-								SUM(IF(cx.物流方式 = "香港-立邦-改派" AND 最终状态 = "已退货",1,0)) as 立邦改派已退货,
-								SUM(IF(cx.物流方式 = "香港-立邦-改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦改派已完成,
-							SUM(IF(cx.物流方式 = "香港-易速配-改派" ,1,0)) AS 易速配改派总订单,
-								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 = "已签收",1,0)) as 易速配改派已签收,
-								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 = "拒收",1,0)) as 易速配改派拒收,
-								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 = "已退货",1,0)) as 易速配改派已退货,
-								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配改派已完成
-				        FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
-                        ) cx WHERE cx.`币种` = '香港'
-                        GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
-                    ) s1
-                    GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
-                    WITH ROLLUP 
-            ) s HAVING s.旬 <> '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
-                FIELD(s.`地区`,'台湾','香港','合计'),
-                FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
-                FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
-                FIELD(s.`产品id`,'合计'),
-                s.总订单 DESC;'''.format(team, month_last, month_yesterday)
-        df17 = pd.read_sql_query(sql=sql17, con=self.engine1)
-        listT.append(df17)
-
-        # 产品整月_直发 台湾
-        print('正在获取---产品整月_直发 台湾…………')
-        sql18 = '''SELECT *
-                        FROM(SELECT IFNULL(s1.家族, '合计') 家族,IFNULL(s1.地区, '合计') 地区,IFNULL(s1.月份, '合计') 月份,
-                                    IFNULL(s1.产品id, '合计') 产品id,IFNULL(s1.产品名称, '合计') 产品名称,IFNULL(s1.父级分类, '合计') 父级分类,IFNULL(s1.二级分类, '合计') 二级分类,
-                                    SUM(s1.已签收) as 已签收,
-        						    SUM(s1.拒收) as 拒收,
-        						    SUM(s1.已退货) as 已退货,
-        						    SUM(s1.已完成) as 已完成,
-        						    SUM(s1.总订单) as 总订单,
-        						    concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.已完成),0) * 100,2),'%') as 完成签收,
-        						    concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.总订单),0) * 100,2),'%') as 总计签收,
-        						    concat(ROUND(IFNULL(SUM(s1.已完成) / SUM(s1.总订单),0) * 100,2),'%') as 完成占比,
-        						    concat(ROUND(IFNULL(SUM(s1.已退货) / SUM(s1.总订单),0) * 100,2),'%') as 退货率,
-        						    concat(ROUND(IFNULL(SUM(s1.拒收) / SUM(s1.已完成),0) * 100,2),'%') as 拒收率,
-        						SUM(s1.大黄蜂已签收) as '台湾-大黄蜂普货头程-森鸿尾程已签收',
-        						    SUM(s1.大黄蜂拒收) as '台湾-大黄蜂普货头程-森鸿尾程拒收',
-        						    SUM(s1.大黄蜂已退货) as '台湾-大黄蜂普货头程-森鸿尾程已退货',
-        						    SUM(s1.大黄蜂已完成) as '台湾-大黄蜂普货头程-森鸿尾程已完成',
-        						    SUM(s1.大黄蜂总订单) as '台湾-大黄蜂普货头程-森鸿尾程总订单',
-        						    concat(ROUND(SUM(s1.大黄蜂已签收) / SUM(s1.大黄蜂已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程完成签收',
-        						    concat(ROUND(SUM(s1.大黄蜂已签收) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程总计签收',
-        						    concat(ROUND(SUM(s1.大黄蜂已完成) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程完成占比',
-        						    concat(ROUND(SUM(s1.大黄蜂已退货) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程退货率',
-        						    concat(ROUND(SUM(s1.大黄蜂拒收) / SUM(s1.大黄蜂已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程拒收率',
-        						SUM(s1.大黄蜂易速配已签收) as '台湾-大黄蜂普货头程-易速配尾程已签收',
-        						    SUM(s1.大黄蜂易速配拒收) as '台湾-大黄蜂普货头程-易速配尾程拒收',
-        						    SUM(s1.大黄蜂易速配已退货) as '台湾-大黄蜂普货头程-易速配尾程已退货',
-        						    SUM(s1.大黄蜂易速配已完成) as '台湾-大黄蜂普货头程-易速配尾程已完成',
-        						    SUM(s1.大黄蜂易速配总订单) as '台湾-大黄蜂普货头程-易速配尾程总订单',
-        						    concat(ROUND(SUM(s1.大黄蜂易速配已签收) / SUM(s1.大黄蜂易速配已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程完成签收',
-        						    concat(ROUND(SUM(s1.大黄蜂易速配已签收) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程总计签收',
-        						    concat(ROUND(SUM(s1.大黄蜂易速配已完成) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程完成占比',
-        						    concat(ROUND(SUM(s1.大黄蜂易速配已退货) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程退货率',
-        						    concat(ROUND(SUM(s1.大黄蜂易速配拒收) / SUM(s1.大黄蜂易速配已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程拒收率',
-						        SUM(s1.TW海快易速配已签收) as '台湾-易速配-TW海快已签收',
-						            SUM(s1.TW海快易速配拒收) as '台湾-易速配-TW海快拒收',
-						            SUM(s1.TW海快易速配已退货) as '台湾-易速配-TW海快已退货',
-						            SUM(s1.TW海快易速配已完成) as '台湾-易速配-TW海快已完成',
-						            SUM(s1.TW海快易速配总订单) as '台湾-易速配-TW海快总订单',
-						            concat(ROUND(SUM(s1.TW海快易速配已签收) / SUM(s1.TW海快易速配已完成) * 100,2),'%') as '台湾-易速配-TW海快完成签收',
-						            concat(ROUND(SUM(s1.TW海快易速配已签收) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快总计签收',
-						            concat(ROUND(SUM(s1.TW海快易速配已完成) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快完成占比',
-						            concat(ROUND(SUM(s1.TW海快易速配已退货) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快退货率',
-						            concat(ROUND(SUM(s1.TW海快易速配拒收) / SUM(s1.TW海快易速配已完成) * 100,2),'%') as '台湾-易速配-TW海快拒收率',
-        						SUM(s1.立邦普货已签收) as '台湾-立邦普货头程-森鸿尾程已签收',
-        						    SUM(s1.立邦普货拒收) as '台湾-立邦普货头程-森鸿尾程拒收',
-        						    SUM(s1.立邦普货已退货) as '台湾-立邦普货头程-森鸿尾程已退货',
-        						    SUM(s1.立邦普货已完成) as '台湾-立邦普货头程-森鸿尾程已完成',
-        						    SUM(s1.立邦普货总订单) as '台湾-立邦普货头程-森鸿尾程总订单',
-        						    concat(ROUND(SUM(s1.立邦普货已签收) / SUM(s1.立邦普货已完成) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程完成签收',
-        						    concat(ROUND(SUM(s1.立邦普货已签收) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程总计签收',
-        						    concat(ROUND(SUM(s1.立邦普货已完成) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程完成占比',
-        						    concat(ROUND(SUM(s1.立邦普货已退货) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程退货率',
-        						    concat(ROUND(SUM(s1.立邦普货拒收) / SUM(s1.立邦普货已完成) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程拒收率',
-        						SUM(s1.立邦普货易速配已签收) as '台湾-立邦普货头程-易速配尾程已签收',
-        						    SUM(s1.立邦普货易速配拒收) as '台湾-立邦普货头程-易速配尾程拒收',
-        						    SUM(s1.立邦普货易速配已退货) as '台湾-立邦普货头程-易速配尾程已退货',
-        						    SUM(s1.立邦普货易速配已完成) as '台湾-立邦普货头程-易速配尾程已完成',
-        						    SUM(s1.立邦普货易速配总订单) as '台湾-立邦普货头程-易速配尾程总订单',
-        						    concat(ROUND(SUM(s1.立邦普货易速配已签收) / SUM(s1.立邦普货易速配已完成) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程完成签收',
-        						    concat(ROUND(SUM(s1.立邦普货易速配已签收) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程总计签收',
-        						    concat(ROUND(SUM(s1.立邦普货易速配已完成) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程完成占比',
-        						    concat(ROUND(SUM(s1.立邦普货易速配已退货) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程退货率',
-        						    concat(ROUND(SUM(s1.立邦普货易速配拒收) / SUM(s1.立邦普货易速配已完成) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程拒收率',
-        						SUM(s1.森鸿新竹已签收) as '台湾-森鸿-新竹-自发头程已签收',
-        						    SUM(s1.森鸿新竹拒收) as '台湾-森鸿-新竹-自发头程拒收',
-        						    SUM(s1.森鸿新竹已退货) as '台湾-森鸿-新竹-自发头程已退货',
-        						    SUM(s1.森鸿新竹已完成) as '台湾-森鸿-新竹-自发头程已完成',
-        						    SUM(s1.森鸿新竹总订单) as '台湾-森鸿-新竹-自发头程总订单',
-        						    concat(ROUND(SUM(s1.森鸿新竹已签收) / SUM(s1.森鸿新竹已完成) * 100,2),'%') as '台湾-森鸿-新竹-自发头程完成签收',
-        						    concat(ROUND(SUM(s1.森鸿新竹已签收) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程总计签收',
-        						    concat(ROUND(SUM(s1.森鸿新竹已完成) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程完成占比',
-        						    concat(ROUND(SUM(s1.森鸿新竹已退货) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程退货率',
-        						    concat(ROUND(SUM(s1.森鸿新竹拒收) / SUM(s1.森鸿新竹已完成) * 100,2),'%') as '台湾-森鸿-新竹-自发头程拒收率',
-        						SUM(s1.速派超商已签收) as '台湾-速派-711超商已签收',
-        						    SUM(s1.速派超商拒收) as '台湾-速派-711超商拒收',
-        						    SUM(s1.速派超商已退货) as '台湾-速派-711超商已退货',
-        						    SUM(s1.速派超商已完成) as '台湾-速派-711超商已完成',
-        						    SUM(s1.速派超商总订单) as '台湾-速派-711超商总订单',
-        						    concat(ROUND(SUM(s1.速派超商已签收) / SUM(s1.速派超商已完成) * 100,2),'%') as '台湾-速派-711超商完成签收',
-        						    concat(ROUND(SUM(s1.速派超商已签收) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商总计签收',
-        						    concat(ROUND(SUM(s1.速派超商已完成) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商完成占比',
-        						    concat(ROUND(SUM(s1.速派超商已退货) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商退货率',
-        						    concat(ROUND(SUM(s1.速派超商拒收) / SUM(s1.速派超商已完成) * 100,2),'%') as '台湾-速派-711超商拒收率',
-        						SUM(s1.速派新竹已签收) as '台湾-速派-新竹已签收',
-        						    SUM(s1.速派新竹拒收) as '台湾-速派-新竹拒收',
-        						    SUM(s1.速派新竹已退货) as '台湾-速派-新竹已退货',
-        						    SUM(s1.速派新竹已完成) as '台湾-速派-新竹已完成',
-        						    SUM(s1.速派新竹总订单) as '台湾-速派-新竹总订单',
-        						    concat(ROUND(SUM(s1.速派新竹已签收) / SUM(s1.速派新竹已完成) * 100,2),'%') as '台湾-速派-新竹完成签收',
-        				    		concat(ROUND(SUM(s1.速派新竹已签收) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹总计签收',
-        					    	concat(ROUND(SUM(s1.速派新竹已完成) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹完成占比',
-        					    	concat(ROUND(SUM(s1.速派新竹已退货) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹退货率',
-        					    	concat(ROUND(SUM(s1.速派新竹拒收) / SUM(s1.速派新竹已完成) * 100,2),'%') as '台湾-速派-新竹拒收率',
-        						SUM(s1.天马顺丰已签收) as '台湾-天马-顺丰已签收',
-        						    SUM(s1.天马顺丰拒收) as '台湾-天马-顺丰拒收',
-        					    	SUM(s1.天马顺丰已退货) as '台湾-天马-顺丰已退货',
-        					    	SUM(s1.天马顺丰已完成) as '台湾-天马-顺丰已完成',
-        					    	SUM(s1.天马顺丰总订单) as '台湾-天马-顺丰总订单',
-        					    	concat(ROUND(SUM(s1.天马顺丰已签收) / SUM(s1.天马顺丰已完成) * 100,2),'%') as '台湾-天马-顺丰完成签收',
-        					    	concat(ROUND(SUM(s1.天马顺丰已签收) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰总计签收',
-        				    		concat(ROUND(SUM(s1.天马顺丰已完成) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰完成占比',
-        				    		concat(ROUND(SUM(s1.天马顺丰已退货) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰退货率',
-        					    	concat(ROUND(SUM(s1.天马顺丰拒收) / SUM(s1.天马顺丰已完成) * 100,2),'%') as '台湾-天马-顺丰拒收率',
-        						SUM(s1.天马新竹已签收) as '台湾-天马-新竹已签收',
-        					    	SUM(s1.天马新竹拒收) as '台湾-天马-新竹拒收',
-        					    	SUM(s1.天马新竹已退货) as '台湾-天马-新竹已退货',
-        					    	SUM(s1.天马新竹已完成) as '台湾-天马-新竹已完成',
-        					    	SUM(s1.天马新竹总订单) as '台湾-天马-新竹总订单',
-        					    	concat(ROUND(SUM(s1.天马新竹已签收) / SUM(s1.天马新竹已完成) * 100,2),'%') as '台湾-天马-新竹完成签收',
-        					    	concat(ROUND(SUM(s1.天马新竹已签收) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹总计签收',
-        					    	concat(ROUND(SUM(s1.天马新竹已完成) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹完成占比',
-        					    	concat(ROUND(SUM(s1.天马新竹已退货) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹退货率',
-        					    	concat(ROUND(SUM(s1.天马新竹拒收) / SUM(s1.天马新竹已完成) * 100,2),'%') as '台湾-天马-新竹拒收率',
-        						SUM(s1.天马黑猫已签收) as '台湾-天马-黑猫已签收',
-        					    	SUM(s1.天马黑猫拒收) as '台湾-天马-黑猫拒收',
-        						    SUM(s1.天马黑猫已退货) as '台湾-天马-黑猫已退货',
-        					    	SUM(s1.天马黑猫已完成) as '台湾-天马-黑猫已完成',
-        					        SUM(s1.天马黑猫总订单) as '台湾-天马-黑猫总订单',
-        					    	concat(ROUND(SUM(s1.天马黑猫已签收) / SUM(s1.天马黑猫已完成) * 100,2),'%') as '台湾-天马-黑猫完成签收',
-        					    	concat(ROUND(SUM(s1.天马黑猫已签收) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫总计签收',
-        					    	concat(ROUND(SUM(s1.天马黑猫已完成) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫完成占比',
-        					    	concat(ROUND(SUM(s1.天马黑猫已退货) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫退货率',
-        					    	concat(ROUND(SUM(s1.天马黑猫拒收) / SUM(s1.天马黑猫已完成) * 100,2),'%') as '台湾-天马-黑猫拒收率',
-        						SUM(s1.易速配新竹已签收) as '台湾-易速配-新竹已签收',
-        					    	SUM(s1.易速配新竹拒收) as '台湾-易速配-新竹拒收',
-        					    	SUM(s1.易速配新竹已退货) as '台湾-易速配-新竹已退货',
-        					    	SUM(s1.易速配新竹已完成) as '台湾-易速配-新竹已完成',
-        					    	SUM(s1.易速配新竹总订单) as '台湾-易速配-新竹总订单',
-        					    	concat(ROUND(SUM(s1.易速配新竹已签收) / SUM(s1.易速配新竹已完成) * 100,2),'%') as '台湾-易速配-新竹完成签收',
-        					    	concat(ROUND(SUM(s1.易速配新竹已签收) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹总计签收',
-        					    	concat(ROUND(SUM(s1.易速配新竹已完成) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹完成占比',
-        					    	concat(ROUND(SUM(s1.易速配新竹已退货) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹退货率',
-        					    	concat(ROUND(SUM(s1.易速配新竹拒收) / SUM(s1.易速配新竹已完成) * 100,2),'%') as '台湾-易速配-新竹拒收率',
-        						SUM(s1.龟山改派已签收) as '龟山改派已签收',
-        					    	SUM(s1.龟山改派拒收) as '龟山改派拒收',
-        					    	SUM(s1.龟山改派已退货) as '龟山改派已退货',
-        					    	SUM(s1.龟山改派已完成) as '龟山改派已完成',
-        					    	SUM(s1.龟山改派总订单) as '龟山改派总订单',
-        					    	concat(ROUND(SUM(s1.龟山改派已签收) / SUM(s1.龟山改派已完成) * 100,2),'%') as '龟山改派完成签收',
-        					    	concat(ROUND(SUM(s1.龟山改派已签收) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派总计签收',
-        					    	concat(ROUND(SUM(s1.龟山改派已完成) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派完成占比',
-        					    	concat(ROUND(SUM(s1.龟山改派已退货) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派退货率',
-        					    	concat(ROUND(SUM(s1.龟山改派拒收) / SUM(s1.龟山改派已完成) * 100,2),'%') as '龟山改派拒收率',
-        				    	SUM(s1.森鸿改派已签收) as '森鸿改派已签收',
-        					    	SUM(s1.森鸿改派拒收) as '森鸿改派拒收',
-        					    	SUM(s1.森鸿改派已退货) as '森鸿改派已退货',
-        					    	SUM(s1.森鸿改派已完成) as '森鸿改派已完成',
-        					    	SUM(s1.森鸿改派总订单) as '森鸿改派总订单',
-        					    	concat(ROUND(SUM(s1.森鸿改派已签收) / SUM(s1.森鸿改派已完成) * 100,2),'%') as '森鸿改派完成签收',
-        					    	concat(ROUND(SUM(s1.森鸿改派已签收) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派总计签收',
-        					    	concat(ROUND(SUM(s1.森鸿改派已完成) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派完成占比',
-        					    	concat(ROUND(SUM(s1.森鸿改派已退货) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派退货率',
-        					    	concat(ROUND(SUM(s1.森鸿改派拒收) / SUM(s1.森鸿改派已完成) * 100,2),'%') as '森鸿改派拒收率',
-        						SUM(s1.速派改派已签收) as '速派改派已签收',
-        					    	SUM(s1.速派改派拒收) as '速派改派拒收',
-        					    	SUM(s1.速派改派已退货) as '速派改派已退货',
-        					    	SUM(s1.速派改派已完成) as '速派改派已完成',
-        					    	SUM(s1.速派改派总订单) as '速派改派总订单',
-        					    	concat(ROUND(SUM(s1.速派改派已签收) / SUM(s1.速派改派已完成) * 100,2),'%') as '速派改派完成签收',
-        					    	concat(ROUND(SUM(s1.速派改派已签收) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派总计签收',
-        					    	concat(ROUND(SUM(s1.速派改派已完成) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派完成占比',
-        					    	concat(ROUND(SUM(s1.速派改派已退货) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派退货率',
-        					    	concat(ROUND(SUM(s1.速派改派拒收) / SUM(s1.速派改派已完成) * 100,2),'%') as '速派改派拒收率',
-        						SUM(s1.天马新竹改派已签收) as '天马新竹改派已签收',
-        					    	SUM(s1.天马新竹改派拒收) as '天马新竹改派拒收',
-        					    	SUM(s1.天马新竹改派已退货) as '天马新竹改派已退货',
-        					    	SUM(s1.天马新竹改派已完成) as '天马新竹改派已完成',
-        					    	SUM(s1.天马新竹改派总订单) as '天马新竹改派总订单',
-        					    	concat(ROUND(SUM(s1.天马新竹改派已签收) / SUM(s1.天马新竹改派已完成) * 100,2),'%') as '天马新竹改派完成签收',
-        					    	concat(ROUND(SUM(s1.天马新竹改派已签收) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派总计签收',
-        					    	concat(ROUND(SUM(s1.天马新竹改派已完成) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派完成占比',
-        					    	concat(ROUND(SUM(s1.天马新竹改派已退货) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派退货率',
-        					    	concat(ROUND(SUM(s1.天马新竹改派拒收) / SUM(s1.天马新竹改派已完成) * 100,2),'%') as '天马新竹改派拒收率',
-        						SUM(s1.天马顺丰改派已签收) as '天马顺丰改派已签收',
-        					    	SUM(s1.天马顺丰改派拒收) as '天马顺丰改派拒收',
-        					    	SUM(s1.天马顺丰改派已退货) as '天马顺丰改派已退货',
-        					    	SUM(s1.天马顺丰改派已完成) as '天马顺丰改派已完成',
-        					    	SUM(s1.天马顺丰改派总订单) as '天马顺丰改派总订单',
-        					    	concat(ROUND(SUM(s1.天马顺丰改派已签收) / SUM(s1.天马顺丰改派已完成) * 100,2),'%') as '天马顺丰改派完成签收',
-        					    	concat(ROUND(SUM(s1.天马顺丰改派已签收) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派总计签收',
-        					    	concat(ROUND(SUM(s1.天马顺丰改派已完成) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派完成占比',
-        					    	concat(ROUND(SUM(s1.天马顺丰改派已退货) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派退货率',
-        					    	concat(ROUND(SUM(s1.天马顺丰改派拒收) / SUM(s1.天马顺丰改派已完成) * 100,2),'%') as '天马顺丰改派拒收率'
-                            FROM(SELECT IFNULL(cx.`家族`, '合计') 家族,
-        								IFNULL(cx.币种, '合计') 地区,
-        								IFNULL(cx.`年月`, '合计') 月份,
-        								IFNULL(cx.产品id, '合计') 产品id,
-        								IFNULL(cx.产品名称, '合计') 产品名称,
-        								IFNULL(cx.父级分类, '合计') 父级分类,
-        								IFNULL(cx.二级分类, '合计') 二级分类,
-        								COUNT(cx.`订单编号`) as 总订单,
-        								SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
-        								SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
-        								SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
-        								SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
-        							SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" ,1,0)) AS 大黄蜂总订单,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "已签收",1,0)) as 大黄蜂已签收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "拒收",1,0)) as 大黄蜂拒收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "已退货",1,0)) as 大黄蜂已退货,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 大黄蜂已完成,
-        							SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" ,1,0)) AS 大黄蜂易速配总订单,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "已签收",1,0)) as 大黄蜂易速配已签收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "拒收",1,0)) as 大黄蜂易速配拒收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "已退货",1,0)) as 大黄蜂易速配已退货,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 大黄蜂易速配已完成,
-							        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" ,1,0)) AS TW海快易速配总订单,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "已签收",1,0)) as TW海快易速配已签收,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "拒收",1,0)) as TW海快易速配拒收,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "已退货",1,0)) as TW海快易速配已退货,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as TW海快易速配已完成,
-        							SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" ,1,0)) AS 立邦普货总订单,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "已签收",1,0)) as 立邦普货已签收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "拒收",1,0)) as 立邦普货拒收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "已退货",1,0)) as 立邦普货已退货,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦普货已完成,
-        							SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" ,1,0)) AS 立邦普货易速配总订单,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "已签收",1,0)) as 立邦普货易速配已签收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "拒收",1,0)) as 立邦普货易速配拒收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "已退货",1,0)) as 立邦普货易速配已退货,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦普货易速配已完成,
-        							SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" ,1,0)) AS 森鸿新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "已签收",1,0)) as 森鸿新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "拒收",1,0)) as 森鸿新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "已退货",1,0)) as 森鸿新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿新竹已完成,
-        							SUM(IF(cx.物流方式 = "台湾-速派-711超商" ,1,0)) AS 速派超商总订单,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "已签收",1,0)) as 速派超商已签收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "拒收",1,0)) as 速派超商拒收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "已退货",1,0)) as 速派超商已退货,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派超商已完成,
-        							SUM(IF(cx.物流方式 = "台湾-速派-新竹" ,1,0)) AS 速派新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "已签收",1,0)) as 速派新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "拒收",1,0)) as 速派新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "已退货",1,0)) as 速派新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派新竹已完成,
-        							SUM(IF(cx.物流方式 = "台湾-天马-顺丰" ,1,0)) AS 天马顺丰总订单,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "已签收",1,0)) as 天马顺丰已签收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "拒收",1,0)) as 天马顺丰拒收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰已退货,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰已完成,
-        							SUM(IF(cx.物流方式 = "台湾-天马-新竹" ,1,0)) AS 天马新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "已签收",1,0)) as 天马新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "拒收",1,0)) as 天马新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "已退货",1,0)) as 天马新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马新竹已完成,
-        							SUM(IF(cx.物流方式 = "台湾-天马-黑猫" ,1,0)) AS 天马黑猫总订单,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "已签收",1,0)) as 天马黑猫已签收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "拒收",1,0)) as 天马黑猫拒收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "已退货",1,0)) as 天马黑猫已退货,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马黑猫已完成,
-        							SUM(IF(cx.物流方式 = "台湾-易速配-新竹" ,1,0)) AS 易速配新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "已签收",1,0)) as 易速配新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "拒收",1,0)) as 易速配新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "已退货",1,0)) as 易速配新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配新竹已完成,
-        							SUM(IF(cx.物流方式 = "龟山" ,1,0)) AS 龟山改派总订单,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已签收",1,0)) as 龟山改派已签收,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "拒收",1,0)) as 龟山改派拒收,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已退货",1,0)) as 龟山改派已退货,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 龟山改派已完成,
-        							SUM(IF(cx.物流方式 = "森鸿" ,1,0)) AS 森鸿改派总订单,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "已签收",1,0)) as 森鸿改派已签收,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "拒收",1,0)) as 森鸿改派拒收,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "已退货",1,0)) as 森鸿改派已退货,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿改派已完成,
-        							SUM(IF(cx.物流方式 = "速派" ,1,0)) AS 速派改派总订单,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "已签收",1,0)) as 速派改派已签收,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "拒收",1,0)) as 速派改派拒收,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "已退货",1,0)) as 速派改派已退货,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派改派已完成,
-        							SUM(IF(cx.物流方式 = "天马新竹" ,1,0)) AS 天马新竹改派总订单,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "已签收",1,0)) as 天马新竹改派已签收,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "拒收",1,0)) as 天马新竹改派拒收,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "已退货",1,0)) as 天马新竹改派已退货,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马新竹改派已完成,
-        							SUM(IF(cx.物流方式 = "天马顺丰" ,1,0)) AS 天马顺丰改派总订单,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已签收",1,0)) as 天马顺丰改派已签收,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "拒收",1,0)) as 天马顺丰改派拒收,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰改派已退货,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰改派已完成
-        				            FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM {0}_zqsb cc where cc.`是否改派` = '直发' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
-                                    ) cx WHERE cx.`币种` = '台湾'
-                                    GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
-                                ) s1
-                                GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
-                                WITH ROLLUP 
-                        ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
-                        FIELD(s.`地区`,'台湾','香港','合计'),
-                        FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
-                        FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday)
-        df18 = pd.read_sql_query(sql=sql18, con=self.engine1)
-        listT.append(df18)
-        # 产品分旬_直发 台湾
-        print('正在获取---产品分旬_直发 台湾…………')
-        sql19 = '''SELECT *
-                            FROM(SELECT IFNULL(s1.家族, '合计') 家族,IFNULL(s1.地区, '合计') 地区,IFNULL(s1.月份, '合计') 月份,IFNULL(s1.旬, '合计') 旬,
-        						IFNULL(s1.产品id, '合计') 产品id,IFNULL(s1.产品名称, '合计') 产品名称,IFNULL(s1.父级分类, '合计') 父级分类,IFNULL(s1.二级分类, '合计') 二级分类,
-        						SUM(s1.已签收) as 已签收,
-        						SUM(s1.拒收) as 拒收,
-        						SUM(s1.已退货) as 已退货,
-        						SUM(s1.已完成) as 已完成,
-        						SUM(s1.总订单) as 总订单,
-        						concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.已完成),0) * 100,2),'%') as 完成签收,
-        						concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.总订单),0) * 100,2),'%') as 总计签收,
-        						concat(ROUND(IFNULL(SUM(s1.已完成) / SUM(s1.总订单),0) * 100,2),'%') as 完成占比,
-        						concat(ROUND(IFNULL(SUM(s1.已退货) / SUM(s1.总订单),0) * 100,2),'%') as 退货率,
-        						concat(ROUND(IFNULL(SUM(s1.拒收) / SUM(s1.已完成),0) * 100,2),'%') as 拒收率,
-        					SUM(s1.大黄蜂已签收) as '台湾-大黄蜂普货头程-森鸿尾程已签收',
-        						SUM(s1.大黄蜂拒收) as '台湾-大黄蜂普货头程-森鸿尾程拒收',
-        						SUM(s1.大黄蜂已退货) as '台湾-大黄蜂普货头程-森鸿尾程已退货',
-        						SUM(s1.大黄蜂已完成) as '台湾-大黄蜂普货头程-森鸿尾程已完成',
-        						SUM(s1.大黄蜂总订单) as '台湾-大黄蜂普货头程-森鸿尾程总订单',
-        						concat(ROUND(SUM(s1.大黄蜂已签收) / SUM(s1.大黄蜂已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程完成签收',
-        						concat(ROUND(SUM(s1.大黄蜂已签收) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程总计签收',
-        						concat(ROUND(SUM(s1.大黄蜂已完成) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程完成占比',
-        						concat(ROUND(SUM(s1.大黄蜂已退货) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程退货率',
-        						concat(ROUND(SUM(s1.大黄蜂拒收) / SUM(s1.大黄蜂已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程拒收率',
-        					SUM(s1.大黄蜂易速配已签收) as '台湾-大黄蜂普货头程-易速配尾程已签收',
-        						SUM(s1.大黄蜂易速配拒收) as '台湾-大黄蜂普货头程-易速配尾程拒收',
-        						SUM(s1.大黄蜂易速配已退货) as '台湾-大黄蜂普货头程-易速配尾程已退货',
-        						SUM(s1.大黄蜂易速配已完成) as '台湾-大黄蜂普货头程-易速配尾程已完成',
-        						SUM(s1.大黄蜂易速配总订单) as '台湾-大黄蜂普货头程-易速配尾程总订单',
-        						concat(ROUND(SUM(s1.大黄蜂易速配已签收) / SUM(s1.大黄蜂易速配已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程完成签收',
-        						concat(ROUND(SUM(s1.大黄蜂易速配已签收) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程总计签收',
-        						concat(ROUND(SUM(s1.大黄蜂易速配已完成) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程完成占比',
-        						concat(ROUND(SUM(s1.大黄蜂易速配已退货) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程退货率',
-        						concat(ROUND(SUM(s1.大黄蜂易速配拒收) / SUM(s1.大黄蜂易速配已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程拒收率',
-						    SUM(s1.TW海快易速配已签收) as '台湾-易速配-TW海快已签收',
-						        SUM(s1.TW海快易速配拒收) as '台湾-易速配-TW海快拒收',
-						        SUM(s1.TW海快易速配已退货) as '台湾-易速配-TW海快已退货',
-						        SUM(s1.TW海快易速配已完成) as '台湾-易速配-TW海快已完成',
-						        SUM(s1.TW海快易速配总订单) as '台湾-易速配-TW海快总订单',
-						        concat(ROUND(SUM(s1.TW海快易速配已签收) / SUM(s1.TW海快易速配已完成) * 100,2),'%') as '台湾-易速配-TW海快完成签收',
-						        concat(ROUND(SUM(s1.TW海快易速配已签收) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快总计签收',
-						        concat(ROUND(SUM(s1.TW海快易速配已完成) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快完成占比',
-						        concat(ROUND(SUM(s1.TW海快易速配已退货) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快退货率',
-						        concat(ROUND(SUM(s1.TW海快易速配拒收) / SUM(s1.TW海快易速配已完成) * 100,2),'%') as '台湾-易速配-TW海快拒收率',
-        					SUM(s1.立邦普货已签收) as '台湾-立邦普货头程-森鸿尾程已签收',
-        						SUM(s1.立邦普货拒收) as '台湾-立邦普货头程-森鸿尾程拒收',
-        						SUM(s1.立邦普货已退货) as '台湾-立邦普货头程-森鸿尾程已退货',
-        						SUM(s1.立邦普货已完成) as '台湾-立邦普货头程-森鸿尾程已完成',
-        						SUM(s1.立邦普货总订单) as '台湾-立邦普货头程-森鸿尾程总订单',
-        						concat(ROUND(SUM(s1.立邦普货已签收) / SUM(s1.立邦普货已完成) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程完成签收',
-        						concat(ROUND(SUM(s1.立邦普货已签收) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程总计签收',
-        						concat(ROUND(SUM(s1.立邦普货已完成) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程完成占比',
-        						concat(ROUND(SUM(s1.立邦普货已退货) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程退货率',
-        						concat(ROUND(SUM(s1.立邦普货拒收) / SUM(s1.立邦普货已完成) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程拒收率',
-        					SUM(s1.立邦普货易速配已签收) as '台湾-立邦普货头程-易速配尾程已签收',
-        						SUM(s1.立邦普货易速配拒收) as '台湾-立邦普货头程-易速配尾程拒收',
-        						SUM(s1.立邦普货易速配已退货) as '台湾-立邦普货头程-易速配尾程已退货',
-        						SUM(s1.立邦普货易速配已完成) as '台湾-立邦普货头程-易速配尾程已完成',
-        						SUM(s1.立邦普货易速配总订单) as '台湾-立邦普货头程-易速配尾程总订单',
-        						concat(ROUND(SUM(s1.立邦普货易速配已签收) / SUM(s1.立邦普货易速配已完成) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程完成签收',
-        						concat(ROUND(SUM(s1.立邦普货易速配已签收) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程总计签收',
-        						concat(ROUND(SUM(s1.立邦普货易速配已完成) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程完成占比',
-        						concat(ROUND(SUM(s1.立邦普货易速配已退货) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程退货率',
-        						concat(ROUND(SUM(s1.立邦普货易速配拒收) / SUM(s1.立邦普货易速配已完成) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程拒收率',
-        					SUM(s1.森鸿新竹已签收) as '台湾-森鸿-新竹-自发头程已签收',
-        						SUM(s1.森鸿新竹拒收) as '台湾-森鸿-新竹-自发头程拒收',
-        						SUM(s1.森鸿新竹已退货) as '台湾-森鸿-新竹-自发头程已退货',
-        						SUM(s1.森鸿新竹已完成) as '台湾-森鸿-新竹-自发头程已完成',
-        						SUM(s1.森鸿新竹总订单) as '台湾-森鸿-新竹-自发头程总订单',
-        						concat(ROUND(SUM(s1.森鸿新竹已签收) / SUM(s1.森鸿新竹已完成) * 100,2),'%') as '台湾-森鸿-新竹-自发头程完成签收',
-        						concat(ROUND(SUM(s1.森鸿新竹已签收) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程总计签收',
-        						concat(ROUND(SUM(s1.森鸿新竹已完成) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程完成占比',
-        						concat(ROUND(SUM(s1.森鸿新竹已退货) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程退货率',
-        						concat(ROUND(SUM(s1.森鸿新竹拒收) / SUM(s1.森鸿新竹已完成) * 100,2),'%') as '台湾-森鸿-新竹-自发头程拒收率',
-        					SUM(s1.速派超商已签收) as '台湾-速派-711超商已签收',
-        						SUM(s1.速派超商拒收) as '台湾-速派-711超商拒收',
-        						SUM(s1.速派超商已退货) as '台湾-速派-711超商已退货',
-        						SUM(s1.速派超商已完成) as '台湾-速派-711超商已完成',
-        						SUM(s1.速派超商总订单) as '台湾-速派-711超商总订单',
-        						concat(ROUND(SUM(s1.速派超商已签收) / SUM(s1.速派超商已完成) * 100,2),'%') as '台湾-速派-711超商完成签收',
-        						concat(ROUND(SUM(s1.速派超商已签收) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商总计签收',
-        						concat(ROUND(SUM(s1.速派超商已完成) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商完成占比',
-        						concat(ROUND(SUM(s1.速派超商已退货) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商退货率',
-        						concat(ROUND(SUM(s1.速派超商拒收) / SUM(s1.速派超商已完成) * 100,2),'%') as '台湾-速派-711超商拒收率',
-        					SUM(s1.速派新竹已签收) as '台湾-速派-新竹已签收',
-        						SUM(s1.速派新竹拒收) as '台湾-速派-新竹拒收',
-        						SUM(s1.速派新竹已退货) as '台湾-速派-新竹已退货',
-        						SUM(s1.速派新竹已完成) as '台湾-速派-新竹已完成',
-        						SUM(s1.速派新竹总订单) as '台湾-速派-新竹总订单',
-        						concat(ROUND(SUM(s1.速派新竹已签收) / SUM(s1.速派新竹已完成) * 100,2),'%') as '台湾-速派-新竹完成签收',
-        						concat(ROUND(SUM(s1.速派新竹已签收) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹总计签收',
-        						concat(ROUND(SUM(s1.速派新竹已完成) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹完成占比',
-        						concat(ROUND(SUM(s1.速派新竹已退货) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹退货率',
-        						concat(ROUND(SUM(s1.速派新竹拒收) / SUM(s1.速派新竹已完成) * 100,2),'%') as '台湾-速派-新竹拒收率',
-        					SUM(s1.天马顺丰已签收) as '台湾-天马-顺丰已签收',
-        						SUM(s1.天马顺丰拒收) as '台湾-天马-顺丰拒收',
-        						SUM(s1.天马顺丰已退货) as '台湾-天马-顺丰已退货',
-        						SUM(s1.天马顺丰已完成) as '台湾-天马-顺丰已完成',
-        						SUM(s1.天马顺丰总订单) as '台湾-天马-顺丰总订单',
-        						concat(ROUND(SUM(s1.天马顺丰已签收) / SUM(s1.天马顺丰已完成) * 100,2),'%') as '台湾-天马-顺丰完成签收',
-        						concat(ROUND(SUM(s1.天马顺丰已签收) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰总计签收',
-        						concat(ROUND(SUM(s1.天马顺丰已完成) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰完成占比',
-        						concat(ROUND(SUM(s1.天马顺丰已退货) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰退货率',
-        						concat(ROUND(SUM(s1.天马顺丰拒收) / SUM(s1.天马顺丰已完成) * 100,2),'%') as '台湾-天马-顺丰拒收率',
-        					SUM(s1.天马新竹已签收) as '台湾-天马-新竹已签收',
-        						SUM(s1.天马新竹拒收) as '台湾-天马-新竹拒收',
-        						SUM(s1.天马新竹已退货) as '台湾-天马-新竹已退货',
-        						SUM(s1.天马新竹已完成) as '台湾-天马-新竹已完成',
-        						SUM(s1.天马新竹总订单) as '台湾-天马-新竹总订单',
-        						concat(ROUND(SUM(s1.天马新竹已签收) / SUM(s1.天马新竹已完成) * 100,2),'%') as '台湾-天马-新竹完成签收',
-        						concat(ROUND(SUM(s1.天马新竹已签收) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹总计签收',
-        						concat(ROUND(SUM(s1.天马新竹已完成) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹完成占比',
-        						concat(ROUND(SUM(s1.天马新竹已退货) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹退货率',
-        						concat(ROUND(SUM(s1.天马新竹拒收) / SUM(s1.天马新竹已完成) * 100,2),'%') as '台湾-天马-新竹拒收率',
-        					SUM(s1.天马黑猫已签收) as '台湾-天马-黑猫已签收',
-        						SUM(s1.天马黑猫拒收) as '台湾-天马-黑猫拒收',
-        						SUM(s1.天马黑猫已退货) as '台湾-天马-黑猫已退货',
-        						SUM(s1.天马黑猫已完成) as '台湾-天马-黑猫已完成',
-        						SUM(s1.天马黑猫总订单) as '台湾-天马-黑猫总订单',
-        						concat(ROUND(SUM(s1.天马黑猫已签收) / SUM(s1.天马黑猫已完成) * 100,2),'%') as '台湾-天马-黑猫完成签收',
-        						concat(ROUND(SUM(s1.天马黑猫已签收) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫总计签收',
-        						concat(ROUND(SUM(s1.天马黑猫已完成) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫完成占比',
-        						concat(ROUND(SUM(s1.天马黑猫已退货) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫退货率',
-        						concat(ROUND(SUM(s1.天马黑猫拒收) / SUM(s1.天马黑猫已完成) * 100,2),'%') as '台湾-天马-黑猫拒收率',
-        					SUM(s1.易速配新竹已签收) as '台湾-易速配-新竹已签收',
-        						SUM(s1.易速配新竹拒收) as '台湾-易速配-新竹拒收',
-        						SUM(s1.易速配新竹已退货) as '台湾-易速配-新竹已退货',
-        						SUM(s1.易速配新竹已完成) as '台湾-易速配-新竹已完成',
-        						SUM(s1.易速配新竹总订单) as '台湾-易速配-新竹总订单',
-        						concat(ROUND(SUM(s1.易速配新竹已签收) / SUM(s1.易速配新竹已完成) * 100,2),'%') as '台湾-易速配-新竹完成签收',
-        						concat(ROUND(SUM(s1.易速配新竹已签收) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹总计签收',
-        						concat(ROUND(SUM(s1.易速配新竹已完成) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹完成占比',
-        						concat(ROUND(SUM(s1.易速配新竹已退货) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹退货率',
-        						concat(ROUND(SUM(s1.易速配新竹拒收) / SUM(s1.易速配新竹已完成) * 100,2),'%') as '台湾-易速配-新竹拒收率',
-        					SUM(s1.龟山改派已签收) as '龟山改派已签收',
-        						SUM(s1.龟山改派拒收) as '龟山改派拒收',
-        						SUM(s1.龟山改派已退货) as '龟山改派已退货',
-        						SUM(s1.龟山改派已完成) as '龟山改派已完成',
-        						SUM(s1.龟山改派总订单) as '龟山改派总订单',
-        						concat(ROUND(SUM(s1.龟山改派已签收) / SUM(s1.龟山改派已完成) * 100,2),'%') as '龟山改派完成签收',
-        						concat(ROUND(SUM(s1.龟山改派已签收) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派总计签收',
-        						concat(ROUND(SUM(s1.龟山改派已完成) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派完成占比',
-        						concat(ROUND(SUM(s1.龟山改派已退货) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派退货率',
-        						concat(ROUND(SUM(s1.龟山改派拒收) / SUM(s1.龟山改派已完成) * 100,2),'%') as '龟山改派拒收率',
-        					SUM(s1.森鸿改派已签收) as '森鸿改派已签收',
-        						SUM(s1.森鸿改派拒收) as '森鸿改派拒收',
-        						SUM(s1.森鸿改派已退货) as '森鸿改派已退货',
-        						SUM(s1.森鸿改派已完成) as '森鸿改派已完成',
-        						SUM(s1.森鸿改派总订单) as '森鸿改派总订单',
-        						concat(ROUND(SUM(s1.森鸿改派已签收) / SUM(s1.森鸿改派已完成) * 100,2),'%') as '森鸿改派完成签收',
-        						concat(ROUND(SUM(s1.森鸿改派已签收) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派总计签收',
-        						concat(ROUND(SUM(s1.森鸿改派已完成) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派完成占比',
-        						concat(ROUND(SUM(s1.森鸿改派已退货) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派退货率',
-        						concat(ROUND(SUM(s1.森鸿改派拒收) / SUM(s1.森鸿改派已完成) * 100,2),'%') as '森鸿改派拒收率',
-        					SUM(s1.速派改派已签收) as '速派改派已签收',
-        						SUM(s1.速派改派拒收) as '速派改派拒收',
-        						SUM(s1.速派改派已退货) as '速派改派已退货',
-        						SUM(s1.速派改派已完成) as '速派改派已完成',
-        						SUM(s1.速派改派总订单) as '速派改派总订单',
-        						concat(ROUND(SUM(s1.速派改派已签收) / SUM(s1.速派改派已完成) * 100,2),'%') as '速派改派完成签收',
-        						concat(ROUND(SUM(s1.速派改派已签收) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派总计签收',
-        						concat(ROUND(SUM(s1.速派改派已完成) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派完成占比',
-        						concat(ROUND(SUM(s1.速派改派已退货) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派退货率',
-        						concat(ROUND(SUM(s1.速派改派拒收) / SUM(s1.速派改派已完成) * 100,2),'%') as '速派改派拒收率',
-        					SUM(s1.天马新竹改派已签收) as '天马新竹改派已签收',
-        						SUM(s1.天马新竹改派拒收) as '天马新竹改派拒收',
-        						SUM(s1.天马新竹改派已退货) as '天马新竹改派已退货',
-        						SUM(s1.天马新竹改派已完成) as '天马新竹改派已完成',
-        						SUM(s1.天马新竹改派总订单) as '天马新竹改派总订单',
-        						concat(ROUND(SUM(s1.天马新竹改派已签收) / SUM(s1.天马新竹改派已完成) * 100,2),'%') as '天马新竹改派完成签收',
-        						concat(ROUND(SUM(s1.天马新竹改派已签收) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派总计签收',
-        						concat(ROUND(SUM(s1.天马新竹改派已完成) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派完成占比',
-        						concat(ROUND(SUM(s1.天马新竹改派已退货) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派退货率',
-        						concat(ROUND(SUM(s1.天马新竹改派拒收) / SUM(s1.天马新竹改派已完成) * 100,2),'%') as '天马新竹改派拒收率',
-        					SUM(s1.天马顺丰改派已签收) as '天马顺丰改派已签收',
-        						SUM(s1.天马顺丰改派拒收) as '天马顺丰改派拒收',
-        						SUM(s1.天马顺丰改派已退货) as '天马顺丰改派已退货',
-        						SUM(s1.天马顺丰改派已完成) as '天马顺丰改派已完成',
-        						SUM(s1.天马顺丰改派总订单) as '天马顺丰改派总订单',
-        						concat(ROUND(SUM(s1.天马顺丰改派已签收) / SUM(s1.天马顺丰改派已完成) * 100,2),'%') as '天马顺丰改派完成签收',
-        						concat(ROUND(SUM(s1.天马顺丰改派已签收) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派总计签收',
-        						concat(ROUND(SUM(s1.天马顺丰改派已完成) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派完成占比',
-        						concat(ROUND(SUM(s1.天马顺丰改派已退货) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派退货率',
-        						concat(ROUND(SUM(s1.天马顺丰改派拒收) / SUM(s1.天马顺丰改派已完成) * 100,2),'%') as '天马顺丰改派拒收率'
-                        FROM(SELECT IFNULL(cx.`家族`, '合计') 家族,
-        								IFNULL(cx.币种, '合计') 地区,
-        								IFNULL(cx.`年月`, '合计') 月份,
-        								IF(cx.旬 =1,'上旬',IF(cx.旬 =2,'中旬',IF(cx.旬 =3,'下旬',cx.旬))) as 旬,
-        								IFNULL(cx.产品id, '合计') 产品id,
-        								IFNULL(cx.产品名称, '合计') 产品名称,
-        								IFNULL(cx.父级分类, '合计') 父级分类,
-        								IFNULL(cx.二级分类, '合计') 二级分类,
-        								COUNT(cx.`订单编号`) as 总订单,
-        								SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
-        								SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
-        								SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
-        								SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
-        							SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" ,1,0)) AS 大黄蜂总订单,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "已签收",1,0)) as 大黄蜂已签收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "拒收",1,0)) as 大黄蜂拒收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "已退货",1,0)) as 大黄蜂已退货,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 大黄蜂已完成,
-        							SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" ,1,0)) AS 大黄蜂易速配总订单,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "已签收",1,0)) as 大黄蜂易速配已签收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "拒收",1,0)) as 大黄蜂易速配拒收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "已退货",1,0)) as 大黄蜂易速配已退货,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 大黄蜂易速配已完成,
-							        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" ,1,0)) AS TW海快易速配总订单,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "已签收",1,0)) as TW海快易速配已签收,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "拒收",1,0)) as TW海快易速配拒收,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "已退货",1,0)) as TW海快易速配已退货,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as TW海快易速配已完成,
-        							SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" ,1,0)) AS 立邦普货总订单,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "已签收",1,0)) as 立邦普货已签收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "拒收",1,0)) as 立邦普货拒收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "已退货",1,0)) as 立邦普货已退货,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦普货已完成,
-        							SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" ,1,0)) AS 立邦普货易速配总订单,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "已签收",1,0)) as 立邦普货易速配已签收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "拒收",1,0)) as 立邦普货易速配拒收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "已退货",1,0)) as 立邦普货易速配已退货,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦普货易速配已完成,
-        							SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" ,1,0)) AS 森鸿新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "已签收",1,0)) as 森鸿新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "拒收",1,0)) as 森鸿新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "已退货",1,0)) as 森鸿新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿新竹已完成,
-        							SUM(IF(cx.物流方式 = "台湾-速派-711超商" ,1,0)) AS 速派超商总订单,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "已签收",1,0)) as 速派超商已签收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "拒收",1,0)) as 速派超商拒收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "已退货",1,0)) as 速派超商已退货,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派超商已完成,
-        							SUM(IF(cx.物流方式 = "台湾-速派-新竹" ,1,0)) AS 速派新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "已签收",1,0)) as 速派新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "拒收",1,0)) as 速派新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "已退货",1,0)) as 速派新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派新竹已完成,
-        							SUM(IF(cx.物流方式 = "台湾-天马-顺丰" ,1,0)) AS 天马顺丰总订单,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "已签收",1,0)) as 天马顺丰已签收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "拒收",1,0)) as 天马顺丰拒收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰已退货,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰已完成,
-        							SUM(IF(cx.物流方式 = "台湾-天马-新竹" ,1,0)) AS 天马新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "已签收",1,0)) as 天马新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "拒收",1,0)) as 天马新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "已退货",1,0)) as 天马新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马新竹已完成,
-        							SUM(IF(cx.物流方式 = "台湾-天马-黑猫" ,1,0)) AS 天马黑猫总订单,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "已签收",1,0)) as 天马黑猫已签收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "拒收",1,0)) as 天马黑猫拒收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "已退货",1,0)) as 天马黑猫已退货,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马黑猫已完成,
-        							SUM(IF(cx.物流方式 = "台湾-易速配-新竹" ,1,0)) AS 易速配新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "已签收",1,0)) as 易速配新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "拒收",1,0)) as 易速配新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "已退货",1,0)) as 易速配新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配新竹已完成,
-        							SUM(IF(cx.物流方式 = "龟山" ,1,0)) AS 龟山改派总订单,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已签收",1,0)) as 龟山改派已签收,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "拒收",1,0)) as 龟山改派拒收,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已退货",1,0)) as 龟山改派已退货,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 龟山改派已完成,
-        							SUM(IF(cx.物流方式 = "森鸿" ,1,0)) AS 森鸿改派总订单,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "已签收",1,0)) as 森鸿改派已签收,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "拒收",1,0)) as 森鸿改派拒收,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "已退货",1,0)) as 森鸿改派已退货,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿改派已完成,
-        							SUM(IF(cx.物流方式 = "速派" ,1,0)) AS 速派改派总订单,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "已签收",1,0)) as 速派改派已签收,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "拒收",1,0)) as 速派改派拒收,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "已退货",1,0)) as 速派改派已退货,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派改派已完成,
-        							SUM(IF(cx.物流方式 = "天马新竹" ,1,0)) AS 天马新竹改派总订单,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "已签收",1,0)) as 天马新竹改派已签收,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "拒收",1,0)) as 天马新竹改派拒收,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "已退货",1,0)) as 天马新竹改派已退货,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马新竹改派已完成,
-        							SUM(IF(cx.物流方式 = "天马顺丰" ,1,0)) AS 天马顺丰改派总订单,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已签收",1,0)) as 天马顺丰改派已签收,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "拒收",1,0)) as 天马顺丰改派拒收,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰改派已退货,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰改派已完成
-        				        FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                    FROM {0}_zqsb cc where  cc.`是否改派` = '直发' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
-                                ) cx WHERE cx.`币种` = '台湾'
-                            GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
-                            ) s1
-                        GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
-                        WITH ROLLUP 
-                    ) s HAVING s.旬 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
-                        FIELD(s.`地区`,'台湾','香港','合计'),
-                        FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
-                        FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
-                        FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday)
-        df19 = pd.read_sql_query(sql=sql19, con=self.engine1)
-        listT.append(df19)
-
-        # 产品整月_改派 台湾
-        print('正在获取---产品整月_直发 台湾…………')
-        sql20 = '''SELECT *
-                        FROM(SELECT IFNULL(s1.家族, '合计') 家族,IFNULL(s1.地区, '合计') 地区,IFNULL(s1.月份, '合计') 月份,
-                                    IFNULL(s1.产品id, '合计') 产品id,IFNULL(s1.产品名称, '合计') 产品名称,IFNULL(s1.父级分类, '合计') 父级分类,IFNULL(s1.二级分类, '合计') 二级分类,
-                                    SUM(s1.已签收) as 已签收,
-        						    SUM(s1.拒收) as 拒收,
-        						    SUM(s1.已退货) as 已退货,
-        						    SUM(s1.已完成) as 已完成,
-        						    SUM(s1.总订单) as 总订单,
-        						    concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.已完成),0) * 100,2),'%') as 完成签收,
-        						    concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.总订单),0) * 100,2),'%') as 总计签收,
-        						    concat(ROUND(IFNULL(SUM(s1.已完成) / SUM(s1.总订单),0) * 100,2),'%') as 完成占比,
-        						    concat(ROUND(IFNULL(SUM(s1.已退货) / SUM(s1.总订单),0) * 100,2),'%') as 退货率,
-        						    concat(ROUND(IFNULL(SUM(s1.拒收) / SUM(s1.已完成),0) * 100,2),'%') as 拒收率,
-        						SUM(s1.大黄蜂已签收) as '台湾-大黄蜂普货头程-森鸿尾程已签收',
-        						    SUM(s1.大黄蜂拒收) as '台湾-大黄蜂普货头程-森鸿尾程拒收',
-        						    SUM(s1.大黄蜂已退货) as '台湾-大黄蜂普货头程-森鸿尾程已退货',
-        						    SUM(s1.大黄蜂已完成) as '台湾-大黄蜂普货头程-森鸿尾程已完成',
-        						    SUM(s1.大黄蜂总订单) as '台湾-大黄蜂普货头程-森鸿尾程总订单',
-        						    concat(ROUND(SUM(s1.大黄蜂已签收) / SUM(s1.大黄蜂已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程完成签收',
-        						    concat(ROUND(SUM(s1.大黄蜂已签收) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程总计签收',
-        						    concat(ROUND(SUM(s1.大黄蜂已完成) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程完成占比',
-        						    concat(ROUND(SUM(s1.大黄蜂已退货) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程退货率',
-        						    concat(ROUND(SUM(s1.大黄蜂拒收) / SUM(s1.大黄蜂已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程拒收率',
-        						SUM(s1.大黄蜂易速配已签收) as '台湾-大黄蜂普货头程-易速配尾程已签收',
-        						    SUM(s1.大黄蜂易速配拒收) as '台湾-大黄蜂普货头程-易速配尾程拒收',
-        						    SUM(s1.大黄蜂易速配已退货) as '台湾-大黄蜂普货头程-易速配尾程已退货',
-        						    SUM(s1.大黄蜂易速配已完成) as '台湾-大黄蜂普货头程-易速配尾程已完成',
-        						    SUM(s1.大黄蜂易速配总订单) as '台湾-大黄蜂普货头程-易速配尾程总订单',
-        						    concat(ROUND(SUM(s1.大黄蜂易速配已签收) / SUM(s1.大黄蜂易速配已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程完成签收',
-        						    concat(ROUND(SUM(s1.大黄蜂易速配已签收) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程总计签收',
-        						    concat(ROUND(SUM(s1.大黄蜂易速配已完成) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程完成占比',
-        						    concat(ROUND(SUM(s1.大黄蜂易速配已退货) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程退货率',
-        						    concat(ROUND(SUM(s1.大黄蜂易速配拒收) / SUM(s1.大黄蜂易速配已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程拒收率',
-						        SUM(s1.TW海快易速配已签收) as '台湾-易速配-TW海快已签收',
-						            SUM(s1.TW海快易速配拒收) as '台湾-易速配-TW海快拒收',
-						            SUM(s1.TW海快易速配已退货) as '台湾-易速配-TW海快已退货',
-						            SUM(s1.TW海快易速配已完成) as '台湾-易速配-TW海快已完成',
-						            SUM(s1.TW海快易速配总订单) as '台湾-易速配-TW海快总订单',
-						            concat(ROUND(SUM(s1.TW海快易速配已签收) / SUM(s1.TW海快易速配已完成) * 100,2),'%') as '台湾-易速配-TW海快完成签收',
-						            concat(ROUND(SUM(s1.TW海快易速配已签收) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快总计签收',
-						            concat(ROUND(SUM(s1.TW海快易速配已完成) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快完成占比',
-						            concat(ROUND(SUM(s1.TW海快易速配已退货) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快退货率',
-						            concat(ROUND(SUM(s1.TW海快易速配拒收) / SUM(s1.TW海快易速配已完成) * 100,2),'%') as '台湾-易速配-TW海快拒收率',
-        						SUM(s1.立邦普货已签收) as '台湾-立邦普货头程-森鸿尾程已签收',
-        						    SUM(s1.立邦普货拒收) as '台湾-立邦普货头程-森鸿尾程拒收',
-        						    SUM(s1.立邦普货已退货) as '台湾-立邦普货头程-森鸿尾程已退货',
-        						    SUM(s1.立邦普货已完成) as '台湾-立邦普货头程-森鸿尾程已完成',
-        						    SUM(s1.立邦普货总订单) as '台湾-立邦普货头程-森鸿尾程总订单',
-        						    concat(ROUND(SUM(s1.立邦普货已签收) / SUM(s1.立邦普货已完成) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程完成签收',
-        						    concat(ROUND(SUM(s1.立邦普货已签收) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程总计签收',
-        						    concat(ROUND(SUM(s1.立邦普货已完成) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程完成占比',
-        						    concat(ROUND(SUM(s1.立邦普货已退货) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程退货率',
-        						    concat(ROUND(SUM(s1.立邦普货拒收) / SUM(s1.立邦普货已完成) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程拒收率',
-        						SUM(s1.立邦普货易速配已签收) as '台湾-立邦普货头程-易速配尾程已签收',
-        						    SUM(s1.立邦普货易速配拒收) as '台湾-立邦普货头程-易速配尾程拒收',
-        						    SUM(s1.立邦普货易速配已退货) as '台湾-立邦普货头程-易速配尾程已退货',
-        						    SUM(s1.立邦普货易速配已完成) as '台湾-立邦普货头程-易速配尾程已完成',
-        						    SUM(s1.立邦普货易速配总订单) as '台湾-立邦普货头程-易速配尾程总订单',
-        						    concat(ROUND(SUM(s1.立邦普货易速配已签收) / SUM(s1.立邦普货易速配已完成) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程完成签收',
-        						    concat(ROUND(SUM(s1.立邦普货易速配已签收) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程总计签收',
-        						    concat(ROUND(SUM(s1.立邦普货易速配已完成) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程完成占比',
-        						    concat(ROUND(SUM(s1.立邦普货易速配已退货) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程退货率',
-        						    concat(ROUND(SUM(s1.立邦普货易速配拒收) / SUM(s1.立邦普货易速配已完成) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程拒收率',
-        						SUM(s1.森鸿新竹已签收) as '台湾-森鸿-新竹-自发头程已签收',
-        						    SUM(s1.森鸿新竹拒收) as '台湾-森鸿-新竹-自发头程拒收',
-        						    SUM(s1.森鸿新竹已退货) as '台湾-森鸿-新竹-自发头程已退货',
-        						    SUM(s1.森鸿新竹已完成) as '台湾-森鸿-新竹-自发头程已完成',
-        						    SUM(s1.森鸿新竹总订单) as '台湾-森鸿-新竹-自发头程总订单',
-        						    concat(ROUND(SUM(s1.森鸿新竹已签收) / SUM(s1.森鸿新竹已完成) * 100,2),'%') as '台湾-森鸿-新竹-自发头程完成签收',
-        						    concat(ROUND(SUM(s1.森鸿新竹已签收) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程总计签收',
-        						    concat(ROUND(SUM(s1.森鸿新竹已完成) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程完成占比',
-        						    concat(ROUND(SUM(s1.森鸿新竹已退货) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程退货率',
-        						    concat(ROUND(SUM(s1.森鸿新竹拒收) / SUM(s1.森鸿新竹已完成) * 100,2),'%') as '台湾-森鸿-新竹-自发头程拒收率',
-        						SUM(s1.速派超商已签收) as '台湾-速派-711超商已签收',
-        						    SUM(s1.速派超商拒收) as '台湾-速派-711超商拒收',
-        						    SUM(s1.速派超商已退货) as '台湾-速派-711超商已退货',
-        						    SUM(s1.速派超商已完成) as '台湾-速派-711超商已完成',
-        						    SUM(s1.速派超商总订单) as '台湾-速派-711超商总订单',
-        						    concat(ROUND(SUM(s1.速派超商已签收) / SUM(s1.速派超商已完成) * 100,2),'%') as '台湾-速派-711超商完成签收',
-        						    concat(ROUND(SUM(s1.速派超商已签收) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商总计签收',
-        						    concat(ROUND(SUM(s1.速派超商已完成) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商完成占比',
-        						    concat(ROUND(SUM(s1.速派超商已退货) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商退货率',
-        						    concat(ROUND(SUM(s1.速派超商拒收) / SUM(s1.速派超商已完成) * 100,2),'%') as '台湾-速派-711超商拒收率',
-        						SUM(s1.速派新竹已签收) as '台湾-速派-新竹已签收',
-        						    SUM(s1.速派新竹拒收) as '台湾-速派-新竹拒收',
-        						    SUM(s1.速派新竹已退货) as '台湾-速派-新竹已退货',
-        						    SUM(s1.速派新竹已完成) as '台湾-速派-新竹已完成',
-        						    SUM(s1.速派新竹总订单) as '台湾-速派-新竹总订单',
-        						    concat(ROUND(SUM(s1.速派新竹已签收) / SUM(s1.速派新竹已完成) * 100,2),'%') as '台湾-速派-新竹完成签收',
-        				    		concat(ROUND(SUM(s1.速派新竹已签收) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹总计签收',
-        					    	concat(ROUND(SUM(s1.速派新竹已完成) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹完成占比',
-        					    	concat(ROUND(SUM(s1.速派新竹已退货) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹退货率',
-        					    	concat(ROUND(SUM(s1.速派新竹拒收) / SUM(s1.速派新竹已完成) * 100,2),'%') as '台湾-速派-新竹拒收率',
-        						SUM(s1.天马顺丰已签收) as '台湾-天马-顺丰已签收',
-        						    SUM(s1.天马顺丰拒收) as '台湾-天马-顺丰拒收',
-        					    	SUM(s1.天马顺丰已退货) as '台湾-天马-顺丰已退货',
-        					    	SUM(s1.天马顺丰已完成) as '台湾-天马-顺丰已完成',
-        					    	SUM(s1.天马顺丰总订单) as '台湾-天马-顺丰总订单',
-        					    	concat(ROUND(SUM(s1.天马顺丰已签收) / SUM(s1.天马顺丰已完成) * 100,2),'%') as '台湾-天马-顺丰完成签收',
-        					    	concat(ROUND(SUM(s1.天马顺丰已签收) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰总计签收',
-        				    		concat(ROUND(SUM(s1.天马顺丰已完成) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰完成占比',
-        				    		concat(ROUND(SUM(s1.天马顺丰已退货) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰退货率',
-        					    	concat(ROUND(SUM(s1.天马顺丰拒收) / SUM(s1.天马顺丰已完成) * 100,2),'%') as '台湾-天马-顺丰拒收率',
-        						SUM(s1.天马新竹已签收) as '台湾-天马-新竹已签收',
-        					    	SUM(s1.天马新竹拒收) as '台湾-天马-新竹拒收',
-        					    	SUM(s1.天马新竹已退货) as '台湾-天马-新竹已退货',
-        					    	SUM(s1.天马新竹已完成) as '台湾-天马-新竹已完成',
-        					    	SUM(s1.天马新竹总订单) as '台湾-天马-新竹总订单',
-        					    	concat(ROUND(SUM(s1.天马新竹已签收) / SUM(s1.天马新竹已完成) * 100,2),'%') as '台湾-天马-新竹完成签收',
-        					    	concat(ROUND(SUM(s1.天马新竹已签收) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹总计签收',
-        					    	concat(ROUND(SUM(s1.天马新竹已完成) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹完成占比',
-        					    	concat(ROUND(SUM(s1.天马新竹已退货) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹退货率',
-        					    	concat(ROUND(SUM(s1.天马新竹拒收) / SUM(s1.天马新竹已完成) * 100,2),'%') as '台湾-天马-新竹拒收率',
-        						SUM(s1.天马黑猫已签收) as '台湾-天马-黑猫已签收',
-        					    	SUM(s1.天马黑猫拒收) as '台湾-天马-黑猫拒收',
-        						    SUM(s1.天马黑猫已退货) as '台湾-天马-黑猫已退货',
-        					    	SUM(s1.天马黑猫已完成) as '台湾-天马-黑猫已完成',
-        					        SUM(s1.天马黑猫总订单) as '台湾-天马-黑猫总订单',
-        					    	concat(ROUND(SUM(s1.天马黑猫已签收) / SUM(s1.天马黑猫已完成) * 100,2),'%') as '台湾-天马-黑猫完成签收',
-        					    	concat(ROUND(SUM(s1.天马黑猫已签收) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫总计签收',
-        					    	concat(ROUND(SUM(s1.天马黑猫已完成) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫完成占比',
-        					    	concat(ROUND(SUM(s1.天马黑猫已退货) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫退货率',
-        					    	concat(ROUND(SUM(s1.天马黑猫拒收) / SUM(s1.天马黑猫已完成) * 100,2),'%') as '台湾-天马-黑猫拒收率',
-        						SUM(s1.易速配新竹已签收) as '台湾-易速配-新竹已签收',
-        					    	SUM(s1.易速配新竹拒收) as '台湾-易速配-新竹拒收',
-        					    	SUM(s1.易速配新竹已退货) as '台湾-易速配-新竹已退货',
-        					    	SUM(s1.易速配新竹已完成) as '台湾-易速配-新竹已完成',
-        					    	SUM(s1.易速配新竹总订单) as '台湾-易速配-新竹总订单',
-        					    	concat(ROUND(SUM(s1.易速配新竹已签收) / SUM(s1.易速配新竹已完成) * 100,2),'%') as '台湾-易速配-新竹完成签收',
-        					    	concat(ROUND(SUM(s1.易速配新竹已签收) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹总计签收',
-        					    	concat(ROUND(SUM(s1.易速配新竹已完成) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹完成占比',
-        					    	concat(ROUND(SUM(s1.易速配新竹已退货) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹退货率',
-        					    	concat(ROUND(SUM(s1.易速配新竹拒收) / SUM(s1.易速配新竹已完成) * 100,2),'%') as '台湾-易速配-新竹拒收率',
-        						SUM(s1.龟山改派已签收) as '龟山改派已签收',
-        					    	SUM(s1.龟山改派拒收) as '龟山改派拒收',
-        					    	SUM(s1.龟山改派已退货) as '龟山改派已退货',
-        					    	SUM(s1.龟山改派已完成) as '龟山改派已完成',
-        					    	SUM(s1.龟山改派总订单) as '龟山改派总订单',
-        					    	concat(ROUND(SUM(s1.龟山改派已签收) / SUM(s1.龟山改派已完成) * 100,2),'%') as '龟山改派完成签收',
-        					    	concat(ROUND(SUM(s1.龟山改派已签收) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派总计签收',
-        					    	concat(ROUND(SUM(s1.龟山改派已完成) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派完成占比',
-        					    	concat(ROUND(SUM(s1.龟山改派已退货) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派退货率',
-        					    	concat(ROUND(SUM(s1.龟山改派拒收) / SUM(s1.龟山改派已完成) * 100,2),'%') as '龟山改派拒收率',
-        				    	SUM(s1.森鸿改派已签收) as '森鸿改派已签收',
-        					    	SUM(s1.森鸿改派拒收) as '森鸿改派拒收',
-        					    	SUM(s1.森鸿改派已退货) as '森鸿改派已退货',
-        					    	SUM(s1.森鸿改派已完成) as '森鸿改派已完成',
-        					    	SUM(s1.森鸿改派总订单) as '森鸿改派总订单',
-        					    	concat(ROUND(SUM(s1.森鸿改派已签收) / SUM(s1.森鸿改派已完成) * 100,2),'%') as '森鸿改派完成签收',
-        					    	concat(ROUND(SUM(s1.森鸿改派已签收) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派总计签收',
-        					    	concat(ROUND(SUM(s1.森鸿改派已完成) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派完成占比',
-        					    	concat(ROUND(SUM(s1.森鸿改派已退货) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派退货率',
-        					    	concat(ROUND(SUM(s1.森鸿改派拒收) / SUM(s1.森鸿改派已完成) * 100,2),'%') as '森鸿改派拒收率',
-        						SUM(s1.速派改派已签收) as '速派改派已签收',
-        					    	SUM(s1.速派改派拒收) as '速派改派拒收',
-        					    	SUM(s1.速派改派已退货) as '速派改派已退货',
-        					    	SUM(s1.速派改派已完成) as '速派改派已完成',
-        					    	SUM(s1.速派改派总订单) as '速派改派总订单',
-        					    	concat(ROUND(SUM(s1.速派改派已签收) / SUM(s1.速派改派已完成) * 100,2),'%') as '速派改派完成签收',
-        					    	concat(ROUND(SUM(s1.速派改派已签收) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派总计签收',
-        					    	concat(ROUND(SUM(s1.速派改派已完成) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派完成占比',
-        					    	concat(ROUND(SUM(s1.速派改派已退货) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派退货率',
-        					    	concat(ROUND(SUM(s1.速派改派拒收) / SUM(s1.速派改派已完成) * 100,2),'%') as '速派改派拒收率',
-        						SUM(s1.天马新竹改派已签收) as '天马新竹改派已签收',
-        					    	SUM(s1.天马新竹改派拒收) as '天马新竹改派拒收',
-        					    	SUM(s1.天马新竹改派已退货) as '天马新竹改派已退货',
-        					    	SUM(s1.天马新竹改派已完成) as '天马新竹改派已完成',
-        					    	SUM(s1.天马新竹改派总订单) as '天马新竹改派总订单',
-        					    	concat(ROUND(SUM(s1.天马新竹改派已签收) / SUM(s1.天马新竹改派已完成) * 100,2),'%') as '天马新竹改派完成签收',
-        					    	concat(ROUND(SUM(s1.天马新竹改派已签收) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派总计签收',
-        					    	concat(ROUND(SUM(s1.天马新竹改派已完成) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派完成占比',
-        					    	concat(ROUND(SUM(s1.天马新竹改派已退货) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派退货率',
-        					    	concat(ROUND(SUM(s1.天马新竹改派拒收) / SUM(s1.天马新竹改派已完成) * 100,2),'%') as '天马新竹改派拒收率',
-        						SUM(s1.天马顺丰改派已签收) as '天马顺丰改派已签收',
-        					    	SUM(s1.天马顺丰改派拒收) as '天马顺丰改派拒收',
-        					    	SUM(s1.天马顺丰改派已退货) as '天马顺丰改派已退货',
-        					    	SUM(s1.天马顺丰改派已完成) as '天马顺丰改派已完成',
-        					    	SUM(s1.天马顺丰改派总订单) as '天马顺丰改派总订单',
-        					    	concat(ROUND(SUM(s1.天马顺丰改派已签收) / SUM(s1.天马顺丰改派已完成) * 100,2),'%') as '天马顺丰改派完成签收',
-        					    	concat(ROUND(SUM(s1.天马顺丰改派已签收) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派总计签收',
-        					    	concat(ROUND(SUM(s1.天马顺丰改派已完成) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派完成占比',
-        					    	concat(ROUND(SUM(s1.天马顺丰改派已退货) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派退货率',
-        					    	concat(ROUND(SUM(s1.天马顺丰改派拒收) / SUM(s1.天马顺丰改派已完成) * 100,2),'%') as '天马顺丰改派拒收率'
-                            FROM(SELECT IFNULL(cx.`家族`, '合计') 家族,
-        								IFNULL(cx.币种, '合计') 地区,
-        								IFNULL(cx.`年月`, '合计') 月份,
-        								IFNULL(cx.产品id, '合计') 产品id,
-        								IFNULL(cx.产品名称, '合计') 产品名称,
-        								IFNULL(cx.父级分类, '合计') 父级分类,
-        								IFNULL(cx.二级分类, '合计') 二级分类,
-        								COUNT(cx.`订单编号`) as 总订单,
-        								SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
-        								SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
-        								SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
-        								SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
-        							SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" ,1,0)) AS 大黄蜂总订单,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "已签收",1,0)) as 大黄蜂已签收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "拒收",1,0)) as 大黄蜂拒收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "已退货",1,0)) as 大黄蜂已退货,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 大黄蜂已完成,
-        							SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" ,1,0)) AS 大黄蜂易速配总订单,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "已签收",1,0)) as 大黄蜂易速配已签收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "拒收",1,0)) as 大黄蜂易速配拒收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "已退货",1,0)) as 大黄蜂易速配已退货,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 大黄蜂易速配已完成,
-							        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" ,1,0)) AS TW海快易速配总订单,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "已签收",1,0)) as TW海快易速配已签收,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "拒收",1,0)) as TW海快易速配拒收,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "已退货",1,0)) as TW海快易速配已退货,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as TW海快易速配已完成,
-        							SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" ,1,0)) AS 立邦普货总订单,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "已签收",1,0)) as 立邦普货已签收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "拒收",1,0)) as 立邦普货拒收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "已退货",1,0)) as 立邦普货已退货,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦普货已完成,
-        							SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" ,1,0)) AS 立邦普货易速配总订单,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "已签收",1,0)) as 立邦普货易速配已签收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "拒收",1,0)) as 立邦普货易速配拒收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "已退货",1,0)) as 立邦普货易速配已退货,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦普货易速配已完成,
-        							SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" ,1,0)) AS 森鸿新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "已签收",1,0)) as 森鸿新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "拒收",1,0)) as 森鸿新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "已退货",1,0)) as 森鸿新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿新竹已完成,
-        							SUM(IF(cx.物流方式 = "台湾-速派-711超商" ,1,0)) AS 速派超商总订单,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "已签收",1,0)) as 速派超商已签收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "拒收",1,0)) as 速派超商拒收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "已退货",1,0)) as 速派超商已退货,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派超商已完成,
-        							SUM(IF(cx.物流方式 = "台湾-速派-新竹" ,1,0)) AS 速派新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "已签收",1,0)) as 速派新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "拒收",1,0)) as 速派新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "已退货",1,0)) as 速派新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派新竹已完成,
-        							SUM(IF(cx.物流方式 = "台湾-天马-顺丰" ,1,0)) AS 天马顺丰总订单,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "已签收",1,0)) as 天马顺丰已签收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "拒收",1,0)) as 天马顺丰拒收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰已退货,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰已完成,
-        							SUM(IF(cx.物流方式 = "台湾-天马-新竹" ,1,0)) AS 天马新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "已签收",1,0)) as 天马新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "拒收",1,0)) as 天马新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "已退货",1,0)) as 天马新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马新竹已完成,
-        							SUM(IF(cx.物流方式 = "台湾-天马-黑猫" ,1,0)) AS 天马黑猫总订单,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "已签收",1,0)) as 天马黑猫已签收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "拒收",1,0)) as 天马黑猫拒收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "已退货",1,0)) as 天马黑猫已退货,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马黑猫已完成,
-        							SUM(IF(cx.物流方式 = "台湾-易速配-新竹" ,1,0)) AS 易速配新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "已签收",1,0)) as 易速配新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "拒收",1,0)) as 易速配新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "已退货",1,0)) as 易速配新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配新竹已完成,
-        							SUM(IF(cx.物流方式 = "龟山" ,1,0)) AS 龟山改派总订单,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已签收",1,0)) as 龟山改派已签收,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "拒收",1,0)) as 龟山改派拒收,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已退货",1,0)) as 龟山改派已退货,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 龟山改派已完成,
-        							SUM(IF(cx.物流方式 = "森鸿" ,1,0)) AS 森鸿改派总订单,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "已签收",1,0)) as 森鸿改派已签收,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "拒收",1,0)) as 森鸿改派拒收,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "已退货",1,0)) as 森鸿改派已退货,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿改派已完成,
-        							SUM(IF(cx.物流方式 = "速派" ,1,0)) AS 速派改派总订单,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "已签收",1,0)) as 速派改派已签收,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "拒收",1,0)) as 速派改派拒收,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "已退货",1,0)) as 速派改派已退货,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派改派已完成,
-        							SUM(IF(cx.物流方式 = "天马新竹" ,1,0)) AS 天马新竹改派总订单,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "已签收",1,0)) as 天马新竹改派已签收,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "拒收",1,0)) as 天马新竹改派拒收,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "已退货",1,0)) as 天马新竹改派已退货,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马新竹改派已完成,
-        							SUM(IF(cx.物流方式 = "天马顺丰" ,1,0)) AS 天马顺丰改派总订单,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已签收",1,0)) as 天马顺丰改派已签收,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "拒收",1,0)) as 天马顺丰改派拒收,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰改派已退货,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰改派已完成
-        				            FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM {0}_zqsb cc where cc.`是否改派` = '改派' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
-                                    ) cx WHERE cx.`币种` = '台湾'
-                                    GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
-                                ) s1
-                                GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
-                                WITH ROLLUP 
-                        ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
-                        FIELD(s.`地区`,'台湾','香港','合计'),
-                        FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
-                        FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday)
-        df20 = pd.read_sql_query(sql=sql20, con=self.engine1)
-        listT.append(df20)
-        # 产品分旬_改派 台湾
-        print('正在获取---产品分旬_直发 台湾…………')
-        sql21 = '''SELECT *
-                            FROM(SELECT IFNULL(s1.家族, '合计') 家族,IFNULL(s1.地区, '合计') 地区,IFNULL(s1.月份, '合计') 月份,IFNULL(s1.旬, '合计') 旬,
-        						IFNULL(s1.产品id, '合计') 产品id,IFNULL(s1.产品名称, '合计') 产品名称,IFNULL(s1.父级分类, '合计') 父级分类,IFNULL(s1.二级分类, '合计') 二级分类,
-        						SUM(s1.已签收) as 已签收,
-        						SUM(s1.拒收) as 拒收,
-        						SUM(s1.已退货) as 已退货,
-        						SUM(s1.已完成) as 已完成,
-        						SUM(s1.总订单) as 总订单,
-        						concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.已完成),0) * 100,2),'%') as 完成签收,
-        						concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.总订单),0) * 100,2),'%') as 总计签收,
-        						concat(ROUND(IFNULL(SUM(s1.已完成) / SUM(s1.总订单),0) * 100,2),'%') as 完成占比,
-        						concat(ROUND(IFNULL(SUM(s1.已退货) / SUM(s1.总订单),0) * 100,2),'%') as 退货率,
-        						concat(ROUND(IFNULL(SUM(s1.拒收) / SUM(s1.已完成),0) * 100,2),'%') as 拒收率,
-        					SUM(s1.大黄蜂已签收) as '台湾-大黄蜂普货头程-森鸿尾程已签收',
-        						SUM(s1.大黄蜂拒收) as '台湾-大黄蜂普货头程-森鸿尾程拒收',
-        						SUM(s1.大黄蜂已退货) as '台湾-大黄蜂普货头程-森鸿尾程已退货',
-        						SUM(s1.大黄蜂已完成) as '台湾-大黄蜂普货头程-森鸿尾程已完成',
-        						SUM(s1.大黄蜂总订单) as '台湾-大黄蜂普货头程-森鸿尾程总订单',
-        						concat(ROUND(SUM(s1.大黄蜂已签收) / SUM(s1.大黄蜂已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程完成签收',
-        						concat(ROUND(SUM(s1.大黄蜂已签收) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程总计签收',
-        						concat(ROUND(SUM(s1.大黄蜂已完成) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程完成占比',
-        						concat(ROUND(SUM(s1.大黄蜂已退货) / SUM(s1.大黄蜂总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程退货率',
-        						concat(ROUND(SUM(s1.大黄蜂拒收) / SUM(s1.大黄蜂已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-森鸿尾程拒收率',
-        					SUM(s1.大黄蜂易速配已签收) as '台湾-大黄蜂普货头程-易速配尾程已签收',
-        						SUM(s1.大黄蜂易速配拒收) as '台湾-大黄蜂普货头程-易速配尾程拒收',
-        						SUM(s1.大黄蜂易速配已退货) as '台湾-大黄蜂普货头程-易速配尾程已退货',
-        						SUM(s1.大黄蜂易速配已完成) as '台湾-大黄蜂普货头程-易速配尾程已完成',
-        						SUM(s1.大黄蜂易速配总订单) as '台湾-大黄蜂普货头程-易速配尾程总订单',
-        						concat(ROUND(SUM(s1.大黄蜂易速配已签收) / SUM(s1.大黄蜂易速配已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程完成签收',
-        						concat(ROUND(SUM(s1.大黄蜂易速配已签收) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程总计签收',
-        						concat(ROUND(SUM(s1.大黄蜂易速配已完成) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程完成占比',
-        						concat(ROUND(SUM(s1.大黄蜂易速配已退货) / SUM(s1.大黄蜂易速配总订单) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程退货率',
-        						concat(ROUND(SUM(s1.大黄蜂易速配拒收) / SUM(s1.大黄蜂易速配已完成) * 100,2),'%') as '台湾-大黄蜂普货头程-易速配尾程拒收率',
-						    SUM(s1.TW海快易速配已签收) as '台湾-易速配-TW海快已签收',
-						        SUM(s1.TW海快易速配拒收) as '台湾-易速配-TW海快拒收',
-						        SUM(s1.TW海快易速配已退货) as '台湾-易速配-TW海快已退货',
-						        SUM(s1.TW海快易速配已完成) as '台湾-易速配-TW海快已完成',
-						        SUM(s1.TW海快易速配总订单) as '台湾-易速配-TW海快总订单',
-						        concat(ROUND(SUM(s1.TW海快易速配已签收) / SUM(s1.TW海快易速配已完成) * 100,2),'%') as '台湾-易速配-TW海快完成签收',
-						        concat(ROUND(SUM(s1.TW海快易速配已签收) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快总计签收',
-						        concat(ROUND(SUM(s1.TW海快易速配已完成) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快完成占比',
-						        concat(ROUND(SUM(s1.TW海快易速配已退货) / SUM(s1.TW海快易速配总订单) * 100,2),'%') as '台湾-易速配-TW海快退货率',
-						        concat(ROUND(SUM(s1.TW海快易速配拒收) / SUM(s1.TW海快易速配已完成) * 100,2),'%') as '台湾-易速配-TW海快拒收率',
-        					SUM(s1.立邦普货已签收) as '台湾-立邦普货头程-森鸿尾程已签收',
-        						SUM(s1.立邦普货拒收) as '台湾-立邦普货头程-森鸿尾程拒收',
-        						SUM(s1.立邦普货已退货) as '台湾-立邦普货头程-森鸿尾程已退货',
-        						SUM(s1.立邦普货已完成) as '台湾-立邦普货头程-森鸿尾程已完成',
-        						SUM(s1.立邦普货总订单) as '台湾-立邦普货头程-森鸿尾程总订单',
-        						concat(ROUND(SUM(s1.立邦普货已签收) / SUM(s1.立邦普货已完成) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程完成签收',
-        						concat(ROUND(SUM(s1.立邦普货已签收) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程总计签收',
-        						concat(ROUND(SUM(s1.立邦普货已完成) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程完成占比',
-        						concat(ROUND(SUM(s1.立邦普货已退货) / SUM(s1.立邦普货总订单) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程退货率',
-        						concat(ROUND(SUM(s1.立邦普货拒收) / SUM(s1.立邦普货已完成) * 100,2),'%') as '台湾-立邦普货头程-森鸿尾程拒收率',
-        					SUM(s1.立邦普货易速配已签收) as '台湾-立邦普货头程-易速配尾程已签收',
-        						SUM(s1.立邦普货易速配拒收) as '台湾-立邦普货头程-易速配尾程拒收',
-        						SUM(s1.立邦普货易速配已退货) as '台湾-立邦普货头程-易速配尾程已退货',
-        						SUM(s1.立邦普货易速配已完成) as '台湾-立邦普货头程-易速配尾程已完成',
-        						SUM(s1.立邦普货易速配总订单) as '台湾-立邦普货头程-易速配尾程总订单',
-        						concat(ROUND(SUM(s1.立邦普货易速配已签收) / SUM(s1.立邦普货易速配已完成) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程完成签收',
-        						concat(ROUND(SUM(s1.立邦普货易速配已签收) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程总计签收',
-        						concat(ROUND(SUM(s1.立邦普货易速配已完成) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程完成占比',
-        						concat(ROUND(SUM(s1.立邦普货易速配已退货) / SUM(s1.立邦普货易速配总订单) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程退货率',
-        						concat(ROUND(SUM(s1.立邦普货易速配拒收) / SUM(s1.立邦普货易速配已完成) * 100,2),'%') as '台湾-立邦普货头程-易速配尾程拒收率',
-        					SUM(s1.森鸿新竹已签收) as '台湾-森鸿-新竹-自发头程已签收',
-        						SUM(s1.森鸿新竹拒收) as '台湾-森鸿-新竹-自发头程拒收',
-        						SUM(s1.森鸿新竹已退货) as '台湾-森鸿-新竹-自发头程已退货',
-        						SUM(s1.森鸿新竹已完成) as '台湾-森鸿-新竹-自发头程已完成',
-        						SUM(s1.森鸿新竹总订单) as '台湾-森鸿-新竹-自发头程总订单',
-        						concat(ROUND(SUM(s1.森鸿新竹已签收) / SUM(s1.森鸿新竹已完成) * 100,2),'%') as '台湾-森鸿-新竹-自发头程完成签收',
-        						concat(ROUND(SUM(s1.森鸿新竹已签收) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程总计签收',
-        						concat(ROUND(SUM(s1.森鸿新竹已完成) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程完成占比',
-        						concat(ROUND(SUM(s1.森鸿新竹已退货) / SUM(s1.森鸿新竹总订单) * 100,2),'%') as '台湾-森鸿-新竹-自发头程退货率',
-        						concat(ROUND(SUM(s1.森鸿新竹拒收) / SUM(s1.森鸿新竹已完成) * 100,2),'%') as '台湾-森鸿-新竹-自发头程拒收率',
-        					SUM(s1.速派超商已签收) as '台湾-速派-711超商已签收',
-        						SUM(s1.速派超商拒收) as '台湾-速派-711超商拒收',
-        						SUM(s1.速派超商已退货) as '台湾-速派-711超商已退货',
-        						SUM(s1.速派超商已完成) as '台湾-速派-711超商已完成',
-        						SUM(s1.速派超商总订单) as '台湾-速派-711超商总订单',
-        						concat(ROUND(SUM(s1.速派超商已签收) / SUM(s1.速派超商已完成) * 100,2),'%') as '台湾-速派-711超商完成签收',
-        						concat(ROUND(SUM(s1.速派超商已签收) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商总计签收',
-        						concat(ROUND(SUM(s1.速派超商已完成) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商完成占比',
-        						concat(ROUND(SUM(s1.速派超商已退货) / SUM(s1.速派超商总订单) * 100,2),'%') as '台湾-速派-711超商退货率',
-        						concat(ROUND(SUM(s1.速派超商拒收) / SUM(s1.速派超商已完成) * 100,2),'%') as '台湾-速派-711超商拒收率',
-        					SUM(s1.速派新竹已签收) as '台湾-速派-新竹已签收',
-        						SUM(s1.速派新竹拒收) as '台湾-速派-新竹拒收',
-        						SUM(s1.速派新竹已退货) as '台湾-速派-新竹已退货',
-        						SUM(s1.速派新竹已完成) as '台湾-速派-新竹已完成',
-        						SUM(s1.速派新竹总订单) as '台湾-速派-新竹总订单',
-        						concat(ROUND(SUM(s1.速派新竹已签收) / SUM(s1.速派新竹已完成) * 100,2),'%') as '台湾-速派-新竹完成签收',
-        						concat(ROUND(SUM(s1.速派新竹已签收) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹总计签收',
-        						concat(ROUND(SUM(s1.速派新竹已完成) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹完成占比',
-        						concat(ROUND(SUM(s1.速派新竹已退货) / SUM(s1.速派新竹总订单) * 100,2),'%') as '台湾-速派-新竹退货率',
-        						concat(ROUND(SUM(s1.速派新竹拒收) / SUM(s1.速派新竹已完成) * 100,2),'%') as '台湾-速派-新竹拒收率',
-        					SUM(s1.天马顺丰已签收) as '台湾-天马-顺丰已签收',
-        						SUM(s1.天马顺丰拒收) as '台湾-天马-顺丰拒收',
-        						SUM(s1.天马顺丰已退货) as '台湾-天马-顺丰已退货',
-        						SUM(s1.天马顺丰已完成) as '台湾-天马-顺丰已完成',
-        						SUM(s1.天马顺丰总订单) as '台湾-天马-顺丰总订单',
-        						concat(ROUND(SUM(s1.天马顺丰已签收) / SUM(s1.天马顺丰已完成) * 100,2),'%') as '台湾-天马-顺丰完成签收',
-        						concat(ROUND(SUM(s1.天马顺丰已签收) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰总计签收',
-        						concat(ROUND(SUM(s1.天马顺丰已完成) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰完成占比',
-        						concat(ROUND(SUM(s1.天马顺丰已退货) / SUM(s1.天马顺丰总订单) * 100,2),'%') as '台湾-天马-顺丰退货率',
-        						concat(ROUND(SUM(s1.天马顺丰拒收) / SUM(s1.天马顺丰已完成) * 100,2),'%') as '台湾-天马-顺丰拒收率',
-        					SUM(s1.天马新竹已签收) as '台湾-天马-新竹已签收',
-        						SUM(s1.天马新竹拒收) as '台湾-天马-新竹拒收',
-        						SUM(s1.天马新竹已退货) as '台湾-天马-新竹已退货',
-        						SUM(s1.天马新竹已完成) as '台湾-天马-新竹已完成',
-        						SUM(s1.天马新竹总订单) as '台湾-天马-新竹总订单',
-        						concat(ROUND(SUM(s1.天马新竹已签收) / SUM(s1.天马新竹已完成) * 100,2),'%') as '台湾-天马-新竹完成签收',
-        						concat(ROUND(SUM(s1.天马新竹已签收) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹总计签收',
-        						concat(ROUND(SUM(s1.天马新竹已完成) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹完成占比',
-        						concat(ROUND(SUM(s1.天马新竹已退货) / SUM(s1.天马新竹总订单) * 100,2),'%') as '台湾-天马-新竹退货率',
-        						concat(ROUND(SUM(s1.天马新竹拒收) / SUM(s1.天马新竹已完成) * 100,2),'%') as '台湾-天马-新竹拒收率',
-        					SUM(s1.天马黑猫已签收) as '台湾-天马-黑猫已签收',
-        						SUM(s1.天马黑猫拒收) as '台湾-天马-黑猫拒收',
-        						SUM(s1.天马黑猫已退货) as '台湾-天马-黑猫已退货',
-        						SUM(s1.天马黑猫已完成) as '台湾-天马-黑猫已完成',
-        						SUM(s1.天马黑猫总订单) as '台湾-天马-黑猫总订单',
-        						concat(ROUND(SUM(s1.天马黑猫已签收) / SUM(s1.天马黑猫已完成) * 100,2),'%') as '台湾-天马-黑猫完成签收',
-        						concat(ROUND(SUM(s1.天马黑猫已签收) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫总计签收',
-        						concat(ROUND(SUM(s1.天马黑猫已完成) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫完成占比',
-        						concat(ROUND(SUM(s1.天马黑猫已退货) / SUM(s1.天马黑猫总订单) * 100,2),'%') as '台湾-天马-黑猫退货率',
-        						concat(ROUND(SUM(s1.天马黑猫拒收) / SUM(s1.天马黑猫已完成) * 100,2),'%') as '台湾-天马-黑猫拒收率',
-        					SUM(s1.易速配新竹已签收) as '台湾-易速配-新竹已签收',
-        						SUM(s1.易速配新竹拒收) as '台湾-易速配-新竹拒收',
-        						SUM(s1.易速配新竹已退货) as '台湾-易速配-新竹已退货',
-        						SUM(s1.易速配新竹已完成) as '台湾-易速配-新竹已完成',
-        						SUM(s1.易速配新竹总订单) as '台湾-易速配-新竹总订单',
-        						concat(ROUND(SUM(s1.易速配新竹已签收) / SUM(s1.易速配新竹已完成) * 100,2),'%') as '台湾-易速配-新竹完成签收',
-        						concat(ROUND(SUM(s1.易速配新竹已签收) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹总计签收',
-        						concat(ROUND(SUM(s1.易速配新竹已完成) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹完成占比',
-        						concat(ROUND(SUM(s1.易速配新竹已退货) / SUM(s1.易速配新竹总订单) * 100,2),'%') as '台湾-易速配-新竹退货率',
-        						concat(ROUND(SUM(s1.易速配新竹拒收) / SUM(s1.易速配新竹已完成) * 100,2),'%') as '台湾-易速配-新竹拒收率',
-        					SUM(s1.龟山改派已签收) as '龟山改派已签收',
-        						SUM(s1.龟山改派拒收) as '龟山改派拒收',
-        						SUM(s1.龟山改派已退货) as '龟山改派已退货',
-        						SUM(s1.龟山改派已完成) as '龟山改派已完成',
-        						SUM(s1.龟山改派总订单) as '龟山改派总订单',
-        						concat(ROUND(SUM(s1.龟山改派已签收) / SUM(s1.龟山改派已完成) * 100,2),'%') as '龟山改派完成签收',
-        						concat(ROUND(SUM(s1.龟山改派已签收) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派总计签收',
-        						concat(ROUND(SUM(s1.龟山改派已完成) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派完成占比',
-        						concat(ROUND(SUM(s1.龟山改派已退货) / SUM(s1.龟山改派总订单) * 100,2),'%') as '龟山改派退货率',
-        						concat(ROUND(SUM(s1.龟山改派拒收) / SUM(s1.龟山改派已完成) * 100,2),'%') as '龟山改派拒收率',
-        					SUM(s1.森鸿改派已签收) as '森鸿改派已签收',
-        						SUM(s1.森鸿改派拒收) as '森鸿改派拒收',
-        						SUM(s1.森鸿改派已退货) as '森鸿改派已退货',
-        						SUM(s1.森鸿改派已完成) as '森鸿改派已完成',
-        						SUM(s1.森鸿改派总订单) as '森鸿改派总订单',
-        						concat(ROUND(SUM(s1.森鸿改派已签收) / SUM(s1.森鸿改派已完成) * 100,2),'%') as '森鸿改派完成签收',
-        						concat(ROUND(SUM(s1.森鸿改派已签收) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派总计签收',
-        						concat(ROUND(SUM(s1.森鸿改派已完成) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派完成占比',
-        						concat(ROUND(SUM(s1.森鸿改派已退货) / SUM(s1.森鸿改派总订单) * 100,2),'%') as '森鸿改派退货率',
-        						concat(ROUND(SUM(s1.森鸿改派拒收) / SUM(s1.森鸿改派已完成) * 100,2),'%') as '森鸿改派拒收率',
-        					SUM(s1.速派改派已签收) as '速派改派已签收',
-        						SUM(s1.速派改派拒收) as '速派改派拒收',
-        						SUM(s1.速派改派已退货) as '速派改派已退货',
-        						SUM(s1.速派改派已完成) as '速派改派已完成',
-        						SUM(s1.速派改派总订单) as '速派改派总订单',
-        						concat(ROUND(SUM(s1.速派改派已签收) / SUM(s1.速派改派已完成) * 100,2),'%') as '速派改派完成签收',
-        						concat(ROUND(SUM(s1.速派改派已签收) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派总计签收',
-        						concat(ROUND(SUM(s1.速派改派已完成) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派完成占比',
-        						concat(ROUND(SUM(s1.速派改派已退货) / SUM(s1.速派改派总订单) * 100,2),'%') as '速派改派退货率',
-        						concat(ROUND(SUM(s1.速派改派拒收) / SUM(s1.速派改派已完成) * 100,2),'%') as '速派改派拒收率',
-        					SUM(s1.天马新竹改派已签收) as '天马新竹改派已签收',
-        						SUM(s1.天马新竹改派拒收) as '天马新竹改派拒收',
-        						SUM(s1.天马新竹改派已退货) as '天马新竹改派已退货',
-        						SUM(s1.天马新竹改派已完成) as '天马新竹改派已完成',
-        						SUM(s1.天马新竹改派总订单) as '天马新竹改派总订单',
-        						concat(ROUND(SUM(s1.天马新竹改派已签收) / SUM(s1.天马新竹改派已完成) * 100,2),'%') as '天马新竹改派完成签收',
-        						concat(ROUND(SUM(s1.天马新竹改派已签收) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派总计签收',
-        						concat(ROUND(SUM(s1.天马新竹改派已完成) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派完成占比',
-        						concat(ROUND(SUM(s1.天马新竹改派已退货) / SUM(s1.天马新竹改派总订单) * 100,2),'%') as '天马新竹改派退货率',
-        						concat(ROUND(SUM(s1.天马新竹改派拒收) / SUM(s1.天马新竹改派已完成) * 100,2),'%') as '天马新竹改派拒收率',
-        					SUM(s1.天马顺丰改派已签收) as '天马顺丰改派已签收',
-        						SUM(s1.天马顺丰改派拒收) as '天马顺丰改派拒收',
-        						SUM(s1.天马顺丰改派已退货) as '天马顺丰改派已退货',
-        						SUM(s1.天马顺丰改派已完成) as '天马顺丰改派已完成',
-        						SUM(s1.天马顺丰改派总订单) as '天马顺丰改派总订单',
-        						concat(ROUND(SUM(s1.天马顺丰改派已签收) / SUM(s1.天马顺丰改派已完成) * 100,2),'%') as '天马顺丰改派完成签收',
-        						concat(ROUND(SUM(s1.天马顺丰改派已签收) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派总计签收',
-        						concat(ROUND(SUM(s1.天马顺丰改派已完成) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派完成占比',
-        						concat(ROUND(SUM(s1.天马顺丰改派已退货) / SUM(s1.天马顺丰改派总订单) * 100,2),'%') as '天马顺丰改派退货率',
-        						concat(ROUND(SUM(s1.天马顺丰改派拒收) / SUM(s1.天马顺丰改派已完成) * 100,2),'%') as '天马顺丰改派拒收率'
-                        FROM(SELECT IFNULL(cx.`家族`, '合计') 家族,
-        								IFNULL(cx.币种, '合计') 地区,
-        								IFNULL(cx.`年月`, '合计') 月份,
-        								IF(cx.旬 =1,'上旬',IF(cx.旬 =2,'中旬',IF(cx.旬 =3,'下旬',cx.旬))) as 旬,
-        								IFNULL(cx.产品id, '合计') 产品id,
-        								IFNULL(cx.产品名称, '合计') 产品名称,
-        								IFNULL(cx.父级分类, '合计') 父级分类,
-        								IFNULL(cx.二级分类, '合计') 二级分类,
-        								COUNT(cx.`订单编号`) as 总订单,
-        								SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
-        								SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
-        								SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
-        								SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
-        							SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" ,1,0)) AS 大黄蜂总订单,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "已签收",1,0)) as 大黄蜂已签收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "拒收",1,0)) as 大黄蜂拒收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 = "已退货",1,0)) as 大黄蜂已退货,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-森鸿尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 大黄蜂已完成,
-        							SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" ,1,0)) AS 大黄蜂易速配总订单,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "已签收",1,0)) as 大黄蜂易速配已签收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "拒收",1,0)) as 大黄蜂易速配拒收,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 = "已退货",1,0)) as 大黄蜂易速配已退货,
-        								SUM(IF(cx.物流方式 = "台湾-大黄蜂普货头程-易速配尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 大黄蜂易速配已完成,
-							        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" ,1,0)) AS TW海快易速配总订单,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "已签收",1,0)) as TW海快易速配已签收,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "拒收",1,0)) as TW海快易速配拒收,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 = "已退货",1,0)) as TW海快易速配已退货,
-								        SUM(IF(cx.物流方式 = "台湾-易速配-TW海快" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as TW海快易速配已完成,
-        							SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" ,1,0)) AS 立邦普货总订单,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "已签收",1,0)) as 立邦普货已签收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "拒收",1,0)) as 立邦普货拒收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 = "已退货",1,0)) as 立邦普货已退货,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-森鸿尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦普货已完成,
-        							SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" ,1,0)) AS 立邦普货易速配总订单,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "已签收",1,0)) as 立邦普货易速配已签收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "拒收",1,0)) as 立邦普货易速配拒收,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 = "已退货",1,0)) as 立邦普货易速配已退货,
-        								SUM(IF(cx.物流方式 = "台湾-立邦普货头程-易速配尾程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 立邦普货易速配已完成,
-        							SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" ,1,0)) AS 森鸿新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "已签收",1,0)) as 森鸿新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "拒收",1,0)) as 森鸿新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 = "已退货",1,0)) as 森鸿新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-森鸿-新竹-自发头程" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿新竹已完成,
-        							SUM(IF(cx.物流方式 = "台湾-速派-711超商" ,1,0)) AS 速派超商总订单,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "已签收",1,0)) as 速派超商已签收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "拒收",1,0)) as 速派超商拒收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 = "已退货",1,0)) as 速派超商已退货,
-        								SUM(IF(cx.物流方式 = "台湾-速派-711超商" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派超商已完成,
-        							SUM(IF(cx.物流方式 = "台湾-速派-新竹" ,1,0)) AS 速派新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "已签收",1,0)) as 速派新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "拒收",1,0)) as 速派新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 = "已退货",1,0)) as 速派新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-速派-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派新竹已完成,
-        							SUM(IF(cx.物流方式 = "台湾-天马-顺丰" ,1,0)) AS 天马顺丰总订单,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "已签收",1,0)) as 天马顺丰已签收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "拒收",1,0)) as 天马顺丰拒收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰已退货,
-        								SUM(IF(cx.物流方式 = "台湾-天马-顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰已完成,
-        							SUM(IF(cx.物流方式 = "台湾-天马-新竹" ,1,0)) AS 天马新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "已签收",1,0)) as 天马新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "拒收",1,0)) as 天马新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 = "已退货",1,0)) as 天马新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-天马-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马新竹已完成,
-        							SUM(IF(cx.物流方式 = "台湾-天马-黑猫" ,1,0)) AS 天马黑猫总订单,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "已签收",1,0)) as 天马黑猫已签收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "拒收",1,0)) as 天马黑猫拒收,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 = "已退货",1,0)) as 天马黑猫已退货,
-        								SUM(IF(cx.物流方式 = "台湾-天马-黑猫" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马黑猫已完成,
-        							SUM(IF(cx.物流方式 = "台湾-易速配-新竹" ,1,0)) AS 易速配新竹总订单,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "已签收",1,0)) as 易速配新竹已签收,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "拒收",1,0)) as 易速配新竹拒收,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 = "已退货",1,0)) as 易速配新竹已退货,
-        								SUM(IF(cx.物流方式 = "台湾-易速配-新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配新竹已完成,
-        							SUM(IF(cx.物流方式 = "龟山" ,1,0)) AS 龟山改派总订单,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已签收",1,0)) as 龟山改派已签收,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "拒收",1,0)) as 龟山改派拒收,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已退货",1,0)) as 龟山改派已退货,
-        								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 龟山改派已完成,
-        							SUM(IF(cx.物流方式 = "森鸿" ,1,0)) AS 森鸿改派总订单,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "已签收",1,0)) as 森鸿改派已签收,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "拒收",1,0)) as 森鸿改派拒收,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 = "已退货",1,0)) as 森鸿改派已退货,
-        								SUM(IF(cx.物流方式 = "森鸿" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 森鸿改派已完成,
-        							SUM(IF(cx.物流方式 = "速派" ,1,0)) AS 速派改派总订单,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "已签收",1,0)) as 速派改派已签收,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "拒收",1,0)) as 速派改派拒收,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 = "已退货",1,0)) as 速派改派已退货,
-        								SUM(IF(cx.物流方式 = "速派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 速派改派已完成,
-        							SUM(IF(cx.物流方式 = "天马新竹" ,1,0)) AS 天马新竹改派总订单,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "已签收",1,0)) as 天马新竹改派已签收,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "拒收",1,0)) as 天马新竹改派拒收,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 = "已退货",1,0)) as 天马新竹改派已退货,
-        								SUM(IF(cx.物流方式 = "天马新竹" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马新竹改派已完成,
-        							SUM(IF(cx.物流方式 = "天马顺丰" ,1,0)) AS 天马顺丰改派总订单,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已签收",1,0)) as 天马顺丰改派已签收,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "拒收",1,0)) as 天马顺丰改派拒收,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰改派已退货,
-        								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰改派已完成
-        				        FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                    FROM {0}_zqsb cc where  cc.`是否改派` = '改派' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
-                                ) cx WHERE cx.`币种` = '台湾'
-                            GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
-                            ) s1
-                        GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
-                        WITH ROLLUP 
-                    ) s HAVING s.旬 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
-                        FIELD(s.`地区`,'台湾','香港','合计'),
-                        FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
-                        FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
-                        FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday)
-        df21 = pd.read_sql_query(sql=sql21, con=self.engine1)
-        listT.append(df21)
-
-        today = datetime.date.today().strftime('%Y.%m.%d')
-        sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品整月香港', '产品分旬台湾', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾']
-        print('正在将物流品类写入excel…………')
-        file_path = 'G:\\输出文件\\{} {} 物流品类-签收率.xlsx'.format(today, match[team])
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        listT[0].to_excel(excel_writer=writer, sheet_name=sheet_name[0], index=False)
-        listT[1].to_excel(excel_writer=writer, sheet_name=sheet_name[1], index=False)
-        listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
-        listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
-        try:
-            print('正在运行' + match[team] + '表宏…………')
-            app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-            app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
-            wbsht1 = app.books.open(file_path)
-            wbsht.macro('gat_总_品类_物流_两月签收率')()
-            wbsht1.save()
-            wbsht1.close()
-            wbsht.close()
-            app.quit()
-        except Exception as e:
-            print('运行失败：', str(Exception) + str(e))
-        print('----已写入excel ')
-
-        print('正在将品类分旬写入excel…………')
-        file_path = 'G:\\输出文件\\{} {} 品类分旬-签收率.xlsx'.format(today, match[team])
-        sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品整月香港', '产品分旬台湾', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾']
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
-        listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
-        try:
-            print('正在运行' + match[team] + '表宏…………')
-            app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-            app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
-            wbsht1 = app.books.open(file_path)
-            wbsht.macro('gat_品类直发分旬签收率')()
-            wbsht1.save()
-            wbsht1.close()
-            wbsht.close()
-            app.quit()
-        except Exception as e:
-            print('运行失败：', str(Exception) + str(e))
-        print('----已写入excel ')
-
-        print('正在将产品写入excel…………')
-        file_path = 'G:\\输出文件\\{} {} 产品明细-签收率.xlsx'.format(today, match[team])
-        sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品分旬台湾', '产品整月香港', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾']
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        listT[4].to_excel(excel_writer=writer, sheet_name=sheet_name[4], index=False)
-        listT[5].to_excel(excel_writer=writer, sheet_name=sheet_name[5], index=False)
-        listT[6].to_excel(excel_writer=writer, sheet_name=sheet_name[6], index=False)
-        listT[7].to_excel(excel_writer=writer, sheet_name=sheet_name[7], index=False)
-        listT[8].to_excel(excel_writer=writer, sheet_name=sheet_name[8], index=False)
-        listT[9].to_excel(excel_writer=writer, sheet_name=sheet_name[9], index=False)
-        listT[10].to_excel(excel_writer=writer, sheet_name=sheet_name[10], index=False)
-        listT[11].to_excel(excel_writer=writer, sheet_name=sheet_name[11], index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
-        try:
-            print('正在运行' + match[team] + '表宏…………')
-            app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-            app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
-            wbsht1 = app.books.open(file_path)
-            wbsht.macro('gat_产品签收率_总')()
-            wbsht1.save()
-            wbsht1.close()
-            wbsht.close()
-            app.quit()
-        except Exception as e:
-            print('运行失败：', str(Exception) + str(e))
-        print('----已写入excel ')
 
     # 新版签收率-报表(刘姐看的)- 单量计算
     def qsb_new(self, team, month_last):  # 报表各团队近两个月的物流数据
@@ -5849,321 +3287,396 @@ class QueryUpdate(Settings):
         # 1、各月-各团队
         print('正在获取---1、各月各团队…………')
         sql10 = '''SELECT *
-                            FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                        IFNULL(cx.`币种`, '总计') 地区,
-                                        IFNULL(cx.家族, '总计') 家族,
-                                        COUNT(cx.`订单编号`) as 总单量,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-            			                concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-            			                ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-
-                                        SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-            			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
-                                FROM (SELECT *,
-                                         IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM gat_zqsb cc where cc.`运单编号` is not null 
-                                      ) cx									
-                                GROUP BY cx.年月,cx.币种,cx.家族
-                                WITH ROLLUP 
-            	            ) s
-                            ORDER BY 月份 DESC,
-                                    FIELD( 地区, '台湾', '香港', '总计' ),
-                                    FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
-                                    s.总单量 DESC;'''.format(team)
+            FROM(SELECT IFNULL(月份, '总计') 月份,IFNULL(地区, '总计') 地区,IFNULL(家族, '总计') 家族,		
+						SUM(总单量) as 总单量,
+                            concat(ROUND(SUM(签收) / SUM(完成) * 100,2),'%') as 完成签收,
+                            concat(ROUND(SUM(签收) / SUM(总单量) * 100,2),'%') as 总计签收,
+                            concat(ROUND(SUM(完成) / SUM(总单量) * 100,2),'%') as 完成占比,
+                            concat(ROUND(SUM(退货) / SUM(总单量) * 100,2),'%') as 退款率,
+                            concat(ROUND(SUM(签收金额) / SUM(金额) * 100,2),'%') as '总计签收(金额)',
+							ROUND(SUM(金额) / SUM(总单量),2) as 平均客单价,		
+						SUM(直发单量) as 直发单量,
+                            concat(ROUND(SUM(直发签收) / SUM(直发完成) * 100,2),'%') as 直发完成签收,
+                            concat(ROUND(SUM(直发签收) / SUM(直发单量) * 100,2),'%') as 直发总计签收,
+                            concat(ROUND(SUM(直发完成) / SUM(直发单量) * 100,2),'%') as 直发完成占比,										
+                        concat(ROUND(SUM(改派单量) / SUM(总单量) * 100,2),'%') as 改派占比,
+                            concat(ROUND(SUM(改派签收) / SUM(改派完成) * 100,2),'%') as 改派完成签收,
+                            concat(ROUND(SUM(改派签收) / SUM(改派单量) * 100,2),'%') as 改派总计签收,
+                            concat(ROUND(SUM(改派完成) / SUM(改派单量) * 100,2),'%') as 改派完成占比
+                        FROM(SELECT 年月 月份,币种 地区,家族,
+                                    COUNT(订单编号) as 总单量,
+									SUM(IF(最终状态 = "已签收",1,0)) 签收,
+									SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 完成,
+									SUM(IF(最终状态 = "已退货",1,0)) 退货,
+									SUM(价格RMB) AS 金额,
+									SUM(IF(最终状态 = "已签收",价格RMB,0)) 签收金额,									
+                                    SUM(IF(是否改派 = '直发',1,0))  as 直发单量,
+									SUM(IF(是否改派 = '直发' AND 最终状态 = "已签收",1,0)) 直发签收,
+									SUM(IF(是否改派 = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 直发完成,								
+                                    SUM(IF(是否改派 = '改派',1,0))  as 改派单量,
+									SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
+									SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
+                            FROM gat_zqsb_cache cx
+							WHERE cx.`运单编号` is not null                                 
+                            GROUP BY cx.年月,cx.币种, cx.家族
+                        ) s
+						GROUP BY 月份,地区,家族
+                        WITH ROLLUP		
+                ) ss			
+                ORDER BY 月份 DESC,
+                        FIELD( 地区, '台湾', '香港', '总计' ),
+                        FIELD( 家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                        总单量 DESC;'''.format(team)
         df10 = pd.read_sql_query(sql=sql10, con=self.engine1)
         listT.append(df10)
         # 2、各月各团队---分旬
         print('正在获取---2、各月各团队---分旬…………')
         sql11 = '''SELECT *
-                            FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                        IFNULL(cx.`旬`, '总计') 旬,
-                                        IFNULL(cx.`币种`, '总计') 地区,
-                                        IFNULL(cx.家族, '总计') 家族,
-                                        COUNT(cx.`订单编号`) as 总单量,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-            			                concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-            			                ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-
-                                        SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-            			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
-                                FROM (SELECT *,
-                                          IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM gat_zqsb cc where cc.`运单编号` is not null 
-                                      )  cx									
-                                GROUP BY cx.年月,cx.旬,cx.币种, cx.家族
-                                WITH ROLLUP 
-            	            ) s
-                            ORDER BY 月份 DESC,旬,
-                                    FIELD( 地区, '台湾', '香港', '总计' ),
-                                    FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
-                                    s.总单量 DESC;'''.format(team)
+            FROM(SELECT IFNULL(月份, '总计') 月份,IFNULL(旬, '总计') 旬,IFNULL(地区, '总计') 地区,IFNULL(家族, '总计') 家族,		
+						SUM(总单量) as 总单量,
+                            concat(ROUND(SUM(签收) / SUM(完成) * 100,2),'%') as 完成签收,
+                            concat(ROUND(SUM(签收) / SUM(总单量) * 100,2),'%') as 总计签收,
+                            concat(ROUND(SUM(完成) / SUM(总单量) * 100,2),'%') as 完成占比,
+                            concat(ROUND(SUM(退货) / SUM(总单量) * 100,2),'%') as 退款率,
+                            concat(ROUND(SUM(签收金额) / SUM(金额) * 100,2),'%') as '总计签收(金额)',
+							ROUND(SUM(金额) / SUM(总单量),2) as 平均客单价,		
+						SUM(直发单量) as 直发单量,
+                            concat(ROUND(SUM(直发签收) / SUM(直发完成) * 100,2),'%') as 直发完成签收,
+                            concat(ROUND(SUM(直发签收) / SUM(直发单量) * 100,2),'%') as 直发总计签收,
+                            concat(ROUND(SUM(直发完成) / SUM(直发单量) * 100,2),'%') as 直发完成占比,										
+                        concat(ROUND(SUM(改派单量) / SUM(总单量) * 100,2),'%') as 改派占比,
+                            concat(ROUND(SUM(改派签收) / SUM(改派完成) * 100,2),'%') as 改派完成签收,
+                            concat(ROUND(SUM(改派签收) / SUM(改派单量) * 100,2),'%') as 改派总计签收,
+                            concat(ROUND(SUM(改派完成) / SUM(改派单量) * 100,2),'%') as 改派完成占比
+                        FROM(SELECT 年月 月份, 旬,币种 地区,家族,
+                                    COUNT(订单编号) as 总单量,
+									SUM(IF(最终状态 = "已签收",1,0)) 签收,
+									SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 完成,
+									SUM(IF(最终状态 = "已退货",1,0)) 退货,
+									SUM(价格RMB) AS 金额,
+									SUM(IF(最终状态 = "已签收",价格RMB,0)) 签收金额,									
+                                    SUM(IF(是否改派 = '直发',1,0))  as 直发单量,
+									SUM(IF(是否改派 = '直发' AND 最终状态 = "已签收",1,0)) 直发签收,
+									SUM(IF(是否改派 = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 直发完成,								
+                                    SUM(IF(是否改派 = '改派',1,0))  as 改派单量,
+									SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
+									SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
+                            FROM gat_zqsb_cache cx
+							WHERE cx.`运单编号` is not null                                 
+                            GROUP BY cx.年月,cx.旬,cx.币种, cx.家族
+                        ) s
+						GROUP BY 月份,旬,地区,家族
+                        WITH ROLLUP	
+                ) ss				
+                ORDER BY 月份 DESC,旬,
+                        FIELD( 地区, '台湾', '香港', '总计' ),
+                        FIELD( 家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                        总单量 DESC;'''.format(team)
         df11 = pd.read_sql_query(sql=sql11, con=self.engine1)
         listT.append(df11)
 
         # 3、各团队-各品类
         print('正在获取---3、各团队-各品类…………')
         sql20 = '''SELECT *
-                            FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                        IFNULL(cx.`币种`, '总计') 地区,
-                                        IFNULL(cx.`家族`, '总计') 家族,
-                                        IFNULL(cx.`父级分类`, '总计') 父级分类,
-                                        COUNT(cx.`订单编号`) as 总单量,
-                                        concat(ROUND(SUM(IF(最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                                        concat(ROUND(SUM(IF(最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                                        concat(ROUND(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                                        concat(ROUND(SUM(IF(最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-                                        concat(ROUND(SUM(IF(最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-                                        concat(ROUND(COUNT(cx.`订单编号`) / 总订单量 * 100,2),'%') as 品类占比,
-                                        ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-                                    SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发',1,0)) / 直发总单量 * 100,2),'%') as 直发品类占比,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / 改派总单量 * 100,2),'%') as 改派品类占比
-                                FROM (SELECT *,
-                                          IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM gat_zqsb cc
-                                      where cc.`运单编号` is not null 
-                                    ) cx 
-                                LEFT JOIN 
-								    (SELECT 币种,家族,年月,count(订单编号) as 总订单量,SUM(IF(`是否改派`= '直发',1,0)) as 直发总单量,SUM(IF(`是否改派` = '改派',1,0)) as 改派总单量
-								    FROM (SELECT *,
-                                                IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                            FROM gat_zqsb cc 
-									    WHERE  cc.`运单编号` is not null 
-									) dg  GROUP BY dg.币种,dg.家族,dg.年月
-								) cx2 ON cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族 AND  cx.年月 = cx2.年月                       
-                                GROUP BY cx.年月,cx.币种,cx.家族,cx.父级分类
-                                WITH ROLLUP 
-                            ) s
-                            ORDER BY 月份 DESC,
-                                    FIELD( 地区, '台湾', '香港', '总计' ),
-                                    FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
-                                    FIELD( 父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
-                                    s.总单量 DESC;'''.format(month_last, team)
+            FROM(SELECT IFNULL(月份, '总计') 月份,IFNULL(地区, '总计') 地区,IFNULL(s.家族, '总计') 家族,IFNULL(父级分类, '总计') 父级分类,
+						SUM(总单量) as 总单量,
+                            concat(ROUND(SUM(签收) / SUM(完成) * 100,2),'%') as 完成签收,
+                            concat(ROUND(SUM(签收) / SUM(总单量) * 100,2),'%') as 总计签收,
+                            concat(ROUND(SUM(完成) / SUM(总单量) * 100,2),'%') as 完成占比,
+                            concat(ROUND(SUM(退货) / SUM(总单量) * 100,2),'%') as 退款率,
+                            concat(ROUND(SUM(签收金额) / SUM(金额) * 100,2),'%') as '总计签收(金额)',
+							concat(ROUND(SUM(总单量) / 总订单量 * 100,2),'%') as 品类占比,						
+							ROUND(SUM(金额) / SUM(总单量),2) as 平均客单价,									
+						SUM(直发单量) as 直发单量,
+                            concat(ROUND(SUM(直发签收) / SUM(直发完成) * 100,2),'%') as 直发完成签收,
+                            concat(ROUND(SUM(直发签收) / SUM(直发单量) * 100,2),'%') as 直发总计签收,
+                            concat(ROUND(SUM(直发完成) / SUM(直发单量) * 100,2),'%') as 直发完成占比,									
+							concat(ROUND(SUM(直发单量) / 直发总单量 * 100,2),'%') as 直发品类占比,
+                        concat(ROUND(SUM(改派单量) / SUM(总单量) * 100,2),'%') as 改派占比,
+                            concat(ROUND(SUM(改派签收) / SUM(改派完成) * 100,2),'%') as 改派完成签收,
+                            concat(ROUND(SUM(改派签收) / SUM(改派单量) * 100,2),'%') as 改派总计签收,
+                            concat(ROUND(SUM(改派完成) / SUM(改派单量) * 100,2),'%') as 改派完成占比,
+							concat(ROUND(SUM(直发单量) / 改派总单量 * 100,2),'%') as 改派品类占比
+                    FROM(SELECT cx.年月 月份, cx.币种 地区, cx.家族, cx.父级分类,
+                            总订单量, 
+                                COUNT(cx.订单编号) as 总单量,
+								SUM(IF(最终状态 = "已签收",1,0)) 签收,
+								SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 完成,
+								SUM(IF(最终状态 = "已退货",1,0)) 退货,
+								SUM(价格RMB) AS 金额,
+								SUM(IF(最终状态 = "已签收",价格RMB,0)) 签收金额,		
+							直发总单量,							
+                                SUM(IF(是否改派 = '直发',1,0)) as 直发单量,
+								SUM(IF(是否改派 = '直发' AND 最终状态 = "已签收",1,0)) 直发签收,
+								SUM(IF(是否改派 = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 直发完成,
+							改派总单量,
+                                SUM(IF(是否改派 = '改派',1,0)) as 改派单量,
+								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
+								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
+                        FROM (SELECT 年月,币种,家族,父级分类,订单编号,最终状态,价格RMB,是否改派
+							    FROM gat_zqsb_cache cc 
+								WHERE  cc.`运单编号` is not null 
+							) cx 
+                        LEFT JOIN 
+							( SELECT 币种,家族,年月,count(订单编号) as 总订单量,SUM(IF(`是否改派`= '直发',1,0)) as 直发总单量,SUM(IF(`是否改派` = '改派',1,0)) as 改派总单量
+							    FROM (SELECT 年月,币种,家族,订单编号,是否改派
+										FROM gat_zqsb_cache cc 
+										WHERE  cc.`运单编号` is not null 
+									) dg  
+								GROUP BY dg.币种,dg.家族,dg.年月
+							) cx2 ON cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族 AND  cx.年月 = cx2.年月   
+						GROUP BY cx.年月,cx.币种,cx.家族,cx.父级分类
+                    ) s				
+					GROUP BY 月份,地区,s.家族,父级分类
+                    WITH ROLLUP
+            ) ss
+			ORDER BY 月份 DESC,
+                    FIELD( 地区, '台湾', '香港', '总计' ),
+                    FIELD( 家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                    FIELD( 父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
+                    总单量 DESC;'''.format(month_last, team)
         df20 = pd.read_sql_query(sql=sql20, con=self.engine1)
         listT.append(df20)
         # 4、各团队-各物流
         print('正在获取---4、各团队-各物流…………')
         sql21 = '''SELECT *
-                        FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                    IFNULL(cx.`币种`, '总计') 地区,
-                                    IFNULL(cx.`是否改派`, '总计') 是否改派,
-                                    IFNULL(cx.`家族`, '总计') 家族,
-                                    IFNULL(cx.`物流方式`, '总计') 物流方式,
-                                    COUNT(cx.`订单编号`) as 总单量,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                                    concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-                                    ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-                                SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-                                    concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
-                            FROM (SELECT *, 
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                    FROM gat_zqsb cc
-                                    where cc.`运单编号` is not null 
-                                ) cx            
-                            GROUP BY cx.年月,cx.币种,cx.是否改派,cx.家族,cx.物流方式
-                            WITH ROLLUP
-                        ) s
-                        ORDER BY FIELD(月份, DATE_FORMAT(CURDATE(),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 2 MONTH),'%Y%m'), 
-                                            DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 4 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 5 MONTH),'%Y%m'), 
-			                                DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 6 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 7 MONTH),'%Y%m'), '总计' ),
-                                FIELD(地区, '台湾', '香港', '总计' ),
-                                FIELD(是否改派, '直发', '改派', '总计' ),
-                                FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
-                                FIELD(物流方式, '台湾-大黄蜂普货头程-森鸿尾程','台湾-大黄蜂普货头程-易速配尾程', '台湾-立邦普货头程-森鸿尾程','台湾-易速配-TW海快','台湾-立邦普货头程-易速配尾程', 
-                                                '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
-                                                '香港-立邦-顺丰','香港-易速配-顺丰','香港-易速配-顺丰YC','香港-森鸿-SH渠道','香港-森鸿-顺丰渠道', 
-                                                '龟山','森鸿','速派','天马顺丰','天马新竹','香港-立邦-改派','香港-森鸿-改派','香港-易速配-改派','总计'),
-                                s.总单量 DESC;'''.format(month_last, team)
+            FROM(SELECT IFNULL(月份, '总计') 月份,IFNULL(地区, '总计') 地区,IFNULL(是否改派, '总计') 是否改派,IFNULL(家族, '总计') 家族,IFNULL(物流方式, '总计') 物流方式,
+						SUM(总单量) as 总单量,
+                            concat(ROUND(SUM(签收) / SUM(完成) * 100,2),'%') as 完成签收,
+                            concat(ROUND(SUM(签收) / SUM(总单量) * 100,2),'%') as 总计签收,
+                            concat(ROUND(SUM(完成) / SUM(总单量) * 100,2),'%') as 完成占比,
+                            concat(ROUND(SUM(退货) / SUM(总单量) * 100,2),'%') as 退款率,
+                            concat(ROUND(SUM(签收金额) / SUM(金额) * 100,2),'%') as '总计签收(金额)',
+							ROUND(SUM(金额) / SUM(总单量),2) as 平均客单价,											
+						SUM(直发单量) as 直发单量,
+                            concat(ROUND(SUM(直发签收) / SUM(直发完成) * 100,2),'%') as 直发完成签收,
+                            concat(ROUND(SUM(直发签收) / SUM(直发单量) * 100,2),'%') as 直发总计签收,
+                            concat(ROUND(SUM(直发完成) / SUM(直发单量) * 100,2),'%') as 直发完成占比,									
+                        concat(ROUND(SUM(改派单量) / SUM(总单量) * 100,2),'%') as 改派占比,
+                            concat(ROUND(SUM(改派签收) / SUM(改派完成) * 100,2),'%') as 改派完成签收,
+                            concat(ROUND(SUM(改派签收) / SUM(改派单量) * 100,2),'%') as 改派总计签收,
+                            concat(ROUND(SUM(改派完成) / SUM(改派单量) * 100,2),'%') as 改派完成占比
+                    FROM(SELECT 年月 月份, 币种 地区, 是否改派, 家族, 物流方式,
+                                COUNT(订单编号) as 总单量,
+								SUM(IF(最终状态 = "已签收",1,0)) 签收,
+								SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 完成,
+								SUM(IF(最终状态 = "已退货",1,0)) 退货,
+								SUM(价格RMB) AS 金额,
+								SUM(IF(最终状态 = "已签收",价格RMB,0)) 签收金额,									
+                            SUM(IF(是否改派 = '直发',1,0)) as 直发单量,
+								SUM(IF(是否改派 = '直发' AND 最终状态 = "已签收",1,0)) 直发签收,
+								SUM(IF(是否改派 = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 直发完成,								
+                            SUM(IF(是否改派 = '改派',1,0)) as 改派单量,
+								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
+								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
+                        FROM gat_zqsb_cache cx
+						WHERE  cx.`运单编号` is not null                                 
+						GROUP BY cx.年月,cx.币种,cx.是否改派,cx.家族,cx.物流方式
+                    ) s
+					GROUP BY 月份,地区,是否改派,家族,物流方式
+                    WITH ROLLUP
+            ) ss
+            ORDER BY FIELD(月份, DATE_FORMAT(CURDATE(),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 2 MONTH),'%Y%m'), 
+                                DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 4 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 5 MONTH),'%Y%m'), 
+			                    DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 6 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 7 MONTH),'%Y%m'), '总计' ),
+                            FIELD(地区, '台湾', '香港', '总计' ),
+                            FIELD(是否改派, '直发', '改派', '总计' ),
+                            FIELD(家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                            FIELD(物流方式, '台湾-大黄蜂普货头程-森鸿尾程','台湾-大黄蜂普货头程-易速配尾程', '台湾-立邦普货头程-森鸿尾程','台湾-易速配-TW海快','台湾-立邦普货头程-易速配尾程', 
+                                            '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
+                                            '香港-立邦-顺丰','香港-易速配-顺丰','香港-易速配-顺丰YC','香港-森鸿-SH渠道','香港-森鸿-顺丰渠道', 
+                                            '龟山','森鸿','速派','天马顺丰','天马新竹','香港-立邦-改派','香港-森鸿-改派','香港-易速配-改派','总计'),
+                            总单量 DESC;'''.format(month_last, team)
         df21 = pd.read_sql_query(sql=sql21, con=self.engine1)
         listT.append(df21)
 
         # 5、各团队-各平台
         print('正在获取---5、各团队-各平台…………')
         sql30 = '''SELECT *
-                            FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                        IFNULL(cx.`币种`, '总计') 地区,
-                                        IFNULL(cx.`家族`, '总计') 家族,
-                                        IFNULL(cx.`订单来源`, '总计') 平台,
-                                        COUNT(cx.`订单编号`) as 总单量,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                                        concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-                                        ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-                                    SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
-                                FROM (SELECT *,
-                                          IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM gat_zqsb cc
-                                      where cc.`运单编号` is not null 
-                                    ) cx                                  
-                                GROUP BY cx.年月,cx.币种,cx.家族,cx.订单来源
-                                WITH ROLLUP 
-                            ) s
-                            ORDER BY 月份 DESC,
-                                    FIELD( 地区, '台湾', '香港', '总计' ),
-                                    FIELD( 家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
-                                    FIELD( 平台, 'google', 'facebook', 'line', 'native',  'Criteo', 'tiktok', 'yahoo','facebookpage','recommend','postsaleclone','recomm','shangwutong','总计' ),
-                                    s.总单量 DESC;'''.format(month_last, team)
+            FROM(SELECT IFNULL(月份, '总计') 月份,IFNULL(地区, '总计') 地区,IFNULL(家族, '总计') 家族,IFNULL(平台, '总计') 平台,
+						SUM(总单量) as 总单量,
+                            concat(ROUND(SUM(签收) / SUM(完成) * 100,2),'%') as 完成签收,
+                            concat(ROUND(SUM(签收) / SUM(总单量) * 100,2),'%') as 总计签收,
+                            concat(ROUND(SUM(完成) / SUM(总单量) * 100,2),'%') as 完成占比,
+                            concat(ROUND(SUM(退货) / SUM(总单量) * 100,2),'%') as 退款率,
+                            concat(ROUND(SUM(签收金额) / SUM(金额) * 100,2),'%') as '总计签收(金额)',
+							ROUND(SUM(金额) / SUM(总单量),2) as 平均客单价,											
+						SUM(直发单量) as 直发单量,
+                            concat(ROUND(SUM(直发签收) / SUM(直发完成) * 100,2),'%') as 直发完成签收,
+                            concat(ROUND(SUM(直发签收) / SUM(直发单量) * 100,2),'%') as 直发总计签收,
+                            concat(ROUND(SUM(直发完成) / SUM(直发单量) * 100,2),'%') as 直发完成占比,									
+                        concat(ROUND(SUM(改派单量) / SUM(总单量) * 100,2),'%') as 改派占比,
+                            concat(ROUND(SUM(改派签收) / SUM(改派完成) * 100,2),'%') as 改派完成签收,
+                            concat(ROUND(SUM(改派签收) / SUM(改派单量) * 100,2),'%') as 改派总计签收,
+                            concat(ROUND(SUM(改派完成) / SUM(改派单量) * 100,2),'%') as 改派完成占比
+                    FROM(SELECT 年月 月份, 币种 地区, 家族,订单来源 平台,
+                                COUNT(订单编号) as 总单量,
+								SUM(IF(最终状态 = "已签收",1,0)) 签收,
+								SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 完成,
+								SUM(IF(最终状态 = "已退货",1,0)) 退货,
+								SUM(价格RMB) AS 金额,
+								SUM(IF(最终状态 = "已签收",价格RMB,0)) 签收金额,									
+                            SUM(IF(是否改派 = '直发',1,0)) as 直发单量,
+								SUM(IF(是否改派 = '直发' AND 最终状态 = "已签收",1,0)) 直发签收,
+								SUM(IF(是否改派 = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 直发完成,								
+                            SUM(IF(是否改派 = '改派',1,0)) as 改派单量,
+								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
+								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
+                        FROM gat_zqsb_cache cx
+						WHERE  cx.`运单编号` is not null                                 
+                        GROUP BY cx.年月,cx.币种,cx.家族,cx.订单来源
+                        ) s
+					GROUP BY 月份,地区,家族,平台
+                    WITH ROLLUP
+            ) ss
+            ORDER BY 月份 DESC,
+                    FIELD(地区, '台湾', '香港', '总计' ),
+                    FIELD(家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                    FIELD(平台, 'google', 'facebook', 'line', 'native',  'Criteo', 'tiktok', 'yahoo','facebookpage','recommend','postsaleclone','recomm','shangwutong','总计' ),
+                    总单量 DESC;'''.format(month_last, team)
         df30 = pd.read_sql_query(sql=sql30, con=self.engine1)
         listT.append(df30)
         # 6、各平台-各团队
         print('正在获取---6、各平台-各团队…………')
         sql31 = '''SELECT *
-                            FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                        IFNULL(cx.`币种`, '总计') 地区,
-                                        IFNULL(cx.`订单来源`, '总计') 平台,
-                                        IFNULL(cx.`家族`, '总计') 家族,
-                                        COUNT(cx.`订单编号`) as 总单量,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                                        concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-                                        ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-                                    SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
-                                FROM (SELECT *,
-                                          IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM gat_zqsb cc
-                                      where cc.日期 >= '{0}' and cc.`运单编号` is not null 
-                                    ) cx                                  
-                                GROUP BY cx.年月,cx.币种,cx.订单来源,cx.家族
-                                WITH ROLLUP 
-                            ) s
-                            ORDER BY 月份 DESC,
-                                    FIELD( 地区, '台湾', '香港', '总计' ),
-                                    FIELD( 平台, 'google', 'facebook', 'line', 'native',  'Criteo', 'tiktok', 'yahoo','facebookpage','recommend','postsaleclone','recomm','shangwutong','总计' ),
-                                    FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
-                                    s.总单量 DESC;'''.format(month_last, team)
+            FROM(SELECT IFNULL(月份, '总计') 月份,IFNULL(地区, '总计') 地区,IFNULL(平台, '总计') 平台,IFNULL(家族, '总计') 家族,									
+						SUM(总单量) as 总单量,
+                            concat(ROUND(SUM(签收) / SUM(完成) * 100,2),'%') as 完成签收,
+                            concat(ROUND(SUM(签收) / SUM(总单量) * 100,2),'%') as 总计签收,
+                            concat(ROUND(SUM(完成) / SUM(总单量) * 100,2),'%') as 完成占比,
+                            concat(ROUND(SUM(退货) / SUM(总单量) * 100,2),'%') as 退款率,
+                            concat(ROUND(SUM(签收金额) / SUM(金额) * 100,2),'%') as '总计签收(金额)',
+							ROUND(SUM(金额) / SUM(总单量),2) as 平均客单价,											
+						SUM(直发单量) as 直发单量,
+                            concat(ROUND(SUM(直发签收) / SUM(直发完成) * 100,2),'%') as 直发完成签收,
+                            concat(ROUND(SUM(直发签收) / SUM(直发单量) * 100,2),'%') as 直发总计签收,
+                            concat(ROUND(SUM(直发完成) / SUM(直发单量) * 100,2),'%') as 直发完成占比,									
+                        concat(ROUND(SUM(改派单量) / SUM(总单量) * 100,2),'%') as 改派占比,
+                            concat(ROUND(SUM(改派签收) / SUM(改派完成) * 100,2),'%') as 改派完成签收,
+                            concat(ROUND(SUM(改派签收) / SUM(改派单量) * 100,2),'%') as 改派总计签收,
+                            concat(ROUND(SUM(改派完成) / SUM(改派单量) * 100,2),'%') as 改派完成占比
+                    FROM(SELECT 年月 月份, 币种 地区, 订单来源 平台,家族,
+                                COUNT(订单编号) as 总单量,
+								SUM(IF(最终状态 = "已签收",1,0)) 签收,
+								SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 完成,
+								SUM(IF(最终状态 = "已退货",1,0)) 退货,
+								SUM(价格RMB) AS 金额,
+								SUM(IF(最终状态 = "已签收",价格RMB,0)) 签收金额,									
+                            SUM(IF(是否改派 = '直发',1,0)) as 直发单量,
+								SUM(IF(是否改派 = '直发' AND 最终状态 = "已签收",1,0)) 直发签收,
+								SUM(IF(是否改派 = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 直发完成,								
+                            SUM(IF(是否改派 = '改派',1,0)) as 改派单量,
+								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
+								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
+                        FROM gat_zqsb_cache cx
+						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null                                 
+                        GROUP BY cx.年月,cx.币种,cx.订单来源,cx.家族
+                        ) s
+					GROUP BY 月份,地区,平台,家族
+                    WITH ROLLUP
+            ) ss
+            ORDER BY 月份 DESC,
+                    FIELD(地区, '台湾', '香港', '总计' ),
+                    FIELD(平台, 'google', 'facebook', 'line', 'native',  'Criteo', 'tiktok', 'yahoo','facebookpage','recommend','postsaleclone','recomm','shangwutong','总计' ),
+                    FIELD(家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                    总单量 DESC;'''.format(month_last, team)
         df31 = pd.read_sql_query(sql=sql31, con=self.engine1)
         listT.append(df31)
 
         # 7、各品类-各团队
         print('正在获取---7、各品类-各团队…………')
         sql40 = '''SELECT *
-                            FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                        IFNULL(cx.`币种`, '总计') 地区,
-                                        IFNULL(cx.`父级分类`, '总计') 父级分类,
-                                        IFNULL(cx.家族, '总计') 家族,
-                                        COUNT(cx.`订单编号`) as 总单量,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                                        concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-                                        ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-
-                                        SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
-                                FROM (SELECT *,
-                                          IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM gat_zqsb cc
-                                      where cc.日期 >= '{0}' and cc.`运单编号` is not null 
-                                    ) cx                                  
-                                GROUP BY cx.年月,cx.币种,cx.父级分类,cx.家族
-                                WITH ROLLUP 
-                            ) s
-                            ORDER BY 月份 DESC,
-                                    FIELD( 地区, '台湾', '香港', '总计' ),
-                                    FIELD( 父级分类, '居家百货', '电子电器', '服饰', '医药保健', '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
-                                    FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
-                                    s.总单量 DESC;'''.format(month_last, team)
+            FROM(SELECT IFNULL(月份, '总计') 月份,IFNULL(地区, '总计') 地区,IFNULL(父级分类, '总计') 父级分类,IFNULL(家族, '总计') 家族,									
+						SUM(总单量) as 总单量,
+                            concat(ROUND(SUM(签收) / SUM(完成) * 100,2),'%') as 完成签收,
+                            concat(ROUND(SUM(签收) / SUM(总单量) * 100,2),'%') as 总计签收,
+                            concat(ROUND(SUM(完成) / SUM(总单量) * 100,2),'%') as 完成占比,
+                            concat(ROUND(SUM(退货) / SUM(总单量) * 100,2),'%') as 退款率,
+                            concat(ROUND(SUM(签收金额) / SUM(金额) * 100,2),'%') as '总计签收(金额)',
+							ROUND(SUM(金额) / SUM(总单量),2) as 平均客单价,											
+						SUM(直发单量) as 直发单量,
+                            concat(ROUND(SUM(直发签收) / SUM(直发完成) * 100,2),'%') as 直发完成签收,
+                            concat(ROUND(SUM(直发签收) / SUM(直发单量) * 100,2),'%') as 直发总计签收,
+                            concat(ROUND(SUM(直发完成) / SUM(直发单量) * 100,2),'%') as 直发完成占比,									
+                        concat(ROUND(SUM(改派单量) / SUM(总单量) * 100,2),'%') as 改派占比,
+                            concat(ROUND(SUM(改派签收) / SUM(改派完成) * 100,2),'%') as 改派完成签收,
+                            concat(ROUND(SUM(改派签收) / SUM(改派单量) * 100,2),'%') as 改派总计签收,
+                            concat(ROUND(SUM(改派完成) / SUM(改派单量) * 100,2),'%') as 改派完成占比
+                    FROM(SELECT 年月 月份, 币种 地区, 父级分类,家族,
+                                COUNT(订单编号) as 总单量,
+								SUM(IF(最终状态 = "已签收",1,0)) 签收,
+								SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 完成,
+								SUM(IF(最终状态 = "已退货",1,0)) 退货,
+								SUM(价格RMB) AS 金额,
+								SUM(IF(最终状态 = "已签收",价格RMB,0)) 签收金额,									
+                            SUM(IF(是否改派 = '直发',1,0)) as 直发单量,
+								SUM(IF(是否改派 = '直发' AND 最终状态 = "已签收",1,0)) 直发签收,
+								SUM(IF(是否改派 = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 直发完成,								
+                            SUM(IF(是否改派 = '改派',1,0)) as 改派单量,
+								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
+								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
+                        FROM gat_zqsb_cache cx
+						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null                                 
+                        GROUP BY cx.年月,cx.币种,cx.父级分类,cx.家族
+                        ) s
+					GROUP BY 月份,地区,父级分类,家族
+                    WITH ROLLUP
+            ) ss
+            ORDER BY 月份 DESC,
+                    FIELD(地区, '台湾', '香港', '总计' ),
+                    FIELD(父级分类, '居家百货', '电子电器', '服饰', '医药保健', '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
+                    FIELD(家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                    总单量 DESC;'''.format(month_last, team)
         df40 = pd.read_sql_query(sql=sql40, con=self.engine1)
         listT.append(df40)
         # 8、各物流-各团队
         print('正在获取---8、各物流-各团队…………')
         sql41 = '''SELECT *
-                        FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                    IFNULL(cx.`币种`, '总计') 地区,
-                                    IFNULL(cx.`是否改派`, '总计') 是否改派,
-                                    IFNULL(cx.`物流方式`, '总计') 物流方式,
-                                    IFNULL(cx.家族, '总计') 家族,
-                                    COUNT(cx.`订单编号`) as 总单量,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                                    concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-                                    ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-                                    SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-                                    concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
-                            FROM (SELECT *, 
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                    FROM gat_zqsb cc
-                                    where cc.日期 >= '{0}' and cc.`运单编号` is not null 
-                                ) cx                                  
-                            GROUP BY cx.年月,cx.币种,cx.是否改派,cx.物流方式,cx.家族
-                            WITH ROLLUP
+            FROM(SELECT IFNULL(月份, '总计') 月份,IFNULL(地区, '总计') 地区,IFNULL(是否改派, '总计') 是否改派,IFNULL(物流方式, '总计') 物流方式,IFNULL(家族, '总计') 家族,									
+						SUM(总单量) as 总单量,
+                            concat(ROUND(SUM(签收) / SUM(完成) * 100,2),'%') as 完成签收,
+                            concat(ROUND(SUM(签收) / SUM(总单量) * 100,2),'%') as 总计签收,
+                            concat(ROUND(SUM(完成) / SUM(总单量) * 100,2),'%') as 完成占比,
+                            concat(ROUND(SUM(退货) / SUM(总单量) * 100,2),'%') as 退款率,
+                            concat(ROUND(SUM(签收金额) / SUM(金额) * 100,2),'%') as '总计签收(金额)',
+							ROUND(SUM(金额) / SUM(总单量),2) as 平均客单价,											
+						SUM(直发单量) as 直发单量,
+                            concat(ROUND(SUM(直发签收) / SUM(直发完成) * 100,2),'%') as 直发完成签收,
+                            concat(ROUND(SUM(直发签收) / SUM(直发单量) * 100,2),'%') as 直发总计签收,
+                            concat(ROUND(SUM(直发完成) / SUM(直发单量) * 100,2),'%') as 直发完成占比,									
+                        concat(ROUND(SUM(改派单量) / SUM(总单量) * 100,2),'%') as 改派占比,
+                            concat(ROUND(SUM(改派签收) / SUM(改派完成) * 100,2),'%') as 改派完成签收,
+                            concat(ROUND(SUM(改派签收) / SUM(改派单量) * 100,2),'%') as 改派总计签收,
+                            concat(ROUND(SUM(改派完成) / SUM(改派单量) * 100,2),'%') as 改派完成占比
+                    FROM(SELECT 年月 月份, 币种 地区, 是否改派, 物流方式, 家族,
+                                COUNT(订单编号) as 总单量,
+								SUM(IF(最终状态 = "已签收",1,0)) 签收,
+								SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 完成,
+								SUM(IF(最终状态 = "已退货",1,0)) 退货,
+								SUM(价格RMB) AS 金额,
+								SUM(IF(最终状态 = "已签收",价格RMB,0)) 签收金额,									
+                            SUM(IF(是否改派 = '直发',1,0)) as 直发单量,
+								SUM(IF(是否改派 = '直发' AND 最终状态 = "已签收",1,0)) 直发签收,
+								SUM(IF(是否改派 = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 直发完成,								
+                            SUM(IF(是否改派 = '改派',1,0)) as 改派单量,
+								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
+								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
+                        FROM gat_zqsb_cache cx
+						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null                                 
+                        GROUP BY cx.年月,cx.币种,cx.是否改派,cx.物流方式,cx.家族
                         ) s
-                        ORDER BY FIELD(月份, DATE_FORMAT(CURDATE(),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 2 MONTH),'%Y%m'), 
-                                            DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 4 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 5 MONTH),'%Y%m'), 
-			                                DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 6 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 7 MONTH),'%Y%m'), '总计' ),
-                                FIELD(地区, '台湾', '香港', '总计' ),
-                                FIELD(是否改派, '直发', '改派', '总计' ),
-                                FIELD(物流方式, '台湾-大黄蜂普货头程-森鸿尾程','台湾-大黄蜂普货头程-易速配尾程', '台湾-立邦普货头程-森鸿尾程','台湾-立邦普货头程-易速配尾程', '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
-                                    '香港-立邦-顺丰','香港-森鸿-SH渠道','香港-森鸿-顺丰渠道','香港-易速配-顺丰', '龟山','森鸿','速派','天马顺丰','天马新竹','香港-立邦-改派','香港-森鸿-改派','香港-易速配-改派','总计' ),
-                                FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
-                                s.总单量 DESC;'''.format(month_last, team)
+					GROUP BY 月份, 地区, 是否改派, 物流方式, 家族
+                    WITH ROLLUP
+            ) ss
+            ORDER BY FIELD(月份, DATE_FORMAT(CURDATE(),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 2 MONTH),'%Y%m'), 
+                                DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 4 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 5 MONTH),'%Y%m'), 
+			                    DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 6 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 7 MONTH),'%Y%m'), '总计' ),
+                    FIELD(地区, '台湾', '香港', '总计' ),
+                    FIELD(是否改派, '直发', '改派', '总计' ),
+                    FIELD(物流方式, '台湾-大黄蜂普货头程-森鸿尾程','台湾-大黄蜂普货头程-易速配尾程', '台湾-立邦普货头程-森鸿尾程','台湾-立邦普货头程-易速配尾程', '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
+                                '香港-立邦-顺丰','香港-森鸿-SH渠道','香港-森鸿-顺丰渠道','香港-易速配-顺丰', '龟山','森鸿','速派','天马顺丰','天马新竹','香港-立邦-改派','香港-森鸿-改派','香港-易速配-改派','总计' ),
+                    FIELD(家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                    总单量 DESC;'''.format(month_last, team)
         df41 = pd.read_sql_query(sql=sql41, con=self.engine1)
         listT.append(df41)
 
@@ -6171,72 +3684,90 @@ class QueryUpdate(Settings):
         print('正在获取---9、同产品各团队的对比…………')
         sql50 = '''SELECT *, IF(神龙完成签收 = '0.00%' OR 神龙完成签收 IS NULL, 神龙完成签收, concat(ROUND(神龙完成签收-完成签收,2),'%')) as 神龙对比,
     			            IF(火凤凰完成签收 = '0.00%' OR 火凤凰完成签收 IS NULL, 火凤凰完成签收, concat(ROUND(火凤凰完成签收-完成签收,2),'%')) as 火凤凰对比,
-    			            IF(小虎队完成签收 = '0.00%' OR 小虎队完成签收 IS NULL, 小虎队完成签收, concat(ROUND(小虎队完成签收-完成签收,2),'%')) as 小虎队对比,
     			            IF(神龙运营完成签收 = '0.00%' OR 神龙运营完成签收 IS NULL, 神龙运营完成签收, concat(ROUND(神龙运营完成签收-完成签收,2),'%')) as 神龙运营对比,
+    			            IF(小虎队完成签收 = '0.00%' OR 小虎队完成签收 IS NULL, 小虎队完成签收, concat(ROUND(小虎队完成签收-完成签收,2),'%')) as 小虎队对比,
     			            IF(红杉完成签收 = '0.00%' OR 红杉完成签收 IS NULL,红杉完成签收, concat(ROUND(红杉完成签收-完成签收,2),'%')) as 红杉对比,
     			            IF(金狮完成签收 = '0.00%' OR 金狮完成签收 IS NULL, 金狮完成签收, concat(ROUND(金狮完成签收-完成签收,2),'%')) as 金狮对比
-                    FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                IFNULL(cx.币种, '总计') 地区,
-                                IFNULL(cx.产品id, '总计') 产品id,
-                                IFNULL(cx.产品名称, '总计') 产品名称,
-                                IFNULL(cx.父级分类, '总计') 父级分类,
-                                COUNT(cx.`订单编号`) as 总单量,
-                                SUM(IF( 最终状态 = "已签收",1,0)) as 签收,
-                                SUM(IF( 最终状态 = "拒收",1,0)) as 拒收,
-                                concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 改派占比,
-                                concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                            concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                                concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                            SUM(IF(cx.团队 LIKE '神龙家族%',1,0)) as 神龙单量,
-                                SUM(IF( cx.团队 LIKE '神龙家族%' AND 最终状态 = "已签收",1,0)) as 神龙签收,
-                                SUM(IF( cx.团队 LIKE '神龙家族%' AND 最终状态 = "拒收",1,0)) as 神龙拒收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙家族%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.团队 LIKE '神龙家族%',1,0)) * 100,2),'%') as 神龙改派占比,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙家族%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '神龙家族%',1,0)) * 100,2),'%') as 神龙总计签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙家族%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '神龙家族%' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) * 100,2),'%') as 神龙完成签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙家族%' AND  最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / SUM(IF(cx.团队 LIKE '神龙家族%',1,0)) * 100,2),'%') as 神龙完成占比,
-                            SUM(IF(cx.团队 LIKE '火凤凰%',1,0)) as 火凤凰单量,
-                                SUM(IF( cx.团队 LIKE '火凤凰%' AND 最终状态 = "已签收",1,0)) as 火凤凰签收,
-                                SUM(IF( cx.团队 LIKE '火凤凰%' AND 最终状态 = "拒收",1,0)) as 火凤凰拒收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '火凤凰%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.团队 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰改派占比,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '火凤凰%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰总计签收,
-                                 concat(ROUND(SUM(IF(cx.团队 LIKE '火凤凰%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '火凤凰%' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) * 100,2),'%') as 火凤凰完成签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '火凤凰%' AND  最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / SUM(IF(cx.团队 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰完成占比,
-                            SUM(IF(cx.团队 LIKE '金鹏%',1,0)) as 小虎队单量,
-                                SUM(IF( cx.团队 LIKE '金鹏%' AND 最终状态 = "已签收",1,0)) as 小虎队签收,
-                                SUM(IF( cx.团队 LIKE '金鹏%' AND 最终状态 = "拒收",1,0)) as 小虎队拒收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金鹏%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.团队 LIKE '金鹏%',1,0)) * 100,2),'%') as 小虎队改派占比,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金鹏%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '金鹏%',1,0)) * 100,2),'%') as 小虎队总计签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金鹏%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '金鹏%' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) * 100,2),'%') as 小虎队完成签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金鹏%' AND  最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / SUM(IF(cx.团队 LIKE '金鹏%',1,0)) * 100,2),'%') as 小虎队完成占比,
-                            SUM(IF(cx.团队 LIKE '神龙-运营1组%',1,0)) as 神龙运营单量,
-                                SUM(IF( cx.团队 LIKE '神龙-运营1组%' AND 最终状态 = "已签收",1,0)) as 神龙运营签收,
-                                SUM(IF( cx.团队 LIKE '神龙-运营1组%' AND 最终状态 = "拒收",1,0)) as 神龙运营拒收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙-运营1组%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.团队 LIKE '神龙-运营1组%',1,0)) * 100,2),'%') as 神龙运营改派占比,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙-运营1组%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '神龙-运营1组%',1,0)) * 100,2),'%') as 神龙运营总计签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙-运营1组%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '神龙-运营1组%' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) * 100,2),'%') as 神龙运营完成签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙-运营1组%' AND  最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / SUM(IF(cx.团队 LIKE '神龙-运营1组%',1,0)) * 100,2),'%') as 神龙运营完成占比,
-                            SUM(IF(cx.团队 LIKE '红杉%',1,0)) as 红杉单量,
-                                SUM(IF( cx.团队 LIKE '红杉%' AND 最终状态 = "已签收",1,0)) as 红杉签收,
-                                SUM(IF( cx.团队 LIKE '红杉%' AND 最终状态 = "拒收",1,0)) as 红杉拒收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '红杉%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.团队 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉改派占比,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '红杉%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉总计签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '红杉%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '红杉%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 红杉完成签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '红杉%' AND  最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / SUM(IF(cx.团队 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉完成占比,
-                            SUM(IF(cx.团队 LIKE '金狮%',1,0)) as 金狮单量,
-                                SUM(IF( cx.团队 LIKE '金狮%' AND 最终状态 = "已签收",1,0)) as 金狮签收,
-                                SUM(IF( cx.团队 LIKE '金狮%' AND 最终状态 = "拒收",1,0)) as 金狮拒收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金狮%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.团队 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮改派占比,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金狮%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮总计签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金狮%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '金狮%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 金狮完成签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金狮%' AND  最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / SUM(IF(cx.团队 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮完成占比
-                        FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                FROM gat_zqsb cc
-                            where cc.日期 >= '{0}' and cc.`运单编号` is not null 
-                            ) cx
-                        GROUP BY cx.年月,cx.币种,cx.产品id
-                    WITH ROLLUP ) s
-                    ORDER BY FIELD(月份,DATE_FORMAT(CURDATE(),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 2 MONTH),'%Y%m'),'总计'),
+					FROM(SELECT	IFNULL(月份, '总计') 月份, IFNULL(地区, '总计') 地区, IFNULL(产品id, '总计') 产品id, IFNULL(产品名称, '总计') 产品名称, IFNULL(父级分类, '总计') 父级分类,
+							SUM(总单量) 总单量, SUM(签收) 签收, SUM(拒收) 拒收,
+                                concat(ROUND(SUM(改派) / SUM(总单量) * 100,2),'%') as 改派占比,
+                                concat(ROUND(SUM(签收) / SUM(总单量) * 100,2),'%') as 总计签收,
+                                concat(ROUND(SUM(签收) / SUM(完成) * 100,2),'%') as 完成签收,
+                                concat(ROUND(SUM(完成) / SUM(总单量) * 100,2),'%') as 完成占比,								
+							SUM(神龙单量) 神龙单量, SUM(神龙签收) 神龙签收, SUM(神龙拒收) 神龙拒收,
+                                concat(ROUND(SUM(神龙改派) / SUM(神龙单量) * 100,2),'%') as 神龙改派占比,
+                                concat(ROUND(SUM(神龙签收) / SUM(神龙单量) * 100,2),'%') as 神龙总计签收,
+                                concat(ROUND(SUM(神龙签收) / SUM(神龙完成) * 100,2),'%') as 神龙完成签收,
+                                concat(ROUND(SUM(神龙完成) / SUM(神龙单量) * 100,2),'%') as 神龙完成占比,					
+							SUM(火凤凰单量) 火凤凰单量, SUM(火凤凰签收) 火凤凰签收, SUM(火凤凰拒收) 火凤凰拒收,
+                                concat(ROUND(SUM(火凤凰改派) / SUM(火凤凰单量) * 100,2),'%') as 火凤凰改派占比,
+                                concat(ROUND(SUM(火凤凰签收) / SUM(火凤凰单量) * 100,2),'%') as 火凤凰总计签收,
+                                concat(ROUND(SUM(火凤凰签收) / SUM(火凤凰完成) * 100,2),'%') as 火凤凰完成签收,
+                                concat(ROUND(SUM(火凤凰完成) / SUM(火凤凰单量) * 100,2),'%') as 火凤凰完成占比,					
+							SUM(神龙运营单量) 神龙运营单量, SUM(神龙运营签收) 神龙运营签收, SUM(神龙运营拒收) 神龙运营拒收,
+                                concat(ROUND(SUM(神龙运营改派) / SUM(神龙运营单量) * 100,2),'%') as 神龙运营改派占比,
+                                concat(ROUND(SUM(神龙运营签收) / SUM(神龙运营单量) * 100,2),'%') as 神龙运营总计签收,
+                                concat(ROUND(SUM(神龙运营签收) / SUM(神龙运营完成) * 100,2),'%') as 神龙运营完成签收,
+                                concat(ROUND(SUM(神龙运营完成) / SUM(神龙运营单量) * 100,2),'%') as 神龙运营完成占比,						
+							SUM(小虎队单量) 小虎队单量, SUM(小虎队签收) 小虎队签收, SUM(小虎队拒收) 小虎队拒收,
+                                concat(ROUND(SUM(小虎队改派) / SUM(小虎队单量) * 100,2),'%') as 小虎队改派占比,
+                                concat(ROUND(SUM(小虎队签收) / SUM(小虎队单量) * 100,2),'%') as 小虎队总计签收,
+                                concat(ROUND(SUM(小虎队签收) / SUM(小虎队完成) * 100,2),'%') as 小虎队完成签收,
+                                concat(ROUND(SUM(小虎队完成) / SUM(小虎队单量) * 100,2),'%') as 小虎队完成占比,					
+							SUM(红杉单量) 红杉单量, SUM(红杉签收) 红杉签收, SUM(红杉拒收) 红杉拒收,
+                                concat(ROUND(SUM(红杉改派) / SUM(红杉单量) * 100,2),'%') as 红杉改派占比,
+                                concat(ROUND(SUM(红杉签收) / SUM(红杉单量) * 100,2),'%') as 红杉总计签收,
+                                concat(ROUND(SUM(红杉签收) / SUM(红杉完成) * 100,2),'%') as 红杉完成签收,
+                                concat(ROUND(SUM(红杉完成) / SUM(红杉单量) * 100,2),'%') as 红杉完成占比,						
+							SUM(金狮单量) 金狮单量, SUM(金狮签收) 金狮签收, SUM(金狮拒收) 金狮拒收,
+                                concat(ROUND(SUM(金狮改派) / SUM(金狮单量) * 100,2),'%') as 金狮改派占比,
+                                concat(ROUND(SUM(金狮签收) / SUM(金狮单量) * 100,2),'%') as 金狮总计签收,
+                                concat(ROUND(SUM(金狮签收) / SUM(金狮完成) * 100,2),'%') as 金狮完成签收,
+                                concat(ROUND(SUM(金狮完成) / SUM(金狮单量) * 100,2),'%') as 金狮完成占比									
+                        FROM(SELECT 年月 月份,币种 地区, 产品id, 产品名称, 父级分类,
+                                COUNT(订单编号) as 总单量,
+                                SUM(IF(最终状态 = "已签收",1,0)) as 签收,
+                                SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+                                SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 完成,
+                                SUM(IF(是否改派 = '改派',1,0)) as 改派,
+                            SUM(IF(家族 = '神龙',1,0)) as 神龙单量,
+                                SUM(IF(家族 = '神龙' AND 最终状态 = "已签收",1,0)) as 神龙签收,
+                                SUM(IF(家族 = '神龙' AND 最终状态 = "拒收",1,0)) as 神龙拒收,
+                                SUM(IF(家族 = '神龙' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 神龙完成,
+                                SUM(IF(家族 = '神龙' AND 是否改派 = '改派',1,0)) as 神龙改派,
+                            SUM(IF(家族 = '火凤凰',1,0)) as 火凤凰单量,
+                                SUM(IF(家族 = '火凤凰' AND 最终状态 = "已签收",1,0)) as 火凤凰签收,
+                                SUM(IF(家族 = '火凤凰' AND 最终状态 = "拒收",1,0)) as 火凤凰拒收,
+                                SUM(IF(家族 = '火凤凰' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 火凤凰完成,
+                                SUM(IF(家族 = '火凤凰' AND 是否改派 = '改派',1,0)) as 火凤凰改派,
+                            SUM(IF(家族 = '神龙-运营1组',1,0)) as 神龙运营单量,
+                                SUM(IF(家族 = '神龙-运营1组' AND 最终状态 = "已签收",1,0)) as 神龙运营签收,
+                                SUM(IF(家族 = '神龙-运营1组' AND 最终状态 = "拒收",1,0)) as 神龙运营拒收,
+                                SUM(IF(家族 = '神龙-运营1组' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 神龙运营完成,
+                                SUM(IF(家族 = '神龙-运营1组' AND 是否改派 = '改派',1,0)) as 神龙运营改派,
+                            SUM(IF(家族 = '小虎队',1,0)) as 小虎队单量,
+                                SUM(IF(家族 = '小虎队' AND 最终状态 = "已签收",1,0)) as 小虎队签收,
+                                SUM(IF(家族 = '小虎队' AND 最终状态 = "拒收",1,0)) as 小虎队拒收,
+                                SUM(IF(家族 = '小虎队' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 小虎队完成,
+                                SUM(IF(家族 = '小虎队' AND 是否改派 = '改派',1,0)) as 小虎队改派,
+                            SUM(IF(家族 = '红杉',1,0)) as 红杉单量,
+                                SUM(IF(家族 = '红杉' AND 最终状态 = "已签收",1,0)) as 红杉签收,
+                                SUM(IF(家族 = '红杉' AND 最终状态 = "拒收",1,0)) as 红杉拒收,
+                                SUM(IF(家族 = '红杉' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 红杉完成,
+                                SUM(IF(家族 = '红杉' AND 是否改派 = '改派',1,0)) as 红杉改派,
+                            SUM(IF(家族 = '金狮',1,0)) as 金狮单量,
+                                SUM(IF(家族 = '金狮' AND 最终状态 = "已签收",1,0)) as 金狮签收,
+                                SUM(IF(家族 = '金狮' AND 最终状态 = "拒收",1,0)) as 金狮拒收,
+                                SUM(IF(家族 = '金狮' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 金狮完成,
+                                SUM(IF(家族 = '金狮' AND 是否改派 = '改派',1,0)) as 金狮改派
+                            FROM gat_zqsb_cache cc
+						    WHERE cc.日期 >= '{0}' and cc.`运单编号` is not null 
+                            GROUP BY cc.年月,cc.币种,cc.产品id
+					    ) s
+						GROUP BY 月份,地区,产品id		
+                        WITH ROLLUP 
+					) ss
+                   ORDER BY FIELD(月份,DATE_FORMAT(CURDATE(),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 2 MONTH),'%Y%m'),'总计'),
                             FIELD(地区,'台湾','香港','总计'),
                             总单量 DESC;'''.format(month_last, team)
         df50 = pd.read_sql_query(sql=sql50, con=self.engine1)
@@ -6244,94 +3775,105 @@ class QueryUpdate(Settings):
 
         # 10、同产品各月的对比
         print('正在获取---10、同产品各月的对比…………')
-        # sql51 = '''SELECT *
-        #             FROM(SELECT IFNULL(cx.`家族`, '总计') 家族,
-        #                         IFNULL(cx.币种, '总计') 地区,
-        #                         IFNULL(cx.产品id, '总计') 产品id,
-        #                         IFNULL(cx.产品名称, '总计') 产品名称,
-        #                         IFNULL(cx.父级分类, '总计') 父级分类,
-        #                         COUNT(cx.`订单编号`) as 总单量,
-        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202104',1,0)) as 04总单量,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202104',1,0)) * 100,2),'%') as 04总计签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 04完成签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202104',1,0)) * 100,2),'%') as 04完成占比,
-        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202105',1,0)) as 05总单量,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202105',1,0)) * 100,2),'%') as 05总计签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 05完成签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202105',1,0)) * 100,2),'%') as 05完成占比,
-        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202106',1,0)) as 06总单量,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202106',1,0)) * 100,2),'%') as 06总计签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 06完成签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202106',1,0)) * 100,2),'%') as 06完成占比,
-        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202107',1,0)) as 07总单量,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202107',1,0)) * 100,2),'%') as 07总计签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 07完成签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202107',1,0)) * 100,2),'%') as 07完成占比,
-        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202108',1,0)) as 08总单量,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202108',1,0)) * 100,2),'%') as 08总计签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 08完成签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202108',1,0)) * 100,2),'%') as 08完成占比,
-        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) as 09总单量,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) * 100,2),'%') as 09总计签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 09完成签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) * 100,2),'%') as 09完成占比,
-        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202110',1,0)) as 10总单量,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202110' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) * 100,2),'%') as 10总计签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202110' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 10完成签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202110' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) * 100,2),'%') as 10完成占比
-        #                 FROM (SELECT *,
-        #                             IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族
-        #                         FROM gat_zqsb cc where cc.`运单编号` is not null
-        #                      )  cx
-        #                 GROUP BY cx.家族,cx.币种,cx.产品id
-        #                 WITH ROLLUP
-        #             ) s
-        #             ORDER BY FIELD(s.`家族`,'神龙','火凤凰','金狮','小虎队','神龙-低价','神龙-运营1组','红杉','总计'),
-        #                     FIELD( 地区, '台湾', '香港', '总计' ),
-        #                     s.总单量 DESC;'''
         sql51 = '''SELECT *
-                    FROM(SELECT IFNULL(cx.`家族`, '总计') 家族,
-                                IFNULL(cx.币种, '总计') 地区,
-                                IFNULL(cx.产品id, '总计') 产品id,
-                                IFNULL(cx.产品名称, '总计') 产品名称,
-                                IFNULL(cx.父级分类, '总计') 父级分类,
+                FROM (SELECT IFNULL(家族, '总计') 家族, IFNULL(地区, '总计') 地区, IFNULL(产品id, '总计') 产品id,  IFNULL(产品名称, '总计') 产品名称, IFNULL(父级分类, '总计') 父级分类,
+						    SUM(总单量) 总单量,
+						SUM(03总量) 03总单量,
+							concat(ROUND(SUM(03签收量) / SUM(03总量) * 100,2),'%') as 03总计签收,
+							concat(ROUND(SUM(03签收量) / SUM(03完成量) * 100,2),'%') as 03完成签收,
+							concat(ROUND(SUM(03完成量) / SUM(03总量) * 100,2),'%') as 03完成占比,						
+						SUM(04总量) 04总单量,
+							concat(ROUND(SUM(04签收量) / SUM(04总量) * 100,2),'%') as 04总计签收,
+							concat(ROUND(SUM(04签收量) / SUM(04完成量) * 100,2),'%') as 04完成签收,
+							concat(ROUND(SUM(04完成量) / SUM(04总量) * 100,2),'%') as 04完成占比,					
+						SUM(05总量) 05总单量,
+							concat(ROUND(SUM(05签收量) / SUM(05总量) * 100,2),'%') as 05总计签收,
+							concat(ROUND(SUM(05签收量) / SUM(05完成量) * 100,2),'%') as 05完成签收,
+							concat(ROUND(SUM(05完成量) / SUM(05总量) * 100,2),'%') as 05完成占比,						
+						SUM(06总量) 06总单量,
+							concat(ROUND(SUM(06签收量) / SUM(06总量) * 100,2),'%') as 06总计签收,
+							concat(ROUND(SUM(06签收量) / SUM(06完成量) * 100,2),'%') as 06完成签收,
+							concat(ROUND(SUM(06完成量) / SUM(06总量) * 100,2),'%') as 06完成占比,				
+						SUM(07总量) 07总单量,
+							concat(ROUND(SUM(07签收量) / SUM(07总量) * 100,2),'%') as 07总计签收,
+							concat(ROUND(SUM(07签收量) / SUM(07完成量) * 100,2),'%') as 07完成签收,
+							concat(ROUND(SUM(07完成量) / SUM(07总量) * 100,2),'%') as 07完成占比,
+						SUM(08总量) 08总单量,
+							concat(ROUND(SUM(08签收量) / SUM(08总量) * 100,2),'%') as 08总计签收,
+							concat(ROUND(SUM(08签收量) / SUM(08完成量) * 100,2),'%') as 08完成签收,
+							concat(ROUND(SUM(08完成量) / SUM(08总量) * 100,2),'%') as 08完成占比,					
+						SUM(09总量) 09总单量,
+							concat(ROUND(SUM(09签收量) / SUM(09总量) * 100,2),'%') as 09总计签收,
+							concat(ROUND(SUM(09签收量) / SUM(09完成量) * 100,2),'%') as 09完成签收,
+							concat(ROUND(SUM(09完成量) / SUM(09总量) * 100,2),'%') as 09完成占比,					
+						SUM(10总量) 10总单量,
+							concat(ROUND(SUM(10签收量) / SUM(10总量) * 100,2),'%') as 10总计签收,
+							concat(ROUND(SUM(10签收量) / SUM(10完成量) * 100,2),'%') as 10完成签收,
+							concat(ROUND(SUM(10完成量) / SUM(10总量) * 100,2),'%') as 10完成占比,					
+						SUM(11总量) 11总单量,
+							concat(ROUND(SUM(11签收量) / SUM(11总量) * 100,2),'%') as 11总计签收,
+							concat(ROUND(SUM(11签收量) / SUM(11完成量) * 100,2),'%') as 11完成签收,
+							concat(ROUND(SUM(11完成量) / SUM(11总量) * 100,2),'%') as 11完成占比,						
+						SUM(12总量) 12总单量,
+							concat(ROUND(SUM(12签收量) / SUM(12总量) * 100,2),'%') as 12总计签收,
+							concat(ROUND(SUM(12签收量) / SUM(12完成量) * 100,2),'%') as 12完成签收,
+							concat(ROUND(SUM(12完成量) / SUM(12总量) * 100,2),'%') as 12完成占比,					
+						SUM(01总量) 01总单量,
+							concat(ROUND(SUM(01签收量) / SUM(01总量) * 100,2),'%') as 01总计签收,
+							concat(ROUND(SUM(01签收量) / SUM(01完成量) * 100,2),'%') as 01完成签收,
+							concat(ROUND(SUM(01完成量) / SUM(01总量) * 100,2),'%') as 01完成占比,						
+						SUM(02总量) 02总单量,
+							concat(ROUND(SUM(02签收量) / SUM(02总量) * 100,2),'%') as 02总计签收,
+							concat(ROUND(SUM(02签收量) / SUM(02完成量) * 100,2),'%') as 02完成签收,
+							concat(ROUND(SUM(02完成量) / SUM(02总量) * 100,2),'%') as 02完成占比		
+                    FROM(SELECT 家族,币种 地区, 产品id, 产品名称, 父级分类,
                                 COUNT(cx.`订单编号`) as 总单量,
-                            SUM(IF(年月 = 202107,1,0)) as 07总单量,
-                                concat(ROUND(SUM(IF(年月 = 202107 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202107,1,0)) * 100,2),'%') as 07总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202107 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202107 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 07完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202107 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202107,1,0)) * 100,2),'%') as 07完成占比,
-                            SUM(IF(年月 = 202108,1,0)) as 08总单量,
-                                concat(ROUND(SUM(IF(年月 = 202108 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202108,1,0)) * 100,2),'%') as 08总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202108 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202108 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 08完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202108 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202108,1,0)) * 100,2),'%') as 08完成占比,
-                            SUM(IF(年月 = 202109,1,0)) as 09总单量,
-                                concat(ROUND(SUM(IF(年月 = 202109 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202109,1,0)) * 100,2),'%') as 09总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202109 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202109 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 09完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202109 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202109,1,0)) * 100,2),'%') as 09完成占比,
-                            SUM(IF(年月 = 202110,1,0)) as 10总单量,
-                                concat(ROUND(SUM(IF(年月 = 202110 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202110,1,0)) * 100,2),'%') as 10总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202110 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202110 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 10完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202110 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202110,1,0)) * 100,2),'%') as 10完成占比,
-                            SUM(IF(年月 = 202111,1,0)) as 11总单量,
-                                concat(ROUND(SUM(IF(年月 = 202111 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202111,1,0)) * 100,2),'%') as 11总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202111 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202111 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 11完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202111 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202111,1,0)) * 100,2),'%') as 11完成占比,
-                            SUM(IF(年月 = 202112,1,0)) as 12总单量,
-                                concat(ROUND(SUM(IF(年月 = 202112 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202112,1,0)) * 100,2),'%') as 12总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202112 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202112 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 12完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202112 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202112,1,0)) * 100,2),'%') as 12完成占比,
-                            SUM(IF(年月 = 202201,1,0)) as 01总单量,
-                                concat(ROUND(SUM(IF(年月 = 202201 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202201,1,0)) * 100,2),'%') as 01总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202201 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202201 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 01完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202201 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202201,1,0)) * 100,2),'%') as 01完成占比
+                            SUM(IF(年月 = 202103,1,0)) as 03总量,
+                                SUM(IF(年月 = 202103 AND 最终状态 = "已签收",1,0)) as 03签收量,
+                                SUM(IF(年月 = 202103 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 03完成量,					
+                            SUM(IF(年月 = 202104,1,0)) as 04总量,
+                                SUM(IF(年月 = 202104 AND 最终状态 = "已签收",1,0)) as 04签收量,
+                                SUM(IF(年月 = 202104 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 04完成量,					
+                            SUM(IF(年月 = 202105,1,0)) as 05总量,
+                                SUM(IF(年月 = 202105 AND 最终状态 = "已签收",1,0)) as 05签收量,
+                                SUM(IF(年月 = 202105 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 05完成量,					
+                            SUM(IF(年月 = 202106,1,0)) as 06总量,
+                                SUM(IF(年月 = 202106 AND 最终状态 = "已签收",1,0)) as 06签收量,
+                                SUM(IF(年月 = 202106 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 06完成量,						
+                            SUM(IF(年月 = 202107,1,0)) as 07总量,
+                                SUM(IF(年月 = 202107 AND 最终状态 = "已签收",1,0)) as 07签收量,
+                                SUM(IF(年月 = 202107 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 07完成量,						
+                            SUM(IF(年月 = 202108,1,0)) as 08总量,
+                                SUM(IF(年月 = 202108 AND 最终状态 = "已签收",1,0)) as 08签收量,
+                                SUM(IF(年月 = 202108 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 08完成量,					
+                            SUM(IF(年月 = 202109,1,0)) as 09总量,
+                                SUM(IF(年月 = 202109 AND 最终状态 = "已签收",1,0)) as 09签收量,
+                                SUM(IF(年月 = 202109 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 09完成量,					
+                            SUM(IF(年月 = 202110,1,0)) as 10总量,
+                                SUM(IF(年月 = 202110 AND 最终状态 = "已签收",1,0)) as 10签收量,
+                                SUM(IF(年月 = 202110 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 10完成量,					
+                            SUM(IF(年月 = 202111,1,0)) as 11总量,
+                                SUM(IF(年月 = 202111 AND 最终状态 = "已签收",1,0)) as 11签收量,
+                                SUM(IF(年月 = 202111 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 11完成量,						
+                            SUM(IF(年月 = 202112,1,0)) as 12总量,
+                                SUM(IF(年月 = 202112 AND 最终状态 = "已签收",1,0)) as 12签收量,
+                                SUM(IF(年月 = 202112 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 12完成量,						
+                            SUM(IF(年月 = 202201,1,0)) as 01总量,
+                                SUM(IF(年月 = 202201 AND 最终状态 = "已签收",1,0)) as 01签收量,
+                                SUM(IF(年月 = 202201 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 01完成量,
+                            SUM(IF(年月 = 202202,1,0)) as 02总量,
+                                SUM(IF(年月 = 202202 AND 最终状态 = "已签收",1,0)) as 02签收量,
+                                SUM(IF(年月 = 202202 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 02完成量							
                         FROM gat_zqsb_cache cx
-                        where cx.`运单编号` is not null 
+                        where cx.`运单编号` is not null
                         GROUP BY cx.家族,cx.币种,cx.产品id
-                        WITH ROLLUP 
                     ) s
-                    ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮','总计'),
-                            FIELD( 地区, '台湾', '香港', '总计' ),
-                            s.总单量 DESC;'''
+					GROUP BY s.家族,s.地区,s.产品id
+					WITH ROLLUP 
+				) ss
+                ORDER BY FIELD(ss.`家族`,'神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮','总计'),
+                        FIELD(ss.地区, '台湾', '香港', '总计' ),
+                        ss.总单量 DESC;'''
         df51 = pd.read_sql_query(sql=sql51, con=self.engine1)
         listT.append(df51)
 
@@ -6570,909 +4112,6 @@ class QueryUpdate(Settings):
         except Exception as e:
             print('运行失败：', str(Exception) + str(e))
         print('----已写入excel ')
-    # 新版签收率-报表(刘姐看的) - 金额计算
-    def qsb_new_money(self, team, month_last):  # 报表各团队近两个月的物流数据
-        month_now = datetime.datetime.now().strftime('%Y-%m-%d')
-        match = {'gat': '港台-每日'}
-        # if team == 'ga9t':
-        #     month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-        #     month_now = datetime.datetime.now().strftime('%Y-%m-%d')
-        # else:
-        #     month_last = '2021-08-01'
-        #     month_now = '2021-09-30'
-        sql = '''DELETE FROM gat_zqsb
-                WHERE gat_zqsb.`订单编号` IN (SELECT 订单编号
-            								FROM gat_order_list 
-            								WHERE gat_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-            								);'''
-        print('正在清除总表的可能删除了的订单…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
-        sql = '''DELETE FROM gat_zqsb gz 
-                WHERE gz.`系统订单状态` = '已转采购' and gz.`是否改派` = '改派' and gz.`审核时间` >= '{0} 00:00:00' AND gz.`日期` >= '{1}';'''.format(month_now, month_last)
-        print('正在清除不参与计算的今日改派订单…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
-        sql = '''UPDATE gat_zqsb d
-                SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', d.`物流方式`) )
-                WHERE d.`是否改派` ='直发';'''
-        print('正在修改-直发的物流渠道…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        sql = '''UPDATE gat_zqsb d
-                SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
-                                IF(d.`物流方式` LIKE '香港-立邦%','香港-立邦-改派',
-    							IF(d.`物流方式` LIKE '香港-易速配%','香港-易速配-改派',
-    							IF(d.`物流方式` LIKE '台湾-立邦普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-大黄蜂普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-森鸿-新竹%','森鸿',
-    							IF(d.`物流方式` LIKE '台湾-天马-顺丰%','天马顺丰',
-    							IF(d.`物流方式` LIKE '台湾-天马-新竹%' OR d.`物流方式` LIKE '台湾-天马-711%','天马新竹',
-    							IF(d.`物流方式` LIKE '台湾-天马-黑猫%','天马黑猫',
-    							IF(d.`物流方式` LIKE '台湾-易速配-龟山%' OR d.`物流方式` LIKE '台湾-易速配-新竹%' OR d.`物流方式` = '易速配','龟山',
-    							IF(d.`物流方式` LIKE '台湾-速派-新竹%' OR d.`物流方式` LIKE '台湾-速派-711超商%','速派', 
-    							IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', d.`物流方式`)))  )  )  )  )  )  )  )
-                WHERE d.`是否改派` ='改派';'''
-        print('正在修改-改派的物流渠道…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=100)
-
-        filePath = []
-        listT = []  # 查询sql的结果 存放池
-        print('正在获取---' + match[team] + '---签收率…………')
-        # 0、每日-各团队
-        print('正在获取---0、每日各团队…………')
-        # sql0 = '''SELECT 月份,地区, 家族,
-        #                     SUM(s.昨日订单量) as 有运单号,
-        #                     SUM(s.直发签收) as 直发签收,
-        #                     SUM(s.直发拒收) as 直发拒收,
-        #                     SUM(s.直发完成) as 直发完成,
-        #                     SUM(s.直发总订单) as 直发总订单,
-        #                     concat(ROUND(IFNULL(SUM(s.直发签收) / SUM(s.直发完成), 0) * 100,2),'%') as 直发完成签收,
-        #                     concat(ROUND(IFNULL(SUM(s.直发签收) / SUM(s.直发总订单), 0) * 100,2),'%') as 直发总计签收,
-        #                     concat(ROUND(IFNULL(SUM(s.直发完成) / SUM(s.直发总订单), 0) * 100,2),'%')as 直发完成占比,
-        #                     SUM(s.改派签收) as 改派签收,
-        #                     SUM(s.改派拒收) as 改派拒收,
-        #                     SUM(s.改派完成) as 改派完成,
-        #                     SUM(s.改派总订单) as 改派总订单,
-        #                     concat(ROUND(IFNULL(SUM(s.改派签收) / SUM(s.改派完成), 0) * 100,2),'%') as 改派完成签收,
-        #                     concat(ROUND(IFNULL(SUM(s.改派签收) / SUM(s.改派总订单), 0) * 100,2),'%') as 改派总计签收,
-        #                     concat(ROUND(IFNULL(SUM(s.改派完成) / SUM(s.改派总订单), 0) * 100,2),'%') as 改派完成占比
-        #             FROM( SELECT IFNULL(cx.`年月`, '总计') 月份,
-        #                         IFNULL(cx.币种, '总计') 地区,
-        #                         IFNULL(cx.家族, '总计') 家族,
-        #                         SUM(IF(cx.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY),1,0)) as 昨日订单量,
-        #                         SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) as 直发签收,
-        #                         SUM(IF(`是否改派` = '直发' AND 最终状态 = "拒收",1,0)) as 直发拒收,
-        #                         SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 直发完成,
-        #                         SUM(IF(`是否改派` = '直发',1,0)) as 直发总订单,
-        #                         SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) as 改派签收,
-        #                         SUM(IF(`是否改派` = '改派' AND 最终状态 = "拒收",1,0)) as 改派拒收,
-        #                         SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 改派完成,
-        #                         SUM(IF(`是否改派` = '改派',1,0)) as 改派总订单
-        #                     FROM (SELECT *,
-        #                                 IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","金鹏",cc.团队)))))) as 家族
-        #                             FROM gat_zqsb cc
-        #                             where cc.日期 >= '{0}' and cc.`运单编号` is not null
-        #                           ) cx
-        #                     GROUP BY cx.年月,cx.币种,cx.家族
-        #                     WITH ROLLUP
-        #                 ) s
-        #                 GROUP BY 月份,地区,家族
-        #                 ORDER BY 月份 DESC,
-        #                         FIELD( 地区, '台湾', '香港', '总计' ),
-        #                         FIELD( 家族, '神龙', '火凤凰', '金狮', '金鹏', '神龙-低价','神龙-运营1组', '红杉', '总计');'''.format(month_last, team)
-        sql0 = '''SELECT *
-                FROM (SELECT IFNULL(s.`年月`, '总计') 月份,
-                            IFNULL(s.币种, '总计') 地区,
-                            IFNULL(s.家族, '总计') 家族,  
-                            SUM(昨日单量) 昨日单量,
-                            SUM(s.直发签收) as 直发签收,
-                            SUM(s.直发拒收) as 直发拒收,
-                            SUM(s.直发完成) as 直发完成,
-                            SUM(s.直发总订单) as 直发总订单,
-                            concat(ROUND(IFNULL(SUM(s.直发签收) / SUM(s.直发完成), 0) * 100,2),'%') as 直发完成签收,
-                            concat(ROUND(IFNULL(SUM(s.直发签收) / SUM(s.直发总订单), 0) * 100,2),'%') as 直发总计签收,
-                            concat(ROUND(IFNULL(SUM(s.直发完成) / SUM(s.直发总订单), 0) * 100,2),'%')as 直发完成占比,
-                            SUM(s.改派签收) as 改派签收,
-                            SUM(s.改派拒收) as 改派拒收,
-                            SUM(s.改派完成) as 改派完成,
-                            SUM(s.改派总订单) as 改派总订单,
-                            concat(ROUND(IFNULL(SUM(s.改派签收) / SUM(s.改派完成), 0) * 100,2),'%') as 改派完成签收,
-                            concat(ROUND(IFNULL(SUM(s.改派签收) / SUM(s.改派总订单), 0) * 100,2),'%') as 改派总计签收,
-                            concat(ROUND(IFNULL(SUM(s.改派完成) / SUM(s.改派总订单), 0) * 100,2),'%') as 改派完成占比
-                    FROM( SELECT cx.`年月`,
-                                cx.`币种`,
-                                cx.`家族`,  
-                                总订单量 昨日单量,
-                                SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) as 直发签收,
-                                SUM(IF(`是否改派` = '直发' AND 最终状态 = "拒收",1,0)) as 直发拒收,
-                                SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 直发完成,
-                                SUM(IF(`是否改派` = '直发',1,0)) as 直发总订单,
-                                SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) as 改派签收,
-                                SUM(IF(`是否改派` = '改派' AND 最终状态 = "拒收",1,0)) as 改派拒收,
-                                SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 改派完成,
-                                SUM(IF(`是否改派` = '改派',1,0)) as 改派总订单
-                            FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                    FROM gat_zqsb cc
-                                    where cc.日期 >= '{0}' and cc.`运单编号` is not null 
-                            ) cx	
-							LEFT JOIN 
-							(SELECT 年月,币种,家族,count(订单编号) as 总订单量
-								FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-										FROM gat_order_list cc 
-										WHERE  cc.日期 = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-								) dg  
-								GROUP BY dg.年月,dg.币种,dg.家族
-							) cx2 
-							ON  cx.年月 = cx2.年月 AND cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族   
-                          GROUP BY cx.年月,cx.币种,cx.家族
-                        ) s						
-                    GROUP BY s.年月,s.币种,s.家族
-					WITH ROLLUP 
-					HAVING `地区` <> '总计'
-				) ss					
-                ORDER BY 月份 DESC,
-                        FIELD( 地区, '台湾', '香港', '总计' ),
-                        FIELD( 家族, '神龙', '火凤凰', '小虎队', '神龙-低价','神龙-运营1组', '红杉', '金狮', '总计'),
-                        直发总订单 DESC;'''.format(month_last, team)
-        df0 = pd.read_sql_query(sql=sql0, con=self.engine1)
-        listT.append(df0)
-
-        # 01、各团队-审核率 删单率
-        print('正在获取---01、各团队-审核率_删单率…………')
-        sql01 = '''SELECT gs.币种,SUBSTRING(删除原因,2) as 删除原因, 
-        			            COUNT(订单编号) as 单量, 
-        			            SUM(IF(gs.`审单类型` = '是',1,0)) as 自动审单量,
-        			            concat(ROUND(SUM(IF(gs.`审单类型` = '是',1,0)) / 总订单量 * 100,2),'%') as 自动审单量率,
-        			            SUM(IF(gs.`审单类型` = '否' or gs.`审单类型` IS NULL,1,0)) as 人工审单量,
-        			            concat(ROUND(SUM(IF(gs.`审单类型` = '否' or gs.`审单类型` IS NULL,1,0)) / 总订单量 * 100,2),'%') as 人工审单量率,
-        			            SUM(IF(gs.`问题原因` IS NOT NULL,1,0)) as 问题订单量,
-        			            SUM(IF(gs.`问题原因` IS NOT NULL AND gs.`系统订单状态` IN ("已删除","支付失败","未支付"),1,0)) as 问题订单删单量,
-        			            concat(ROUND(SUM(IF(gs.`问题原因` IS NOT NULL AND gs.`系统订单状态` NOT IN ("已删除","支付失败","未支付"),1,0)) / SUM(IF(gs.`问题原因` IS NOT NULL,1,0))  * 100,2),'%') as 问题订单转化率,
-        			            SUM(IF(gs.`系统订单状态` = '已删除',1,0)) as 删单量,
-        			            concat(ROUND(SUM(IF(gs.`系统订单状态` = '已删除',1,0)) / 总订单量 * 100,2),'%') as 删单率
-                            FROM  gat_order_list gs
-                            LEFT JOIN (SELECT 币种, COUNT(订单编号)  as 总订单量
-        					            FROM  gat_order_list gss
-        					            WHERE gss.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-        					            GROUP BY gss.`币种`
-        					) gs2 ON gs.`币种` = gs2.`币种`
-                            WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                            GROUP BY gs.`币种`,gs.`删除原因`
-                            WITH ROLLUP
-                            HAVING gs.`币种` IS NOT null
-                            ORDER BY gs.币种,单量 DESC;'''
-        df01 = pd.read_sql_query(sql=sql01, con=self.engine1)
-        listT.append(df01)
-
-        # 1、各月-各团队
-        print('正在获取---1、各月各团队…………')
-        sql10 = '''SELECT *
-                            FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                        IFNULL(cx.`币种`, '总计') 地区,
-                                        IFNULL(cx.家族, '总计') 家族,
-                                        COUNT(cx.`订单编号`) as 总单量,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-            			                concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-            			                ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-
-                                        SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-            			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
-                                FROM (SELECT *,
-                                         IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM gat_zqsb cc where cc.`运单编号` is not null 
-                                      ) cx									
-                                GROUP BY cx.年月,cx.币种,cx.家族
-                                WITH ROLLUP 
-            	            ) s
-                            ORDER BY 月份 DESC,
-                                    FIELD( 地区, '台湾', '香港', '总计' ),
-                                    FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮', '总计' ),
-                                    s.总单量 DESC;'''.format(team)
-        df10 = pd.read_sql_query(sql=sql10, con=self.engine1)
-        listT.append(df10)
-        # 2、各月各团队---分旬
-        print('正在获取---2、各月各团队---分旬…………')
-        sql11 = '''SELECT *
-                            FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                        IFNULL(cx.`旬`, '总计') 旬,
-                                        IFNULL(cx.`币种`, '总计') 地区,
-                                        IFNULL(cx.家族, '总计') 家族,
-                                        COUNT(cx.`订单编号`) as 总单量,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-            			                concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-            			                concat(ROUND(SUM(IF( 最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-            			                ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-
-                                        SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-            			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-            			                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
-                                FROM (SELECT *,
-                                          IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM gat_zqsb cc where cc.`运单编号` is not null 
-                                      )  cx									
-                                GROUP BY cx.年月,cx.旬,cx.币种, cx.家族
-                                WITH ROLLUP 
-            	            ) s
-                            ORDER BY 月份 DESC,旬,
-                                    FIELD( 地区, '台湾', '香港', '总计' ),
-                                    FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮', '总计' ),
-                                    s.总单量 DESC;'''.format(team)
-        df11 = pd.read_sql_query(sql=sql11, con=self.engine1)
-        listT.append(df11)
-
-        # 3、各团队-各品类
-        print('正在获取---3、各团队-各品类…………')
-        sql20 = '''SELECT *
-                            FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                        IFNULL(cx.`币种`, '总计') 地区,
-                                        IFNULL(cx.`家族`, '总计') 家族,
-                                        IFNULL(cx.`父级分类`, '总计') 父级分类,
-                                        COUNT(cx.`订单编号`) as 总单量,
-                                        concat(ROUND(SUM(IF(最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                                        concat(ROUND(SUM(IF(最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                                        concat(ROUND(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                                        concat(ROUND(SUM(IF(最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-                                        concat(ROUND(SUM(IF(最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-                                        concat(ROUND(COUNT(cx.`订单编号`) / 总订单量 * 100,2),'%') as 品类占比,
-                                        ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-                                    SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发',1,0)) / 直发总单量 * 100,2),'%') as 直发品类占比,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / 改派总单量 * 100,2),'%') as 改派品类占比
-                                FROM (SELECT *,
-                                          IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM gat_zqsb cc
-                                      where cc.`运单编号` is not null 
-                                    ) cx 
-                                LEFT JOIN 
-								    (SELECT 币种,家族,年月,count(订单编号) as 总订单量,SUM(IF(`是否改派`= '直发',1,0)) as 直发总单量,SUM(IF(`是否改派` = '改派',1,0)) as 改派总单量
-								    FROM (SELECT *,
-                                                IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                            FROM gat_zqsb cc 
-									    WHERE  cc.`运单编号` is not null 
-									) dg  GROUP BY dg.币种,dg.家族,dg.年月
-								) cx2 ON cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族 AND  cx.年月 = cx2.年月                       
-                                GROUP BY cx.年月,cx.币种,cx.家族,cx.父级分类
-                                WITH ROLLUP 
-                            ) s
-                            ORDER BY 月份 DESC,
-                                    FIELD( 地区, '台湾', '香港', '总计' ),
-                                    FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮', '总计' ),
-                                    FIELD( 父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
-                                    s.总单量 DESC;'''.format(month_last, team)
-        df20 = pd.read_sql_query(sql=sql20, con=self.engine1)
-        listT.append(df20)
-        # 4、各团队-各物流
-        print('正在获取---4、各团队-各物流…………')
-        sql21 = '''SELECT *
-                        FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                    IFNULL(cx.`币种`, '总计') 地区,
-                                    IFNULL(cx.`是否改派`, '总计') 是否改派,
-                                    IFNULL(cx.`家族`, '总计') 家族,
-                                    IFNULL(cx.`物流方式`, '总计') 物流方式,
-                                    COUNT(cx.`订单编号`) as 总单量,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                                    concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-                                    ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-                                SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-                                    concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
-                            FROM (SELECT *, 
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                    FROM gat_zqsb cc
-                                    where cc.`运单编号` is not null 
-                                ) cx            
-                            GROUP BY cx.年月,cx.币种,cx.是否改派,cx.家族,cx.物流方式
-                            WITH ROLLUP
-                        ) s
-                        ORDER BY FIELD(月份, DATE_FORMAT(CURDATE(),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 2 MONTH),'%Y%m'), 
-                                            DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 4 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 5 MONTH),'%Y%m'), 
-			                                DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 6 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 7 MONTH),'%Y%m'), '总计' ),
-                                FIELD(地区, '台湾', '香港', '总计' ),
-                                FIELD(是否改派, '直发', '改派', '总计' ),
-                                FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮', '总计' ),
-                                FIELD(物流方式, '台湾-大黄蜂普货头程-森鸿尾程','台湾-大黄蜂普货头程-易速配尾程', '台湾-立邦普货头程-森鸿尾程','台湾-易速配-TW海快','台湾-立邦普货头程-易速配尾程', 
-                                                '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
-                                                '香港-立邦-顺丰','香港-易速配-顺丰','香港-易速配-顺丰YC','香港-森鸿-SH渠道','香港-森鸿-顺丰渠道', 
-                                                '龟山','森鸿','速派','天马顺丰','天马新竹','香港-立邦-改派','香港-森鸿-改派','香港-易速配-改派','总计'),
-                                s.总单量 DESC;'''.format(month_last, team)
-        df21 = pd.read_sql_query(sql=sql21, con=self.engine1)
-        listT.append(df21)
-
-        # 5、各团队-各平台
-        print('正在获取---6、各团队-各平台…………')
-        sql30 = '''SELECT *
-                            FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                        IFNULL(cx.`币种`, '总计') 地区,
-                                        IFNULL(cx.`家族`, '总计') 家族,
-                                        IFNULL(cx.`订单来源`, '总计') 平台,
-                                        COUNT(cx.`订单编号`) as 总单量,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                                        concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-                                        ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-                                    SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
-                                FROM (SELECT *,
-                                          IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM gat_zqsb cc
-                                      where cc.`运单编号` is not null 
-                                    ) cx                                  
-                                GROUP BY cx.年月,cx.币种,cx.家族,cx.订单来源
-                                WITH ROLLUP 
-                            ) s
-                            ORDER BY 月份 DESC,
-                                    FIELD( 地区, '台湾', '香港', '总计' ),
-                                    FIELD( 家族, '神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮', '总计' ),
-                                    FIELD( 平台, 'google', 'facebook', 'line', 'native',  'Criteo', 'tiktok', 'yahoo','facebookpage','recommend','postsaleclone','recomm','shangwutong','总计' ),
-                                    s.总单量 DESC;'''.format(month_last, team)
-        df30 = pd.read_sql_query(sql=sql30, con=self.engine1)
-        listT.append(df30)
-        # 6、各平台-各团队
-        print('正在获取---5、各平台-各团队…………')
-        sql31 = '''SELECT *
-                            FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                        IFNULL(cx.`币种`, '总计') 地区,
-                                        IFNULL(cx.`订单来源`, '总计') 平台,
-                                        IFNULL(cx.`家族`, '总计') 家族,
-                                        COUNT(cx.`订单编号`) as 总单量,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                                        concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-                                        ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-                                    SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
-                                FROM (SELECT *,
-                                          IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM gat_zqsb cc
-                                      where cc.日期 >= '{0}' and cc.`运单编号` is not null 
-                                    ) cx                                  
-                                GROUP BY cx.年月,cx.币种,cx.订单来源,cx.家族
-                                WITH ROLLUP 
-                            ) s
-                            ORDER BY 月份 DESC,
-                                    FIELD( 地区, '台湾', '香港', '总计' ),
-                                    FIELD( 平台, 'google', 'facebook', 'line', 'native',  'Criteo', 'tiktok', 'yahoo','facebookpage','recommend','postsaleclone','recomm','shangwutong','总计' ),
-                                    FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮', '总计' ),
-                                    s.总单量 DESC;'''.format(month_last, team)
-        df31 = pd.read_sql_query(sql=sql31, con=self.engine1)
-        listT.append(df31)
-
-        # 7、各品类-各团队
-        print('正在获取---7、各品类-各团队…………')
-        sql40 = '''SELECT *
-                            FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                        IFNULL(cx.`币种`, '总计') 地区,
-                                        IFNULL(cx.`父级分类`, '总计') 父级分类,
-                                        IFNULL(cx.家族, '总计') 家族,
-                                        COUNT(cx.`订单编号`) as 总单量,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                                        concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-                                        concat(ROUND(SUM(IF( 最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-                                        ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-
-                                        SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-                                        concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
-                                FROM (SELECT *,
-                                          IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                        FROM gat_zqsb cc
-                                      where cc.日期 >= '{0}' and cc.`运单编号` is not null 
-                                    ) cx                                  
-                                GROUP BY cx.年月,cx.币种,cx.父级分类,cx.家族
-                                WITH ROLLUP 
-                            ) s
-                            ORDER BY 月份 DESC,
-                                    FIELD( 地区, '台湾', '香港', '总计' ),
-                                    FIELD( 父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
-                                    FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮', '总计' ),
-                                    s.总单量 DESC;'''.format(month_last, team)
-        df40 = pd.read_sql_query(sql=sql40, con=self.engine1)
-        listT.append(df40)
-        # 8、各物流-各团队
-        print('正在获取---8、各物流-各团队…………')
-        sql41 = '''SELECT *
-                        FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                    IFNULL(cx.`币种`, '总计') 地区,
-                                    IFNULL(cx.`是否改派`, '总计') 是否改派,
-                                    IFNULL(cx.`物流方式`, '总计') 物流方式,
-                                    IFNULL(cx.家族, '总计') 家族,
-                                    COUNT(cx.`订单编号`) as 总单量,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                                    concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-                                    concat(ROUND(SUM(IF( 最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-                                    ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-                                    SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-                                    concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-                                    concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比
-                            FROM (SELECT *, 
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                    FROM gat_zqsb cc
-                                    where cc.日期 >= '{0}' and cc.`运单编号` is not null 
-                                ) cx                                  
-                            GROUP BY cx.年月,cx.币种,cx.是否改派,cx.物流方式,cx.家族
-                            WITH ROLLUP
-                        ) s
-                        ORDER BY FIELD(月份, DATE_FORMAT(CURDATE(),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 2 MONTH),'%Y%m'), 
-                                            DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 4 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 5 MONTH),'%Y%m'), 
-			                                DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 6 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 7 MONTH),'%Y%m'), '总计' ),
-                                FIELD(地区, '台湾', '香港', '总计' ),
-                                FIELD(是否改派, '直发', '改派', '总计' ),
-                                FIELD(物流方式, '台湾-大黄蜂普货头程-森鸿尾程','台湾-大黄蜂普货头程-易速配尾程', '台湾-立邦普货头程-森鸿尾程','台湾-立邦普货头程-易速配尾程', '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
-                                    '香港-立邦-顺丰','香港-森鸿-SH渠道','香港-森鸿-顺丰渠道','香港-易速配-顺丰', '龟山','森鸿','速派','天马顺丰','天马新竹','香港-立邦-改派','香港-森鸿-改派','香港-易速配-改派','总计' ),
-                                FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮', '总计' ),
-                                s.总单量 DESC;'''.format(month_last, team)
-        df41 = pd.read_sql_query(sql=sql41, con=self.engine1)
-        listT.append(df41)
-
-        # 9、同产品各团队的对比
-        print('正在获取---9、同产品各团队的对比…………')
-        sql50 = '''SELECT *, IF(神龙完成签收 = '0.00%' OR 神龙完成签收 IS NULL, 神龙完成签收, concat(ROUND(神龙完成签收-完成签收,2),'%')) as 神龙对比,
-    			            IF(火凤凰完成签收 = '0.00%' OR 火凤凰完成签收 IS NULL, 火凤凰完成签收, concat(ROUND(火凤凰完成签收-完成签收,2),'%')) as 火凤凰对比,
-    			            IF(小虎队完成签收 = '0.00%' OR 小虎队完成签收 IS NULL, 小虎队完成签收, concat(ROUND(小虎队完成签收-完成签收,2),'%')) as 小虎队对比,
-    			            IF(神龙运营完成签收 = '0.00%' OR 神龙运营完成签收 IS NULL, 神龙运营完成签收, concat(ROUND(神龙运营完成签收-完成签收,2),'%')) as 神龙运营对比,
-    			            IF(红杉完成签收 = '0.00%' OR 红杉完成签收 IS NULL,红杉完成签收, concat(ROUND(红杉完成签收-完成签收,2),'%')) as 红杉对比,
-    			            IF(金狮完成签收 = '0.00%' OR 金狮完成签收 IS NULL, 金狮完成签收, concat(ROUND(金狮完成签收-完成签收,2),'%')) as 金狮对比
-                    FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                IFNULL(cx.币种, '总计') 地区,
-                                IFNULL(cx.产品id, '总计') 产品id,
-                                IFNULL(cx.产品名称, '总计') 产品名称,
-                                IFNULL(cx.父级分类, '总计') 父级分类,
-                                COUNT(cx.`订单编号`) as 总单量,
-                                SUM(IF( 最终状态 = "已签收",1,0)) as 签收,
-                                SUM(IF( 最终状态 = "拒收",1,0)) as 拒收,
-                                concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 改派占比,
-                                concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                            concat(ROUND(SUM(IF( 最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                                concat(ROUND(SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                            SUM(IF(cx.团队 LIKE '神龙家族%',1,0)) as 神龙单量,
-                                SUM(IF( cx.团队 LIKE '神龙家族%' AND 最终状态 = "已签收",1,0)) as 神龙签收,
-                                SUM(IF( cx.团队 LIKE '神龙家族%' AND 最终状态 = "拒收",1,0)) as 神龙拒收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙家族%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.团队 LIKE '神龙家族%',1,0)) * 100,2),'%') as 神龙改派占比,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙家族%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '神龙家族%',1,0)) * 100,2),'%') as 神龙总计签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙家族%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '神龙家族%' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) * 100,2),'%') as 神龙完成签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙家族%' AND  最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / SUM(IF(cx.团队 LIKE '神龙家族%',1,0)) * 100,2),'%') as 神龙完成占比,
-                            SUM(IF(cx.团队 LIKE '火凤凰%',1,0)) as 火凤凰单量,
-                                SUM(IF( cx.团队 LIKE '火凤凰%' AND 最终状态 = "已签收",1,0)) as 火凤凰签收,
-                                SUM(IF( cx.团队 LIKE '火凤凰%' AND 最终状态 = "拒收",1,0)) as 火凤凰拒收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '火凤凰%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.团队 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰改派占比,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '火凤凰%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰总计签收,
-                                 concat(ROUND(SUM(IF(cx.团队 LIKE '火凤凰%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '火凤凰%' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) * 100,2),'%') as 火凤凰完成签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '火凤凰%' AND  最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / SUM(IF(cx.团队 LIKE '火凤凰%',1,0)) * 100,2),'%') as 火凤凰完成占比,
-                            SUM(IF(cx.团队 LIKE '金鹏%',1,0)) as 小虎队单量,
-                                SUM(IF( cx.团队 LIKE '金鹏%' AND 最终状态 = "已签收",1,0)) as 小虎队签收,
-                                SUM(IF( cx.团队 LIKE '金鹏%' AND 最终状态 = "拒收",1,0)) as 小虎队拒收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金鹏%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.团队 LIKE '金鹏%',1,0)) * 100,2),'%') as 小虎队改派占比,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金鹏%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '金鹏%',1,0)) * 100,2),'%') as 小虎队总计签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金鹏%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '金鹏%' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) * 100,2),'%') as 小虎队完成签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金鹏%' AND  最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / SUM(IF(cx.团队 LIKE '金鹏%',1,0)) * 100,2),'%') as 小虎队完成占比,
-                            SUM(IF(cx.团队 LIKE '神龙-运营1组%',1,0)) as 神龙运营单量,
-                                SUM(IF( cx.团队 LIKE '神龙-运营1组%' AND 最终状态 = "已签收",1,0)) as 神龙运营签收,
-                                SUM(IF( cx.团队 LIKE '神龙-运营1组%' AND 最终状态 = "拒收",1,0)) as 神龙运营拒收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙-运营1组%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.团队 LIKE '神龙-运营1组%',1,0)) * 100,2),'%') as 神龙运营改派占比,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙-运营1组%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '神龙-运营1组%',1,0)) * 100,2),'%') as 神龙运营总计签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙-运营1组%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '神龙-运营1组%' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) * 100,2),'%') as 神龙运营完成签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '神龙-运营1组%' AND  最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / SUM(IF(cx.团队 LIKE '神龙-运营1组%',1,0)) * 100,2),'%') as 神龙运营完成占比,
-                            SUM(IF(cx.团队 LIKE '红杉%',1,0)) as 红杉单量,
-                                SUM(IF( cx.团队 LIKE '红杉%' AND 最终状态 = "已签收",1,0)) as 红杉签收,
-                                SUM(IF( cx.团队 LIKE '红杉%' AND 最终状态 = "拒收",1,0)) as 红杉拒收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '红杉%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.团队 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉改派占比,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '红杉%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉总计签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '红杉%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '红杉%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 红杉完成签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '红杉%' AND  最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / SUM(IF(cx.团队 LIKE '红杉%',1,0)) * 100,2),'%') as 红杉完成占比,
-                            SUM(IF(cx.团队 LIKE '金狮%',1,0)) as 金狮单量,
-                                SUM(IF( cx.团队 LIKE '金狮%' AND 最终状态 = "已签收",1,0)) as 金狮签收,
-                                SUM(IF( cx.团队 LIKE '金狮%' AND 最终状态 = "拒收",1,0)) as 金狮拒收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金狮%' AND `是否改派` = '改派',1,0)) / SUM(IF(cx.团队 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮改派占比,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金狮%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮总计签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金狮%' AND  最终状态 = "已签收",1,0)) / SUM(IF(cx.团队 LIKE '金狮%' AND 最终状态 IN ("已签收","拒收","已退货","理赔"),1,0)) * 100,2),'%') as 金狮完成签收,
-                                concat(ROUND(SUM(IF(cx.团队 LIKE '金狮%' AND  最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / SUM(IF(cx.团队 LIKE '金狮%',1,0)) * 100,2),'%') as 金狮完成占比
-                        FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                FROM gat_zqsb cc
-                            where cc.日期 >= '{0}' and cc.`运单编号` is not null 
-                            ) cx
-                        GROUP BY cx.年月,cx.币种,cx.产品id
-                    WITH ROLLUP ) s
-                    ORDER BY FIELD(月份,DATE_FORMAT(CURDATE(),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 2 MONTH),'%Y%m'),'总计'),
-                            FIELD(地区,'台湾','香港','总计'),
-                            总单量 DESC;'''.format(month_last, team)
-        df50 = pd.read_sql_query(sql=sql50, con=self.engine1)
-        listT.append(df50)
-
-        # 10、同产品各月的对比
-        print('正在获取---10、同产品各月的对比…………')
-        # sql51 = '''SELECT *
-        #             FROM(SELECT IFNULL(cx.`家族`, '总计') 家族,
-        #                         IFNULL(cx.币种, '总计') 地区,
-        #                         IFNULL(cx.产品id, '总计') 产品id,
-        #                         IFNULL(cx.产品名称, '总计') 产品名称,
-        #                         IFNULL(cx.父级分类, '总计') 父级分类,
-        #                         COUNT(cx.`订单编号`) as 总单量,
-        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202104',1,0)) as 04总单量,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202104',1,0)) * 100,2),'%') as 04总计签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 04完成签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202104' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202104',1,0)) * 100,2),'%') as 04完成占比,
-        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202105',1,0)) as 05总单量,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202105',1,0)) * 100,2),'%') as 05总计签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 05完成签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202105' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202105',1,0)) * 100,2),'%') as 05完成占比,
-        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202106',1,0)) as 06总单量,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202106',1,0)) * 100,2),'%') as 06总计签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 06完成签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202106' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202106',1,0)) * 100,2),'%') as 06完成占比,
-        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202107',1,0)) as 07总单量,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202107',1,0)) * 100,2),'%') as 07总计签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 07完成签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202107' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202107',1,0)) * 100,2),'%') as 07完成占比,
-        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202108',1,0)) as 08总单量,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202108',1,0)) * 100,2),'%') as 08总计签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 08完成签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202108' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202108',1,0)) * 100,2),'%') as 08完成占比,
-        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) as 09总单量,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) * 100,2),'%') as 09总计签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 09完成签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) * 100,2),'%') as 09完成占比,
-        #                     SUM(IF(date_format(cx.日期,'%Y%m') = '202110',1,0)) as 10总单量,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202110' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) * 100,2),'%') as 10总计签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202110' AND 最终状态 = "已签收",1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 10完成签收,
-        #                         concat(ROUND(SUM(IF(date_format(cx.日期,'%Y%m') = '202110' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(date_format(cx.日期,'%Y%m') = '202109',1,0)) * 100,2),'%') as 10完成占比
-        #                 FROM (SELECT *,
-        #                             IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族
-        #                         FROM gat_zqsb cc where cc.`运单编号` is not null
-        #                      )  cx
-        #                 GROUP BY cx.家族,cx.币种,cx.产品id
-        #                 WITH ROLLUP
-        #             ) s
-        #             ORDER BY FIELD(s.`家族`,'神龙','火凤凰','金狮','小虎队','神龙-低价','神龙-运营1组','红杉','总计'),
-        #                     FIELD( 地区, '台湾', '香港', '总计' ),
-        #                     s.总单量 DESC;'''
-        sql51 = '''SELECT *
-                    FROM(SELECT IFNULL(cx.`家族`, '总计') 家族,
-                                IFNULL(cx.币种, '总计') 地区,
-                                IFNULL(cx.产品id, '总计') 产品id,
-                                IFNULL(cx.产品名称, '总计') 产品名称,
-                                IFNULL(cx.父级分类, '总计') 父级分类,
-                                COUNT(cx.`订单编号`) as 总单量,
-                            SUM(IF(年月 = 202104,1,0)) as 04总单量,
-                                concat(ROUND(SUM(IF(年月 = 202104 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202104,1,0)) * 100,2),'%') as 04总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202104 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202104 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 04完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202104 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202104,1,0)) * 100,2),'%') as 04完成占比,
-                            SUM(IF(年月 = 202105,1,0)) as 05总单量,
-                                concat(ROUND(SUM(IF(年月 = 202105 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202105,1,0)) * 100,2),'%') as 05总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202105 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202105 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 05完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202105 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202105,1,0)) * 100,2),'%') as 05完成占比,
-                            SUM(IF(年月 = 202106,1,0)) as 06总单量,
-                                concat(ROUND(SUM(IF(年月 = 202106 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202106,1,0)) * 100,2),'%') as 06总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202106 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202106 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 06完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202106 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202106,1,0)) * 100,2),'%') as 06完成占比,        
-                            SUM(IF(年月 = 202107,1,0)) as 07总单量,
-                                concat(ROUND(SUM(IF(年月 = 202107 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202107,1,0)) * 100,2),'%') as 07总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202107 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202107 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 07完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202107 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202107,1,0)) * 100,2),'%') as 07完成占比,
-                            SUM(IF(年月 = 202108,1,0)) as 08总单量,
-                                concat(ROUND(SUM(IF(年月 = 202108 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202108,1,0)) * 100,2),'%') as 08总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202108 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202108 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 08完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202108 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202108,1,0)) * 100,2),'%') as 08完成占比,
-                            SUM(IF(年月 = 202109,1,0)) as 09总单量,
-                                concat(ROUND(SUM(IF(年月 = 202109 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202109,1,0)) * 100,2),'%') as 09总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202109 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202109 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 09完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202109 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202109,1,0)) * 100,2),'%') as 09完成占比,
-                            SUM(IF(年月 = 202110,1,0)) as 10总单量,
-                                concat(ROUND(SUM(IF(年月 = 202110 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202110,1,0)) * 100,2),'%') as 10总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202110 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202110 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 10完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202110 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202110,1,0)) * 100,2),'%') as 10完成占比,
-                            SUM(IF(年月 = 202111,1,0)) as 11总单量,
-                                concat(ROUND(SUM(IF(年月 = 202111 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202111,1,0)) * 100,2),'%') as 11总计签收,
-                                concat(ROUND(SUM(IF(年月 = 202111 AND 最终状态 = "已签收",1,0)) / SUM(IF(年月 = 202111 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 11完成签收,
-                                concat(ROUND(SUM(IF(年月 = 202111 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(年月 = 202111,1,0)) * 100,2),'%') as 11完成占比  
-                        FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                FROM gat_zqsb cc where cc.`运单编号` is not null 
-                             )  cx
-                        GROUP BY cx.家族,cx.币种,cx.产品id
-                        WITH ROLLUP 
-                    ) s
-                    ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','总计'),
-                            FIELD( 地区, '台湾', '香港', '总计' ),
-                            s.总单量 DESC;'''
-        df51 = pd.read_sql_query(sql=sql51, con=self.engine1)
-        listT.append(df51)
-
-        # 13、各团队-问题率
-        # print('正在获取---3、各团队-问题率…………')
-        sql02 = '''SELECT *
-                FROM (
-                    (SELECT 币种,'核实地址' AS 问题原因,核实地址 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实地址%",1,0)) as 核实地址
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'核实姓名' AS 问题原因,核实姓名 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实姓名%",1,0)) as 核实姓名
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'核实规格' AS 问题原因,核实规格 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实规格%",1,0)) as 核实规格
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'核实数量' AS 问题原因,核实数量 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实数量%",1,0)) as 核实数量
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'核实电话' AS 问题原因,核实电话 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实电话%",1,0)) as 核实电话
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'重复下单' AS 问题原因,重复下单 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%重复下单%",1,0)) as 重复下单
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'核实拉黑率' AS 问题原因,核实拉黑率 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实拉黑率%",1,0)) as 核实拉黑率
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'核实IP' AS 问题原因,核实IP AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实IP%",1,0)) as 核实IP
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'回复留言' AS 问题原因,回复留言 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%回复留言%",1,0)) as 回复留言
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'核实金额' AS 问题原因,核实金额 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实金额%",1,0)) as 核实金额
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'删运单号' AS 问题原因,删运单号 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%删运单号%",1,0)) as 删运单号
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'可疑订单' AS 问题原因,可疑订单 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%可疑订单%",1,0)) as 可疑订单
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'核实邮箱' AS 问题原因,核实邮箱 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实邮箱%",1,0)) as 核实邮箱
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'无法派送地区' AS 问题原因,无法派送地区 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%无法派送地区%",1,0)) as 无法派送地区
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = '2021-10-02'
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'核实邮编' AS 问题原因,核实邮编 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%核实邮编%",1,0)) as 核实邮编
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'拼团未完成' AS 问题原因,拼团未完成 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%拼团未完成%",1,0)) as 拼团未完成
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'支付失败' AS 问题原因,支付失败 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%支付失败%",1,0)) as 支付失败
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )
-                UNION
-                    (SELECT 币种,'未支付' AS 问题原因,未支付 AS 数量
-                        FROM (SELECT 币种,SUM(IF(问题原因 LIKE "%未支付%",1,0)) as 未支付
-                                FROM  gat_order_list gs
-                                WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                                GROUP BY gs.`币种`
-                        ) ss
-                    )					
-                ) scs
-                ORDER BY 币种 , 数量 DESC;'''
-        # df02 = pd.read_sql_query(sql=sql02, con=self.engine1)
-        # listT.append(df02)
-
-        # 11、各团队-各二级品类
-        # print('正在获取---3、各团队-各二级品类…………')
-        sql20 = '''SELECT *
-                    FROM(SELECT IFNULL(cx.`年月`, '总计') 月份,
-                                IFNULL(cx.`币种`, '总计') 地区,
-                                IFNULL(cx.`家族`, '总计') 家族,
-                                IFNULL(cx.`父级分类`, '总计') 父级分类,
-                                IFNULL(cx.`二级分类`, '总计') 二级分类,
-                                COUNT(cx.`订单编号`) as 总单量,
-                                concat(ROUND(SUM(IF(最终状态 = "已签收",1,0)) / SUM(IF( 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 完成签收,
-                                concat(ROUND(SUM(IF(最终状态 = "已签收",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 总计签收,
-                                concat(ROUND(SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 完成占比,
-                                concat(ROUND(SUM(IF(最终状态 = "已退货",1,0)) / COUNT(cx.`订单编号`) * 100,2),'%') as 退款率,
-                                concat(ROUND(SUM(IF(最终状态 = "已签收",价格RMB,0)) / SUM(价格RMB) * 100,2),'%') as '总计签收(金额)',
-                                concat(ROUND(COUNT(cx.`订单编号`) / 总订单量 * 100,2),'%') as 品类占比,
-                                ROUND(SUM(价格RMB) / COUNT(cx.`订单编号`),2) as 平均客单价,
-                            SUM(IF(`是否改派` = '直发',1,0))  as 直发单量,
-                                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 直发完成签收,
-                                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发总计签收,
-                                concat(ROUND(SUM(IF(`是否改派` = '直发' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '直发',1,0)) * 100,2),'%') as 直发完成占比,
-                                concat(ROUND(SUM(IF(`是否改派` = '直发',1,0)) / 直发总单量 * 100,2),'%') as 直发品类占比,
-                            concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / COUNT(cx.`订单编号`) * 100,2),'%')as 改派占比,
-                                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) * 100,2),'%') as 改派完成签收,
-                                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 = "已签收",1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派总计签收,
-                                concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比,
-                                concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / 改派总单量 * 100,2),'%') as 改派品类占比
-                        FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                FROM gat_zqsb cc
-                                where cc.`运单编号` is not null 
-                            ) cx 
-                        LEFT JOIN 
-        					(SELECT 币种,家族,年月,count(订单编号) as 总订单量,SUM(IF(`是否改派`= '直发',1,0)) as 直发总单量,SUM(IF(`是否改派` = '改派',1,0)) as 改派总单量
-        					FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-低价%","神龙-低价",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
-                                    FROM gat_zqsb cc 
-        							WHERE cc.`运单编号` is not null 
-        						) dg  GROUP BY dg.币种,dg.家族,dg.年月
-        					) cx2 ON cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族 AND  cx.年月 = cx2.年月                       
-                        GROUP BY cx.年月,cx.币种,cx.家族,cx.父级分类,cx.二级分类
-                        WITH ROLLUP 
-                    ) s
-                    ORDER BY 月份 DESC,
-                            FIELD( 地区, '台湾', '香港', '总计' ),
-                            FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮', '总计' ),
-                            FIELD( s.父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
-                            FIELD( s.二级分类, '厨房用品', '日用百货', '布艺家纺', '宠物用品',  '户外运动', '汽车用品', '手表手环','影音娱乐','电脑外设','手机外设',
-                                                '家用电器', '个护电器','上衣', '下装',  '内衣', '套装', '裙子','配饰','母婴服饰','保健食品','护理护具', 
-                                                '保健器械', '药品', '成人保健', '凉/拖鞋', '皮鞋', '休闲运动鞋','靴子', '彩妆','护肤','个人洗护','单肩包','双肩包',
-                                                '钱包','行李箱包', '手表', '饰品','玩具','母婴用品','总计'),
-                            s.总单量 DESC;'''.format(month_last, team)
-        # df20 = pd.read_sql_query(sql=sql20, con=self.engine1)
-        # listT.append(df20)
-
-        print('正在写入excel…………')
-        today = datetime.date.today().strftime('%Y.%m.%d')
-        file_path = 'G:\\输出文件\\{} {}-签收率.xlsx'.format(today, match[team])
-        sheet_name = ['每日各团队', '审核率_删单率', '各月各团队', '各月各团队分旬', '各团队各品类', '各团队各物流', '各团队各平台', '各平台各团队', '各品类各团队', '各物流各团队', '同产品各团队','同产品各月', '各团队二级品类']
-        df0 = pd.DataFrame([])                                          # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)                            # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')           # 初始化写入对象
-        book = load_workbook(file_path)                                 # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book                                              # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        for i in range(len(listT)):
-            listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-        if 'Sheet1' in book.sheetnames:                                 # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
-        try:
-            print('正在运行' + match[team] + '表宏…………')
-            app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-            app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
-            wbsht1 = app.books.open(file_path)
-            wbsht.macro('zl_report_day')()
-            wbsht1.save()
-            wbsht1.close()
-            wbsht.close()
-            app.quit()
-        except Exception as e:
-            print('运行失败：', str(Exception) + str(e))
-        print('----已写入excel ')
-
 
     # 更新-地区签收率(自己看的)
     def address_repot(self, team, month_last, month_yesterday):    # 更新-地区签收率
@@ -7698,8 +4337,7 @@ class QueryUpdate(Settings):
         #     print('运行失败：', str(Exception) + str(e))
         # print('----已写入excel ')
 
-
-    # 更新上期-总表 （备用） DATE_SUB(CURDATE(), INTERVAL 1 month)
+    # 更新上期-总表 （备用）
     def replaceHostbefore(self, team, last_time):
         try:
             print('正在获取往昔数据中......')
@@ -8680,6 +5318,7 @@ class QueryUpdate(Settings):
             # app.quit()
         print('----已写入excel ')
 
+
     # 拒收核实-查询需要的产品id
     def jushou(self):
         print('正在查询需核实订单…………')
@@ -8803,42 +5442,6 @@ class QueryUpdate(Settings):
         writer.save()
         writer.close()
         print('----已写入excel ')
-
-    # 拒收核实-查询每日新增拒收停用
-    def jushou_Upload(self, month_begin):
-        month_begin = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y%m')
-        print(month_begin)
-        print('正在查询每日新增拒收信息…………')
-        sql = '''SELECT *
-                FROM (SELECT null 处理日期, 订单编号, '-' 核实原因, null 具体原因, null 再次克隆下单, '-' 处理人
-			        FROM  gat_zqsb g
-			        WHERE g.`年月` >= '{0}' AND g.`最终状态` = '拒收'
-                ) s
-                WHERE s.`订单编号` NOT IN (SELECT 订单编号 FROM 拒收核实_cy);'''.format(month_begin)
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        columns = list(df)
-        columns = ', '.join(columns)
-        try:
-            print('写入中+++')
-            df.to_sql('dim_wl', con=self.engine1, index=False, if_exists='replace')
-            sql = 'REPLACE INTO 拒收核实_cy({}, 记录时间) SELECT *, NOW() 记录时间 FROM dim_wl; '.format(columns)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        except Exception as e:
-            print('插入失败：', str(Exception) + str(e))
-        print('写入完成…………')
-        # try:
-        #     sql = '''update 拒收核实_copy1 a, dim_wl b
-        #                         set a.`处理日期`=b.`处理日期`,
-        #                             a.`订单编号`=b.`订单编号`,
-        # 		                    a.`核实原因`=b.`核实原因` ,
-        # 		                    a.`具体原因`=b.`具体原因`,
-        # 		                    a.`再次克隆下单`=b.`再次克隆下单`,
-        # 		                    a.`处理人`=b.`处理人`
-        # 		                where a.`订单编号`=b.`订单编号`;'''.format(team)
-        #     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
-        # except Exception as e:
-        #     print('插入失败：', str(Exception) + str(e))
-        # print('----更新完成----')
 
     # 获取电话核实日报表 周报表
     def phone_report(self):
@@ -9095,14 +5698,14 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    if team == 'gat':
+    if team == 'ga9t':
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
     else:
-        month_last = '2021-11-01'
-        month_old = '2021-12-31'
-        month_yesterday = '2021-12-31'
+        month_last = '2021-12-01'
+        month_old = '2021-12-01'        # 获取-每日-报表 开始的时间
+        month_yesterday = '2022-02-07'
 
     last_time = '2021-01-01'
     write = '本期'
@@ -9117,7 +5720,6 @@ if __name__ == '__main__':
     # m.address_repot(team, month_last, month_yesterday)                       #  获取-地区签收率-报表
 
      # 停用备用使用
-    # m.jushou_Upload('202103')                           #  拒收核实-查询每日新增拒收停用
     # m.EportOrder(team)       #  导出需要更新的签收表
     # m.qsb_report(team, '2021-06-26', '2021-05-26')
     print('耗时：', datetime.datetime.now() - start)
