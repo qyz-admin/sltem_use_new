@@ -253,10 +253,10 @@ class MysqlControl(Settings):
     def creatMyOrderSl(self, team):  # 最近五天的全部订单信息
         match = {'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队", "火凤凰-港台(繁体)", "神龙-低价", "神龙-运营1组"',
                  'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
-                 'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "神龙-韩国"'
+                 'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"'
                  }
         # 12-1月的
-        if team in ('sls9c', 'gat', 'sl_r9b'):
+        if team in ('slsc', 'gat', 'sl_rb'):
             # 获取日期时间
             sql = 'SELECT MAX(`日期`) 日期 FROM {0}_order_list;'.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -276,7 +276,7 @@ class MysqlControl(Settings):
             # 11-12月的
             begin = datetime.date(2021, 12, 1)
             print(begin)
-            end = datetime.date(2022, 2, 21)
+            end = datetime.date(2022, 2, 8)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -499,7 +499,7 @@ class MysqlControl(Settings):
     def creatMyOrderSlTWO(self, team, begin, end):  # 最近两个月的更新订单信息
         match = {'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队", "火凤凰-港台(繁体)", "神龙-低价", "神龙-运营1组"',
                  'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
-                 'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "神龙-韩国"',
+                 'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"',
                  }
         today = datetime.date.today().strftime('%Y.%m.%d')
         # if team in ('sltg', 'slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
@@ -725,7 +725,6 @@ class MysqlControl(Settings):
 		                    a.`价格RMB`=b.`价格RMB`,
 		                    a.`物流花费`=b.`物流花费`,
 		                    a.`包裹重量`=b.`包裹重量`,
-		                    a.`添加物流单号时间`=b.`添加物流单号时间`,
 		                    a.`上线时间`=b.`上线时间`
 		                where a.`订单编号`=b.`订单编号`;'''.format(team)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
@@ -752,6 +751,7 @@ class MysqlControl(Settings):
                  'slrb_jn': '金牛家族-日本',
                  'slrb_xhd': '金鹏家族-小虎队',
                  'slrb_ks': '奎蛇-日本',
+                 'slrb_ks_hg': '奎蛇-韩国',
                  'slrb_sl': '神龙-韩国'}
         emailAdd = {'slgat': 'giikinliujun@163.com',
                     'slgat_hfh': 'giikinliujun@163.com',
@@ -889,8 +889,8 @@ class MysqlControl(Settings):
         elif team in ('slsc'):
             # print(month_yesterday)
             # print('正在获取台湾的物流信息......')
-            sql = '''REPLACE INTO slsc SELECT null,订单编号,原运单号,运单编号,出货时间,物流状态,状态时间,航班时间,清关时间,上线时间,更新时间 添加时间 
-                    FROM gat WHERE gat.`添加时间` = '{0} 00:00:00';'''.format(month_yesterday)
+            # sql = '''REPLACE INTO slsc SELECT null,订单编号,原运单号,运单编号,出货时间,物流状态,状态时间,航班时间,清关时间,上线时间,更新时间 添加时间
+            #         FROM gat WHERE gat.`添加时间` = '{0} 00:00:00';'''.format(month_yesterday)
             # df = pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
                         IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
@@ -947,7 +947,7 @@ class MysqlControl(Settings):
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             print('正在写入---' + match[team] + ' ---临时缓存…………')  # 备用临时缓存表 'slgat_run': '神龙-运营1组',
             df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace')
-            today = datetime.date.today().strftime('%Y.%m.%d')
+        today = datetime.date.today().strftime('%Y.%m.%d')
         print('正在写入excel…………')
         filePath = []
         if team in ('gat'):
@@ -960,10 +960,10 @@ class MysqlControl(Settings):
                 df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]),
                             sheet_name=match[tem2], index=False)
                 print(tem2 + '----已写入excel')
-                print('正在打印' + match[tem2] + ' 物流时效…………')
+                # print('正在打印' + match[tem2] + ' 物流时效…………')
                 # self.data_wl(tem2)
         elif team in ('sl_rb'):
-            for tem in ('"神龙家族-日本团队"|slrb', '"金狮-日本"|slrb_js', '"红杉家族-日本","红杉家族-日本666"|slrb_hs', '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"|slrb_jl', '"火凤凰-日本"|slrb_hfh', '"金牛家族-日本"|slrb_jn', '"金鹏家族-小虎队"|slrb_xhd', '"奎蛇-日本"|slrb_ks', '"神龙-韩国"|slrb_sl'):
+            for tem in ('"神龙家族-日本团队"|slrb', '"金狮-日本"|slrb_js', '"红杉家族-日本","红杉家族-日本666"|slrb_hs', '"精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌"|slrb_jl', '"火凤凰-日本"|slrb_hfh', '"金牛家族-日本"|slrb_jn', '"金鹏家族-小虎队"|slrb_xhd', '"奎蛇-日本"|slrb_ks', '"奎蛇-韩国"|slrb_ks_hg', '"神龙-韩国"|slrb_sl'):
                 tem1 = tem.split('|')[0]
                 tem2 = tem.split('|')[1]
                 sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
@@ -978,19 +978,23 @@ class MysqlControl(Settings):
                                         二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,null 价格区间,
                                         null 包裹重量,null 包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
                                         b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态,b.添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, a.添加物流单号时间,省洲, 数量, a.站点ID
-                                    FROM {0}_order_list a
-                                        LEFT JOIN (SELECT * FROM {1} WHERE id IN (SELECT MAX(id) FROM {1} WHERE {1}.添加时间 > '{2}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
-                                        LEFT JOIN {1}_logisitis_match c ON b.物流状态 = c.签收表物流状态
-                                        LEFT JOIN {1}_return d ON a.订单编号 = d.订单编号
-                                    WHERE a.日期 >= '{3}' AND a.日期 <= '{4}'
-                                        AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                                        AND a.`团队`in ({5})
+                                    FROM (SELECT * 
+							            FROM {0}_order_list g
+							            WHERE g.日期 >= '{3}' AND g.日期 <= '{4}' 
+							                AND g.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+							                AND g.团队 in ({5})
+						            ) a
+                                    LEFT JOIN slrb_wl_data b ON a.`运单编号` = b.`运单编号`
+                                    LEFT JOIN {1}_logisitis_match c ON b.物流状态 = c.签收表物流状态
+                                    LEFT JOIN {1}_return d ON a.订单编号 = d.订单编号
                                     ORDER BY a.`下单时间`;'''.format('sl_rb', 'sl_rb', month_begin, month_last, month_yesterday, tem1)
-                # sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
-                # df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace')
                 df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]), sheet_name=match[tem2], index=False)
                 print(tem2 + '----已写入excel')
+                df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace')
+                sql = 'REPLACE INTO {0}_zqsb_rb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(tem2)
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                print('----已写入' + match[team] + '全部签收表中')
                 # print('正在打印' + match[tem2] + ' 物流时效…………')
                 # self.data_wl(tem2)
         else:
@@ -1004,18 +1008,10 @@ class MysqlControl(Settings):
         # 导入签收率表中和输出物流时效（不包含全部的订单状态）
         print('输出文件成功…………')
         if team in ('gat', 'slsc'):
-            print('正在打印' + match[team] + ' 物流时效…………')
-            print('---' + match[team] + ' 不打印文件')
-        else:
-            print('正在打印' + match[team] + ' 物流时效…………')
-            # self.data_wl(team)
-        print('正在写入' + match[team] + ' 全部签收表中…………')
-        if team == 'slrb':
-            sql = 'REPLACE INTO {0}_zqsb_rb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)
-        else:
+            print('正在写入' + match[team] + ' 全部签收表中…………')
             sql = 'REPLACE INTO {0}_zqsb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        print('----已写入' + match[team] + '全部签收表中')
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('----已写入' + match[team] + '全部签收表中')
 
         # 商城订单的获取---暂时使用的
         if team in ('slgat0', 'gat0'):  # IG和UP订单

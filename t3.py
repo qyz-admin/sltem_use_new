@@ -11,7 +11,7 @@ from gat_update2 import QueryUpdate
 import datetime
 from dateutil.relativedelta import relativedelta
 start: datetime = datetime.datetime.now()
-team = 'gat'
+team = 'sl_rb'
 match1 = {'gat': '港台',
           'slsc': '品牌'}
 match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
@@ -24,7 +24,7 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
 说明：  日本 需整理的表：1、吉客印神龙直发签收表=密码：‘JKTSL’>(明细再copy保存；改派明细不需要);2、直发签收表>(明细再copy保存；3、状态更新需要copy保存);
 '''
 # 初始化时间设置
-if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'ga9t', 'sl_rb'):
+if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'ga9t', 'sl_r9b'):
     # 更新时间
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
@@ -39,12 +39,12 @@ if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'ga9t', 'sl_rb'):
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    begin = datetime.date(2021, 11, 1)
-    end = datetime.date(2021, 12, 7)
+    begin = datetime.date(2022, 1, 1)
+    end = datetime.date(2022, 2, 9)
     # 导出时间
-    month_last = '2021-11-01'
-    month_yesterday = '2021-12-07'
-    month_begin = '2021-10-01'
+    month_last = '2022-01-01'
+    month_yesterday = '2022-02-09'
+    month_begin = '2021-12-01'
 print('****** 更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 导出起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 # 库的引用
@@ -90,13 +90,13 @@ for dir in dirs:
 print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
-m.creatMyOrderSlTWO(team, begin, end)   # 最近两个月的 部分内容 更新信息
-m.creatMyOrderSl(team)  # 最近五天的全部订单信息
+# m.creatMyOrderSlTWO(team, begin, end)   # 最近两个月的 部分内容 更新信息
+# m.creatMyOrderSl(team)  # 最近五天的全部订单信息
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 
 print('------------更新部分：---------------------')
-if team in ('ga99t', 'slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'sl_rb'):
-    m.creatMyOrderSlTWO(team, begin, end)   # 最近两个月的更新订单信息
+if team in ('ga99t', 'slsc', 'sl_rb'):
+    # m.creatMyOrderSlTWO(team, begin, end)   # 最近两个月的更新订单信息
     print('处理耗时：', datetime.datetime.now() - start)
 
     print('------------导出部分：---------------------')
