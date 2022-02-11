@@ -288,8 +288,8 @@ class QueryTwo(Settings, Settings_sso):
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO 物流问题件(处理时间,物流反馈时间,处理人,订单编号,处理结果, 拒收原因, 记录时间) 
-                    SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,最新处理结果 AS 处理结果, 拒收原因, NOW() 记录时间 
+            sql = '''REPLACE INTO 物流问题件(处理时间,物流反馈时间,处理人,订单编号,处理结果, 拒收原因, 币种, 记录时间) 
+                    SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,最新处理结果 AS 处理结果, 拒收原因, 币种, NOW() 记录时间 
                     FROM customer'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -458,8 +458,8 @@ class QueryTwo(Settings, Settings_sso):
         dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞', na=False))]
         dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
         dp.to_excel('G:\\输出文件\\物流客诉件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-        sql = '''REPLACE INTO 物流客诉件(处理时间,物流反馈时间,处理人,订单编号,处理方案, 处理结果, 客诉原因, 赠品补发订单编号,记录时间) 
-                SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,最新处理结果 AS 处理方案, 处理内容 AS 处理结果, 客诉原因, 赠品补发订单编号, NOW() 记录时间 
+        sql = '''REPLACE INTO 物流客诉件(处理时间,物流反馈时间,处理人,订单编号,处理方案, 处理结果, 客诉原因, 赠品补发订单编号,币种, 记录时间) 
+                SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,最新处理结果 AS 处理方案, 处理内容 AS 处理结果, 客诉原因, 赠品补发订单编号, 币种, NOW() 记录时间 
                 FROM customer;'''
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('写入成功......')
@@ -849,8 +849,9 @@ if __name__ == '__main__':
         m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
     elif int(select) == 3:
         timeStart, timeEnd = m.readInfo('采购异常')
-        m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
-        m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
+        # m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
+        # m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
+        m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))  # 查询更新-采购问题件（一、简单查询）
 
     elif int(select) == 4:
         timeStart, timeEnd = m.readInfo('物流问题件')

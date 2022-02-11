@@ -296,7 +296,7 @@ class QueryTwoLower(Settings, Settings_sso):
             time_path: datetime = datetime.datetime.now()
             mkpath = r"F:\神龙签收率\(未发货) 直发-仓库-压单\\" + time_path.strftime('%m.%d')
 
-            sql = '''SELECT * FROM 压单表 g WHERE g.`记录时间` >= CURDATE();'''
+            sql = '''SELECT * FROM 压单表 g WHERE g.`记录时间` >= CURDATE() and g.是否下架 <> '已下架';'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             isExists = os.path.exists(mkpath)
             if not isExists:

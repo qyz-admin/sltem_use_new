@@ -1364,14 +1364,14 @@ if __name__ == '__main__':
     '''
     select = 5
     if int(select) == 1:
-        m.readFormHost('202110', '拒收核实')
-        m.readFormHost('202110', '拒收缓存')
+        m.readFormHost('202110', '拒收核实')        # 上传每日核实过的
+        m.readFormHost('202110', '拒收缓存')        # 上传核实的表
 
     elif int(select) == 2:
         m.readFormHost('202110', '其他')
 
     elif int(select) == 3:
-        begin = datetime.date(2021, 12, 1)  # 压单反馈上传使用
+        begin = datetime.date(2021, 12, 1)      # 压单反馈上传使用
         print(begin)
         end = datetime.date(2021, 12, 31)
         print(end)

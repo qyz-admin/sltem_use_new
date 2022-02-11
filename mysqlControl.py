@@ -767,44 +767,44 @@ class MysqlControl(Settings):
         #     month_yesterday = '2021-07-31'
         #     month_begin = '2021-02-01'
         print('正在检查父级分类为空的信息---')
-        sql = '''SELECT 订单编号,商品id,
-				        dp.product_id, dp.`name` product_name, dp.third_cate_id,
-                        dc.ppname cate, dc.pname second_cate, dc.`name` third_cate
-                FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-                    FROM {0}_order_list sl
-                    WHERE sl.`日期`> '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
-			        ) s
-                LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
-                LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''.format(team, month_begin)
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
-        print('正在更新父级分类的详情…………')
-        sql = '''update {0}_order_list a, tem_product_id b
-            		    set a.`父级分类`= IF(b.`cate` = '', a.`父级分类`, b.`cate`),
-            				a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
-            				a.`三级分类`= IF(b.`third_cate` = '', a.`三级分类`, b.`third_cate`)
-            			where a.`订单编号`= b.`订单编号`;'''.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
-        print('更新完成+++')
-
-        print('正在检查产品id为空的信息---')
-        sql = '''SELECT 订单编号,商品id,
-				        dp.product_id, dp.`name` product_name, dp.third_cate_id
-                FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-                    FROM {0}_order_list sl
-                    WHERE sl.`日期`> '{1}' AND (sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
-			        ) s
-                LEFT JOIN dim_product_gat dp ON dp.product_id = s.`产品id`;'''.format(
-            team, month_begin)
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
-        print('正在更新产品详情…………')
-        sql = '''update {0}_order_list a, tem_product_id b
-            		    set a.`产品id`= IF(b.`product_id` = '',a.`产品id`, b.`product_id`),
-            		        a.`产品名称`= IF(b.`product_name` = '',a.`产品名称`, b.`product_name`)
-            			where a.`订单编号`= b.`订单编号`;'''.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        print('更新完成+++')
+        # sql = '''SELECT 订单编号,商品id,
+		# 		        dp.product_id, dp.`name` product_name, dp.third_cate_id,
+        #                 dc.ppname cate, dc.pname second_cate, dc.`name` third_cate
+        #         FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
+        #             FROM {0}_order_list sl
+        #             WHERE sl.`日期`> '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+		# 	        ) s
+        #         LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
+        #         LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''.format(team, month_begin)
+        # df = pd.read_sql_query(sql=sql, con=self.engine1)
+        # df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
+        # print('正在更新父级分类的详情…………')
+        # sql = '''update {0}_order_list a, tem_product_id b
+        #     		    set a.`父级分类`= IF(b.`cate` = '', a.`父级分类`, b.`cate`),
+        #     				a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
+        #     				a.`三级分类`= IF(b.`third_cate` = '', a.`三级分类`, b.`third_cate`)
+        #     			where a.`订单编号`= b.`订单编号`;'''.format(team)
+        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        # print('更新完成+++')
+        #
+        # print('正在检查产品id为空的信息---')
+        # sql = '''SELECT 订单编号,商品id,
+		# 		        dp.product_id, dp.`name` product_name, dp.third_cate_id
+        #         FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
+        #             FROM {0}_order_list sl
+        #             WHERE sl.`日期`> '{1}' AND (sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+		# 	        ) s
+        #         LEFT JOIN dim_product_gat dp ON dp.product_id = s.`产品id`;'''.format(
+        #     team, month_begin)
+        # df = pd.read_sql_query(sql=sql, con=self.engine1)
+        # df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
+        # print('正在更新产品详情…………')
+        # sql = '''update {0}_order_list a, tem_product_id b
+        #     		    set a.`产品id`= IF(b.`product_id` = '',a.`产品id`, b.`product_id`),
+        #     		        a.`产品名称`= IF(b.`product_name` = '',a.`产品名称`, b.`product_name`)
+        #     			where a.`订单编号`= b.`订单编号`;'''.format(team)
+        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        # print('更新完成+++')
 
         token = 'fc246aa95068f486c7d11368d12e0dbb'  # 补充查询产品信息需要
         if team == 'slxmt':  # 新马物流查询函数导出
@@ -893,10 +893,11 @@ class MysqlControl(Settings):
             #         FROM gat WHERE gat.`添加时间` = '{0} 00:00:00';'''.format(month_yesterday)
             # df = pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-                        IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
+                        IF(出货时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), a.仓储扫描时间, 出货时间) 出货时间,
                         IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
-                        IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
-                        IF(ISNULL(a.上线时间), IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '',b.上线时间), a.上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
+                        IF(状态时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), '', 状态时间) 状态时间,
+                        IF(ISNULL(a.上线时间), IF(b.上线时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), '',b.上线时间), a.上线时间) 上线时间, 系统订单状态, 
+                        IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
                         IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
                         IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
                         IF(是否改派='二次改派', '改派', 是否改派) 是否改派,物流方式,
@@ -922,25 +923,26 @@ class MysqlControl(Settings):
             											);'''
             print('正在清除港澳台-总表的可能删除了的订单…………')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-            sql = '''SELECT 年月, 旬, 日期, 团队, 币种, null 区域, null 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-                        IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
-                        IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
-                        IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
-                        IF(ISNULL(a.上线时间), IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '',b.上线时间), a.上线时间) 上线时间, 系统订单状态, IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
-                        IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                        IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
-                        IF(是否改派='二次改派', '改派', 是否改派) 是否改派,
-                        物流方式,物流名称,null 运输方式,null 货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
-                        二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,null 价格区间,
-                        null 包裹重量,null 包裹体积,null 邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, null 签收表订单编号, null 签收表运单编号, 
-                        null 原运单号, b.物流状态 签收表物流状态,null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, null 添加物流单号时间,null 省洲, null 数量
-                    FROM {0}_order_list a
-                        LEFT JOIN (SELECT * FROM {0} WHERE id IN (SELECT MAX(id) FROM {0} WHERE {0}.添加时间 > '{1}' GROUP BY 运单编号) ORDER BY id) b ON a.`运单编号` = b.`运单编号`
+            sql = '''SELECT 年月, 旬, 日期, 团队, 币种, null 区域, 订单来源, a.订单编号, 电话号码, a.运单编号,
+                            IF(出货时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), a.仓储扫描时间, 出货时间) 出货时间,
+                            IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
+                            IF(状态时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), '', 状态时间) 状态时间,
+                            IF(ISNULL(a.上线时间), IF(b.上线时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), null,b.上线时间), a.上线时间) 上线时间, 系统订单状态,
+                            IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
+                            IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
+                            IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
+                            IF(是否改派='二次改派', '改派', 是否改派) 是否改派,
+                            物流方式,物流名称,null 运输方式,null 货物类型,是否低价,付款方式,产品id,产品名称,父级分类, 二级分类,三级分类, 下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB, null 价格区间, null 包裹重量, null 包裹体积,null 邮编, 
+                            IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, null 签收表订单编号, null 签收表运单编号, null 原运单号, b.物流状态 签收表物流状态, null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, 添加物流单号时间,
+                            省洲,数量, a.下架时间, a.物流提货时间, a.完结状态, a.回款时间
+                        FROM (SELECT * 
+        					    FROM {0}_order_list g
+        						WHERE g.日期 >= '{2}' AND g.日期 <= '{3}' AND g.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+        					) a
+                        LEFT JOIN gat_wl_data b ON a.`运单编号` = b.`运单编号`
                         LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
                         LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
-                    WHERE a.日期 >= '{2}' AND a.日期 <= '{3}'
-                    AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-                    ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
+                        ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
 
         if team != 'sl_rb':
             print('正在获取---' + match[team] + ' ---全部导出数据内容…………')
@@ -967,32 +969,32 @@ class MysqlControl(Settings):
                 tem1 = tem.split('|')[0]
                 tem2 = tem.split('|')[1]
                 sql = '''SELECT 年月, 旬, 日期, 团队,币种, 区域, 订单来源, a.订单编号 订单编号, 电话号码, a.运单编号 运单编号,
-                                        IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', null, 出货时间) 出货时间,
-                                        IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
-                                        IF(状态时间='1990-01-01 00:00:00' or 状态时间='1899-12-30 00:00:00' or 状态时间='0000-00-00 00:00:00', '', 状态时间) 状态时间,
-                                        IF(ISNULL(a.上线时间), IF(b.上线时间='1990-01-01 00:00:00' or b.上线时间='1899-12-29 00:00:00' or b.上线时间='1899-12-30 00:00:00' or b.上线时间='0000-00-00 00:00:00', '',b.上线时间), a.上线时间) 上线时间, 系统订单状态,
-                                        IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
-                                        IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                                        IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
-                                        是否改派,物流方式,物流名称,运输方式,'货到付款' AS 货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
-                                        二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,null 价格区间,
-                                        null 包裹重量,null 包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
-                                        b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态,b.添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, a.添加物流单号时间,省洲, 数量, a.站点ID
-                                    FROM (SELECT * 
-							            FROM {0}_order_list g
-							            WHERE g.日期 >= '{3}' AND g.日期 <= '{4}' 
-							                AND g.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-							                AND g.团队 in ({5})
-						            ) a
-                                    LEFT JOIN slrb_wl_data b ON a.`运单编号` = b.`运单编号`
-                                    LEFT JOIN {1}_logisitis_match c ON b.物流状态 = c.签收表物流状态
-                                    LEFT JOIN {1}_return d ON a.订单编号 = d.订单编号
-                                    ORDER BY a.`下单时间`;'''.format('sl_rb', 'sl_rb', month_begin, month_last, month_yesterday, tem1)
+                                IF(出货时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), null, 出货时间) 出货时间,
+                                IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
+                                IF(状态时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), '', 状态时间) 状态时间,
+                                IF(ISNULL(a.上线时间), IF(b.上线时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), '',b.上线时间), a.上线时间) 上线时间, 系统订单状态,
+                                IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
+                                IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
+                                IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
+                                是否改派,物流方式,物流名称,运输方式,'货到付款' AS 货物类型,是否低价,付款方式,产品id,产品名称,父级分类,
+                                二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB,null 价格区间,
+                                null 包裹重量,null 包裹体积,邮编,IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在,
+                                b.订单编号 签收表订单编号, b.运单编号 签收表运单编号, 原运单号, b.物流状态 签收表物流状态,b.添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, a.添加物流单号时间,省洲, 数量, a.站点ID
+                            FROM (SELECT * 
+							        FROM {0}_order_list g
+							        WHERE g.日期 >= '{3}' AND g.日期 <= '{4}' 
+							            AND g.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+							            AND g.团队 in ({5})
+						    ) a
+                            LEFT JOIN slrb_wl_data b ON a.`运单编号` = b.`运单编号`
+                            LEFT JOIN {1}_logisitis_match c ON b.物流状态 = c.签收表物流状态
+                            LEFT JOIN {1}_return d ON a.订单编号 = d.订单编号
+                            ORDER BY a.`下单时间`;'''.format('sl_rb', 'sl_rb', month_begin, month_last, month_yesterday, tem1)
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
                 df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]), sheet_name=match[tem2], index=False)
                 print(tem2 + '----已写入excel')
                 df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace')
-                sql = 'REPLACE INTO {0}_zqsb_rb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(tem2)
+                sql = 'REPLACE INTO {0}_zqsb_rb SELECT *, NOW() 更新时间 FROM d1_{1};'.format('sl_rb', tem2)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                 print('----已写入' + match[team] + '全部签收表中')
                 # print('正在打印' + match[tem2] + ' 物流时效…………')

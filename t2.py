@@ -40,10 +40,10 @@ if team in ('ga9t', 'slsc', 'sl_r9b'):
 else:
     # 更新时间
     begin = datetime.date(2021, 12, 1)
-    end = datetime.date(2022, 2, 10)
+    end = datetime.date(2022, 2, 11)
     # 导出时间
     month_last = '2021-12-01'
-    month_yesterday = '2022-02-10'
+    month_yesterday = '2022-02-11'
     month_begin = '2021-11-01'
 print('****** 更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 导出起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
