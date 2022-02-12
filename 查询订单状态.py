@@ -365,7 +365,7 @@ class QueryUpdate(Settings):
                 FROM( SELECT * 
                         FROM ( SELECT *,yu.包裹重量 - yu.`MIN(包裹重量)` as 差量
         				        FROM ( SELECT 年月,日期,团队,币种,订单编号,数量,电话号码,运单编号,是否改派,物流方式,商品id,ds.产品id,产品名称,价格,下单时间,审核时间,仓储扫描时间,完结状态,完结状态时间,物流花费,包裹重量,包裹体积,ds.规格中文,产品量, 
-        				                    单量,重量小 as 'MIN(包裹重量)', 重量大 as 'MAX(包裹重量)',重量差, 选品人
+        				                    单量,重量小 as 'MIN(包裹重量)', 重量大 as 'MAX(包裹重量)',重量差, 选品人, null 备注
         								FROM (SELECT *
 											FROM gat_order_list g
 											WHERE g.年月>= '{1}'
@@ -489,7 +489,7 @@ if __name__ == '__main__':
         upload = '查询-运单号'
         # m.readFormHost(upload)
 
-    # m.readFormHost('查询运费')
+    m.readFormHost('查询运费')
     m.trans_way_cost_new(team)  # 同产品下的规格运费查询
 
 
