@@ -838,56 +838,76 @@ class QueryTwo(Settings, Settings_sso):
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         max_count = req['data']['count']
+        print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
         # print(req)
         ordersDict = []
-        try:
-            for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
-                # print(result)
-                result['订单编号'] = result['orderNumber']
-                result['再次克隆下单'] = result['newCloneNumber']
-                if result['traceItems'] != []:
-                    # print(result['traceItems'])
-                    result['跟进人'] = (result['traceItems'][0]).split(':')[1]         # 跟进人
-                    result['时间'] = (result['traceItems'][1]).split(':')[1]          # 时间
-                    result['联系方式'] = (result['traceItems'][3]).split(':')[1]        # 联系方式
-                    result['问题类型'] = (result['traceItems'][4]).split(':')[1]        # 问题类型
-                    result['问题原因'] = (result['traceItems'][5]).split(':')[1]        # 问题类型
-                    result['内容'] = (result['traceItems'][2]).split(':')[1]          # 内容
-                    result['处理结果'] = (result['traceItems'][6]).split(':')[1]        # 处理结果
-                if len(result['traceItems']) > 7:
-                    result['是否需要商品'] = (result['traceItems'][7]).split(':')[1]        # 处理结果
-                else:
+        if max_count != 0:
+            try:
+                for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
+                    # print(result)
+                    result['订单编号'] = result['orderNumber']
+                    result['再次克隆下单'] = result['newCloneNumber']
+                    result['跟进人'] = ''
+                    result['时间'] = ''
+                    result['内容'] = ''
+                    result['联系方式'] = ''
+                    result['问题类型'] = ''
+                    result['问题原因'] = ''
+                    result['处理结果'] = ''
                     result['是否需要商品'] = ''
-                ordersDict.append(result.copy())
-        except Exception as e:
-            print('转化失败： 重新获取中', str(Exception) + str(e))
-        df = pd.json_normalize(ordersDict)
-        print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
-        print('*' * 50)
-        if max_count > 500:
-            in_count = math.ceil(max_count/500)
-            dlist = []
-            n = 1
-            while n < in_count:  # 这里用到了一个while循环，穿越过来的
-                print('剩余查询次数' + str(in_count - n))
-                n = n + 1
-                data = self._order_js_Query(timeStart, timeEnd, n)
-                dlist.append(data)
-            dp = df.append(dlist, ignore_index=True)
+                    if result['traceItems'] != []:
+                        if len(result['traceItems']) >= 5:
+                            result['跟进人'] = ((result['traceItems'][0]).split(':')[1]).strip()  # 跟进人
+                            result['时间'] = ((result['traceItems'][1]).split(':')[1]).strip()  # 时间
+                            result['内容'] = ((result['traceItems'][2]).split(':')[1]).strip()  # 内容
+                            result['联系方式'] = ((result['traceItems'][3]).split(':')[1]).strip()  # 联系方式
+                            result['问题类型'] = ((result['traceItems'][4]).split(':')[1]).strip()  # 问题类型
+                        if len(result['traceItems']) == 6:
+                            result['处理结果'] = ((result['traceItems'][5]).split(':')[1]).strip()  # 问题类型
+                        if len(result['traceItems']) >= 7:
+                            result['问题原因'] = ((result['traceItems'][5]).split(':')[1]).strip()  # 问题类型
+                            result['处理结果'] = ((result['traceItems'][6]).split(':')[1]).strip()  # 处理结果
+                        if len(result['traceItems']) >= 8:
+                            result['是否需要商品'] = ((result['traceItems'][7]).split(':')[1]).strip()  # 处理结果
+                    ordersDict.append(result.copy())
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            df = pd.json_normalize(ordersDict)
+            print('*' * 50)
+            if max_count > 500:
+                in_count = math.ceil(max_count/500)
+                dlist = []
+                n = 1
+                while n < in_count:  # 这里用到了一个while循环，穿越过来的
+                    print('剩余查询次数' + str(in_count - n))
+                    n = n + 1
+                    data = self._order_js_Query(timeStart, timeEnd, n)
+                    dlist.append(data)
+                dp = df.append(dlist, ignore_index=True)
+            else:
+                dp = df
+            dp = dp[['订单编号', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
+            dp.columns = ['订单编号', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果', '是否需要商品']
+            print('正在写入......')
+            dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            df.to_excel('G:\\输出文件\\拒收问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            sql = '''REPLACE INTO 拒收问题件(订单编号,再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果, 是否需要商品,记录时间) 
+                    SELECT 订单编号,IF(再次克隆下单 = '',NULL,再次克隆下单) 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果,是否需要商品, NOW() 记录时间 
+                    FROM customer;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('写入成功......')
+
+            print('获取每日新增核实拒收表......')
+            sql = '''SELECT 处理时间,团队,js.订单编号,产品id,产品名称,下单时间,完结状态时间,电话号码,核实原因,具体原因,NULL 通话截图,NULL ID,再次克隆下单,NULL 备注,处理人
+                    FROM (SELECT * FROM 拒收问题件 WHERE 记录时间 >= TIMESTAMP(CURDATE())) js
+                    LEFT JOIN gat_order_list g ON js.订单编号= g.订单编号;'''
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            df.to_excel('G:\\输出文件\\需核实拒收-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            print('获取写入成功......')
         else:
-            dp = df
-        dp = dp[['订单编号', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
-        dp.columns = ['订单编号', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果', '是否需要商品']
-        print('正在写入......')
-        dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-        df.to_excel('G:\\输出文件\\拒收问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-        sql = '''REPLACE INTO 拒收问题件(订单编号,再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果, 是否需要商品,记录时间) 
-                SELECT 订单编号,IF(再次克隆下单 = '',NULL,再次克隆下单) 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果,是否需要商品, NOW() 记录时间 
-                FROM customer;'''
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        print('写入成功......')
+            print('****** 没有信息！！！')
         print('*' * 50)
-    def _order_js_Query(self, timeStart, timeEnd, n):  # 进入物流客诉件界面
+    def _order_js_Query(self, timeStart, timeEnd, n):  # 进入拒收问题件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRejectList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -909,18 +929,29 @@ class QueryTwo(Settings, Settings_sso):
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
                 result['订单编号'] = result['orderNumber']
                 result['再次克隆下单'] = result['newCloneNumber']
+                result['跟进人'] = ''
+                result['时间'] = ''
+                result['内容'] = ''
+                result['联系方式'] = ''
+                result['问题类型'] = ''
+                result['问题原因'] = ''
+                result['处理结果'] = ''
+                result['是否需要商品'] = ''
                 if result['traceItems'] != []:
-                    result['跟进人'] = (result['traceItems'][0]).split(':')[1]         # 跟进人
-                    result['时间'] = (result['traceItems'][1]).split(':')[1]          # 时间
-                    result['联系方式'] = (result['traceItems'][3]).split(':')[1]        # 联系方式
-                    result['问题类型'] = (result['traceItems'][4]).split(':')[1]        # 问题类型
-                    result['问题原因'] = (result['traceItems'][5]).split(':')[1]        # 问题类型
-                    result['内容'] = (result['traceItems'][2]).split(':')[1]          # 内容
-                    result['处理结果'] = (result['traceItems'][6]).split(':')[1]        # 处理结果
-                if len(result['traceItems']) > 7:
-                    result['是否需要商品'] = (result['traceItems'][7]).split(':')[1]        # 处理结果
-                else:
-                    result['是否需要商品'] = ''
+                    # print(len(result['traceItems']))
+                    if len(result['traceItems']) >= 5:
+                        result['跟进人'] = ((result['traceItems'][0]).split(':')[1]).strip()  # 跟进人
+                        result['时间'] = ((result['traceItems'][1]).split(':')[1]).strip()  # 时间
+                        result['内容'] = ((result['traceItems'][2]).split(':')[1]).strip()  # 内容
+                        result['联系方式'] = ((result['traceItems'][3]).split(':')[1]).strip()  # 联系方式
+                        result['问题类型'] = ((result['traceItems'][4]).split(':')[1]).strip()  # 问题类型
+                    if len(result['traceItems']) == 6:
+                        result['处理结果'] = ((result['traceItems'][5]).split(':')[1]).strip()  # 问题类型
+                    if len(result['traceItems']) >= 7:
+                        result['问题原因'] = ((result['traceItems'][5]).split(':')[1]).strip()  # 问题类型
+                        result['处理结果'] = ((result['traceItems'][6]).split(':')[1]).strip()  # 处理结果
+                    if len(result['traceItems']) >= 8:
+                        result['是否需要商品'] = ((result['traceItems'][7]).split(':')[1]).strip()  # 处理结果
                 ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
@@ -949,64 +980,64 @@ class QueryTwo(Settings, Settings_sso):
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         max_count = req['data']['count']
-        # print(req)
-        ordersDict = []
-        try:
-            for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
-                orderInfo_count = 0
-                for dt in result['orderDetails']:
-                    if dt != []:
-                        all_index = [substr.start() for substr in re.finditer('』x', dt['spec'])]  # 得到所有  '』x' 下标[6, 18, 27, 34, 39]
-                        for index in all_index:
-                            orderInfo_count = orderInfo_count + int(dt['spec'][index + 2:index + 3])    # 对下标推移位置，获取个数进行加  『白色,均码』x1,『黑色,均码』x1
-                result['orderInfo_count'] = orderInfo_count
-                result['orderInfo.order_number'] = ''
-                result['orderInfo.currency'] = ''
-                result['orderInfo.area'] = ''
-                result['orderInfo.amount'] = ''
-                result['orderInfoAfter.order_number'] = ''
-                result['orderInfoAfter.amount'] = ''
-                result['orderInfo.order_number'] = result['orderInfo']['order_number']
-                result['orderInfo.currency'] = result['orderInfo']['currency']
-                result['orderInfo.area'] = result['orderInfo']['area']
-                result['orderInfo.amount'] = result['orderInfo']['amount']
-                if result['orderInfoAfter'] != []:
-                    result['orderInfoAfter.order_number'] = result['orderInfoAfter']['order_number']
-                    result['orderInfoAfter.amount'] = result['orderInfoAfter']['amount']
-                ordersDict.append(result.copy())
-        except Exception as e:
-            print('转化失败： 重新获取中', str(Exception) + str(e))
-        df = pd.json_normalize(ordersDict)
         print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
-        print('*' * 50)
-        if max_count > 90:
-            in_count = math.ceil(max_count/90)
-            dlist = []
-            n = 1
-            while n < in_count:  # 这里用到了一个while循环，穿越过来的
-                print('剩余查询次数' + str(in_count - n))
-                n = n + 1
-                data = self._orderReturnList_Query(team, timeStart, timeEnd, n)
-                dlist.append(data)
-            dp = df.append(dlist, ignore_index=True)
-        else:
-            dp = df
-        dp = dp[['orderInfo.order_number',  'orderInfo.currency', 'orderInfo.area', 'orderInfo.amount', 'orderInfo_count', 'feedback_type', 'question_type',
-                 'orderInfoAfter.order_number', 'orderInfoAfter.amount', 'refund_amount', 'create_time', 'user', 'deal_time', 'deal_user', 'type']]
-        dp.columns = ['订单编号', '币种', '团队', '金额', '数量', '反馈方式', '反馈问题类型', '新订单编号', '克隆后金额', '退款金额', '导入时间',
-                      '登记人', '处理时间', '处理人', '售后类型']
-        dp = dp[(dp['币种'].str.contains('港币|台币', na=False))]
-        print('共有 ' + str(len(dp)) + '条 正在写入......')
-        dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-        dp.to_excel('G:\\输出文件\\{0}-查询{1}.xlsx'.format(match[team], rq), sheet_name='查询', index=False, engine='xlsxwriter')
-        sql = '''REPLACE INTO 退换货表(订单编号,币种,团队,金额,数量, 反馈方式, 反馈问题类型, 新订单编号,克隆后金额, 退款金额, 导入时间, 登记人, 处理时间, 处理人, 售后类型, 记录时间) 
-                SELECT 订单编号,币种,团队,金额,数量, 反馈方式, 反馈问题类型, 新订单编号, IF(克隆后金额 = '',NULL,克隆后金额) 克隆后金额, IF(退款金额 = '',NULL,退款金额) 退款金额, 
+        ordersDict = []
+        if max_count != 0:
+            try:
+                for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
+                    orderInfo_count = 0
+                    for dt in result['orderDetails']:
+                        if dt != []:
+                            all_index = [substr.start() for substr in re.finditer('』x', dt['spec'])]  # 得到所有  '』x' 下标[6, 18, 27, 34, 39]
+                            for index in all_index:
+                                orderInfo_count = orderInfo_count + int(dt['spec'][index + 2:index + 3])    # 对下标推移位置，获取个数进行加  『白色,均码』x1,『黑色,均码』x1
+                    result['orderInfo_count'] = orderInfo_count
+                    result['orderInfo.order_number'] = ''
+                    result['orderInfo.currency'] = ''
+                    result['orderInfo.area'] = ''
+                    result['orderInfo.amount'] = ''
+                    result['orderInfoAfter.order_number'] = ''
+                    result['orderInfoAfter.amount'] = ''
+                    result['orderInfo.order_number'] = result['orderInfo']['order_number']
+                    result['orderInfo.currency'] = result['orderInfo']['currency']
+                    result['orderInfo.area'] = result['orderInfo']['area']
+                    result['orderInfo.amount'] = result['orderInfo']['amount']
+                    if result['orderInfoAfter'] != []:
+                        result['orderInfoAfter.order_number'] = result['orderInfoAfter']['order_number']
+                        result['orderInfoAfter.amount'] = result['orderInfoAfter']['amount']
+                    ordersDict.append(result.copy())
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            df = pd.json_normalize(ordersDict)
+            print('*' * 50)
+            if max_count > 90:
+                in_count = math.ceil(max_count/90)
+                dlist = []
+                n = 1
+                while n < in_count:  # 这里用到了一个while循环，穿越过来的
+                    print('剩余查询次数' + str(in_count - n))
+                    n = n + 1
+                    data = self._orderReturnList_Query(team, timeStart, timeEnd, n)
+                    dlist.append(data)
+                dp = df.append(dlist, ignore_index=True)
+            else:
+                dp = df
+            dp = dp[['orderInfo.order_number',  'orderInfo.currency', 'orderInfo.area', 'orderInfo.amount', 'orderInfo_count', 'feedback_type', 'question_type',
+                    'orderInfoAfter.order_number', 'orderInfoAfter.amount', 'refund_amount', 'create_time', 'user', 'deal_time', 'deal_user', 'type']]
+            dp.columns = ['订单编号', '币种', '团队', '金额', '数量', '反馈方式', '反馈问题类型', '新订单编号', '克隆后金额', '退款金额', '导入时间',
+                        '登记人', '处理时间', '处理人', '售后类型']
+            dp = dp[(dp['币种'].str.contains('港币|台币', na=False))]
+            print('共有 ' + str(len(dp)) + '条 正在写入......')
+            dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            dp.to_excel('G:\\输出文件\\{0}-查询{1}.xlsx'.format(match[team], rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            sql = '''REPLACE INTO 退换货表(订单编号,币种,团队,金额,数量, 反馈方式, 反馈问题类型, 新订单编号,克隆后金额, 退款金额, 导入时间, 登记人, 处理时间, 处理人, 售后类型, 记录时间) 
+                    SELECT 订单编号,币种,团队,金额,数量, 反馈方式, 反馈问题类型, 新订单编号, IF(克隆后金额 = '',NULL,克隆后金额) 克隆后金额, IF(退款金额 = '',NULL,退款金额) 退款金额, 
                         导入时间, 登记人, 处理时间, 处理人, IF(售后类型 = '' OR 售后类型 IS NULL,'退货',售后类型) 售后类型, NOW() 记录时间
-                FROM customer;'''
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                    FROM customer;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('写入成功......')
         print('*' * 50)
-    def _orderReturnList_Query(self, team, timeStart, timeEnd, n):  # 进入物流客诉件界面
+    def _orderReturnList_Query(self, team, timeStart, timeEnd, n):  # 进入退换货界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?name=gorder.postSale&action=getOrderReturnList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -1075,7 +1106,7 @@ if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
 
-    select = 8
+    select = 989
     if int(select) == 1:
         timeStart, timeEnd = m.readInfo('物流问题件')
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
@@ -1136,10 +1167,11 @@ if __name__ == '__main__':
 
     # m._sale_Query_info('NR112180927421695')
 
-    # m.orderReturnList_Query(timeStart, timeEnd)           # 查询更新-退换货
-    timeStart, timeEnd = m.readInfo('拒收问题件')
+    # for team in [1, 2]:
+        # m.orderReturnList_Query(team, '2022-02-15', '2022-02-16')           # 查询更新-退换货
 
-    m.order_js_Query('2022-02-01', '2022-02-12')            # 查询更新-拒收问题件
+    # timeStart, timeEnd = m.readInfo('拒收问题件')
+    # m.order_js_Query('2022-02-11', '2022-02-14')            # 查询更新-拒收问题件
 
 
 

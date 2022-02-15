@@ -251,7 +251,7 @@ class MysqlControl(Settings):
 
 
     def creatMyOrderSl(self, team):  # 最近五天的全部订单信息
-        match = {'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队", "火凤凰-港台(繁体)", "神龙-低价", "神龙-运营1组"',
+        match = {'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队", "火凤凰-港台(繁体)", "神龙-低价", "神龙-主页运营1组"',
                  'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"'
                  }
@@ -274,9 +274,9 @@ class MysqlControl(Settings):
             print(end)
         else:
             # 11-12月的
-            begin = datetime.date(2021, 12, 1)
+            begin = datetime.date(2019, 1, 1)
             print(begin)
-            end = datetime.date(2022, 2, 8)
+            end = datetime.date(2020, 1, 1)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -442,7 +442,7 @@ class MysqlControl(Settings):
                             null 打包花费,
                             a.other_fee 其它花费,
                             a.weight 包裹重量,
-                            a.volume 包裹体积,
+                            null 包裹体积,
                             a.ship_zip 邮编,
                             a.turn_purchase_time 添加物流单号时间,
                             null 规格中文,
@@ -497,7 +497,7 @@ class MysqlControl(Settings):
         return '写入完成'
 
     def creatMyOrderSlTWO(self, team, begin, end):  # 最近两个月的更新订单信息
-        match = {'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队", "火凤凰-港台(繁体)", "神龙-低价", "神龙-运营1组"',
+        match = {'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队", "火凤凰-港台(繁体)", "神龙-低价", "神龙-主页运营1组"',
                  'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"',
                  }
@@ -739,7 +739,7 @@ class MysqlControl(Settings):
                  'slgat_hs': '红杉-港台',
                  'slgat_js': '金狮-港台',
                  'slgat_jp': '小虎队-港台',
-                 'slgat_run': '神龙-运营1组',
+                 'slgat_run': '神龙-主页运营1组',
                  'gat': '港台',
                  'slsc': '品牌',
                  'sl_rb': '日本',
@@ -947,13 +947,13 @@ class MysqlControl(Settings):
         if team != 'sl_rb':
             print('正在获取---' + match[team] + ' ---全部导出数据内容…………')
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            print('正在写入---' + match[team] + ' ---临时缓存…………')  # 备用临时缓存表 'slgat_run': '神龙-运营1组',
+            print('正在写入---' + match[team] + ' ---临时缓存…………')  # 备用临时缓存表 'slgat_run': '神龙-主页运营1组',
             df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace')
         today = datetime.date.today().strftime('%Y.%m.%d')
         print('正在写入excel…………')
         filePath = []
         if team in ('gat'):
-            for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-小虎队"|slgat_jp',  '"神龙-运营1组"|slgat_run'):
+            for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-小虎队"|slgat_jp',  '"神龙-主页运营1组"|slgat_run'):
                 tem1 = tem.split('|')[0]
                 tem2 = tem.split('|')[1]
                 sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)

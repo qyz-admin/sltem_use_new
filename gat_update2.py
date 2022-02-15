@@ -310,7 +310,7 @@ class QueryUpdate(Settings):
                  'slgat_hs': '红杉-港台',
                  'slgat_js': '金狮-港台',
                  'slgat_jp': '小虎队-港台',
-                 'slgat_run': '神龙-运营1组',
+                 'slgat_run': '神龙-主页运营1组',
                  'gat': '港台',
                  'slsc': '品牌',
                  'slrb': '神龙-日本',
@@ -331,7 +331,7 @@ class QueryUpdate(Settings):
         # print('正在写入---' + match[team] + ' ---临时缓存…………')             # 备用临时缓存表
         # df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
 
-        for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-小虎队"|slgat_jp', '"神龙-运营1组"|slgat_run'):
+        for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-小虎队"|slgat_jp', '"神龙-主页运营1组"|slgat_run'):
             tem1 = tem.split('|')[0]
             tem2 = tem.split('|')[1]
             sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)
@@ -385,21 +385,21 @@ class QueryUpdate(Settings):
 			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '香港',(avg_sign_rate-0.89) ,
 			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '台湾',(avg_sign_rate-0.86),
 			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '香港',(avg_sign_rate-0.89), 
-			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '台湾',(avg_sign_rate-0.86), 
-			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '香港',(avg_sign_rate-0.88), NULL)))))) AS 历史平均影响, 
+			                    IF(s.团队 = '神龙-主页运营1组' AND s.币种 = '台湾',(avg_sign_rate-0.86), 
+			                    IF(s.团队 = '神龙-主页运营1组' AND s.币种 = '香港',(avg_sign_rate-0.88), NULL)))))) AS 历史平均影响, 
 			                    sign_rate AS 预测, 
 			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '台湾',(sign_rate-0.81),
 			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '香港',(sign_rate-0.89) ,
 			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '台湾',(sign_rate-0.86),
 			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '香港',(sign_rate-0.89), 
-			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '台湾',(sign_rate-0.86), 
-			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '香港',(sign_rate-0.88), NULL)))))) AS 预测影响,
+			                    IF(s.团队 = '神龙-主页运营1组' AND s.币种 = '台湾',(sign_rate-0.86), 
+			                    IF(s.团队 = '神龙-主页运营1组' AND s.币种 = '香港',(sign_rate-0.88), NULL)))))) AS 预测影响,
 			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '台湾',0.81,
 			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '香港',0.89,
 			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '台湾',0.86,
 			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '香港',0.89, 
-			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '台湾',0.86, 
-			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '香港',0.88, NULL)))))) AS 目标签收率
+			                    IF(s.团队 = '神龙-主页运营1组' AND s.币种 = '台湾',0.86, 
+			                    IF(s.团队 = '神龙-主页运营1组' AND s.币种 = '香港',0.88, NULL)))))) AS 目标签收率
                         FROM (SELECT cc.`团队`, cc.`币种`, cc.`产品id`, cc.`产品名称`, cc.`三级分类`,
 						            COUNT(订单编号) AS 本月单量,
 						            SUM(`价格RMB`) AS 总金额,
@@ -559,7 +559,7 @@ class QueryUpdate(Settings):
                 ) s2
                 GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`是否改派`, s2.`物流方式` 
                 HAVING s2.年月 <> '合计'
-    ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+    ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
             FIELD(s2.`币种`,'台湾','香港','合计'),
             s2.`年月`,
             FIELD(s2.`是否改派`,'改派','直发','合计'),
@@ -663,7 +663,7 @@ class QueryUpdate(Settings):
                     ) s2 
                     GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`是否改派`, s2.`物流方式`, s2.`旬`
                     HAVING s2.是否改派 <> '合计'
-        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                 FIELD(s2.`币种`,'台湾','香港','合计'),
                 s2.`年月`,
                 FIELD(s2.`是否改派`,'改派','直发','合计'),
@@ -756,7 +756,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.`家族`,s1.`币种`, s1.`年月`, s1.`父级分类`, s1.`旬`
                         with rollup
                 ) s2 HAVING s2.年月 <> '合计'
-            ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+            ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                     FIELD(s2.`币种`,'台湾','香港','合计'),
                     s2.`年月`,
                     FIELD(s2.父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','合计' ),
@@ -845,7 +845,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.`家族`,s1.`币种`, s1.`年月`, s1.`父级分类`, s1.`二级分类`, s1.`旬`
                         with rollup
                 ) s2 HAVING s2.年月 <> '合计'
-        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                 FIELD(s2.`币种`,'台湾','香港','合计'),
                 s2.`年月`,
                 FIELD(s2.父级分类, '居家百货', '电子电器', '服饰', '医药保健', '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','合计' ),
@@ -1160,7 +1160,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                         WITH ROLLUP 
                 ) s HAVING s.月份 != '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`产品id`,'合计'),
@@ -1469,7 +1469,7 @@ class QueryUpdate(Settings):
                 GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                 WITH ROLLUP 
             ) s HAVING s.旬 != '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -1619,7 +1619,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                         WITH ROLLUP 
                     ) s HAVING s.月份 != '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`产品id`,'合计'),
@@ -1770,7 +1770,7 @@ class QueryUpdate(Settings):
                     GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                     WITH ROLLUP 
             ) s HAVING s.旬 <> '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -2080,7 +2080,7 @@ class QueryUpdate(Settings):
                                 GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                 WITH ROLLUP 
                         ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
@@ -2389,7 +2389,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                         WITH ROLLUP 
                     ) s HAVING s.旬 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -2699,7 +2699,7 @@ class QueryUpdate(Settings):
                                 GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                 WITH ROLLUP 
                         ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
@@ -3008,7 +3008,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                         WITH ROLLUP 
                     ) s HAVING s.旬 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -3200,7 +3200,7 @@ class QueryUpdate(Settings):
         #                 GROUP BY 月份,地区,家族
         #                 ORDER BY 月份 DESC,
         #                         FIELD( 地区, '台湾', '香港', '总计' ),
-        #                         FIELD( 家族, '神龙', '火凤凰', '金狮', '金鹏', '神龙-低价','神龙-运营1组', '红杉', '总计');'''.format(month_last, team)
+        #                         FIELD( 家族, '神龙', '火凤凰', '金狮', '金鹏', '神龙-低价','神龙-主页运营1组', '红杉', '总计');'''.format(month_last, team)
         sql0 = '''SELECT *
                 FROM (SELECT IFNULL(s.`年月`, '总计') 月份,
                             IFNULL(s.币种, '总计') 地区,
@@ -3253,7 +3253,7 @@ class QueryUpdate(Settings):
 				) ss					
                 ORDER BY 月份 DESC,
                         FIELD( 地区, '台湾', '香港', '总计' ),
-                        FIELD( 家族, '神龙', '火凤凰', '小虎队', '神龙-低价', '神龙-运营1组', '红杉', '金狮', '总计'),
+                        FIELD( 家族, '神龙', '火凤凰', '小虎队', '神龙-低价', '神龙-主页运营1组', '红杉', '金狮', '总计'),
                         直发总订单 DESC;'''.format(month_last, team)
         df0 = pd.read_sql_query(sql=sql0, con=self.engine1)
         listT.append(df0)
@@ -3326,7 +3326,7 @@ class QueryUpdate(Settings):
                 ) ss			
                 ORDER BY 月份 DESC,
                         FIELD( 地区, '台湾', '香港', '总计' ),
-                        FIELD( 家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                        FIELD( 家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-主页运营1组','红杉','金狮', '总计' ),
                         总单量 DESC;'''.format(team)
         df10 = pd.read_sql_query(sql=sql10, con=self.engine1)
         listT.append(df10)
@@ -3371,7 +3371,7 @@ class QueryUpdate(Settings):
                 ) ss				
                 ORDER BY 月份 DESC,旬,
                         FIELD( 地区, '台湾', '香港', '总计' ),
-                        FIELD( 家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                        FIELD( 家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-主页运营1组','红杉','金狮', '总计' ),
                         总单量 DESC;'''.format(team)
         df11 = pd.read_sql_query(sql=sql11, con=self.engine1)
         listT.append(df11)
@@ -3433,7 +3433,7 @@ class QueryUpdate(Settings):
             ) ss
 			ORDER BY 月份 DESC,
                     FIELD( 地区, '台湾', '香港', '总计' ),
-                    FIELD( 家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                    FIELD( 家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-主页运营1组','红杉','金狮', '总计' ),
                     FIELD( 父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
                     总单量 DESC;'''.format(month_last, team)
         df20 = pd.read_sql_query(sql=sql20, con=self.engine1)
@@ -3482,7 +3482,7 @@ class QueryUpdate(Settings):
 			                    DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 6 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 7 MONTH),'%Y%m'), '总计' ),
                             FIELD(地区, '台湾', '香港', '总计' ),
                             FIELD(是否改派, '直发', '改派', '总计' ),
-                            FIELD(家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                            FIELD(家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-主页运营1组','红杉','金狮', '总计' ),
                             FIELD(物流方式, '台湾-大黄蜂普货头程-森鸿尾程','台湾-大黄蜂普货头程-易速配尾程', '台湾-立邦普货头程-森鸿尾程','台湾-易速配-TW海快','台湾-立邦普货头程-易速配尾程', 
                                             '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
                                             '香港-立邦-顺丰','香港-易速配-顺丰','香港-易速配-顺丰YC','香港-森鸿-SH渠道','香港-森鸿-顺丰渠道', 
@@ -3532,7 +3532,7 @@ class QueryUpdate(Settings):
             ) ss
             ORDER BY 月份 DESC,
                     FIELD(地区, '台湾', '香港', '总计' ),
-                    FIELD(家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                    FIELD(家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-主页运营1组','红杉','金狮', '总计' ),
                     FIELD(平台, 'google', 'facebook', 'line', 'native',  'Criteo', 'tiktok', 'yahoo','facebookpage','recommend','postsaleclone','recomm','shangwutong','总计' ),
                     总单量 DESC;'''.format(month_last, team)
         df30 = pd.read_sql_query(sql=sql30, con=self.engine1)
@@ -3579,7 +3579,7 @@ class QueryUpdate(Settings):
             ORDER BY 月份 DESC,
                     FIELD(地区, '台湾', '香港', '总计' ),
                     FIELD(平台, 'google', 'facebook', 'line', 'native',  'Criteo', 'tiktok', 'yahoo','facebookpage','recommend','postsaleclone','recomm','shangwutong','总计' ),
-                    FIELD(家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                    FIELD(家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-主页运营1组','红杉','金狮', '总计' ),
                     总单量 DESC;'''.format(month_last, team)
         df31 = pd.read_sql_query(sql=sql31, con=self.engine1)
         listT.append(df31)
@@ -3626,7 +3626,7 @@ class QueryUpdate(Settings):
             ORDER BY 月份 DESC,
                     FIELD(地区, '台湾', '香港', '总计' ),
                     FIELD(父级分类, '居家百货', '电子电器', '服饰', '医药保健', '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
-                    FIELD(家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                    FIELD(家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-主页运营1组','红杉','金狮', '总计' ),
                     总单量 DESC;'''.format(month_last, team)
         df40 = pd.read_sql_query(sql=sql40, con=self.engine1)
         listT.append(df40)
@@ -3676,7 +3676,7 @@ class QueryUpdate(Settings):
                     FIELD(是否改派, '直发', '改派', '总计' ),
                     FIELD(物流方式, '台湾-大黄蜂普货头程-森鸿尾程','台湾-大黄蜂普货头程-易速配尾程', '台湾-立邦普货头程-森鸿尾程','台湾-立邦普货头程-易速配尾程', '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
                                 '香港-立邦-顺丰','香港-森鸿-SH渠道','香港-森鸿-顺丰渠道','香港-易速配-顺丰', '龟山','森鸿','速派','天马顺丰','天马新竹','香港-立邦-改派','香港-森鸿-改派','香港-易速配-改派','总计' ),
-                    FIELD(家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                    FIELD(家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-主页运营1组','红杉','金狮', '总计' ),
                     总单量 DESC;'''.format(month_last, team)
         df41 = pd.read_sql_query(sql=sql41, con=self.engine1)
         listT.append(df41)
@@ -3741,11 +3741,11 @@ class QueryUpdate(Settings):
                                 SUM(IF(家族 = '火凤凰' AND 最终状态 = "拒收",1,0)) as 火凤凰拒收,
                                 SUM(IF(家族 = '火凤凰' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 火凤凰完成,
                                 SUM(IF(家族 = '火凤凰' AND 是否改派 = '改派',1,0)) as 火凤凰改派,
-                            SUM(IF(家族 = '神龙-运营1组',1,0)) as 神龙运营单量,
-                                SUM(IF(家族 = '神龙-运营1组' AND 最终状态 = "已签收",1,0)) as 神龙运营签收,
-                                SUM(IF(家族 = '神龙-运营1组' AND 最终状态 = "拒收",1,0)) as 神龙运营拒收,
-                                SUM(IF(家族 = '神龙-运营1组' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 神龙运营完成,
-                                SUM(IF(家族 = '神龙-运营1组' AND 是否改派 = '改派',1,0)) as 神龙运营改派,
+                            SUM(IF(家族 = '神龙-主页运营1组',1,0)) as 神龙运营单量,
+                                SUM(IF(家族 = '神龙-主页运营1组' AND 最终状态 = "已签收",1,0)) as 神龙运营签收,
+                                SUM(IF(家族 = '神龙-主页运营1组' AND 最终状态 = "拒收",1,0)) as 神龙运营拒收,
+                                SUM(IF(家族 = '神龙-主页运营1组' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 神龙运营完成,
+                                SUM(IF(家族 = '神龙-主页运营1组' AND 是否改派 = '改派',1,0)) as 神龙运营改派,
                             SUM(IF(家族 = '小虎队',1,0)) as 小虎队单量,
                                 SUM(IF(家族 = '小虎队' AND 最终状态 = "已签收",1,0)) as 小虎队签收,
                                 SUM(IF(家族 = '小虎队' AND 最终状态 = "拒收",1,0)) as 小虎队拒收,
@@ -3872,7 +3872,7 @@ class QueryUpdate(Settings):
 					GROUP BY s.家族,s.地区,s.产品id
 					WITH ROLLUP 
 				) ss
-                ORDER BY FIELD(ss.`家族`,'神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮','总计'),
+                ORDER BY FIELD(ss.`家族`,'神龙','火凤凰','小虎队','神龙-低价', '神龙-主页运营1组','红杉','金狮','总计'),
                         FIELD(ss.地区, '台湾', '香港', '总计' ),
                         ss.总单量 DESC;'''
         df51 = pd.read_sql_query(sql=sql51, con=self.engine1)
@@ -4074,7 +4074,7 @@ class QueryUpdate(Settings):
                     ) s
                     ORDER BY 月份 DESC,
                             FIELD( 地区, '台湾', '香港', '总计' ),
-                            FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-运营1组','红杉','金狮', '总计' ),
+                            FIELD( s.家族, '神龙','火凤凰','小虎队','神龙-低价', '神龙-主页运营1组','红杉','金狮', '总计' ),
                             FIELD( s.父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
                             FIELD( s.二级分类, '厨房用品', '日用百货', '布艺家纺', '宠物用品',  '户外运动', '汽车用品', '手表手环','影音娱乐','电脑外设','手机外设',
                                                 '家用电器', '个护电器','上衣', '下装',  '内衣', '套装', '裙子','配饰','母婴服饰','保健食品','护理护具', 
@@ -4217,7 +4217,7 @@ class QueryUpdate(Settings):
                     ) s2
                     GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`是否改派`, s2.`省洲`
                     HAVING s2.年月 <> '合计'
-        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','红杉','神龙-运营1组','金狮','合计'),
+        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','红杉','神龙-主页运营1组','金狮','合计'),
                 FIELD(s2.`币种`,'台湾','香港','合计'),
                 s2.`年月`,
                 FIELD(s2.`是否改派`,'改派','直发','合计'),
@@ -4323,20 +4323,20 @@ class QueryUpdate(Settings):
             del book['Sheet1']
         writer.save()
         writer.close()
-        # try:
-        #     print('正在运行' + match[team] + '表宏…………')
-        #     app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-        #     app.display_alerts = False
-        #     wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
-        #     wbsht1 = app.books.open(file_path)
-        #     wbsht.macro('gat_总_地区_两月签收率')()
-        #     wbsht1.save()
-        #     wbsht1.close()
-        #     wbsht.close()
-        #     app.quit()
-        # except Exception as e:
-        #     print('运行失败：', str(Exception) + str(e))
-        # print('----已写入excel ')
+        try:
+            print('正在运行' + match[team] + '表宏…………')
+            app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
+            app.display_alerts = False
+            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            wbsht1 = app.books.open(file_path)
+            wbsht.macro('gat_总_地区_两月签收率')()
+            wbsht1.save()
+            wbsht1.close()
+            wbsht.close()
+            app.quit()
+        except Exception as e:
+            print('运行失败：', str(Exception) + str(e))
+        print('----已写入excel ')
 
     # 更新上期-总表 （备用）
     def replaceHostbefore(self, team, last_time):
@@ -5363,7 +5363,7 @@ class QueryUpdate(Settings):
                                     WITH ROLLUP 
                                 ) s 
                                 HAVING s.月份 != '合计' AND s.产品id != '合计' AND s.`拒收` >= '1'
-                                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+                                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                                 FIELD(s.`地区`,'台湾','香港','合计'),
                                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'),'合计'),
                                 FIELD(s.`产品id`,'合计'),
@@ -5413,7 +5413,7 @@ class QueryUpdate(Settings):
                                     WITH ROLLUP 
                                 ) s 
                                 HAVING s.月份 != '合计' AND s.产品id != '合计' AND s.`拒收` >= '1'
-                                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+                                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                                 FIELD(s.`地区`,'台湾','香港','合计'),
                                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'),'合计'),
                                 FIELD(s.`产品id`,'合计'),
@@ -5820,7 +5820,7 @@ ORDER BY 系统问题;'''.format()  # 港台查询函数导出
                 ) s2
                 GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`是否改派`, s2.`物流方式` 
                 HAVING s2.年月 <> '合计'
-    ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+    ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
             FIELD(s2.`币种`,'台湾','香港','合计'),
             s2.`年月`,
             FIELD(s2.`是否改派`,'改派','直发','合计'),
@@ -5924,7 +5924,7 @@ ORDER BY 系统问题;'''.format()  # 港台查询函数导出
                     ) s2 
                     GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`是否改派`, s2.`物流方式`, s2.`旬`
                     HAVING s2.是否改派 <> '合计'
-        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                 FIELD(s2.`币种`,'台湾','香港','合计'),
                 s2.`年月`,
                 FIELD(s2.`是否改派`,'改派','直发','合计'),
@@ -6017,7 +6017,7 @@ ORDER BY 系统问题;'''.format()  # 港台查询函数导出
                         GROUP BY s1.`家族`,s1.`币种`, s1.`年月`, s1.`父级分类`, s1.`旬`
                         with rollup
                 ) s2 HAVING s2.年月 <> '合计'
-            ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+            ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                     FIELD(s2.`币种`,'台湾','香港','合计'),
                     s2.`年月`,
                     FIELD(s2.父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','合计' ),
@@ -6106,7 +6106,7 @@ ORDER BY 系统问题;'''.format()  # 港台查询函数导出
                         GROUP BY s1.`家族`,s1.`币种`, s1.`年月`, s1.`父级分类`, s1.`二级分类`, s1.`旬`
                         with rollup
                 ) s2 HAVING s2.年月 <> '合计'
-        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                 FIELD(s2.`币种`,'台湾','香港','合计'),
                 s2.`年月`,
                 FIELD(s2.父级分类, '居家百货', '电子电器', '服饰', '医药保健', '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','合计' ),
@@ -6421,7 +6421,7 @@ ORDER BY 系统问题;'''.format()  # 港台查询函数导出
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                         WITH ROLLUP 
                 ) s HAVING s.月份 != '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`产品id`,'合计'),
@@ -6730,7 +6730,7 @@ ORDER BY 系统问题;'''.format()  # 港台查询函数导出
                 GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                 WITH ROLLUP 
             ) s HAVING s.旬 != '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -6880,7 +6880,7 @@ ORDER BY 系统问题;'''.format()  # 港台查询函数导出
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                         WITH ROLLUP 
                     ) s HAVING s.月份 != '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`产品id`,'合计'),
@@ -7031,7 +7031,7 @@ ORDER BY 系统问题;'''.format()  # 港台查询函数导出
                     GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                     WITH ROLLUP 
             ) s HAVING s.旬 <> '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -7341,7 +7341,7 @@ ORDER BY 系统问题;'''.format()  # 港台查询函数导出
                                 GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                 WITH ROLLUP 
                         ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
@@ -7650,7 +7650,7 @@ ORDER BY 系统问题;'''.format()  # 港台查询函数导出
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                         WITH ROLLUP 
                     ) s HAVING s.旬 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -7960,7 +7960,7 @@ ORDER BY 系统问题;'''.format()  # 港台查询函数导出
                                 GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                 WITH ROLLUP 
                         ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
@@ -8269,7 +8269,7 @@ ORDER BY 系统问题;'''.format()  # 港台查询函数导出
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                         WITH ROLLUP 
                     ) s HAVING s.旬 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-运营1组','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙-低价','神龙-主页运营1组','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
