@@ -390,7 +390,7 @@ class QueryUpdate(Settings):
 	            WHERE s.产品id NOT IN ( SELECT  DISTINCT  产品id FROM 运费核实 y);'''.format(month_yesterday, month_now)
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
         df1 = df1[['年月', '团队',  '日期', '币种', '订单编号', '数量', '电话号码', '运单编号', '是否改派', '物流方式', '商品id', '产品id', '产品名称',
-                 '价格', '仓储扫描时间', '完结状态', '物流花费', '包裹体积', '规格中文', '产品量', '包裹重量',  'MIN(包裹重量)', '差量', '选品人']]
+                 '价格', '仓储扫描时间', '完结状态', '物流花费', '包裹体积', '规格中文', '产品量', '包裹重量',  'MIN(包裹重量)', '差量', '选品人', '备注']]
         df1 = df1.loc[df1["币种"] == "台湾"]
         listT.append(df1)
 
@@ -489,7 +489,7 @@ if __name__ == '__main__':
         upload = '查询-运单号'
         m.readFormHost(upload)
 
-    m.readFormHost('查询运费')
+    # m.readFormHost('查询运费')
     m.trans_way_cost_new(team)  # 同产品下的规格运费查询
 
 

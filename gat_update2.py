@@ -289,13 +289,17 @@ class QueryUpdate(Settings):
         print('已清除不参与计算的今日改派订单…………')
 
         print('*******正在查询改派未发货订单…………')
-        sql = '''SELECT xj.*, '未发货' AS 状态
-                FROM 已下架表  xj
-                LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
-			    LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
-                WHERE xj.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) 
-                    AND xj.币种 = '台币' AND (最终状态 = '未发货' or 最终状态 IS NULL)  
-                    AND (gs.系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单') AND gs.是否改派 = '改派') OR gs.系统订单状态 IS NULL
+        sql = '''SELECT *
+                FROM ( SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
+                        FROM (SELECT *
+			                FROM 已下架表  x
+			                WHERE x.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) AND x.币种 = '台币'
+                        )  xj
+                        LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
+                        LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
+                        WHERE 最终状态 = '未发货' or 最终状态 IS NULL
+                ) ss
+                WHERE 是否改派 = '改派' AND (系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单')) OR 是否改派 IS NULL
                 ORDER BY FIELD(物流渠道,'龟山','龟山备货','天马顺丰','天马新竹','速派','立邦');'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df = df.loc[df["币种"] == "台币"]
@@ -4099,19 +4103,19 @@ class QueryUpdate(Settings):
             del book['Sheet1']
         writer.save()
         writer.close()
-        # try:
-        #     print('正在运行' + match[team] + '表宏…………')
-        #     app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-        #     app.display_alerts = False
-        #     wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
-        #     wbsht1 = app.books.open(file_path)
-        #     wbsht.macro('zl_report_day')()
-        #     wbsht1.save()
-        #     wbsht1.close()
-        #     wbsht.close()
-        #     app.quit()
-        # except Exception as e:
-        #     print('运行失败：', str(Exception) + str(e))
+        try:
+            print('正在运行' + match[team] + '表宏…………')
+            app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
+            app.display_alerts = False
+            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            wbsht1 = app.books.open(file_path)
+            wbsht.macro('zl_report_day')()
+            wbsht1.save()
+            wbsht1.close()
+            wbsht.close()
+            app.quit()
+        except Exception as e:
+            print('运行失败：', str(Exception) + str(e))
         print('----已写入excel ')
 
     # 更新-地区签收率(自己看的)
@@ -8388,8 +8392,8 @@ if __name__ == '__main__':
     '''
     if team == 'gat':
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-        # month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-        month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
+        month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+        # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
         month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
     else:
         month_last = '2022-01-01'

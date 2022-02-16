@@ -223,10 +223,10 @@ class QueryTwoLower(Settings, Settings_sso):
                     db.rename(columns={'备注（压单核实是否需要）': '处理结果'}, inplace=True)
                     db.insert(0, '处理时间', rq)
                     db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-                    sql = '''update 压单表 a, customer b
-                                set a.`处理时间` = b.`处理时间`,
-		                            a.`处理结果` = b.`处理结果`
-                            where a.`订单编号`= b.`订单编号`;'''
+                    # sql = '''update 压单表 a, customer b set a.`处理时间` = b.`处理时间`, a.`处理结果` = b.`处理结果` where a.`订单编号`= b.`订单编号`;'''
+                    sql = '''REPLACE INTO 压单表_已核实(订单编号,处理时间,处理结果,记录时间) 
+                            SELECT 订单编号,处理时间,处理结果,NOW() 记录时间 
+                            FROM customer;'''
                     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                     print('++++成功导入：' + sht.name + '--->>>到压单表')
                 else:
@@ -286,8 +286,8 @@ class QueryTwoLower(Settings, Settings_sso):
             dp = dp[(dp['币种'].str.contains('港币|台币', na=False))]
             # print(dp)
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO 压单表(订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, 下架时间, 处理时间,处理结果,记录时间) 
-                    SELECT 订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, IF(下架时间 = '',NULL,下架时间) 下架时间, NULL 处理时间, NULL 处理结果,NOW() 记录时间 
+            sql = '''REPLACE INTO 压单表(订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, 下架时间,记录时间) 
+                    SELECT 订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, IF(下架时间 = '',NULL,下架时间) 下架时间, NOW() 记录时间
                     FROM customer'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('共有 ' + str(len(dp)) + '条 成功写入数据库+++++++')
@@ -295,8 +295,10 @@ class QueryTwoLower(Settings, Settings_sso):
             print('正在获取 压单反馈 信息中......')
             time_path: datetime = datetime.datetime.now()
             mkpath = r"F:\神龙签收率\(未发货) 直发-仓库-压单\\" + time_path.strftime('%m.%d')
-
-            sql = '''SELECT * FROM 压单表 g WHERE g.`记录时间` >= CURDATE() and g.是否下架 <> '已下架';'''
+            sql = '''SELECT s.*,s1.处理结果,s1.处理时间
+                    FROM ( SELECT * FROM 压单表 g WHERE g.`记录时间` >= CURDATE() and g.是否下架 <> '已下架'
+                    ) s 
+                    LEFT JOIN 压单表_已核实 s1 ON s.订单编号 = s1.订单编号;'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             isExists = os.path.exists(mkpath)
             if not isExists:

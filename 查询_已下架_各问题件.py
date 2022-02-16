@@ -898,11 +898,19 @@ class QueryTwo(Settings, Settings_sso):
             print('写入成功......')
 
             print('获取每日新增核实拒收表......')
+            rq = datetime.datetime.now().strftime('%m.%d')
             sql = '''SELECT 处理时间,团队,js.订单编号,产品id,产品名称,下单时间,完结状态时间,电话号码,核实原因,具体原因,NULL 通话截图,NULL ID,再次克隆下单,NULL 备注,处理人
                     FROM (SELECT * FROM 拒收问题件 WHERE 记录时间 >= TIMESTAMP(CURDATE())) js
                     LEFT JOIN gat_order_list g ON js.订单编号= g.订单编号;'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_excel('G:\\输出文件\\需核实拒收-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel('F:\\神龙签收率\\(订   单) 拒收原因-核实\\(上传)订单客户反馈-核实原因 & 再次克隆下单汇总\\{} 需核实拒收-每日上传 - 副本.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+
+            df = df[['订单编号', '核实原因', '具体原因', '产品id']]
+            df.columns = ['订单编号', '客户反馈', '具体原因', '产品ID']
+            df.insert(2, '反馈类型', '拒收')
+            df.insert(3, '仓库问题', '否')
+            df = df.loc[df["客户反馈"] != "未联系上客户"]
+            df.to_excel('F:\\神龙签收率\\(订   单) 拒收原因-核实\\(上传)订单客户反馈-核实原因 & 再次克隆下单汇总\\{} 台湾 - 订单客户反馈(上传).xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             print('获取写入成功......')
         else:
             print('****** 没有信息！！！')
@@ -1171,7 +1179,7 @@ if __name__ == '__main__':
         # m.orderReturnList_Query(team, '2022-02-15', '2022-02-16')           # 查询更新-退换货
 
     # timeStart, timeEnd = m.readInfo('拒收问题件')
-    # m.order_js_Query('2022-02-11', '2022-02-14')            # 查询更新-拒收问题件
+    m.order_js_Query('2022-02-15', '2022-02-15')            # 查询更新-拒收问题件
 
 
 
