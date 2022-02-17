@@ -899,7 +899,8 @@ class QueryTwo(Settings, Settings_sso):
 
             print('获取每日新增核实拒收表......')
             rq = datetime.datetime.now().strftime('%m.%d')
-            sql = '''SELECT 处理时间,团队,js.订单编号,产品id,产品名称,下单时间,完结状态时间,电话号码,核实原因,具体原因,NULL 通话截图,NULL ID,再次克隆下单,NULL 备注,处理人
+            sql = '''SELECT 处理时间,IF(团队 LIKE "%红杉%","红杉",IF(团队 LIKE "火凤凰%","火凤凰",IF(团队 LIKE "神龙家族%","神龙",IF(团队 LIKE "金狮%","金狮",IF(团队 LIKE "神龙-主页运营1组%","神龙主页运营",IF(团队 LIKE "金鹏%","小虎队",团队)))))) as 团队,
+                            js.订单编号,产品id,产品名称,下单时间,完结状态时间,电话号码,核实原因,具体原因,NULL 通话截图,NULL ID,再次克隆下单,NULL 备注,处理人
                     FROM (SELECT * FROM 拒收问题件 WHERE 记录时间 >= TIMESTAMP(CURDATE())) js
                     LEFT JOIN gat_order_list g ON js.订单编号= g.订单编号;'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -1114,7 +1115,7 @@ if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
 
-    select = 989
+    select = 99
     if int(select) == 1:
         timeStart, timeEnd = m.readInfo('物流问题件')
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
@@ -1154,7 +1155,7 @@ if __name__ == '__main__':
     if int(select) == 99:
         lw = QueryTwoLower('+86-18538110674', 'qyz04163510')
         start: datetime = datetime.datetime.now()
-        lw.order_lower('2021-12-31', '2022-01-01', '自动')
+        lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 自动时 输入的时间无效；切为不自动时，有效
         print('查询耗时：', datetime.datetime.now() - start)
 
     '''
@@ -1179,7 +1180,7 @@ if __name__ == '__main__':
         # m.orderReturnList_Query(team, '2022-02-15', '2022-02-16')           # 查询更新-退换货
 
     # timeStart, timeEnd = m.readInfo('拒收问题件')
-    m.order_js_Query('2022-02-15', '2022-02-15')            # 查询更新-拒收问题件
+    # m.order_js_Query('2022-02-15', '2022-02-15')            # 查询更新-拒收问题件
 
 
 

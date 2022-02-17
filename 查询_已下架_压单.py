@@ -350,10 +350,10 @@ class QueryTwoLower(Settings, Settings_sso):
     # 进入已下架界面
     def order_lower(self, timeStart, timeEnd, auto_time):  # 进入已下架界面
         start: datetime = datetime.datetime.now()
-        team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓']
-        # team_whid = ['天马顺丰仓']
-        team_stock_type = [1, 2]
-        # team_stock_type = [2]
+        # team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓']
+        team_whid = ['龟山易速配']
+        # team_stock_type = [1, 2]
+        team_stock_type = [1]
         match = {1: 'SKU库存',
                  2: '组合库存',
                  3: '混合库存'}
@@ -447,17 +447,32 @@ class QueryTwoLower(Settings, Settings_sso):
             except Exception as e:
                 print('转化失败： 重新获取中', str(Exception) + str(e))
             data = pd.json_normalize(ordersDict)
-            data = data[['order_number', 'addtime', 'billno', 'old_billno', 'goods_id', 'product_name', 'intime', 'whid', 'waill_name', 'currency_id', 'count_time']]
-            data.columns = ['订单编号', '下单时间', '新运单号', '原运单号', '产品id', '商品名称', '下架时间', '仓库', '物流渠道', '币种', '统计时间']
+            data = data[['order_number', 'addtime', 'billno', 'old_billno', 'goods_id', 'product_name', 'intime', 'whid', 'waill_name', 'currency_id', 'product_spec', 'quantity', 'ship_name', 'ship_address', 'ship_phone', 'amount','count_time']]
+            data.columns = ['订单编号', '下单时间', '新运单号', '原运单号', '产品id', '商品名称', '下架时间', '仓库', '物流渠道', '币种', '商品规格', '购买数量', '收货人', '收货地址', '联系电话', '统计时间']
             print(data)
             print('>>>' + tem_name + '-' + type_name + ' <<< 查询完结！！！')
             data.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO 已下架表(订单编号,下单时间,新运单号,原运单号, 产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种,统计时间,记录时间)
-                    SELECT 订单编号,下单时间,新运单号,原运单号, 产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种, 统计时间,NOW() 记录时间
+            sql = '''REPLACE INTO 已下架表(订单编号,下单时间,新运单号,原运单号, 产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种,商品规格, 购买数量, 收货人, 收货地址, 联系电话,订单金额,统计时间,记录时间)
+                    SELECT 订单编号,下单时间,新运单号,原运单号, 产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种, 商品规格, 购买数量, 收货人, 收货地址, 联系电话, 订单金额,统计时间,NOW() 记录时间
                     FROM customer'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
             data.to_excel('G:\\输出文件\\已下架 {0} {1}-{2}.xlsx'.format(tem_name, type_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+
+            print('获取每日新增龟山备货表......')
+            rq = datetime.datetime.now().strftime('%m.%d')
+            sql = '''SELECT NULL '序號(無用途)',NULL '訂單號長度限制: 20碼請勿使用中文）', 收货人 AS '收件人姓名(必填)長度限制: 20碼', 收货地址 AS '收件人地址(必填)中文限制: 50字', 
+                            联系电话 AS '收件人電話長度限制: 15碼',商品名称 AS '託運備註中文限制: 50字', NULL '(商品別編號)勿填', 购买数量 AS '商品數量(必填)(限數字)', NULL '才積重量限數字', 
+                            订单金额 AS '代收貨款限數字',NULL '指定配送日期YYYYMMDD範例: 20140220    ->2月20號', NULL '指定配送時間範例:   1   (上午 -> 09~13) 2   (下午 -> 13~17)3   (晚上 -> 17~20)',
+			                订单编号 , 商品规格, 产品id AS '产品ID', NULL '原运单号'
+                    FROM 已下架表 yx
+                    WHERE yx.记录时间 >= TIMESTAMP(CURDATE()) AND yx.物流渠道 = '龟山备货';'''
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            if df is not None and len(df) > 0:
+                df.to_excel('G:\\输出文件\\{} 龟山备货.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+                print('获取成功......')
+            else:
+                print('****** 今日无新增龟山备货数据！！！')
         else:
             print('****** 没有新增的改派订单！！！')
             return None
@@ -502,9 +517,10 @@ if __name__ == '__main__':
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
-    # m.order_lower('2021-12-31', '2022-01-01', '自动')
-    m.readFile()
-    m.order_spec()
+    m.order_lower('2022-02-16', '2022-02-17', '自1动')
+
+    # m.readFile()
+    # m.order_spec()
 
 
 

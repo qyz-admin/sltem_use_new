@@ -425,7 +425,7 @@ class QueryUpdate(Settings):
         listT.append(df2)
 
         print('正在写入excel…………')
-        file_path = 'G:\\输出文件\\{} 运费总直发-查询{}.xlsx'.format(output, rq)
+        file_path = 'F:\\神龙签收率\\运费-核实\\{} 运费总直发-查询{}.xlsx'.format(output, rq)
         sheet_name = ['运费查询', '运费总']
         df0 = pd.DataFrame([])                                      # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)                        # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
