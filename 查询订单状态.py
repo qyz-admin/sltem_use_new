@@ -64,7 +64,7 @@ class QueryUpdate(Settings):
     # 获取签收表内容---港澳台更新签收总表
     def readFormHost(self, upload):
         match = {'查询-运单号': r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表',
-                 '查询运费': r'F:\神龙签收率\运费-核实',
+                 '查询运费': r'F:\神龙签收率\A运费-核实',
                  '其他': r'D:\Users\Administrator\Desktop\需要用到的文件\B客服工作表'}
         path = match[upload]
         dirs = os.listdir(path=path)
@@ -425,7 +425,7 @@ class QueryUpdate(Settings):
         listT.append(df2)
 
         print('正在写入excel…………')
-        file_path = 'F:\\神龙签收率\\运费-核实\\{} 运费总直发-查询{}.xlsx'.format(output, rq)
+        file_path = 'F:\\神龙签收率\\A运费-核实\\{} 运费总直发-查询{}.xlsx'.format(output, rq)
         sheet_name = ['运费查询', '运费总']
         df0 = pd.DataFrame([])                                      # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)                        # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -489,7 +489,7 @@ if __name__ == '__main__':
         upload = '查询-运单号'
         m.readFormHost(upload)
 
-    # m.readFormHost('查询运费')
+    m.readFormHost('查询运费')
     m.trans_way_cost_new(team)  # 同产品下的规格运费查询
 
 

@@ -350,10 +350,10 @@ class QueryTwoLower(Settings, Settings_sso):
     # 进入已下架界面
     def order_lower(self, timeStart, timeEnd, auto_time):  # 进入已下架界面
         start: datetime = datetime.datetime.now()
-        # team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓']
-        team_whid = ['龟山易速配']
-        # team_stock_type = [1, 2]
-        team_stock_type = [1]
+        team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓']
+        # team_whid = ['龟山易速配']
+        team_stock_type = [1, 2]
+        # team_stock_type = [1]
         match = {1: 'SKU库存',
                  2: '组合库存',
                  3: '混合库存'}
@@ -447,8 +447,8 @@ class QueryTwoLower(Settings, Settings_sso):
             except Exception as e:
                 print('转化失败： 重新获取中', str(Exception) + str(e))
             data = pd.json_normalize(ordersDict)
-            data = data[['order_number', 'addtime', 'billno', 'old_billno', 'goods_id', 'product_name', 'intime', 'whid', 'waill_name', 'currency_id', 'product_spec', 'quantity', 'ship_name', 'ship_address', 'ship_phone', 'amount','count_time']]
-            data.columns = ['订单编号', '下单时间', '新运单号', '原运单号', '产品id', '商品名称', '下架时间', '仓库', '物流渠道', '币种', '商品规格', '购买数量', '收货人', '收货地址', '联系电话', '统计时间']
+            data = data[['order_number', 'addtime', 'billno', 'old_billno', 'goods_id', 'product_name', 'intime', 'whid', 'waill_name', 'currency_id', 'product_spec', 'quantity', 'ship_name', 'ship_address', 'ship_phone', 'amount', 'count_time']]
+            data.columns = ['订单编号', '下单时间', '新运单号', '原运单号', '产品id', '商品名称', '下架时间', '仓库', '物流渠道', '币种', '商品规格', '购买数量', '收货人', '收货地址', '联系电话', '订单金额', '统计时间']
             print(data)
             print('>>>' + tem_name + '-' + type_name + ' <<< 查询完结！！！')
             data.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
@@ -461,7 +461,7 @@ class QueryTwoLower(Settings, Settings_sso):
 
             print('获取每日新增龟山备货表......')
             rq = datetime.datetime.now().strftime('%m.%d')
-            sql = '''SELECT NULL '序號(無用途)',NULL '訂單號長度限制: 20碼請勿使用中文）', 收货人 AS '收件人姓名(必填)長度限制: 20碼', 收货地址 AS '收件人地址(必填)中文限制: 50字', 
+            sql = '''SELECT CURDATE() '序號(無用途)',NULL '訂單號長度限制: 20碼請勿使用中文）', 收货人 AS '收件人姓名(必填)長度限制: 20碼', 收货地址 AS '收件人地址(必填)中文限制: 50字', 
                             联系电话 AS '收件人電話長度限制: 15碼',商品名称 AS '託運備註中文限制: 50字', NULL '(商品別編號)勿填', 购买数量 AS '商品數量(必填)(限數字)', NULL '才積重量限數字', 
                             订单金额 AS '代收貨款限數字',NULL '指定配送日期YYYYMMDD範例: 20140220    ->2月20號', NULL '指定配送時間範例:   1   (上午 -> 09~13) 2   (下午 -> 13~17)3   (晚上 -> 17~20)',
 			                订单编号 , 商品规格, 产品id AS '产品ID', NULL '原运单号'
@@ -511,16 +511,132 @@ class QueryTwoLower(Settings, Settings_sso):
         writer.close()
         print('----已写入excel ')
 
+    # 查询改派无运单好（仓储的获取）
+    def get_billno_res(self):  # 进入仓储界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        timeStart = ((datetime.datetime.now() + datetime.timedelta(days=1)) - relativedelta(months=2)).strftime('%Y-%m-%d')
+        timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
+        print('正在查询 港台 改派无运单号......')
+        url = r'http://gwms-v3.giikin.cn/order/order/secondsendbillnonone'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'http://gwms-v3.giikin.cn',
+                    'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
+        data = {'page': '1',
+                'limit': 500,
+                'startDate': timeStart + ' 00:00:00',
+                'endDate': timeEnd + ' 23:59:59',
+                'selectStr': '1=1'}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
+        max_count = req['count']
+        print('++++++本次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+        if max_count != [] or max_count != 0:
+            # 首次查询
+            ordersdict = []
+            try:
+                for result in req['data']:
+                    ordersdict.append(result)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            df = pd.json_normalize(ordersdict)
+            # 剩余查询
+            if max_count > 500:
+                in_count = math.ceil(max_count/500)
+                dlist = []
+                n = 1
+                while n < in_count:  # 这里用到了一个while循环，穿越过来的
+                    print('剩余查询次数' + str(in_count - n))
+                    n = n + 1
+                    data = self._order_spec(timeStart, timeEnd, n)                     # 分页获取详情
+                    dlist.append(data)
+                dp = df.append(dlist, ignore_index=True)
+            else:
+                dp = df
+            print('正在写入......')
+            dp.to_excel('G:\\输出文件\\改派无运单号 {}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            # dp = dp[['order_number', 'goods_id', 'goods_name', 'currency_id', 'area_id', 'ydtime', 'purid', 'other_reason', 'buyer', 'intime', 'addtime', 'is_lower', 'below_time', 'cate']]
+            # dp.columns = ['订单编号', '产品ID', '产品名称', '币种', '团队', '反馈时间', '压单原因', '其他原因', '采购员', '入库时间', '下单时间', '是否下架', '下架时间', '品类']
+            # dp = dp[(dp['币种'].str.contains('港币|台币', na=False))]
+            # print(dp)
+            # dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            sql = '''REPLACE INTO 压单表(订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, 下架时间,记录时间) 
+                    SELECT 订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, IF(下架时间 = '',NULL,下架时间) 下架时间, NOW() 记录时间
+                    FROM customer'''
+            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('共有 ' + str(len(dp)) + '条 成功写入数据库+++++++')
+
+            # print('正在获取 压单反馈 信息中......')
+            # time_path: datetime = datetime.datetime.now()
+            # mkpath = r"F:\神龙签收率\(未发货) 直发-仓库-压单\\" + time_path.strftime('%m.%d')
+            # sql = '''SELECT s.*,s1.处理结果,s1.处理时间
+            #         FROM ( SELECT * FROM 压单表 g WHERE g.`记录时间` >= CURDATE() and g.是否下架 <> '已下架'
+            #         ) s
+            #         LEFT JOIN 压单表_已核实 s1 ON s.订单编号 = s1.订单编号;'''
+            # df = pd.read_sql_query(sql=sql, con=self.engine1)
+            # isExists = os.path.exists(mkpath)
+            # if not isExists:
+            #     os.makedirs(mkpath)
+            # else:
+            #     print(mkpath + ' 目录已存在')
+            # file_path = mkpath + '\\压单反馈 {0}.xlsx'.format(rq)
+            # df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
+            # print('输出成功......')
+            # print('*' * 50)
+        else:
+            print('****** 没有新增的改派订单！！！')
+            return None
+        print('*' * 50)
+    def _get_billno_res(self, timeStart, timeEnd, n):  # 进入压单检索界面
+        print('+++正在查询订单信息中')
+        url = r'http://gwms-v3.giikin.cn/order/order/secondsendbillnonone'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'http://gwms-v3.giikin.cn',
+                    'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
+        data = {'page': '1',
+                'limit': 500,
+                'startDate': timeStart + ' 00:00:00',
+                'endDate': timeEnd + ' 23:59:59',
+                'selectStr': '1=1'}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
+        max_count = req['count']
+        if max_count != [] or max_count != 0:
+            ordersdict = []
+            try:
+                for result in req['data']:
+                    ordersdict.append(result)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            data = pd.json_normalize(ordersdict)
+            # print(data)
+        else:
+            data = None
+            print('****** 没有信息！！！')
+        return data
+
 if __name__ == '__main__':
     m = QueryTwoLower('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
-    m.order_lower('2022-02-16', '2022-02-17', '自1动')
+    # m.order_lower('2022-02-17', '2022-02-18', '自动')
 
     # m.readFile()
-    # m.order_spec()
+    # m.order_spec()       # 已下架-压单
+
+
+    m.get_billno_res()      # 改派无运单号
 
 
 
