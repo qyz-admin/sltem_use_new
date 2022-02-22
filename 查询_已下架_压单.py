@@ -219,9 +219,10 @@ class QueryTwoLower(Settings, Settings_sso):
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
                     print('++++正在导入查询：' + sht.name + '表； 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
-                    db = db[['订单编号', '备注（压单核实是否需要）']]
+                    if '处理时间' not in db.columns:
+                        db.insert(0, '处理时间', rq)
+                    db = db[['订单编号', '处理时间', '备注（压单核实是否需要）']]
                     db.rename(columns={'备注（压单核实是否需要）': '处理结果'}, inplace=True)
-                    db.insert(0, '处理时间', rq)
                     db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
                     # sql = '''update 压单表 a, customer b set a.`处理时间` = b.`处理时间`, a.`处理结果` = b.`处理结果` where a.`订单编号`= b.`订单编号`;'''
                     sql = '''REPLACE INTO 压单表_已核实(订单编号,处理时间,处理结果,记录时间) 
@@ -295,10 +296,14 @@ class QueryTwoLower(Settings, Settings_sso):
             print('正在获取 压单反馈 信息中......')
             time_path: datetime = datetime.datetime.now()
             mkpath = r"F:\神龙签收率\(未发货) 直发-仓库-压单\\" + time_path.strftime('%m.%d')
-            sql = '''SELECT s.*,s1.处理结果,s1.处理时间
+            sql = '''SELECT s.*,s1.处理结果,s1.处理时间,NULL 备注,DATEDIFF(curdate(),入库时间) 压单天数,DATE_FORMAT(入库时间,'%Y-%m-%d') 入库
                     FROM ( SELECT * FROM 压单表 g WHERE g.`记录时间` >= CURDATE() and g.是否下架 <> '已下架'
-                    ) s 
-                    LEFT JOIN 压单表_已核实 s1 ON s.订单编号 = s1.订单编号;'''
+                    ) s
+                    LEFT JOIN (SELECT *
+							    FROM 压单表_已核实
+								WHERE id IN (SELECT MAX(id) FROM 压单表_已核实 y WHERE y.处理时间 >= DATE_SUB(CURDATE(), INTERVAL 2 month) GROUP BY 订单编号) 
+					) s1 ON s.订单编号 = s1.订单编号
+					ORDER BY 压单天数;'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             isExists = os.path.exists(mkpath)
             if not isExists:
@@ -366,29 +371,31 @@ class QueryTwoLower(Settings, Settings_sso):
                  '龟山-火凤凰备货': 198,
                  '天马顺丰仓': 204}
         if auto_time == '自动':
-            sql = '''SELECT DISTINCT 统计时间 FROM 已下架表 d GROUP BY 统计时间 ORDER BY 统计时间 DESC'''
-            rq = pd.read_sql_query(sql=sql, con=self.engine1)
-            rq = pd.to_datetime(rq['统计时间'][0])
-
-            begin = (rq + datetime.timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
-            begin = datetime.datetime.strptime(begin, '%Y-%m-%d %H:%M:%S')
-            end = (datetime.datetime.now()).strftime('%Y-%m-%d %H:%M:%S')
-            end = datetime.datetime.strptime(end, '%Y-%m-%d %H:%M:%S')
-            print('****** 总起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
-
-            for i in range((end - begin).days + 1):  # 按天循环获取订单状态
-                day = begin + datetime.timedelta(days=i)
-                timeStart = (day - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-                timeEnd = day.strftime('%Y-%m-%d')
-                print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
-                for tem in team_whid:
-                    if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货'):
-                        for tem_type in team_stock_type:
-                            print('+++正在查询仓库： ' + tem + '；库存类型:' + match[tem_type] + ' 信息')
-                            self._order_lower_info(match2[tem], tem_type, timeStart, timeEnd, tem, match[tem_type])
-                    else:
-                        print('+++正在查询仓库： ' + tem + '；库存类型:组合库存 信息')
-                        self._order_lower_info(match2[tem], 2, timeStart, timeEnd, tem, '组合库存')
+            # sql = '''SELECT DISTINCT 统计时间 FROM 已下架表 d GROUP BY 统计时间 ORDER BY 统计时间 DESC'''
+            # rq = pd.read_sql_query(sql=sql, con=self.engine1)
+            # rq = pd.to_datetime(rq['统计时间'][0])
+            #
+            # begin = (rq + datetime.timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
+            # begin = datetime.datetime.strptime(begin, '%Y-%m-%d %H:%M:%S')
+            # end = (datetime.datetime.now()).strftime('%Y-%m-%d %H:%M:%S')
+            # end = datetime.datetime.strptime(end, '%Y-%m-%d %H:%M:%S')
+            # print('****** 总起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
+            #
+            # for i in range((end - begin).days + 1):  # 按天循环获取订单状态
+            #     day = begin + datetime.timedelta(days=i)
+            #     timeStart = (day - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            #     timeEnd = day.strftime('%Y-%m-%d')
+            timeStart = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+            timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
+            print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
+            for tem in team_whid:
+                if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货'):
+                    for tem_type in team_stock_type:
+                        print('+++正在查询仓库： ' + tem + '；库存类型:' + match[tem_type] + ' 信息')
+                        self._order_lower_info(match2[tem], tem_type, timeStart, timeEnd, tem, match[tem_type])
+                else:
+                    print('+++正在查询仓库： ' + tem + '；库存类型:组合库存 信息')
+                    self._order_lower_info(match2[tem], 2, timeStart, timeEnd, tem, '组合库存')
         else:
             print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
             for tem in team_whid:
@@ -630,13 +637,13 @@ if __name__ == '__main__':
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
-    # m.order_lower('2022-02-17', '2022-02-18', '自动')
+    m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
 
-    # m.readFile()
-    # m.order_spec()       # 已下架-压单
+    # m.readFile()            # 上传每日压单核实结果
+    # m.order_spec()       # 压单反馈
 
 
-    m.get_billno_res()      # 改派无运单号
+    # m.get_billno_res()      # 改派无运单号
 
 
 

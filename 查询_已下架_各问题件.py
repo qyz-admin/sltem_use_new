@@ -34,7 +34,6 @@ class QueryTwo(Settings, Settings_sso):
         self.userMobile = userMobile
         self.password = password
         # self._online()
-
         self.sso_online_Two()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -1112,10 +1111,28 @@ if __name__ == '__main__':
     龟山-火凤凰备货 whid =198
     天马顺丰仓 whid =204
     '''
+    print('正在生成每日新文件夹......')
+    time_path: datetime = datetime.datetime.now()
+    mkpath = "F:\\神龙签收率\\" + time_path.strftime('%m.%d')
+    isExists = os.path.exists(mkpath)
+    if not isExists:
+        os.makedirs(mkpath)
+        os.makedirs(mkpath + "\\产品签收率")
+        os.makedirs(mkpath + "\\导状态")
+        os.makedirs(mkpath + "\\签收率")
+        os.makedirs(mkpath + "\\物流表")
+        print('创建成功')
+    else:
+        print(mkpath + ' 目录已存在')
+    print('*' * 50)
+
+    '''
+    # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
+    '''
     m = QueryTwo('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
 
-    select = 99
+    select = 909
     if int(select) == 1:
         timeStart, timeEnd = m.readInfo('物流问题件')
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
@@ -1152,7 +1169,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 已下架 状态运行（二）-----------------------------------------
     '''
-    if int(select) == 99:
+    if int(select) == 909:
         lw = QueryTwoLower('+86-18538110674', 'qyz04163510')
         start: datetime = datetime.datetime.now()
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 自动时 输入的时间无效；切为不自动时，有效
@@ -1161,7 +1178,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------
     '''
-    if int(select) == 99:
+    if int(select) == 909:
         m.my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
         m.my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
 
