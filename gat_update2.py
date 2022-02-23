@@ -344,8 +344,11 @@ class QueryUpdate(Settings):
             sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             # df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
-            df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]), sheet_name=match[tem2], index=False)
-            print(tem2 + '----已写入excel')
+            old_path = 'G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2])
+            df.to_excel(old_path, sheet_name=match[tem2], index=False)
+            new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\{} {}签收表.xlsx'.format(today, match[tem2])
+            shutil.copyfile(old_path, new_path)     # copy到指定位置
+            print(tem2 + '----已写入excel; 并复制到指定文件夹中')
             # print('正在打印' + match[tem2] + ' 物流时效…………')
             # self.m.data_wl(tem2)
         try:

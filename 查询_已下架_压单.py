@@ -356,9 +356,9 @@ class QueryTwoLower(Settings, Settings_sso):
     def order_lower(self, timeStart, timeEnd, auto_time):  # 进入已下架界面
         start: datetime = datetime.datetime.now()
         team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓']
-        # team_whid = ['龟山易速配']
+        # team_whid = ['速派八股仓']
         team_stock_type = [1, 2]
-        # team_stock_type = [1]
+        # team_stock_type = [2]
         match = {1: 'SKU库存',
                  2: '组合库存',
                  3: '混合库存'}
@@ -414,7 +414,7 @@ class QueryTwoLower(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'http://gwms-v3.giikin.cn',
                     'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
-        data = {'page': 1, 'limit': 500, 'startDate': timeStart + ' 08:30:00', 'endDate':  timeEnd + ' 08:30:00', 'selectStr': '1=1 and ob.whid = ' + str(tem) + ' and ob.stock_type = ' + str(tem_type)}
+        data = {'page': 1, 'limit': 500, 'startDate': timeStart + ' 08:30:00', 'endDate':  timeEnd + ' 23:59:59', 'selectStr': '1=1 and ob.whid = ' + str(tem) + ' and ob.stock_type = ' + str(tem_type)}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
         # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -645,6 +645,6 @@ if __name__ == '__main__':
 
     # m.get_billno_res()      # 改派无运单号
 
-
+    #h  ttp://gwms-v3.giikin.cn/order/delivery/batchImportLegDeliveryBoxData
 
     print('查询耗时：', datetime.datetime.now() - start)

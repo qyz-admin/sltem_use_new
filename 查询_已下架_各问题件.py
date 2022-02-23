@@ -1132,7 +1132,7 @@ if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
 
-    select = 909
+    select = 99
     if int(select) == 1:
         timeStart, timeEnd = m.readInfo('物流问题件')
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
@@ -1169,7 +1169,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 已下架 状态运行（二）-----------------------------------------
     '''
-    if int(select) == 909:
+    if int(select) == 99:
         lw = QueryTwoLower('+86-18538110674', 'qyz04163510')
         start: datetime = datetime.datetime.now()
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 自动时 输入的时间无效；切为不自动时，有效
@@ -1178,7 +1178,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------
     '''
-    if int(select) == 909:
+    if int(select) == 99:
         m.my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
         m.my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
 
