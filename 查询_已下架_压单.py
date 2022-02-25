@@ -429,7 +429,11 @@ class QueryTwoLower(Settings, Settings_sso):
             ordersDict = []
             try:
                 for result in req['data']:              # 添加新的字典键-值对，为下面的重新赋值
-                    result['count_time'] = timeEnd
+                    if result['intime'] > (result['intime']).split()[0] + ' 08:30:00':      # 判断修改统计时间
+                        result['count_time'] = (datetime.datetime.strptime(result['intime'], '%Y-%m-%d %H:%M:%S') + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+                    else:
+                        result['count_time'] = (result['intime']).split()[0]
+                    # result['count_time'] = timeEnd
                     if type_name == 'SKU库存':
                         result['waill_name'] = '龟山备货'
                     else:
@@ -454,13 +458,13 @@ class QueryTwoLower(Settings, Settings_sso):
             except Exception as e:
                 print('转化失败： 重新获取中', str(Exception) + str(e))
             data = pd.json_normalize(ordersDict)
-            data = data[['order_number', 'addtime', 'billno', 'old_billno', 'goods_id', 'product_name', 'intime', 'whid', 'waill_name', 'currency_id', 'product_spec', 'quantity', 'ship_name', 'ship_address', 'ship_phone', 'amount', 'count_time']]
-            data.columns = ['订单编号', '下单时间', '新运单号', '原运单号', '产品id', '商品名称', '下架时间', '仓库', '物流渠道', '币种', '商品规格', '购买数量', '收货人', '收货地址', '联系电话', '订单金额', '统计时间']
+            data = data[['order_number', 'addtime', 'billno', 'old_billno', 'goods_id', 'product_name', 'intime', 'whid', 'waill_name', 'currency_id', 'area_id', 'product_spec', 'quantity', 'ship_name', 'ship_address', 'ship_phone', 'amount', 'count_time']]
+            data.columns = ['订单编号', '下单时间', '新运单号', '原运单号', '产品id', '商品名称', '下架时间', '仓库', '物流渠道', '币种', '团队', '商品规格', '购买数量', '收货人', '收货地址', '联系电话', '订单金额', '统计时间']
             print(data)
             print('>>>' + tem_name + '-' + type_name + ' <<< 查询完结！！！')
             data.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO 已下架表(订单编号,下单时间,新运单号,原运单号, 产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种,商品规格, 购买数量, 收货人, 收货地址, 联系电话,订单金额,统计时间,记录时间)
-                    SELECT 订单编号,下单时间,新运单号,原运单号, 产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种, 商品规格, 购买数量, 收货人, 收货地址, 联系电话, 订单金额,统计时间,NOW() 记录时间
+            sql = '''REPLACE INTO 已下架表(订单编号,下单时间,新运单号,原运单号, 产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种, 团队,商品规格, 购买数量, 收货人, 收货地址, 联系电话,订单金额,统计时间,记录时间)
+                    SELECT 订单编号,下单时间,新运单号,原运单号, 产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种, 团队, 商品规格, 购买数量, 收货人, 收货地址, 联系电话, 订单金额,统计时间,NOW() 记录时间
                     FROM customer'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -471,7 +475,7 @@ class QueryTwoLower(Settings, Settings_sso):
             sql = '''SELECT CURDATE() '序號(無用途)',NULL '訂單號長度限制: 20碼請勿使用中文）', 收货人 AS '收件人姓名(必填)長度限制: 20碼', 收货地址 AS '收件人地址(必填)中文限制: 50字', 
                             联系电话 AS '收件人電話長度限制: 15碼',商品名称 AS '託運備註中文限制: 50字', NULL '(商品別編號)勿填', 购买数量 AS '商品數量(必填)(限數字)', NULL '才積重量限數字', 
                             订单金额 AS '代收貨款限數字',NULL '指定配送日期YYYYMMDD範例: 20140220    ->2月20號', NULL '指定配送時間範例:   1   (上午 -> 09~13) 2   (下午 -> 13~17)3   (晚上 -> 17~20)',
-			                订单编号 , 商品规格, 产品id AS '产品ID', NULL '原运单号'
+			                订单编号 , 商品规格, 产品id AS '产品ID', NULL '原运单号', 团队
                     FROM 已下架表 yx
                     WHERE yx.记录时间 >= TIMESTAMP(CURDATE()) AND yx.物流渠道 = '龟山备货';'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -635,12 +639,30 @@ if __name__ == '__main__':
     m = QueryTwoLower('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
+    '''
+    # -----------------------------------------------正在生成每日新文件夹-----------------------------------------
+    '''
+    print('正在生成明日新文件夹......')
+    time_path: datetime = datetime.datetime.now() + datetime.timedelta(days=1)
+    mkpath = "F:\\神龙签收率\\" + time_path.strftime('%m.%d')
+    isExists = os.path.exists(mkpath)
+    if not isExists:
+        os.makedirs(mkpath)
+        os.makedirs(mkpath + "\\产品签收率")
+        os.makedirs(mkpath + "\\产品签收率\\直发")
+        os.makedirs(mkpath + "\\导状态")
+        os.makedirs(mkpath + "\\签收率")
+        os.makedirs(mkpath + "\\物流表")
+        print('创建成功')
+    else:
+        print(mkpath + ' 目录已存在')
+    print('*' * 50)
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
-    m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
+    # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
 
-    # m.readFile()            # 上传每日压单核实结果
-    # m.order_spec()       # 压单反馈
+    m.readFile()            # 上传每日压单核实结果
+    m.order_spec()       # 压单反馈  （备注（压单核实是否需要））
 
 
     # m.get_billno_res()      # 改派无运单号
