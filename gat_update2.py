@@ -69,6 +69,8 @@ class QueryUpdate(Settings):
             filePath = os.path.join(path, dir)
             if dir[:2] != '~$':
                 print(filePath)
+                if '需发货的改派订单' in dir:
+                    write = '需发货'
                 self.wbsheetHost(filePath, team, write, last_time)
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
@@ -92,20 +94,19 @@ class QueryUpdate(Settings):
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
                     print('++++正在导入更新：' + sht.name + ' 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
-                    self.writeCacheHost(db)             # 将返回的dateFrame导入数据库的临时表
+                    db.to_sql('gat_update', con=self.engine1, index=False, if_exists='replace')         # 将返回的dateFrame导入数据库的临时表
                     print('++++正在更新：' + sht.name + '--->>>到总订单')
                     if write == '本期':                 # 将数据库的临时表替换进指定的总表
                         self.replacHost(team)
                     elif write == '上期':
                         self.replaceHostbefore(team, last_time)
+                    elif write == '需发货':
+                        self.online(team)
                     print('++++----->>>' + sht.name + '：订单更新完成++++')
                 else:
                     print('----------数据为空导入失败：' + sht.name)
             wb.close()
         app.quit()                                     # 工作表的订单信息
-    def writeCacheHost(self, dataFrame):    # 写入更新缓存表
-        dataFrame.to_sql('gat_update', con=self.engine1, index=False, if_exists='replace')
-
 
     # 更新-总表(地区签收率使用)
     def repHost(self, team):    # 更新-总表(地区签收率使用)
@@ -122,6 +123,7 @@ class QueryUpdate(Settings):
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
+
     # 更新-总表（总体签收率使用）
     def replacHost(self, team):
         try:
@@ -155,6 +157,23 @@ class QueryUpdate(Settings):
                     		                    a.`父级分类`= IF(b.`父级分类` = '', NULL, b.`父级分类`),
                     		                    a.`二级分类`= IF(b.`二级分类` = '', NULL, b.`二级分类`)
                     		                where a.`订单编号`= b.`订单编号`;'''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        except Exception as e:
+            print('更新失败：', str(Exception) + str(e))
+        print('更新成功…………')
+    # 更新-总表（修改已发货 使用）
+    def online(self, team):
+        try:
+            print('正在更新单表中......')
+            sql = '''update {0}_order_list a, gat_update b
+                                set a.`系统订单状态`= '已发货'
+        		                where a.`运单编号`= b.`运单编号`;'''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('正在更新总表中......')
+            sql = '''update {0}_zqsb a, gat_update b
+                                set a.`系统订单状态`= '已发货',
+                                    a.`最终状态`= '在途'
+                    		    where a.`运单编号`= b.`运单编号`;'''.format(team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
@@ -3246,13 +3265,13 @@ class QueryUpdate(Settings):
                                 SUM(IF(`是否改派` = '改派',1,0)) as 改派总订单
                             FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
                                     FROM gat_zqsb cc
-                                    where cc.日期 >= '{0}' and cc.`运单编号` is not null 
+                                    where cc.日期 >= '{0}' and cc.`运单编号` is not null AND cc.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")
                             ) cx	
 							LEFT JOIN 
 							(SELECT 年月,币种,家族,count(订单编号) as 总订单量
 								FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
 										FROM gat_order_list cc 
-										WHERE  cc.日期 = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+										WHERE  cc.日期 = DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND cc.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")
 								) dg  
 								GROUP BY dg.年月,dg.币种,dg.家族
 							) cx2 
@@ -3286,7 +3305,7 @@ class QueryUpdate(Settings):
                             FROM  gat_order_list gs
                             LEFT JOIN (SELECT 币种, COUNT(订单编号)  as 总订单量
         					            FROM  gat_order_list gss
-        					            WHERE gss.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+        					            WHERE gss.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND gss.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")
         					            GROUP BY gss.`币种`
         					) gs2 ON gs.`币种` = gs2.`币种`
                             WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
@@ -3330,7 +3349,7 @@ class QueryUpdate(Settings):
 									SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 									SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                             FROM gat_zqsb_cache cx
-							WHERE cx.`运单编号` is not null                                 
+							WHERE cx.`运单编号` is not null AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")                       
                             GROUP BY cx.年月,cx.币种, cx.家族
                         ) s
 						GROUP BY 月份,地区,家族
@@ -3375,7 +3394,7 @@ class QueryUpdate(Settings):
 									SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 									SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                             FROM gat_zqsb_cache cx
-							WHERE cx.`运单编号` is not null                                 
+							WHERE cx.`运单编号` is not null AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")                    
                             GROUP BY cx.年月,cx.旬,cx.币种, cx.家族
                         ) s
 						GROUP BY 月份,旬,地区,家族
@@ -3428,13 +3447,13 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM (SELECT 年月,币种,家族,父级分类,订单编号,最终状态,价格RMB,是否改派
 							    FROM gat_zqsb_cache cc 
-								WHERE  cc.`运单编号` is not null 
+								WHERE  cc.`运单编号` is not null AND cc.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")
 							) cx 
                         LEFT JOIN 
 							( SELECT 币种,家族,年月,count(订单编号) as 总订单量,SUM(IF(`是否改派`= '直发',1,0)) as 直发总单量,SUM(IF(`是否改派` = '改派',1,0)) as 改派总单量
 							    FROM (SELECT 年月,币种,家族,订单编号,是否改派
 										FROM gat_zqsb_cache cc 
-										WHERE  cc.`运单编号` is not null 
+										WHERE  cc.`运单编号` is not null AND cc.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")
 									) dg  
 								GROUP BY dg.币种,dg.家族,dg.年月
 							) cx2 ON cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族 AND  cx.年月 = cx2.年月   
@@ -3483,7 +3502,7 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM gat_zqsb_cache cx
-						WHERE  cx.`运单编号` is not null                                 
+						WHERE  cx.`运单编号` is not null  AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")        
 						GROUP BY cx.年月,cx.币种,cx.是否改派,cx.家族,cx.物流方式
                     ) s
 					GROUP BY 月份,地区,是否改派,家族,物流方式
@@ -3536,7 +3555,7 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM gat_zqsb_cache cx
-						WHERE  cx.`运单编号` is not null                                 
+						WHERE  cx.`运单编号` is not null AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")                  
                         GROUP BY cx.年月,cx.币种,cx.家族,cx.订单来源
                         ) s
 					GROUP BY 月份,地区,家族,平台
@@ -3582,7 +3601,7 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM gat_zqsb_cache cx
-						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null                                 
+						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")                        
                         GROUP BY cx.年月,cx.币种,cx.订单来源,cx.家族
                         ) s
 					GROUP BY 月份,地区,平台,家族
@@ -3629,7 +3648,7 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM gat_zqsb_cache cx
-						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null                                 
+						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null  AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")                
                         GROUP BY cx.年月,cx.币种,cx.父级分类,cx.家族
                         ) s
 					GROUP BY 月份,地区,父级分类,家族
@@ -3675,7 +3694,7 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM gat_zqsb_cache cx
-						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null                                 
+						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null  AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")                           
                         GROUP BY cx.年月,cx.币种,cx.是否改派,cx.物流方式,cx.家族
                         ) s
 					GROUP BY 月份, 地区, 是否改派, 物流方式, 家族
@@ -3774,7 +3793,7 @@ class QueryUpdate(Settings):
                                 SUM(IF(家族 = '金狮' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 金狮完成,
                                 SUM(IF(家族 = '金狮' AND 是否改派 = '改派',1,0)) as 金狮改派
                             FROM gat_zqsb_cache cc
-						    WHERE cc.日期 >= '{0}' and cc.`运单编号` is not null 
+						    WHERE cc.日期 >= '{0}' and cc.`运单编号` is not null AND cc.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")
                             GROUP BY cc.年月,cc.币种,cc.产品id
 					    ) s
 						GROUP BY 月份,地区,产品id		
@@ -3878,7 +3897,7 @@ class QueryUpdate(Settings):
                                 SUM(IF(年月 = 202202 AND 最终状态 = "已签收",1,0)) as 02签收量,
                                 SUM(IF(年月 = 202202 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 02完成量							
                         FROM gat_zqsb_cache cx
-                        where cx.`运单编号` is not null
+                        where cx.`运单编号` is not null AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")
                         GROUP BY cx.家族,cx.币种,cx.产品id
                     ) s
 					GROUP BY s.家族,s.地区,s.产品id
@@ -4071,14 +4090,14 @@ class QueryUpdate(Settings):
                         FROM (SELECT *,
                                     IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
                                 FROM gat_zqsb cc
-                                where cc.`运单编号` is not null 
+                                where cc.`运单编号` is not null AND cc.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")
                             ) cx 
                         LEFT JOIN 
         					(SELECT 币种,家族,年月,count(订单编号) as 总订单量,SUM(IF(`是否改派`= '直发',1,0)) as 直发总单量,SUM(IF(`是否改派` = '改派',1,0)) as 改派总单量
         					FROM (SELECT *,
                                         IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
                                     FROM gat_zqsb cc 
-        							WHERE cc.`运单编号` is not null 
+        							WHERE cc.`运单编号` is not null AND cc.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队")
         						) dg  GROUP BY dg.币种,dg.家族,dg.年月
         					) cx2 ON cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族 AND  cx.年月 = cx2.年月                       
                         GROUP BY cx.年月,cx.币种,cx.家族,cx.父级分类,cx.二级分类

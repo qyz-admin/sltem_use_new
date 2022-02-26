@@ -195,13 +195,13 @@ class QueryTwoLower(Settings, Settings_sso):
                 rq = rq.strftime('%Y.%m.%d')
                 self._readFile(filePath, rq)
 
-                excel = win32.gencache.EnsureDispatch('Excel.Application')
-                wb = excel.Workbooks.Open(filePath)
-                file_path = os.path.join(path, "~$ " + dir)
-                wb.SaveAs(file_path, FileFormat=51)              # FileFormat = 51 is for .xlsx extension
-                wb.Close()                                      # FileFormat = 56 is for .xls extension
-                excel.Application.Quit()
-                os.remove(filePath)
+                # excel = win32.gencache.EnsureDispatch('Excel.Application')
+                # wb = excel.Workbooks.Open(filePath)
+                # file_path = os.path.join(path, "~$ " + dir)
+                # wb.SaveAs(file_path, FileFormat=51)              # FileFormat = 51 is for .xlsx extension
+                # wb.Close()                                      # FileFormat = 56 is for .xls extension
+                # excel.Application.Quit()
+                # os.remove(filePath)
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
     def _readFile(self, filePath, rq):
@@ -475,7 +475,7 @@ class QueryTwoLower(Settings, Settings_sso):
             sql = '''SELECT CURDATE() '序號(無用途)',NULL '訂單號長度限制: 20碼請勿使用中文）', 收货人 AS '收件人姓名(必填)長度限制: 20碼', 收货地址 AS '收件人地址(必填)中文限制: 50字', 
                             联系电话 AS '收件人電話長度限制: 15碼',商品名称 AS '託運備註中文限制: 50字', NULL '(商品別編號)勿填', 购买数量 AS '商品數量(必填)(限數字)', NULL '才積重量限數字', 
                             订单金额 AS '代收貨款限數字',NULL '指定配送日期YYYYMMDD範例: 20140220    ->2月20號', NULL '指定配送時間範例:   1   (上午 -> 09~13) 2   (下午 -> 13~17)3   (晚上 -> 17~20)',
-			                订单编号 , 商品规格, 产品id AS '产品ID', NULL '原运单号', 团队
+			                订单编号 , 商品规格, 产品id AS '产品ID', NULL '原运单号', 团队,下架时间,统计时间
                     FROM 已下架表 yx
                     WHERE yx.记录时间 >= TIMESTAMP(CURDATE()) AND yx.物流渠道 = '龟山备货';'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)

@@ -175,6 +175,7 @@ class SltemMonitoring(Settings):
                  '小虎队-香港': '"金鹏家族-小虎队"',
                  '小虎队-台湾': '"金鹏家族-小虎队"',
                  '神龙运营1组-台湾': '"神龙-运营1组"',
+                 '神龙火凤凰-台湾': '"神龙家族-港澳台","火凤凰-港澳台", "火凤凰-港台(繁体)"',
                  '火凤凰-台湾': '"火凤凰-港澳台", "火凤凰-港台(繁体)"',
                  '火凤凰-香港': '"火凤凰-港澳台", "火凤凰-港台(繁体)"'}
         emailAdd = {'神龙香港': 'giikinliujun@163.com', '神龙台湾': 'giikinliujun@163.com',
@@ -184,7 +185,7 @@ class SltemMonitoring(Settings):
         # 初始化配置
         start: datetime = datetime.datetime.now()
         family = ""
-        if team in ('神龙-香港', '神龙-台湾', '火凤凰-香港', '火凤凰-台湾', '小虎队-香港', '小虎队-台湾', '神龙运营1组-台湾'):
+        if team in ('神龙火凤凰-台湾', '神龙-香港', '神龙-台湾', '火凤凰-香港', '火凤凰-台湾', '小虎队-香港', '小虎队-台湾', '神龙运营1组-台湾'):
             family = 'qsb_gat'
         elif team in ('品牌-日本', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾', '品牌-台湾', '品牌-香港'):
             family = 'qsb_slsc'
@@ -197,8 +198,14 @@ class SltemMonitoring(Settings):
                     GROUP BY 年月
                     ORDER BY 年月 DESC'''.format(family, now_month)
         rq = pd.read_sql_query(sql=sql, con=self.engine1)
-        now_month_new = rq['年月'][0]
-        now_month_old = rq['年月'][1]
+        now_month_new = ''
+        now_month_old = ''
+        if ready == '本期宏':
+            now_month_new = rq['年月'][0]
+            now_month_old = rq['年月'][1]
+        elif ready == '上期宏':
+            now_month_new = rq['年月'][1]
+            now_month_old = rq['年月'][2]
         print('本期时间：' + now_month)
         print('当月: ', end="")
         print(now_month_new)
@@ -211,15 +218,14 @@ class SltemMonitoring(Settings):
                     GROUP BY 年月
                     ORDER BY 年月 DESC'''.format(family, last_month)
         rq = pd.read_sql_query(sql=sql, con=self.engine1)
+        last_month_new = ''
+        last_month_old = ''
         if ready == '本期宏':
             last_month_new = rq['年月'][0]
             last_month_old = rq['年月'][1]
-        elif ready == '本期宏':
+        elif ready == '上期宏':
             last_month_new = rq['年月'][1]
             last_month_old = rq['年月'][2]
-        else:
-            last_month_new = rq['年月'][0]
-            last_month_old = rq['年月'][1]
         print('上期时间：' + last_month)
         print('当月: ', end="")
         print(last_month_new)
@@ -794,20 +800,21 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2022.01.25'
-    now_month = '2022.02.25'
+    last_month = '2022.01.26'
+    now_month = '2022.02.26'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传
 
     # 测试监控运行（二）-- 第一种手动方式
-    m.order_Monitoring('港台')        # 各月缓存（整体一）
+    # m.order_Monitoring('港台')        # 各月缓存（整体一）
     # for team in ['神龙-台湾', '神龙-香港', '神龙运营1组-台湾', '火凤凰-台湾', '火凤凰-香港', '小虎队-台湾']:
-    for team in ['神龙-台湾', '神龙-香港', '神龙运营1组-台湾', '火凤凰-台湾', '火凤凰-香港']:
+    # for team in ['神龙-台湾', '神龙-香港', '神龙运营1组-台湾', '火凤凰-台湾', '火凤凰-香港']:
+    for team in ['神龙火凤凰-台湾']:
         now_month = now_month.replace('.', '-')           # 修改配置时间
         last_month = last_month.replace('.', '-')
-        m.sl_Monitoring(team, now_month, last_month, '本期宏')      # 输出数据--每月正常使用的时间（二）
-        # m.sl_Monitoring(team, now_month, last_month, '上期宏')      # 输出数据--每月正常使用的时间（二）
+        # m.sl_Monitoring(team, now_month, last_month, '本期宏')      # 输出数据--每月正常使用的时间（二）
+        m.sl_Monitoring(team, now_month, last_month, '上期宏')      # 输出数据--每月正常使用的时间（二）
 
 
     # 测试监控运行（三）-- 第二种自动方式

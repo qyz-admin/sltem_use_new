@@ -411,10 +411,10 @@ class QueryTwo(Settings, Settings_sso):
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\派送问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO 派送问题件(订单编号,币种,下单时间,创建时间,完成时间, 派送问题, 订单状态, 物流状态, 订单类型, 物流渠道, 派送问题首次时间, 处理人, 处理记录, 处理时间,备注, 记录时间) 
-                    SELECT 订单编号,币种,下单时间,创建时间,完成时间, 派送问题, 订单状态, 物流状态, 订单类型, 物流渠道, 派送问题首次时间, 处理人, 处理记录, IF(处理时间 = '',NULL,处理时间) 处理时间,备注,NOW() 记录时间 
+            sql = '''REPLACE INTO 派送问题件(订单编号,下单时间,创建时间, 派送问题, 派送问题首次时间, 处理人, 处理记录, 处理时间,备注, 记录时间) 
+                    SELECT 订单编号,下单时间,创建时间, 派送问题, 派送问题首次时间, 处理人, 处理记录, IF(处理时间 = '',NULL,处理时间) 处理时间,备注,NOW() 记录时间 
                     FROM customer'''
-            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
         else:
             print('没有需要获取的信息！！！')
@@ -490,10 +490,14 @@ class QueryTwo(Settings, Settings_sso):
                         if len(rec.split()) > 1:
                             result['result_content'] = rec.split()[1]     # 处理内容
                         result['dealContent'] = rec.split()[0]            # 最新处理结果
+
                         rec_name = record.split("#处理结果：")[0]
-                        if len(rec_name.split()) > 2:
-                            if (rec_name.split())[2] != '' or (rec_name.split())[2] != []:
-                                result['traceUserName'] = (rec_name.split())[2]
+                        if '赠品' in rec.split()[0] or '退款' in rec.split()[0] or '补发' in rec.split()[0] or '换货' in rec.split()[0]:                    # 筛选无用的通话记录
+                            if len(rec_name.split()) > 2:
+                                if (rec_name.split())[2] != '' or (rec_name.split())[2] != []:
+                                    result['traceUserName'] = (rec_name.split())[2]
+                            else:
+                                result['traceUserName'] = ''
                         else:
                             result['traceUserName'] = ''
                         ordersDict.append(result.copy())    # append()方法只是将字典的地址存到list中，而键赋值的方式就是修改地址，所以才导致覆盖的问题;  使用copy() 或者 deepcopy()  当字典中存在list的时候需要使用deepcopy()
@@ -546,7 +550,7 @@ class QueryTwo(Settings, Settings_sso):
         sql = '''REPLACE INTO 物流客诉件(处理时间,物流反馈时间,处理人,订单编号,处理方案, 处理结果, 客诉原因, 赠品补发订单编号,币种, 记录时间) 
                 SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,最新处理结果 AS 处理方案, 处理内容 AS 处理结果, 客诉原因, 赠品补发订单编号, 币种, NOW() 记录时间 
                 FROM customer;'''
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('写入成功......')
         print('*' * 50)
     def _waybill_Query(self, timeStart, timeEnd, n):  # 进入物流客诉件界面
@@ -586,9 +590,12 @@ class QueryTwo(Settings, Settings_sso):
                             result['result_content'] = rec.split()[1]     # 处理内容
                         result['dealContent'] = rec.split()[0]            # 最新处理结果
                         rec_name = record.split("#处理结果：")[0]
-                        if len(rec_name.split()) > 2:
-                            if (rec_name.split())[2] != '' or (rec_name.split())[2] != []:
-                                result['traceUserName'] = (rec_name.split())[2]
+                        if '赠品' in rec.split()[0] or '退款' in rec.split()[0] or '补发' in rec.split()[0] or '换货' in rec.split()[0]:                    # 筛选无用的通话记录
+                            if len(rec_name.split()) > 2:
+                                if (rec_name.split())[2] != '' or (rec_name.split())[2] != []:
+                                    result['traceUserName'] = (rec_name.split())[2]
+                            else:
+                                result['traceUserName'] = ''
                         else:
                             result['traceUserName'] = ''
                         ordersDict.append(result.copy())    # append()方法只是将字典的地址存到list中，而键赋值的方式就是修改地址，所以才导致覆盖的问题;  使用copy() 或者 deepcopy()  当字典中存在list的时候需要使用deepcopy()
@@ -1227,7 +1234,7 @@ if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
 
-    select = 9009
+    select = 909
     if int(select) == 1:
         timeStart, timeEnd = m.readInfo('物流问题件')
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
@@ -1282,11 +1289,11 @@ if __name__ == '__main__':
 
     # m.waybill_InfoQuery('2021-12-01', '2022-01-12')         # 查询更新-物流问题件
 
-    # m.waybill_deliveryList('2022-02-02', '2022-02-02')         # 查询更新-派送问题件
+    m.waybill_deliveryList('2022-02-25', '2022-02-25')         # 查询更新-派送问题件
 
-    # m.waybill_Query('2021-12-01', '2022-01-11')             # 查询更新-物流客诉件
+    # m.waybill_Query('2022-02-26', '2022-02-26')              # 查询更新-物流客诉件
 
-    # m.ssale_Query('2021-12-01', '2022-01-12')                    # 查询更新-采购问题件（一、简单查询）
+    # m.ssale_Query('2022-02-25', '2022-02-26')                    # 查询更新-采购问题件（一、简单查询）
     # m.sale_Query_info('2021-07-01', '2021-12-01')             # 查询更新-采购问题件 (二、补充查询)
 
     # m._sale_Query_info('NR112180927421695')
@@ -1295,7 +1302,7 @@ if __name__ == '__main__':
         # m.orderReturnList_Query(team, '2022-02-15', '2022-02-16')           # 查询更新-退换货
 
     # timeStart, timeEnd = m.readInfo('拒收问题件')
-    m.order_js_Query('2022-02-24', '2022-02-24')            # 查询更新-拒收问题件
+    # m.order_js_Query('2022-02-24', '2022-02-24')            # 查询更新-拒收问题件
 
 
 

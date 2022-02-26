@@ -156,7 +156,8 @@ class ExcelControl():
                         '清关时间': [False, ['''清关时间'''], []],
                         '上线时间': [False, ['清关时间', '''上线时间
 （即货交地派时间）''', '上线时间', '新竹上线时间'], ['货交地派时间']],
-                        '原运单号': [False, ['原单号', '原單號', '原始顺丰订单号'], []]},
+                        '原运单号': [False, ['原单号', '原單號', '原始顺丰订单号'], []],
+                        '配送问题': [False, ['''配送问题'''], []]},
                 'slxmt': {'出货时间': [True, ['出货时间', 'Inbound Datetime'], []],
                         '订单编号': [True, ['订单号', '订单编号', 'Shipper Order Number', 'Shipper Reference Number'], []],
                         '运单编号': [True, ['转单号', '运单号', '运单编号', 'Tracking ID', 'Tracking Id ', 'tracking_id',
