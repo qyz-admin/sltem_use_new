@@ -191,9 +191,14 @@ class QueryTwo(Settings, Settings_sso):
         print('>>>>>>正式查询中<<<<<<')
         print('正在获取需要订单信息......')
         start = datetime.datetime.now()
-        sql = '''SELECT DISTINCT 处理时间 FROM {0} d GROUP BY 处理时间 ORDER BY 处理时间 DESC'''.format(team)
-        rq = pd.read_sql_query(sql=sql, con=self.engine1)
-        rq = pd.to_datetime(rq['处理时间'][0])
+        if team == '派送问题件':
+            sql = '''SELECT DISTINCT 派送问题首次时间 FROM {0} d GROUP BY 派送问题首次时间 ORDER BY 派送问题首次时间 DESC'''.format(team)
+            rq = pd.read_sql_query(sql=sql, con=self.engine1)
+            rq = pd.to_datetime(rq['派送问题首次时间'][0])
+        else:
+            sql = '''SELECT DISTINCT 处理时间 FROM {0} d GROUP BY 处理时间 ORDER BY 处理时间 DESC'''.format(team)
+            rq = pd.read_sql_query(sql=sql, con=self.engine1)
+            rq = pd.to_datetime(rq['处理时间'][0])
         last_time = (rq + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         print('起止时间：' + team + last_time + ' - ' + now_time)
@@ -284,7 +289,7 @@ class QueryTwo(Settings, Settings_sso):
                      'gift_reissue_order_number', 'update_time']]
             dp.columns = ['订单编号', '币种', '订单金额', '客户姓名', '客户电话', '客户地址', '送达时间', '导入时间', '最新处理状态', '最新处理结果',
                           '处理时间', '拒收原因', '具体原因', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态', '赠品补发订单编号', '更新时间']
-            dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞', na=False))]
+            dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞|张陈平', na=False))]
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
@@ -372,7 +377,7 @@ class QueryTwo(Settings, Settings_sso):
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/deliveryProblemPackage'}
         data = {'order_number': None, 'waybill_number': None, 'question_level': None, 'question_type': None, 'order_trace_id': None, 'ship_phone': None,
-                'page': 1, 'pageSize': 90, 'addtime': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'question_time':None, 'trace_time': None,
+                'page': 1, 'pageSize': 90, 'addtime': None, 'question_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'trace_time': None,
                 'create_time': None, 'finishtime': None, 'sale_id': None, 'product_id': None, 'logistics_id': None, 'area_id': None, 'currency_id': None,
                 'order_status': None, 'logistics_status': None}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
@@ -411,8 +416,8 @@ class QueryTwo(Settings, Settings_sso):
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\派送问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO 派送问题件(订单编号,下单时间,创建时间, 派送问题, 派送问题首次时间, 处理人, 处理记录, 处理时间,备注, 记录时间) 
-                    SELECT 订单编号,下单时间,创建时间, 派送问题, 派送问题首次时间, 处理人, 处理记录, IF(处理时间 = '',NULL,处理时间) 处理时间,备注,NOW() 记录时间 
+            sql = '''REPLACE INTO 派送问题件(订单编号,创建时间, 派送问题, 派送问题首次时间, 处理人, 处理记录, 处理时间,备注, 记录时间) 
+                    SELECT 订单编号,创建时间, 派送问题, 派送问题首次时间, 处理人, 处理记录, IF(处理时间 = '',NULL,处理时间) 处理时间,备注,NOW() 记录时间 
                     FROM customer'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -427,7 +432,7 @@ class QueryTwo(Settings, Settings_sso):
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/deliveryProblemPackage'}
         data = {'order_number': None, 'waybill_number': None, 'question_level': None, 'question_type': None, 'order_trace_id': None, 'ship_phone': None,
-                'page': n, 'pageSize': 90, 'addtime': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'question_time':None, 'trace_time': None,
+                'page': n, 'pageSize': 90, 'addtime': None, 'question_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'trace_time': None,
                 'create_time': None, 'finishtime': None, 'sale_id': None, 'product_id': None, 'logistics_id': None, 'area_id': None, 'currency_id': None,
                 'order_status': None, 'logistics_status': None}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
@@ -544,7 +549,7 @@ class QueryTwo(Settings, Settings_sso):
                       '处理时间', '处理内容', '客诉原因', '具体原因', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态',
                       '赠品补发订单编号', '更新时间']
         print('正在写入......')
-        dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞', na=False))]
+        dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞|张陈平', na=False))]
         dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
         dp.to_excel('G:\\输出文件\\物流客诉件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         sql = '''REPLACE INTO 物流客诉件(处理时间,物流反馈时间,处理人,订单编号,处理方案, 处理结果, 客诉原因, 赠品补发订单编号,币种, 记录时间) 
@@ -829,10 +834,12 @@ class QueryTwo(Settings, Settings_sso):
                 dp = df
             dp = dp[(dp['currencyName'].str.contains('台币|港币', na=False))]           # 筛选币种
             dp = dp[['orderNumber']]
-
+            # print(dp)
             print('++++++明细查询中+++++++')
-            dt = self._ssale_Query_info(dp['orderNumber'][0])                           # 查询第一个订单信息
+            # print(dp['orderNumber'][0])
+            # dt = self._ssale_Query_info(dp['orderNumber'][0])                           # 查询第一个订单信息
             order_list = list(dp['orderNumber'])
+            # print(order_list)
             # dtlist = []
             for ord in order_list:
                 data = self._ssale_Query_info(ord)                                      # 查询全部订单信息
@@ -897,7 +904,7 @@ class QueryTwo(Settings, Settings_sso):
                 data = pd.json_normalize(ord)
                 dp = data[['orderNumber', 'content', 'addTime', 'addTime', 'name', 'dealProcess']]
                 dp.columns = ['订单编号', '反馈内容', '处理时间', '详细处理时间', '处理人', '处理结果']
-                dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞', na=False))]
+                dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞|张陈平', na=False))]
                 dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
                 sql = '''REPLACE INTO 采购异常(订单编号,处理结果,处理时间,详细处理时间,反馈内容, 处理人,记录时间) 
                         SELECT 订单编号,处理结果,处理时间,详细处理时间,反馈内容, 处理人, NOW() 记录时间 
@@ -1234,7 +1241,7 @@ if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
 
-    select = 909
+    select = 99
     if int(select) == 1:
         timeStart, timeEnd = m.readInfo('物流问题件')
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
@@ -1262,6 +1269,9 @@ if __name__ == '__main__':
         timeStart, timeEnd = m.readInfo('拒收问题件')
         m.order_js_Query(timeStart, timeEnd)                        # 查询更新-拒收问题件
 
+        timeStart, timeEnd = m.readInfo('派送问题件')
+        m.order_js_Query(timeStart, timeEnd)                        # 查询更新-派送问题件
+
         timeStart, timeEnd = m.readInfo('采购异常')
         m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
         # m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
@@ -1275,6 +1285,7 @@ if __name__ == '__main__':
         lw = QueryTwoLower('+86-18538110674', 'qyz04163510')
         start: datetime = datetime.datetime.now()
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 自动时 输入的时间无效；切为不自动时，有效
+
         print('查询耗时：', datetime.datetime.now() - start)
 
     '''
@@ -1289,11 +1300,11 @@ if __name__ == '__main__':
 
     # m.waybill_InfoQuery('2021-12-01', '2022-01-12')         # 查询更新-物流问题件
 
-    m.waybill_deliveryList('2022-02-25', '2022-02-25')         # 查询更新-派送问题件
+    # m.waybill_deliveryList('2022-02-24', '2022-02-27')         # 查询更新-派送问题件
 
     # m.waybill_Query('2022-02-26', '2022-02-26')              # 查询更新-物流客诉件
-
-    # m.ssale_Query('2022-02-25', '2022-02-26')                    # 查询更新-采购问题件（一、简单查询）
+    # timeStart, timeEnd = m.readInfo('采购异常')
+    # m.ssale_Query('2022-02-28', '2022-03-01')                    # 查询更新-采购问题件（一、简单查询）
     # m.sale_Query_info('2021-07-01', '2021-12-01')             # 查询更新-采购问题件 (二、补充查询)
 
     # m._sale_Query_info('NR112180927421695')

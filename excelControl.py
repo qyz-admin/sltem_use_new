@@ -153,11 +153,13 @@ class ExcelControl():
                                         '时间'], []],
                         '航班时间': [False, ['航班起飞时间', '''国内清关时间
 （或航班起飞时间）''', '起飞时间'], ['航班起飞时间']],
-                        '清关时间': [False, ['''清关时间'''], []],
-                        '上线时间': [False, ['清关时间', '''上线时间
-（即货交地派时间）''', '上线时间', '新竹上线时间'], ['货交地派时间']],
-                        '原运单号': [False, ['原单号', '原單號', '原始顺丰订单号'], []],
-                        '配送问题': [False, ['''配送问题'''], []]},
+                        '清关时间': [False, ['''清关时间''', '''清关时间
+'''], []],
+                        '原运单号': [False, ['原单号', '原單號', '原始顺丰订单号','原运单号'], []],
+                        '配送问题': [False, ['''配送问题''', '改派失败原因'], []],
+                        '上线时间': [False, ['上线时间', '''上线时间
+（即货交地派时间）''', '货交地派时间', '''清关时间
+''', '''新竹上线时间'''], []]},
                 'slxmt': {'出货时间': [True, ['出货时间', 'Inbound Datetime'], []],
                         '订单编号': [True, ['订单号', '订单编号', 'Shipper Order Number', 'Shipper Reference Number'], []],
                         '运单编号': [True, ['转单号', '运单号', '运单编号', 'Tracking ID', 'Tracking Id ', 'tracking_id',
@@ -345,6 +347,26 @@ class ExcelControl():
                 df['订单编号'] = df['订单编号'].astype(str)
                 df = df[~(df['订单编号'].str.contains('BJ|GK|KD|NB|NR|TG|TR|XM'))]
                 df.reset_index(drop=True, inplace=True)
+
+            if '新竹' in shtName or '7-11' in shtName or '711' in shtName:       # 添加上线时间
+                df.insert(0, '上线时间', '')
+                if '清关时间' in df.columns:
+                    df['上线时间'] = df['清关时间'].copy()
+                else:
+                    df['上线时间'] = df['出货时间'].copy()
+            if '重出明细' in shtName or '重出明细' in shtName:                       # 添加上线时间  天马改派
+                df.insert(0, '上线时间', '')
+                df['上线时间'] = df['出货时间'].copy()
+            if '转寄表' in shtName:                          # 添加上线时间  立邦 改派
+                df.insert(0, '上线时间', '')
+                df['上线时间'] = df['出货时间'].copy()
+            if '月明细' in shtName:                          # 添加上线时间  易速配
+                df.insert(0, '上线时间', '')
+                df['上线时间'] = df['清关时间'].copy()
+            if '月重出' in shtName or '备货转寄' in shtName:       # 添加上线时间  易速配 改派
+                df.insert(0, '上线时间', '')
+                df['上线时间'] = df['出货时间'].copy()
+            # print(df['上线时间'])
             return df
         else:
             return None
