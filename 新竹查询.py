@@ -106,7 +106,6 @@ class QueryTwo(Settings, Settings_sso):
         if max_count > 0:
             df = pd.DataFrame([])                # 创建空的dataframe数据框
             dlist = []
-            n = 0
             for ord in orderId:
                 print(ord)
                 data = self._SearchGoods(ord)
@@ -180,7 +179,11 @@ class QueryTwo(Settings, Settings_sso):
             result = {}
             # print(val)
             if "請檢查您的查貨資料。" in str(val):
-                return None
+                data = pd.DataFrame([[res, res2, '', '']], columns=['查货号码', '查货时间', '轨迹时间', '轨迹内容'])
+                data.dropna(axis=0, how='any', inplace=True)
+                data.sort_values(by="轨迹时间", inplace=True, ascending=True)  # inplace: 原地修改; ascending：升序
+                # print(data)
+                return data
             if "ctl00_ContentFrame_lblInvoiceNo" in str(val):
                 result['查货号码'] = str(val).split(r'ctl00_ContentFrame_lblInvoiceNo">')[1].split('</')[0]
                 result['查货时间'] = str(val).split('時間：')[1].split('</')[0]
@@ -200,7 +203,7 @@ class QueryTwo(Settings, Settings_sso):
             ordersDict.append(result)
         # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         data = pd.json_normalize(ordersDict)
-        # print(data)
+        print(data)
         data.dropna(axis=0, how='any', inplace=True)
         data.sort_values(by="轨迹时间", inplace=True, ascending=True)  # inplace: 原地修改; ascending：升序
         # print(data)
