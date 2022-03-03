@@ -69,9 +69,11 @@ class QueryUpdate(Settings):
             filePath = os.path.join(path, dir)
             if dir[:2] != '~$':
                 print(filePath)
-                if '需发货的改派订单' in dir:
+                if '需发货的改派订单' in dir or '订单检索' in dir:
                     write = '需发货'
                 self.wbsheetHost(filePath, team, write, last_time)
+                os.remove(filePath)
+                print('已清除上传文件…………')
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
     def wbsheetHost(self, filePath, team, write, last_time):
@@ -93,14 +95,18 @@ class QueryUpdate(Settings):
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
-                    print('++++正在导入更新：' + sht.name + ' 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
-                    db.to_sql('gat_update', con=self.engine1, index=False, if_exists='replace')         # 将返回的dateFrame导入数据库的临时表
-                    print('++++正在更新：' + sht.name + '--->>>到总订单')
                     if write == '本期':                 # 将数据库的临时表替换进指定的总表
+                        print('++++正在导入更新：' + sht.name + ' 共：' + str(len(db)) + '行','sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                        db.to_sql('gat_update', con=self.engine1, index=False, if_exists='replace')  # 将返回的dateFrame导入数据库的临时表
                         self.replacHost(team)
                     elif write == '上期':
+                        print('++++正在导入更新：' + sht.name + ' 共：' + str(len(db)) + '行','sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                        db.to_sql('gat_update', con=self.engine1, index=False, if_exists='replace')  # 将返回的dateFrame导入数据库的临时表
                         self.replaceHostbefore(team, last_time)
                     elif write == '需发货':
+                        db = db[['订单编号']]
+                        print('++++正在导入更新：' + sht.name + ' 共：' + str(len(db)) + '行','sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                        db.to_sql('gat_update', con=self.engine1, index=False,if_exists='replace')  # 将返回的dateFrame导入数据库的临时表
                         self.online(team)
                     print('++++----->>>' + sht.name + '：订单更新完成++++')
                 else:
@@ -167,13 +173,13 @@ class QueryUpdate(Settings):
             print('正在更新单表中......')
             sql = '''update {0}_order_list a, gat_update b
                                 set a.`系统订单状态`= '已发货'
-        		                where a.`运单编号`= b.`运单编号`;'''.format(team)
+        		                where a.`订单编号`= b.`订单编号`;'''.format(team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('正在更新总表中......')
             sql = '''update {0}_zqsb a, gat_update b
                                 set a.`系统订单状态`= '已发货',
                                     a.`最终状态`= '在途'
-                    		    where a.`运单编号`= b.`运单编号`;'''.format(team)
+                    		    where a.`订单编号`= b.`订单编号`;'''.format(team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
@@ -8430,12 +8436,12 @@ if __name__ == '__main__':
 
     last_time = '2021-01-01'
     write = '本期'
-    # m.readFormHost(team, write, last_time)                            # 更新签收表---港澳台（一）
+    m.readFormHost(team, write, last_time)                            # 更新签收表---港澳台（一）
 
-    m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
-    m.qsb_new(team, month_old)                                    # 获取-每日-报表
-    m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收表
-    m.phone_report()                                        # 获取电话核实日报表 周报表
+    # m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
+    # m.qsb_new(team, month_old)                                    # 获取-每日-报表
+    # m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收表
+    # m.phone_report()                                        # 获取电话核实日报表 周报表
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id
     # m.address_repot(team, month_last, month_yesterday)                       #  获取-地区签收率-报表

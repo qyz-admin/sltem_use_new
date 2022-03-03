@@ -64,7 +64,7 @@ class QueryTwo(Settings, Settings_sso):
                                                                                     self.mysql2['port'],
                                                                                     self.mysql2['datebase']))
     # 获取签收表内容
-    def readFormHost(self, team):
+    def readFormHost(self):
         start = datetime.datetime.now()
         path = r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表'
         dirs = os.listdir(path=path)
@@ -73,10 +73,10 @@ class QueryTwo(Settings, Settings_sso):
             filePath = os.path.join(path, dir)
             if dir[:2] != '~$':
                 print(filePath)
-                self.wbsheetHost(filePath, team)
+                self.wbsheetHost(filePath)
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
-    def wbsheetHost(self, filePath, team):
+    def wbsheetHost(self, filePath):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
         app.display_alerts = False
@@ -86,35 +86,45 @@ class QueryTwo(Settings, Settings_sso):
                 try:
                     db = None
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
-                    print(db.columns)
-                    columns_value = list(db.columns)                             # 获取数据的标题名，转为列表
-                    for column_val in columns_value:
-                        if '产品id' != column_val:
-                            db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
+                    db = db[['运单编号']]
                     db.dropna(axis=0, how='any', inplace=True)                  # 空值（缺失值），将空值所在的行/列删除后
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
-                    # print(db)
-                    rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+                    print(db)
                     print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
-                    productId = list(db['产品id'])
-                    print(productId[0])
-                    df = self.orderInfoQuery(productId[0])
-                    dlist = []
-                    for proId in productId[1:]:
-                        data = self.orderInfoQuery(proId)
-                        dlist.append(data)
-                    dp = df.append(dlist, ignore_index=True)
-                    dp.to_excel('G:\\输出文件\\产品检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
-                    print('查询已导出+++')
+                    # 将获取到的运单号 查询轨迹
+                    self.Search_online(db)
                 else:
                     print('----------数据为空,查询失败：' + sht.name)
             wb.close()
         app.quit()
 
+    #  查询运单轨迹-按订单查询（一）
+    def Search_online(self, db):
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        orderId = list(db['运单编号'])
+        print(orderId)
+        max_count = len(orderId)                 # 使用len()获取列表的长度，上节学的
+        if max_count > 0:
+            df = pd.DataFrame([])                # 创建空的dataframe数据框
+            dlist = []
+            for ord in orderId:
+                print(ord)
+                data = self._order_online(ord)
+                if data is not None and len(data) > 0:
+                    dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+            dp.dropna(axis=0, how='any', inplace=True)
+        else:
+            dp = None
+        print(dp)
+        dp.to_excel('G:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+        print('查询已导出+++')
+        print('*' * 50)
 
-    def order_online(self, timeStart, timeEnd):  # 进入订单检索界面
+    #  查询运单轨迹-按时间查询（二）
+    def order_online(self, timeStart, timeEnd):  # 进入运单轨迹界面
         # print('正在获取需要订单信息......')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         start = datetime.datetime.now()
@@ -124,21 +134,23 @@ class QueryTwo(Settings, Settings_sso):
             day = begin + datetime.timedelta(days=i + 1)
             day = day.strftime('%Y-%m-%d')
             print('正在获取 ' + day + ' 号订单信息…………')
-            sql = '''SELECT id,`运单编号`  FROM gat_order_list sl WHERE sl.`日期` = '{0}' AND sl.运单编号 IS NOT NULL;'''.format(day)
+            # sql = '''SELECT id,`运单编号`  FROM gat_order_list sl WHERE sl.`日期` = '{0}' AND sl.运单编号 IS NOT NULL;'''.format(day)
+            sql = '''SELECT id,`运单编号`  FROM gat_order_list sl WHERE sl.`下单时间` BETWEEN  '2022-02-03 09:00:00' AND '2022-02-03 09:30:00' AND sl.运单编号 IS NOT NULL;'''.format(day)
             ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
             if ordersDict.empty:
                 print('无需要更新订单信息！！！')
                 return
             # print(ordersDict['运单编号'][0])
             orderId = list(ordersDict['运单编号'])
-            max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+            max_count = len(orderId)            # 使用len()获取列表的长度，上节学的
             if max_count > 0:
-                df = self._order_online(orderId[0:1])
+                df = pd.DataFrame([])           # 创建空的dataframe数据框
                 dlist = []
-                for ord in orderId[1:]:
+                for ord in orderId:
                     print(ord)
                     data = self._order_online(ord)
-                    dlist.append(data)
+                    if data is not None and len(data) > 0:
+                        dlist.append(data)
                 dp = df.append(dlist, ignore_index=True)
                 dp.to_excel('G:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         print('++++++查询成功+++++++')
@@ -167,12 +179,16 @@ class QueryTwo(Settings, Settings_sso):
         # print(req)
         ordersDict = []
         try:
-            for result in req['data']['list']:
-                for res in result['list']:
-                    res['orderNumber'] = result['order_number']
-                    res['wayBillNumber'] = result['track_no']
-                    print(res)
-                    ordersDict.append(res)
+            if req['data']['list'] == []:
+                print(req['data']['list'])
+                return None
+            else:
+                for result in req['data']['list']:
+                    for res in result['list']:
+                        res['orderNumber'] = result['order_number']
+                        res['wayBillNumber'] = result['track_no']
+                        print(res)
+                        ordersDict.append(res)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
         data = pd.json_normalize(ordersDict)
@@ -197,11 +213,18 @@ if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
+    '''
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
-    # 1、手动导入状态
-    # for team in ['gat']:
-        # m.readFormHost(team)
+    # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    '''
+    select = 1
+    if int(select) == 1:
+        print("1-->>> 正在按订单查询+++")
+        m.readFormHost()       # 导入；，更新--->>数据更新切换
+    elif int(select) == 2:
+        print("2-->>> 正在按时间查询+++")
+        m.order_online('2022-02-02', '2022-02-03')
 
-    m.order_online('2022-02-02', '2022-02-03')
+    # m._order_online('6823590841')
 
     print('查询耗时：', datetime.datetime.now() - start)

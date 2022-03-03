@@ -17,7 +17,7 @@ from settings_sso import Settings_sso
 from sqlalchemy import create_engine
 from settings import Settings
 from emailControl import EmailControl
-
+from multiprocessing.dummy import Pool
 
 # -*- coding:utf-8 -*-
 class QueryTwo(Settings, Settings_sso):
@@ -83,12 +83,17 @@ class QueryTwo(Settings, Settings_sso):
             for sht in wb.sheets:
                 try:
                     db = None
-                    db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
+                    print(sht.name)
+                    # db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False, dtype=str).value
+                    # db = pd.read_excel(filePath, sheet_name=sht.name, header=1, names=int, index_col=False, dtype=str)
+                    db = pd.read_excel(filePath, sheet_name=sht.name)
                     db = db[['运单编号']]
+                    db['运单编号'] = db['运单编号'].astype(str)
                     db.dropna(axis=0, how='any', inplace=True)                  # 空值（缺失值），将空值所在的行/列删除后
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
+                    print(db)
                     rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
                     print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
                     # 将获取到的运单号 查询轨迹
@@ -102,10 +107,13 @@ class QueryTwo(Settings, Settings_sso):
     def SearchGoods(self,db):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         orderId = list(db['运单编号'])
+        print(orderId)
         max_count = len(orderId)                 # 使用len()获取列表的长度，上节学的
         if max_count > 0:
             df = pd.DataFrame([])                # 创建空的dataframe数据框
             dlist = []
+            # pool = Pool(4)
+            # result = pool.map(self._SearchGoods,orderId)
             for ord in orderId:
                 print(ord)
                 data = self._SearchGoods(ord)
@@ -195,7 +203,7 @@ class QueryTwo(Settings, Settings_sso):
                 L_cls = str(val).split('L_cls">')[1]
                 L_cls = pattern.sub('', L_cls)
                 # print(L_time) 
-                # print(L_cls) 
+                print(res) 
                 result['查货号码'] = res
                 result['查货时间'] = res2
                 result['轨迹时间'] = L_time

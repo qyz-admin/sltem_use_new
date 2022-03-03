@@ -74,15 +74,14 @@ class QueryUpdate(Settings):
             if dir[:2] != '~$':
                 print(filePath)
                 self.wbsheetHost(filePath, upload)
-
-                # if upload == '查询运费':
-                #     excel = win32.gencache.EnsureDispatch('Excel.Application')
-                #     wb = excel.Workbooks.Open(filePath)
-                #     file_path = os.path.join(path, "~$ " + dir)
-                #     wb.SaveAs(file_path, FileFormat=51)  # FileFormat = 51 is for .xlsx extension
-                #     wb.Close()  # FileFormat = 56 is for .xls extension
-                #     excel.Application.Quit()
-                #     os.remove(filePath)
+                if upload == '查询运费':
+                    excel = win32.gencache.EnsureDispatch('Excel.Application')
+                    wb = excel.Workbooks.Open(filePath)
+                    file_path = os.path.join(path, "~$ " + dir)
+                    wb.SaveAs(file_path, FileFormat=51)  # FileFormat = 51 is for .xlsx extension
+                    wb.Close()  # FileFormat = 56 is for .xls extension
+                    excel.Application.Quit()
+                    os.remove(filePath)
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
     def wbsheetHost(self, filePath, upload):

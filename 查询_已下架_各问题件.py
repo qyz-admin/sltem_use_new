@@ -1255,6 +1255,9 @@ if __name__ == '__main__':
         # m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
         # m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
         m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))  # 查询更新-采购问题件（一、简单查询）
+    elif int(select) == 4:
+        timeStart, timeEnd = m.readInfo('派送问题件')
+        m.order_js_Query(timeStart, timeEnd)                        # 查询更新-派送问题件
 
     elif int(select) == 99:
         timeStart, timeEnd = m.readInfo('物流问题件')
