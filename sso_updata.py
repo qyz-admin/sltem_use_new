@@ -1138,7 +1138,7 @@ class QueryTwo(Settings):
 
 
     # 查询更新（新后台的获取）
-    def dayQuery(self, searchType, team, team2):  # 进入订单检索界面，
+    def dayQuery(self, team):  # 进入订单检索界面，
         print('>>>>>>正式查询中<<<<<<')
         print('正在获取需要订单信息......')
         start = datetime.datetime.now()
@@ -1158,33 +1158,54 @@ class QueryTwo(Settings):
             # print(ord)
             n = n + 500
             try:
-                self.orderInfoQuery(ord, searchType, team, team2)
+                self.orderInfoQuery(ord)
             except Exception as e:
                 print('获取失败： 30秒后重新获取', str(Exception) + str(e))
                 time.sleep(30)
-                self.orderInfoQuery(ord, searchType, team, team2)
+                self.orderInfoQuery(ord)
         print('单日查询耗时：', datetime.datetime.now() - start)
 
 
     # 更新团队订单明细（新后台的获取  方法一的更新）
-    def orderInfo(self, searchType, team, team2, last_month):  # 进入订单检索界面，
+    def orderInfo(self, team, updata, begin, end):  # 进入订单检索界面
         # print('正在获取需要订单信息......')
-        start = datetime.datetime.now()
-        sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` = '{1}';'''.format(team, last_month)
-        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
-        if ordersDict.empty:
-            print('无需要更新订单信息！！！')
-            return
-        print(ordersDict['订单编号'][0])
-        orderId = list(ordersDict['订单编号'])
-        max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
-        n = 0
-        while n < max_count:        # 这里用到了一个while循环，穿越过来的
-            ord = ', '.join(orderId[n:n + 500])
-            n = n + 500
-            self.orderInfoQuery(ord, searchType, team, team2)
-        print('单日查询耗时：', datetime.datetime.now() - start)
-    def orderInfoQuery(self, ord, searchType, team, team2):  # 进入订单检索界面
+        match1 = {'gat': '港台',
+                  'slsc': '品牌'}
+        if updata != '全部':
+            # 获取日期时间
+            sql = 'SELECT MAX(`日期`) 日期 FROM {0}_order_list;'.format(team)
+            rq = pd.read_sql_query(sql=sql, con=self.engine1)
+            rq = pd.to_datetime(rq['日期'][0])
+            yy = int((rq - datetime.timedelta(days=9)).strftime('%Y'))
+            mm = int((rq - datetime.timedelta(days=9)).strftime('%m'))
+            dd = int((rq - datetime.timedelta(days=9)).strftime('%d'))
+            begin = datetime.date(yy, mm, dd)
+            print(begin)
+            yy2 = int(datetime.datetime.now().strftime('%Y'))
+            mm2 = int(datetime.datetime.now().strftime('%m'))
+            dd2 = int(datetime.datetime.now().strftime('%d'))
+            end = datetime.date(yy2, mm2, dd2)
+            print(end)
+        for i in range((end - begin).days):             # 按天循环获取订单状态
+            day = begin + datetime.timedelta(days=i)
+            last_month = str(day)
+            print('正在更新 ' + match1[team] + last_month + ' 号订单信息…………')
+            start = datetime.datetime.now()
+            sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` = '{1}';'''.format('gat_order_list', last_month)
+            ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+            if ordersDict.empty:
+                print('无需要更新订单信息！！！')
+                return
+            print(ordersDict['订单编号'][0])
+            orderId = list(ordersDict['订单编号'])
+            max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
+            n = 0
+            while n < max_count:        # 这里用到了一个while循环，穿越过来的
+                ord = ', '.join(orderId[n:n + 500])
+                n = n + 500
+                self.orderInfoQuery(ord)
+            print('单日查询耗时：', datetime.datetime.now() - start)
+    def orderInfoQuery(self, ord):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -1200,12 +1221,8 @@ class QueryTwo(Settings):
                 'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None,
                 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
                 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None}
-        if searchType == '订单号':
-            data.update({'orderPrefix': ord,
-                         'shippingNumber': None})
-        elif searchType == '运单号':
-            data.update({'order_number': None,
-                         'shippingNumber': ord})
+        data.update({'orderPrefix': ord,
+                    'shippingNumber': None})
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
@@ -1309,7 +1326,7 @@ class QueryTwo(Settings):
                             FROM d1_cpy h
                                 LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
                                 LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
-                                LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = TRIM(h.logisticsName);'''.format(team)
+                                LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = TRIM(h.logisticsName);'''.format('gat_order_list')
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             df.to_sql('d1_cpy_cp', con=self.engine1, index=False, if_exists='replace')
             print('正在更新表总表中......')
@@ -1342,7 +1359,7 @@ class QueryTwo(Settings):
                                 a.`下单人`= IF(b.`下单人` = '', NULL,  b.`下单人`),
                                 a.`克隆人`= IF(b.`克隆人` = '', NULL,  b.`克隆人`),
                                 a.`选品人`= IF(b.`选品人` = '', NULL,  b.`选品人`)
-                    where a.`订单编号`=b.`订单编号`;'''.format(team2)
+                    where a.`订单编号`=b.`订单编号`;'''.format('gat_order_list')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
@@ -1532,6 +1549,7 @@ class QueryTwo(Settings):
                 print('--->>>重启失败： 需手动重新启动！！！')
                 pass
         # print('正在写入缓存中......')
+        # df = None
         try:
             df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId',
                        'spec', 'quantity', 'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime',

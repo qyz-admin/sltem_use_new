@@ -156,8 +156,6 @@ class QueryTwo(Settings, Settings_sso):
         print('++++++查询成功+++++++')
         print('查询耗时：', datetime.datetime.now() - start)
         print('*' * 50)
-
-    # 查询更新（新后台的获取）
     def _order_online(self, ord):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
@@ -208,6 +206,101 @@ class QueryTwo(Settings, Settings_sso):
         # print('*' * 50)
         return data
 
+    #  查询运单轨迹-上线及派送（三）
+    def order_bind_status(self, timeStart, timeEnd):  # 进入运单轨迹界面
+        # print('正在获取需要订单信息......')
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        start = datetime.datetime.now()
+        begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d')
+        end = datetime.datetime.strptime(timeEnd, '%Y-%m-%d')
+        for i in range((end - begin).days):
+            day = begin + datetime.timedelta(days=i + 1)
+            day = day.strftime('%Y-%m-%d')
+            print('正在获取 ' + day + ' 号订单信息…………')
+            # sql = '''SELECT id,`运单编号`  FROM gat_order_list sl WHERE sl.`日期` = '{0}' AND sl.运单编号 IS NOT NULL;'''.format(day)
+            sql = '''SELECT id,`运单编号`  FROM gat_order_list sl WHERE sl.`下单时间` BETWEEN  '2022-02-03 09:00:00' AND '2022-02-03 09:30:00' AND sl.运单编号 IS NOT NULL;'''.format(day)
+            ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+            if ordersDict.empty:
+                print('无需要更新订单信息！！！')
+                return
+            # print(ordersDict['运单编号'][0])
+            orderId = list(ordersDict['运单编号'])
+            max_count = len(orderId)            # 使用len()获取列表的长度，上节学的
+            if max_count > 0:
+                df = pd.DataFrame([])           # 创建空的dataframe数据框
+                dlist = []
+                for ord in orderId:
+                    print(ord)
+                    data = self._order_online(ord)
+                    if data is not None and len(data) > 0:
+                        dlist.append(data)
+                dp = df.append(dlist, ignore_index=True)
+                dp.to_excel('G:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        print('++++++查询成功+++++++')
+        print('查询耗时：', datetime.datetime.now() - start)
+        print('*' * 50)
+    def _order_bind_status(self, ord):  # 进入订单检索界面
+        print('+++正在查询订单信息中')
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        url = r'https://gimp.giikin.com/service?service=gorder.order&action=getLogisticsTrace'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/logisticsTrajectory'}
+        data = {'numbers': ord,
+                'searchType': 1,
+                'isReal': 1
+                }
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        ordersDict = []
+        try:
+            if req['data']['list'] == []:
+                print(req['data']['list'])
+                return None
+            else:
+                for result in req['data']['list']:
+                    print(result)
+                    print(11)
+                    k = 0
+                    for res in result['list']:
+                        res['订单编号'] = result['order_number']
+                        res['运单编号'] = result['track_no']
+                        if '貨件已抵達土城營業所，貨件整理中' in res or '貨件已抵達土城營業所，貨件整理中' in res:
+                            res['上线时间'] = result['track_date']
+                        if '配送中' in res:
+                            k= k + 1
+                            while k > 0:
+                                res[str(k) +'派'] = result['track_date']
+                        print(res)
+                        print(22)
+                        ordersDict.append(res)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        data = pd.json_normalize(ordersDict)
+        print(data)
+        # data.sort_values(by="track_date", inplace=True, ascending=True)  # inplace: 原地修改; ascending：升序
+        # data['name'] = data['name'].str.strip()
+        # data['cate_id'] = data['cate_id'].str.strip()
+        # data['second_cate_id'] = data['second_cate_id'].str.strip()
+        # data['third_cate_id'] = data['third_cate_id'].str.strip()
+        # data = data[['id', 'name', 'cate_id', 'second_cate_id', 'third_cate_id', 'status', 'price', 'selectionName',
+        #              'sellerCount', 'buyerName', 'saleCount', 'logisticsCost', 'lender', 'isGift', 'createTime',
+        #              'categorys', 'image']]
+        # data.columns = ['产品id', '产品名称', '一级分类', '二级分类', '三级分类', '产品状态', '价格(￥)', '选品人',
+        #                 '供应商数', '采购人', '商品数', 'logisticsCost', '出借人', '特殊信息', '添加时间',
+        #                 '产品分类', '产品图片']
+        data.to_excel('G:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False,engine='xlsxwriter')
+        print('++++++本批次查询成功+++++++')
+        # print('*' * 50)
+        return data
+
+
 
 if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')
@@ -217,7 +310,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     '''
-    select = 1
+    select = 22
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         m.readFormHost()       # 导入；，更新--->>数据更新切换
@@ -225,6 +318,6 @@ if __name__ == '__main__':
         print("2-->>> 正在按时间查询+++")
         m.order_online('2022-02-02', '2022-02-03')
 
-    # m._order_online('6823590841')
+    m._order_bind_status('7449201841')
 
     print('查询耗时：', datetime.datetime.now() - start)

@@ -203,7 +203,7 @@ class QueryTwo(Settings, Settings_sso):
                 L_cls = str(val).split('L_cls">')[1]
                 L_cls = pattern.sub('', L_cls)
                 # print(L_time) 
-                print(res) 
+                # print(res) 
                 result['查货号码'] = res
                 result['查货时间'] = res2
                 result['轨迹时间'] = L_time
@@ -211,7 +211,7 @@ class QueryTwo(Settings, Settings_sso):
             ordersDict.append(result)
         # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         data = pd.json_normalize(ordersDict)
-        print(data)
+        # print(data)
         data.dropna(axis=0, how='any', inplace=True)
         data.sort_values(by="轨迹时间", inplace=True, ascending=True)  # inplace: 原地修改; ascending：升序
         # print(data)

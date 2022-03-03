@@ -412,22 +412,22 @@ class QueryUpdate(Settings):
 			                    总金额 / 团队金额 AS 产品金额团队占比,
 			                    最近单量 AS 最近3天单量,
 			                    avg_sign_rate AS 历史平均,
-			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '台湾',(avg_sign_rate-0.81),
+			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '台湾',(avg_sign_rate-0.825),
 			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '香港',(avg_sign_rate-0.89) ,
-			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '台湾',(avg_sign_rate-0.86),
+			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '台湾',(avg_sign_rate-0.87),
 			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '香港',(avg_sign_rate-0.89), 
 			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '台湾',(avg_sign_rate-0.86), 
 			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '香港',(avg_sign_rate-0.88), NULL)))))) AS 历史平均影响, 
 			                    sign_rate AS 预测, 
-			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '台湾',(sign_rate-0.81),
+			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '台湾',(sign_rate-0.825),
 			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '香港',(sign_rate-0.89) ,
-			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '台湾',(sign_rate-0.86),
+			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '台湾',(sign_rate-0.87),
 			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '香港',(sign_rate-0.89), 
 			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '台湾',(sign_rate-0.86), 
 			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '香港',(sign_rate-0.88), NULL)))))) AS 预测影响,
-			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '台湾',0.81,
+			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '台湾',0.825,
 			                    IF(s.团队 = '神龙家族-港澳台' AND s.币种 = '香港',0.89,
-			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '台湾',0.86,
+			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '台湾',0.87,
 			                    IF(s.团队 = '火凤凰-港澳台' AND s.币种 = '香港',0.89, 
 			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '台湾',0.86, 
 			                    IF(s.团队 = '神龙-运营1组' AND s.币种 = '香港',0.88, NULL)))))) AS 目标签收率
@@ -8438,10 +8438,10 @@ if __name__ == '__main__':
     write = '本期'
     m.readFormHost(team, write, last_time)                            # 更新签收表---港澳台（一）
 
-    # m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
-    # m.qsb_new(team, month_old)                                    # 获取-每日-报表
-    # m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收表
-    # m.phone_report()                                        # 获取电话核实日报表 周报表
+    m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
+    m.qsb_new(team, month_old)                                    # 获取-每日-报表
+    m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收表
+    m.phone_report()                                        # 获取电话核实日报表 周报表
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id
     # m.address_repot(team, month_last, month_yesterday)                       #  获取-地区签收率-报表
