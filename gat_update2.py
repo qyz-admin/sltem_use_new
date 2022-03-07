@@ -8432,7 +8432,7 @@ if __name__ == '__main__':
     else:
         month_last = '2022-01-01'
         month_old = '2022-01-01'        # 获取-每日-报表 开始的时间
-        month_yesterday = '2022-02-28'
+        month_yesterday = '2022-03-07'
 
     last_time = '2021-01-01'
     write = '本期'

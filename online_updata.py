@@ -134,8 +134,8 @@ class QueryTwo(Settings, Settings_sso):
             day = begin + datetime.timedelta(days=i + 1)
             day = day.strftime('%Y-%m-%d')
             print('正在获取 ' + day + ' 号订单信息…………')
-            # sql = '''SELECT id,`运单编号`  FROM gat_order_list sl WHERE sl.`日期` = '{0}' AND sl.运单编号 IS NOT NULL;'''.format(day)
-            sql = '''SELECT id,`运单编号`  FROM gat_order_list sl WHERE sl.`下单时间` BETWEEN  '2022-02-03 09:00:00' AND '2022-02-03 09:30:00' AND sl.运单编号 IS NOT NULL;'''.format(day)
+            sql = '''SELECT id,`运单编号`  FROM gat_order_list sl WHERE sl.`日期` = '{0}' AND sl.运单编号 IS NOT NULL;'''.format(day)
+            # sql = '''SELECT id,`运单编号`  FROM gat_order_list sl WHERE sl.`下单时间` BETWEEN  '2022-02-03 09:00:00' AND '2022-02-03 09:30:00' AND sl.运单编号 IS NOT NULL;'''.format(day)
             ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
             if ordersDict.empty:
                 print('无需要更新订单信息！！！')
@@ -178,14 +178,14 @@ class QueryTwo(Settings, Settings_sso):
         ordersDict = []
         try:
             if req['data']['list'] == []:
-                print(req['data']['list'])
+                # print(req['data']['list'])
                 return None
             else:
                 for result in req['data']['list']:
                     for res in result['list']:
                         res['orderNumber'] = result['order_number']
                         res['wayBillNumber'] = result['track_no']
-                        print(res)
+                        # print(res)
                         ordersDict.append(res)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
@@ -259,6 +259,7 @@ class QueryTwo(Settings, Settings_sso):
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
         ordersDict = []
+        val = {}
         try:
             if req['data']['list'] == []:
                 print(req['data']['list'])
@@ -267,19 +268,39 @@ class QueryTwo(Settings, Settings_sso):
                 for result in req['data']['list']:
                     print(result)
                     print(11)
+
                     k = 0
+                    t = 0
+                    g = 0
+                    val['订单编号'] = result['order_number']
+                    val['运单编号'] = result['track_no']
                     for res in result['list']:
-                        res['订单编号'] = result['order_number']
-                        res['运单编号'] = result['track_no']
-                        if '貨件已抵達土城營業所，貨件整理中' in res or '貨件已抵達土城營業所，貨件整理中' in res:
-                            res['上线时间'] = result['track_date']
-                        if '配送中' in res:
-                            k= k + 1
-                            while k > 0:
-                                res[str(k) +'派'] = result['track_date']
+
                         print(res)
-                        print(22)
-                        ordersDict.append(res)
+                        if '貨件已抵達土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達桃園營業所，貨件整理中' in res['track_info']:      # 新竹
+                            val['上线时间'] = res['track_date']
+                        if '配送中' in res['track_info']:
+                            k = k + 1
+                            val[str(k) +'派'] = res['track_date']
+
+                        if '結轉物流中心' in res['track_info']:         # 7-11 
+                            val['上线时间'] = res['track_date']
+                        if '门市配达' in res['track_info']:
+                            val[str(k) +'派'] = res['track_date']
+
+                        if '項目營業部' in res['track_info']:         # 顺丰
+                            val['上线时间'] = res['track_date']
+                        if '正在派件' in res['track_info'] or '快件已' in res['track_info'] or '快件代' in res['track_info'] or '快件派送' in res['track_info']:
+                            val[str(k) +'派'] = res['track_date']
+
+                        if '快件到达 【香港青衣中轉場】' in res['track_info']:         # 立邦
+                            while t == 0:
+                                t= t + 1
+                                val['上线时间'] = res['track_date']
+                        if '正在派送途中' in res['track_info']:
+                            g = g + 1
+                            val[str(g) +'派'] = res['track_date']
+                    ordersDict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
         data = pd.json_normalize(ordersDict)
@@ -310,14 +331,14 @@ if __name__ == '__main__':
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     '''
-    select = 22
+    select = 2
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         m.readFormHost()       # 导入；，更新--->>数据更新切换
     elif int(select) == 2:
         print("2-->>> 正在按时间查询+++")
-        m.order_online('2022-02-02', '2022-02-03')
+        m.order_online('2022-01-01', '2022-01-05')
 
-    m._order_bind_status('7449201841')
+    # m._order_bind_status('7449201841')
 
     print('查询耗时：', datetime.datetime.now() - start)

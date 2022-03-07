@@ -88,9 +88,13 @@ class QueryTwo(Settings, Settings_sso):
                     db = None
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                     print(db.columns)
+                    # db = db[['订单编号']]
                     columns_value = list(db.columns)                             # 获取数据的标题名，转为列表
                     if '订单号' in columns_value:
                         db.rename(columns={'订单号': '订单编号'}, inplace=True)
+                        # db = db[['订单号']]
+                    # if '订单编号' in column_val:
+                    #     db = db[['订单编号']]
                     for column_val in columns_value:
                         if '订单编号' != column_val:
                             db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表

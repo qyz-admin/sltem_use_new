@@ -218,6 +218,7 @@ class QueryTwo(Settings, Settings_sso):
                     productId = list(db['产品id'])
                     print(productId[0])
                     df = self.orderInfoQuery(productId[0])
+                    print(df)
                     dlist = []
                     for proId in productId[1:]:
                         data = self.orderInfoQuery(proId)
