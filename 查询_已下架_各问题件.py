@@ -1259,7 +1259,7 @@ if __name__ == '__main__':
         timeStart, timeEnd = m.readInfo('派送问题件')
         m.order_js_Query(timeStart, timeEnd)                        # 查询更新-派送问题件
 
-    elif int(select) == 99:
+    elif int(select) == 909:
         timeStart, timeEnd = m.readInfo('物流问题件')
         m.waybill_InfoQuery('2021-12-01', '2021-12-01')             # 查询更新-物流问题件
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件

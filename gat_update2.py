@@ -307,14 +307,6 @@ class QueryUpdate(Settings):
             new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\{} {} 更新-签收表.xlsx'.format(today,match[team])
             shutil.copyfile(old_path, new_path)     # copy到指定位置
             print('----已写入excel; 并复制到指定文件夹中')
-        print('正在写入' + match[team] + ' 全部签收表中…………')
-        sql = 'REPLACE INTO {0}_zqsb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        sql = '''DELETE FROM gat_zqsb gz 
-                 WHERE gz.`系统订单状态` = '已转采购' and gz.`是否改派` = '改派'
-                   and gz.`审核时间` >= '{0} 00:00:00' AND gz.`日期` >= '{1}';'''.format(month_yesterday, month_last)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        print('已清除不参与计算的今日改派订单…………')
 
         print('*******正在查询改派未发货订单…………')
         sql = '''SELECT *
@@ -332,7 +324,17 @@ class QueryUpdate(Settings):
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df = df.loc[df["币种"] == "台币"]
         df.to_excel('F:\\神龙签收率\\(未发货) 改派-物流\\{} 改派未发货.xlsx'.format(today), sheet_name='台湾', index=False)
+
+        print('正在写入' + match[team] + ' 全部签收表中…………')
+        sql = 'REPLACE INTO {0}_zqsb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        sql = '''DELETE FROM gat_zqsb gz 
+                 WHERE gz.`系统订单状态` = '已转采购' and gz.`是否改派` = '改派'
+                   and gz.`审核时间` >= '{0} 00:00:00' AND gz.`日期` >= '{1}';'''.format(month_yesterday, month_last)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        print('已清除不参与计算的今日改派订单…………')
         print('******----已写入excel******')
+
 
     # 导出总的签收表---各家族-港澳台(三)
     def EportOrderBook(self, team, month_last, month_yesterday):
@@ -395,7 +397,7 @@ class QueryUpdate(Settings):
         week: datetime = datetime.datetime.now()
         if week.isoweekday() == 2 or week.isoweekday() == 4:
             time_path: datetime = datetime.datetime.now()
-            mkpath = "F:\\神龙签收率\\预估签收率\\" + time_path.strftime('%m.%d')
+            mkpath = "F:\\神龙签收率\\A预估签收率\\" + time_path.strftime('%m.%d')
             isExists = os.path.exists(mkpath)
             if not isExists:
                 os.makedirs(mkpath)
@@ -477,6 +479,75 @@ class QueryUpdate(Settings):
             print('运行成功…………')
         else:
             print('今日无需获取预估签收率的数据！！！')
+
+        print('正在获取同产品各团队对比的数据......')
+        week: datetime = datetime.datetime.now()
+        if week.isoweekday() == 2:
+            time_path: datetime = datetime.datetime.now()
+            mkpath = "F:\\神龙签收率\\A同产品各团队对比\\" + time_path.strftime('%m.%d')
+            isExists = os.path.exists(mkpath)
+            if not isExists:
+                os.makedirs(mkpath)
+            else:
+                print(mkpath + ' 目录已存在')
+            file_path = mkpath + '\\{} 同产品各团队的对比_使用版.xlsx'.format(time_path.strftime('%m.%d'))
+            sql = '''SELECT *
+					FROM(SELECT	IFNULL(月份, '总计') 月份, IFNULL(地区, '总计') 地区, IFNULL(产品id, '总计') 产品id, IFNULL(产品名称, '总计') 产品名称,
+							SUM(神龙单量) 神龙单量, 
+                                concat(ROUND(SUM(神龙签收) / SUM(神龙总量) * 100,2),'%') as 神龙总计签收,
+                                concat(ROUND(SUM(神龙完成) / SUM(神龙总量) * 100,2),'%') as 神龙完成占比,					
+							SUM(火凤凰单量) 火凤凰单量, 
+                                concat(ROUND(SUM(火凤凰签收) / SUM(火凤凰总量) * 100,2),'%') as 火凤凰总计签收,
+                                concat(ROUND(SUM(火凤凰完成) / SUM(火凤凰总量) * 100,2),'%') as 火凤凰完成占比,					
+							SUM(神龙运营单量) 神龙运营单量, 
+                                concat(ROUND(SUM(神龙运营签收) / SUM(神龙运营总量) * 100,2),'%') as 神龙运营总计签收,
+                                concat(ROUND(SUM(神龙运营完成) / SUM(神龙运营总量) * 100,2),'%') as 神龙运营完成占比					
+                        FROM(SELECT 年月 月份,币种 地区, 产品id, 产品名称,
+                                    SUM(IF(家族 = '神龙',1,0)) as 神龙单量,
+									SUM(IF(家族 = '神龙',价格,0)) as 神龙总量,
+                                    SUM(IF(家族 = '神龙' AND 最终状态 = "已签收",价格,0)) as 神龙签收,
+                                    SUM(IF(家族 = '神龙' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 神龙完成,
+                                    SUM(IF(家族 = '火凤凰',1,0)) as 火凤凰单量,
+									SUM(IF(家族 = '火凤凰',价格,0)) as 火凤凰总量,
+                                    SUM(IF(家族 = '火凤凰' AND 最终状态 = "已签收",价格,0)) as 火凤凰签收,
+                                    SUM(IF(家族 = '火凤凰' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 火凤凰完成,
+                                    SUM(IF(家族 = '神龙-运营1组',1,0)) as 神龙运营单量,
+									SUM(IF(家族 = '神龙-运营1组',价格,0)) as 神龙运营总量,
+                                    SUM(IF(家族 = '神龙-运营1组' AND 最终状态 = "已签收",价格,0)) as 神龙运营签收,
+                                    SUM(IF(家族 = '神龙-运营1组' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 神龙运营完成,
+                                    SUM(IF(家族 = '小虎队',1,0)) as 小虎队单量,
+									SUM(IF(家族 = '小虎队',价格,0)) as 小虎队总量,
+                                    SUM(IF(家族 = '小虎队' AND 最终状态 = "已签收",价格,0)) as 小虎队签收,
+                                    SUM(IF(家族 = '小虎队' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 小虎队完成
+                            FROM gat_zqsb_cache cc
+							WHERE cc.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m')
+							GROUP BY cc.年月,cc.币种,cc.产品id
+						) s
+					GROUP BY 月份,地区,产品id		
+--                   WITH ROLLUP 
+					) ss
+                   ORDER BY FIELD(月份,DATE_FORMAT(CURDATE(),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 2 MONTH),'%Y%m'),'总计'),
+                            FIELD(地区,'台湾','香港','总计'),
+                            神龙单量 DESC;'''
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            df.to_excel(file_path, sheet_name='使用', index=False)
+            print('输出成功…………')
+            try:
+                print('正在运行 同产品各团队对比 表宏…………')
+                app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
+                app.display_alerts = False
+                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+                wbsht1 = app.books.open(file_path)
+                wbsht.macro('同产品各团队对比_使用版')()
+                wbsht1.save()
+                wbsht1.close()
+                wbsht.close()
+                app.quit()
+            except Exception as e:
+                print('运行失败：', str(Exception) + str(e))
+            print('运行成功…………')
+        else:
+            print('今日无需获取 同产品各团队对比 的数据！！！')
 
     # 新版签收率-报表(自己看的) - 单量计算
     def gat_new(self, team, month_last, month_yesterday):  # 报表各团队近两个月的物流数据
@@ -8424,7 +8495,7 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    if team == 'ga9t':
+    if team == 'gat':
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
