@@ -25,7 +25,7 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
 '''
 # 初始化时间设置
 updata = '全部'           #  后台获取全部（两月）、部分更新（近五天）
-if team in ('ga9t', 'slsc', 'sl_r9b'):
+if team in ('ga99t', 'slsc', 'sl_r9b'):
     # 更新时间
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
@@ -40,8 +40,8 @@ if team in ('ga9t', 'slsc', 'sl_r9b'):
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    begin = datetime.date(2022, 1, 1)
-    end = datetime.date(2022, 3, 8)
+    begin = datetime.date(2022, 2, 12)
+    end = datetime.date(2022, 2, 13)
     # 导出时间
     month_last = '2022-01-01'
     month_yesterday = '2022-03-08'

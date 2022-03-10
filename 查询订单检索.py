@@ -570,8 +570,8 @@ if __name__ == '__main__':
         m.readFormHost(team, searchType)        # 导入；，更新--->>数据更新切换
     elif int(select) == 2:
         print("2-->>> 正在按时间查询+++")
-        timeStart = '2021-11-18'
-        timeEnd = '2021-11-19'
+        timeStart = '2022-02-01'
+        timeEnd = '2022-02-28'
         m.order_TimeQuery(timeStart, timeEnd)
 
     print('查询耗时：', datetime.datetime.now() - start)

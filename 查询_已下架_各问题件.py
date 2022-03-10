@@ -496,7 +496,7 @@ class QueryTwo(Settings, Settings_sso):
                             result['result_info'] = rec.split()[2]        # 客诉原因
                         if len(rec.split()) > 1:
                             result['result_content'] = rec.split()[1]     # 处理内容
-                        result['dealContent'] = rec.split()[0]            # 最新处理结果
+                        result['dealContent'] = zhconv.convert(rec.split()[0], 'zh-hans')          # 最新处理结果
 
                         rec_name = record.split("#处理结果：")[0]
                         if '赠品' in rec.split()[0] or '退款' in rec.split()[0] or '补发' in rec.split()[0] or '换货' in rec.split()[0]:                    # 筛选无用的通话记录
@@ -524,7 +524,10 @@ class QueryTwo(Settings, Settings_sso):
                     if result['traceRecord'] != '' or result['traceRecord'] != []:
                         result['deal_time'] = result['traceRecord'].split()[0]
                     if result['traceUserName'] != '' or result['traceUserName'] != []:
-                        result['traceUserName'] = result['traceUserName'].replace('客服：', '')
+                        if '赠品' in result['traceRecord'] or '退款' in result['traceRecord'] or '补发' in result['traceRecord'] or '换货' in result['traceRecord']:
+                            result['traceUserName'] = result['traceUserName'].replace('客服：', '')
+                        else:
+                            result['traceUserName'] = ''
                     result['dealContent'] = result['dealContent'].strip()
                     ordersDict.append(result.copy())
         except Exception as e:
@@ -557,7 +560,7 @@ class QueryTwo(Settings, Settings_sso):
         sql = '''REPLACE INTO 物流客诉件(处理时间,物流反馈时间,处理人,订单编号,处理方案, 处理结果, 客诉原因, 赠品补发订单编号,币种, 记录时间) 
                 SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,最新处理结果 AS 处理方案, 处理内容 AS 处理结果, 客诉原因, 赠品补发订单编号, 币种, NOW() 记录时间 
                 FROM customer;'''
-        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('写入成功......')
         print('*' * 50)
     def _waybill_Query(self, timeStart, timeEnd, n):  # 进入物流客诉件界面
@@ -622,7 +625,10 @@ class QueryTwo(Settings, Settings_sso):
                     if result['traceRecord'] != '' or result['traceRecord'] != []:
                         result['deal_time'] = result['traceRecord'].split()[0]
                     if result['traceUserName'] != '' or result['traceUserName'] != []:
-                        result['traceUserName'] = result['traceUserName'].replace('客服：', '')
+                        if '赠品' in result['traceRecord'] or '退款' in result['traceRecord'] or '补发' in result['traceRecord'] or '换货' in result['traceRecord']:
+                            result['traceUserName'] = result['traceUserName'].replace('客服：', '')
+                        else:
+                            result['traceUserName'] = ''
                     result['dealContent'] = result['dealContent'].strip()
                     ordersDict.append(result.copy())
         except Exception as e:
@@ -1011,12 +1017,12 @@ class QueryTwo(Settings, Settings_sso):
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             df.to_excel('F:\\神龙签收率\\(订   单) 拒收原因-核实\\(上传)订单客户反馈-核实原因 & 再次克隆下单汇总\\{} 需核实拒收-每日上传 - 副本.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
 
-            df = df[['订单编号', '核实原因', '具体原因', '产品id']]
-            df.columns = ['订单编号', '客户反馈', '具体原因', '产品ID']
-            df.insert(2, '反馈类型', '拒收')
-            df.insert(3, '仓库问题', '否')
-            df = df.loc[df["客户反馈"] != "未联系上客户"]
-            df.to_excel('F:\\神龙签收率\\(订   单) 拒收原因-核实\\(上传)订单客户反馈-核实原因 & 再次克隆下单汇总\\{} 台湾 - 订单客户反馈(上传).xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            # df = df[['订单编号', '核实原因', '具体原因', '产品id']]
+            # df.columns = ['订单编号', '客户反馈', '具体原因', '产品ID']
+            # df.insert(2, '反馈类型', '拒收')
+            # df.insert(3, '仓库问题', '否')
+            # df = df.loc[df["客户反馈"] != "未联系上客户"]
+            # df.to_excel('F:\\神龙签收率\\(订   单) 拒收原因-核实\\(上传)订单客户反馈-核实原因 & 再次克隆下单汇总\\{} 台湾 - 订单客户反馈(上传).xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             print('获取写入成功......')
         else:
             print('****** 没有信息！！！')
@@ -1257,9 +1263,9 @@ if __name__ == '__main__':
         m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))  # 查询更新-采购问题件（一、简单查询）
     elif int(select) == 4:
         timeStart, timeEnd = m.readInfo('派送问题件')
-        m.order_js_Query(timeStart, timeEnd)                        # 查询更新-派送问题件
+        m.waybill_deliveryList(timeStart, timeEnd)                        # 查询更新-派送问题件
 
-    elif int(select) == 909:
+    elif int(select) == 99:
         timeStart, timeEnd = m.readInfo('物流问题件')
         m.waybill_InfoQuery('2021-12-01', '2021-12-01')             # 查询更新-物流问题件
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
@@ -1275,7 +1281,7 @@ if __name__ == '__main__':
         m.order_js_Query(timeStart, timeEnd)                        # 查询更新-拒收问题件
 
         timeStart, timeEnd = m.readInfo('派送问题件')
-        m.order_js_Query(timeStart, timeEnd)                        # 查询更新-派送问题件
+        m.waybill_deliveryList(timeStart, timeEnd)                        # 查询更新-派送问题件
 
         timeStart, timeEnd = m.readInfo('采购异常')
         m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
@@ -1300,7 +1306,11 @@ if __name__ == '__main__':
         m.my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
         m.my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
 
+
+
+    '''
     # -----------------------------------------------测试部分-----------------------------------------
+    '''
     # timeStart, timeEnd = m.readInfo('物流问题件')
 
     # m.waybill_InfoQuery('2021-12-01', '2022-01-12')         # 查询更新-物流问题件
@@ -1308,7 +1318,7 @@ if __name__ == '__main__':
     # timeStart, timeEnd = m.readInfo('派送问题件')
     # m.waybill_deliveryList(timeStart, timeEnd)         # 查询更新-派送问题件
 
-    # m.waybill_Query('2022-02-26', '2022-02-26')              # 查询更新-物流客诉件
+    # m.waybill_Query('2022-03-04', '2022-03-04')              # 查询更新-物流客诉件
 
     # timeStart, timeEnd = m.readInfo('采购异常')
     # m.ssale_Query('2022-02-28', '2022-03-01')                    # 查询更新-采购问题件（一、简单查询）

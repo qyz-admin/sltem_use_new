@@ -715,7 +715,7 @@ class SltemMonitoring(Settings):
         wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
         wbsht1 = app.books.open(filePath)
         if ready == '本期宏':
-            wbsht.macro('sl_总监控运行3')()
+            wbsht.macro('sl_总监控运行')()
         else:
             wbsht.macro('sl_总监控运行3')()
         wbsht1.save()
@@ -800,8 +800,8 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2022.02.08'
-    now_month = '2022.03.08'
+    last_month = '2022.02.10'
+    now_month = '2022.03.10'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传

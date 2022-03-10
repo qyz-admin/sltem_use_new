@@ -1295,7 +1295,8 @@ class QueryTwo(Settings):
             				    h.orderNumber 订单编号,
             				    h.quantity 数量,
             				    h.`shipInfo.shipPhone` 电话号码,
-            				    h.wayBillNumber 运单编号,
+            				    UPPER(h.wayBillNumber) 运单编号,
+            				    IF(h.logisticsName LIKE "台湾-天马-711" AND LENGTH(h.wayBillNumber)=20, CONCAT(861,RIGHT(h.wayBillNumber,8)), UPPER(h.wayBillNumber)) 查件单号,
             				    h.orderStatus 系统订单状态,
             				    IF(h.`logisticsStatus` in ('发货中'), null, h.`logisticsStatus`) 系统物流状态,
             				    IF(h.`reassignmentTypeName` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
@@ -1335,6 +1336,7 @@ class QueryTwo(Settings):
                                 a.`数量`= b.`数量`,
                                 a.`电话号码`= b.`电话号码` ,
                                 a.`运单编号`= IF(b.`运单编号` = '', NULL, b.`运单编号`),
+                                a.`查件单号`= IF(b.`查件单号` = '', NULL, b.`查件单号`),
                                 a.`系统订单状态`= IF(b.`系统订单状态` = '', NULL, b.`系统订单状态`),
                                 a.`系统物流状态`= IF(b.`系统物流状态` = '', NULL, b.`系统物流状态`),
                                 a.`是否改派`= b.`是否改派`,
@@ -1360,7 +1362,7 @@ class QueryTwo(Settings):
                                 a.`克隆人`= IF(b.`克隆人` = '', NULL,  b.`克隆人`),
                                 a.`选品人`= IF(b.`选品人` = '', NULL,  b.`选品人`)
                     where a.`订单编号`=b.`订单编号`;'''.format('gat_order_list')
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('*************************本批次更新成功***********************************')
@@ -1625,6 +1627,8 @@ if __name__ == '__main__':
             # m.orderInfo_th(searchType, team, team2, last_month, now_month)
             break
 
-    m.orderInfoQuery('NR112151454534728', '订单号', 'gat_order_list', 'gat_order_list')  # 进入订单检索界面
+    # m.orderInfoQuery('NR112151454534728', '订单号', 'gat_order_list', 'gat_order_list')  # 进入订单检索界面
+
+    m.orderInfoQuery('GT203090849067593')  # 进入订单检索界面
 
     # print('更新耗时：', datetime.datetime.now() - start)

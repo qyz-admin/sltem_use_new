@@ -64,7 +64,7 @@ class QueryTwo(Settings, Settings_sso):
                                                                                     self.mysql2['port'],
                                                                                     self.mysql2['datebase']))
     # 获取签收表内容
-    def readFormHost(self):
+    def readFormHost(self, isReal):
         start = datetime.datetime.now()
         path = r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表'
         dirs = os.listdir(path=path)
@@ -73,10 +73,10 @@ class QueryTwo(Settings, Settings_sso):
             filePath = os.path.join(path, dir)
             if dir[:2] != '~$':
                 print(filePath)
-                self.wbsheetHost(filePath)
+                self.wbsheetHost(filePath, isReal)
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
-    def wbsheetHost(self, filePath):
+    def wbsheetHost(self, filePath, isReal):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
         app.display_alerts = False
@@ -94,14 +94,14 @@ class QueryTwo(Settings, Settings_sso):
                     print(db)
                     print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
                     # 将获取到的运单号 查询轨迹
-                    self.Search_online(db)
+                    self.Search_online(db, isReal)
                 else:
                     print('----------数据为空,查询失败：' + sht.name)
             wb.close()
         app.quit()
 
     #  查询运单轨迹-按订单查询（一）
-    def Search_online(self, db):
+    def Search_online(self, db, isReal):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         orderId = list(db['运单编号'])
         print(orderId)
@@ -111,7 +111,7 @@ class QueryTwo(Settings, Settings_sso):
             dlist = []
             for ord in orderId:
                 print(ord)
-                data = self._order_online(ord)
+                data = self._order_online(ord, isReal)
                 if data is not None and len(data) > 0:
                     dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
@@ -124,7 +124,7 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
 
     #  查询运单轨迹-按时间查询（二）
-    def order_online(self, timeStart, timeEnd):  # 进入运单轨迹界面
+    def order_online(self, timeStart, timeEnd, isReal):  # 进入运单轨迹界面
         # print('正在获取需要订单信息......')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         start = datetime.datetime.now()
@@ -148,7 +148,7 @@ class QueryTwo(Settings, Settings_sso):
                 dlist = []
                 for ord in orderId:
                     print(ord)
-                    data = self._order_online(ord)
+                    data = self._order_online(ord, isReal)
                     if data is not None and len(data) > 0:
                         dlist.append(data)
                 dp = df.append(dlist, ignore_index=True)
@@ -156,7 +156,7 @@ class QueryTwo(Settings, Settings_sso):
         print('++++++查询成功+++++++')
         print('查询耗时：', datetime.datetime.now() - start)
         print('*' * 50)
-    def _order_online(self, ord):  # 进入订单检索界面
+    def _order_online(self, ord, isReal):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getLogisticsTrace'
@@ -165,7 +165,7 @@ class QueryTwo(Settings, Settings_sso):
                     'Referer': 'https://gimp.giikin.com/front/logisticsTrajectory'}
         data = {'numbers': ord,
                 'searchType': 1,
-                'isReal': 1
+                'isReal': isReal
                 }
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
@@ -385,14 +385,16 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 
     '''
-    select = 22
+    isReal = 0
+    select = 1
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
-        m.readFormHost()       # 导入；，更新--->>数据更新切换
+        m.readFormHost(isReal)       # 导入；，更新--->>数据更新切换
     elif int(select) == 2:
         print("2-->>> 正在按时间查询+++")
-        m.order_online('2022-01-01', '2022-01-05')
+        m.order_online('2022-01-01', '2022-01-05', isReal)
 
     m.order_bind_status('2022-01-01', '2022-01-02')
 

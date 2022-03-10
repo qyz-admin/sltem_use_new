@@ -274,9 +274,9 @@ class MysqlControl(Settings):
             print(end)
         else:
             # 11-12月的
-            begin = datetime.date(2022, 1, 1)
+            begin = datetime.date(2022, 2, 12)
             print(begin)
-            end = datetime.date(2022, 2, 22)
+            end = datetime.date(2022, 2, 13)
             print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -414,6 +414,7 @@ class MysqlControl(Settings):
                             a.qty 数量,
                             a.ship_phone 电话号码,
                             UPPER(a.waybill_number) 运单编号,
+                            IF(dim_trans_way.all_name LIKE "台湾-天马-711" AND LENGTH(a.waybill_number)=20, CONCAT(861,RIGHT(a.waybill_number,8)), UPPER(a.waybill_number)) 查件单号,
                             a.order_status 系统订单状态id,
                             IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
                             IF(a.second=0,'直发','改派') 是否改派,
@@ -617,6 +618,7 @@ class MysqlControl(Settings):
                                             a.qty 数量,
                                             a.ship_phone 电话号码,
                                             UPPER(a.waybill_number) 运单编号,
+                                            IF(dim_trans_way.all_name LIKE "台湾-天马-711" AND LENGTH(a.waybill_number)=20, CONCAT(861,RIGHT(a.waybill_number,8)), UPPER(a.waybill_number)) 查件单号,
                                             a.order_status 系统订单状态id,
                                             IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
                                             IF(a.second=0,'直发','改派') 是否改派,
@@ -677,6 +679,7 @@ class MysqlControl(Settings):
                             a.`数量`=b.`数量`,
 		                    a.`电话号码`=b.`电话号码` ,
 		                    a.`运单编号`=b.`运单编号`,
+		                    a.`查件单号`=b.`查件单号`,
 		                    a.`系统订单状态`=b.`系统订单状态`,
 		                    a.`系统物流状态`=b.`系统物流状态`,
 		                    a.`是否改派`=b.`是否改派`,

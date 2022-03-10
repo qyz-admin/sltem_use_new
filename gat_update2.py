@@ -291,7 +291,7 @@ class QueryUpdate(Settings):
 							FROM {0}_order_list g
 							WHERE g.日期 >= '{2}' AND g.日期 <= '{3}' AND g.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
 						) a
-                        LEFT JOIN gat_wl_data b ON a.`运单编号` = b.`运单编号`
+                        LEFT JOIN gat_wl_data b ON a.`查件单号` = b.`运单编号`
                         LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
                         LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
                         ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
@@ -359,6 +359,26 @@ class QueryUpdate(Settings):
         #     month_yesterday = '2021-10-01'
         print(month_last)
         print(month_yesterday)
+        sql = '''UPDATE d1_gat d
+                        SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', d.`物流方式`) )
+                        WHERE d.`是否改派` ='直发';'''
+        print('正在修改-直发的物流渠道…………')
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        sql = '''UPDATE d1_gat d
+                        SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
+                                        IF(d.`物流方式` LIKE '香港-立邦%','香港-立邦-改派',
+            							IF(d.`物流方式` LIKE '香港-易速配%','香港-易速配-改派',
+            							IF(d.`物流方式` LIKE '台湾-立邦普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-大黄蜂普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-森鸿-新竹%','森鸿',
+            							IF(d.`物流方式` LIKE '台湾-天马-顺丰%','天马顺丰',
+            							IF(d.`物流方式` LIKE '台湾-天马-新竹%' OR d.`物流方式` LIKE '台湾-天马-711%','天马新竹',
+            							IF(d.`物流方式` LIKE '台湾-天马-黑猫%','天马黑猫',
+            							IF(d.`物流方式` LIKE '台湾-易速配-龟山%' OR d.`物流方式` LIKE '台湾-易速配-新竹%' OR d.`物流方式` = '易速配','龟山',
+            							IF(d.`物流方式` LIKE '台湾-速派-新竹%' OR d.`物流方式` LIKE '台湾-速派-711超商%','速派',
+            							IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', d.`物流方式`)))  )  )  )  )  )  )  )
+                        WHERE d.`是否改派` ='改派';'''
+        print('正在修改-改派的物流渠道…………')
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
         print('正在获取---' + match[team] + ' ---全部数据内容…………')
         sql = '''SELECT * FROM {0}_zqsb a WHERE a.日期 >= '{1}' AND a.日期 <= '{2}' ORDER BY a.`下单时间`;'''.format(team, month_last, month_yesterday)     # 港台查询函数导出
         # df = pd.read_sql_query(sql=sql, con=self.engine1)

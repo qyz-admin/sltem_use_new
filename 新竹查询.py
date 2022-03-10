@@ -83,7 +83,7 @@ class QueryTwo(Settings, Settings_sso):
             for sht in wb.sheets:
                 try:
                     db = None
-                    print(sht.name)
+                    # print(sht.name)
                     # db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False, dtype=str).value
                     # db = pd.read_excel(filePath, sheet_name=sht.name, header=1, names=int, index_col=False, dtype=str)
                     db = pd.read_excel(filePath, sheet_name=sht.name)
@@ -93,7 +93,7 @@ class QueryTwo(Settings, Settings_sso):
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
-                    print(db)
+                    # print(db)
                     rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
                     print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
                     # 将获取到的运单号 查询轨迹
