@@ -177,7 +177,7 @@ class QueryTwo(Settings, Settings_sso):
         # print(req)
         ordersDict = []
         try:
-            if req['data']['list'] == []:
+            if req['data']['list'][0]['list'] == []:
                 # print(req['data']['list'])
                 return None
             else:
@@ -396,7 +396,7 @@ if __name__ == '__main__':
         print("2-->>> 正在按时间查询+++")
         m.order_online('2022-01-01', '2022-01-05', isReal)
 
-    m.order_bind_status('2022-01-01', '2022-01-02')
+    # m.order_bind_status('2022-01-01', '2022-01-02')
 
     # m._order_bind_status('7449201841')
 

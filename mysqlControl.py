@@ -283,6 +283,7 @@ class MysqlControl(Settings):
             # print(str(day))
             yesterday = str(day) + ' 23:59:59'
             last_month = str(day)
+            df = None
             if team == 'slsc':
                 sql = '''SELECT a.id,
                                         a.month 年月,
@@ -296,8 +297,10 @@ class MysqlControl(Settings):
                                         a.qty 数量,
                                         a.ship_phone 电话号码,
                                         UPPER(a.waybill_number) 运单编号,
-                                        a.order_status 系统订单状态id,
-                                        IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
+                --                      a.order_status 系统订单状态id,
+                --                      IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
+                                        os.name 系统订单状态,
+                                        ls.name 系统物流状态,
                                         IF(a.second=0,'直发','改派') 是否改派,
                                         dim_trans_way.all_name 物流方式,
                                         dim_trans_way.simple_name 物流名称,
@@ -338,6 +341,8 @@ class MysqlControl(Settings):
                                         left join dim_trans_way ON dim_trans_way.id = a.logistics_id
                                         left join dim_cate ON dim_cate.id = a.third_cate_id
                                         left join dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
+                                        LEFT JOIN dim_order_status os ON os.id = a.order_status
+							            LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
                                 WHERE  a.rq = '{0}' AND a.rq <= '{1}'
                                     AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
                 print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
@@ -355,8 +360,10 @@ class MysqlControl(Settings):
                                             a.qty 数量,
                                             a.ship_phone 电话号码,
                                             UPPER(a.waybill_number) 运单编号,
-                                            a.order_status 系统订单状态id,
-                                            IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
+                --                          a.order_status 系统订单状态id,
+                --                          IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
+                                            os.name 系统订单状态,
+                                            ls.name 系统物流状态,
                                             IF(a.second=0,'直发','改派') 是否改派,
                                             dim_trans_way.all_name 物流方式,
                                             dim_trans_way.simple_name 物流名称,
@@ -397,6 +404,8 @@ class MysqlControl(Settings):
                                             left join dim_trans_way ON dim_trans_way.id = a.logistics_id
                                             left join dim_cate ON dim_cate.id = a.third_cate_id
                                             left join dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
+                                            LEFT JOIN dim_order_status os ON os.id = a.order_status
+							                LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
                                     WHERE  a.rq = '{0}' AND a.rq <= '{1}'
                                         AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
                 print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
@@ -415,8 +424,10 @@ class MysqlControl(Settings):
                             a.ship_phone 电话号码,
                             UPPER(a.waybill_number) 运单编号,
                             IF(dim_trans_way.all_name LIKE "台湾-天马-711" AND LENGTH(a.waybill_number)=20, CONCAT(861,RIGHT(a.waybill_number,8)), UPPER(a.waybill_number)) 查件单号,
-                            a.order_status 系统订单状态id,
-                            IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
+                --            a.order_status 系统订单状态id,
+                --            IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
+                            os.name 系统订单状态,
+                            ls.name 系统物流状态,
                             IF(a.second=0,'直发','改派') 是否改派,
                             dim_trans_way.all_name 物流方式,
                             dim_trans_way.simple_name 物流名称,
@@ -466,26 +477,28 @@ class MysqlControl(Settings):
                             a.ip IP,
                             null 选品人
                     FROM gk_order a
-                            left join dim_area ON dim_area.id = a.area_id
-                            left join dim_payment ON dim_payment.id = a.payment_id
+                            LEFT JOIN dim_area ON dim_area.id = a.area_id
+                            LEFT JOIN dim_payment ON dim_payment.id = a.payment_id
 	                        LEFT JOIN gk_sale ON gk_sale.id = a.sale_id
-                            left join dim_trans_way ON dim_trans_way.id = a.logistics_id
-                            left join dim_cate ON dim_cate.id = a.third_cate_id
-                            left join intervals ON intervals.id = a.intervals
-                            left join dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
+                            LEFT JOIN dim_trans_way ON dim_trans_way.id = a.logistics_id
+                            LEFT JOIN dim_cate ON dim_cate.id = a.third_cate_id
+                            LEFT JOIN intervals ON intervals.id = a.intervals
+                            LEFT JOIN dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
+                            LEFT JOIN dim_order_status os ON os.id = a.order_status
+							LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
                     WHERE  a.rq = '{0}' AND a.rq <= '{1}' AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
                 print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
                 df = pd.read_sql_query(sql=sql, con=self.engine2)
-            sql = 'SELECT * FROM dim_order_status;'
-            df1 = pd.read_sql_query(sql=sql, con=self.engine1)
-            print('+++合并订单状态中…………')
-            df = pd.merge(left=df, right=df1, left_on='系统订单状态id', right_on='id', how='left')
-            sql = 'SELECT * FROM dim_logistics_status;'
-            df1 = pd.read_sql_query(sql=sql, con=self.engine1)
-            print('+++合并物流状态中…………')
-            df = pd.merge(left=df, right=df1, left_on='系统物流状态id', right_on='id', how='left')
-            df = df.drop(labels=['id', 'id_y', '系统订单状态id', '系统物流状态id'], axis=1)
-            df.rename(columns={'id_x': 'id', 'name_x': '系统订单状态', 'name_y': '系统物流状态'}, inplace=True)
+            # sql = 'SELECT * FROM dim_order_status;'
+            # df1 = pd.read_sql_query(sql=sql, con=self.engine1)
+            # print('+++合并订单状态中…………')
+            # df = pd.merge(left=df, right=df1, left_on='系统订单状态id', right_on='id', how='left')
+            # sql = 'SELECT * FROM dim_logistics_status;'
+            # df1 = pd.read_sql_query(sql=sql, con=self.engine1)
+            # print('+++合并物流状态中…………')
+            # df = pd.merge(left=df, right=df1, left_on='系统物流状态id', right_on='id', how='left')
+            # df = df.drop(labels=['id', 'id_y', '系统订单状态id', '系统物流状态id'], axis=1)
+            # df.rename(columns={'id_x': 'id', 'name_x': '系统订单状态', 'name_y': '系统物流状态'}, inplace=True)
             print('++++++正在将 ' + yesterday[8:10] + ' 号订单写入数据库++++++')
             # 这一句会报错,需要修改my.ini文件中的[mysqld]段中的"max_allowed_packet = 1024M"
             try:
@@ -494,7 +507,7 @@ class MysqlControl(Settings):
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             except Exception as e:
                 print('插入失败：', str(Exception) + str(e))
-            print('写入完成…………')
+            print('-' * 25 + '写入完成' + '-' * 25)
         return '写入完成'
 
     def creatMyOrderSlTWO(self, team, begin, end):  # 最近两个月的更新订单信息
@@ -523,6 +536,7 @@ class MysqlControl(Settings):
             # print(str(day))
             yesterday = str(day) + ' 23:59:59'
             last_month = str(day)
+            df = None
             print('正在更新 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单信息…………')
             if team == 'sl_rb':
                 sql = '''SELECT DISTINCT a.id,
@@ -532,8 +546,10 @@ class MysqlControl(Settings):
                                 a.qty 数量,
                                 a.ship_phone 电话号码,
                                 UPPER(a.waybill_number) 运单编号,
-                                a.order_status 系统订单状态id,
-                                IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
+                --              a.order_status 系统订单状态id,
+                --              IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
+                                os.name 系统订单状态,
+                                ls.name 系统物流状态,
                                 IF(a.second=0,'直发','改派') 是否改派,
                                 dim_trans_way.all_name 物流方式,
                                 dim_trans_way.simple_name 物流名称,
@@ -564,6 +580,8 @@ class MysqlControl(Settings):
                                 left join dim_cate on dim_cate.id = a.third_cate_id
                         --      left join intervals on intervals.id = a.intervals
                                 left join dim_currency_lang on dim_currency_lang.id = a.currency_lang_id
+                                LEFT JOIN dim_order_status os ON os.id = a.order_status
+							    LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
                         WHERE a.rq = '{0}' AND a.rq <= '{1}'
                             AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
                 df = pd.read_sql_query(sql=sql, con=self.engine20)
@@ -575,8 +593,10 @@ class MysqlControl(Settings):
                                 a.qty 数量,
                                 a.ship_phone 电话号码,
                                 UPPER(a.waybill_number) 运单编号,
-                                a.order_status 系统订单状态id,
-                                IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
+                --              a.order_status 系统订单状态id,
+                --              IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
+                                os.name 系统订单状态,
+                                ls.name 系统物流状态,
                                 IF(a.second=0,'直发','改派') 是否改派,
                                 dim_trans_way.all_name 物流方式,
                                 dim_trans_way.simple_name 物流名称,
@@ -607,6 +627,8 @@ class MysqlControl(Settings):
                                 left join dim_cate on dim_cate.id = a.third_cate_id
                         --      left join intervals on intervals.id = a.intervals
                                 left join dim_currency_lang on dim_currency_lang.id = a.currency_lang_id
+                                LEFT JOIN dim_order_status os ON os.id = a.order_status
+							    LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
                         WHERE a.rq = '{0}' AND a.rq <= '{1}'
                             AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
                 df = pd.read_sql_query(sql=sql, con=self.engine4)
@@ -619,8 +641,10 @@ class MysqlControl(Settings):
                                             a.ship_phone 电话号码,
                                             UPPER(a.waybill_number) 运单编号,
                                             IF(dim_trans_way.all_name LIKE "台湾-天马-711" AND LENGTH(a.waybill_number)=20, CONCAT(861,RIGHT(a.waybill_number,8)), UPPER(a.waybill_number)) 查件单号,
-                                            a.order_status 系统订单状态id,
-                                            IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
+                --                          a.order_status 系统订单状态id,
+                --                          IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
+                                            os.name 系统订单状态,
+                                            ls.name 系统物流状态,
                                             IF(a.second=0,'直发','改派') 是否改派,
                                             dim_trans_way.all_name 物流方式,
                                             dim_trans_way.simple_name 物流名称,
@@ -657,18 +681,20 @@ class MysqlControl(Settings):
                                             left join dim_cate ON dim_cate.id = a.third_cate_id
                                             left join intervals ON intervals.id = a.intervals
                                             left join dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
+                                            LEFT JOIN dim_order_status os ON os.id = a.order_status
+							                LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
                                     WHERE  a.rq = '{0}' AND a.rq <= '{1}' AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
                 df = pd.read_sql_query(sql=sql, con=self.engine2)
-            sql = 'SELECT * FROM dim_order_status;'
-            df1 = pd.read_sql_query(sql=sql, con=self.engine1)
-            print('++++更新订单状态中…………')
-            df = pd.merge(left=df, right=df1, left_on='系统订单状态id', right_on='id', how='left')
-            sql = 'SELECT * FROM dim_logistics_status;'
-            df1 = pd.read_sql_query(sql=sql, con=self.engine1)
-            print('++++更新物流状态中…………')
-            df = pd.merge(left=df, right=df1, left_on='系统物流状态id', right_on='id', how='left')
-            df = df.drop(labels=['id', 'id_y', '系统订单状态id', '系统物流状态id'], axis=1)
-            df.rename(columns={'id_x': 'id', 'name_x': '系统订单状态', 'name_y': '系统物流状态'}, inplace=True)
+            # sql = 'SELECT * FROM dim_order_status;'
+            # df1 = pd.read_sql_query(sql=sql, con=self.engine1)
+            # print('++++更新订单状态中…………')
+            # df = pd.merge(left=df, right=df1, left_on='系统订单状态id', right_on='id', how='left')
+            # sql = 'SELECT * FROM dim_logistics_status;'
+            # df1 = pd.read_sql_query(sql=sql, con=self.engine1)
+            # print('++++更新物流状态中…………')
+            # df = pd.merge(left=df, right=df1, left_on='系统物流状态id', right_on='id', how='left')
+            # df = df.drop(labels=['id', 'id_y', '系统订单状态id', '系统物流状态id'], axis=1)
+            # df.rename(columns={'id_x': 'id', 'name_x': '系统订单状态', 'name_y': '系统物流状态'}, inplace=True)
             print('+++++++正在将 ' + yesterday[8:10] + ' 号订单更新到数据库++++++')
             # 这一句会报错,需要修改my.ini文件中的[mysqld]段中的"max_allowed_packet = 1024M"
             df.to_sql('sl_order2', con=self.engine1, index=False, if_exists='replace')
@@ -733,7 +759,7 @@ class MysqlControl(Settings):
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             except Exception as e:
                 print('插入失败：', str(Exception) + str(e))
-            print('----更新完成----')
+            print('-' * 25 + '更新完成' + '-' * 25)
         return '更新完成'
 
     def connectOrder(self, team, month_last, month_yesterday, month_begin):

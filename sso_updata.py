@@ -1286,7 +1286,7 @@ class QueryTwo(Settings):
             df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId',
                        'spec', 'quantity', 'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime',
                        'finishTime', 'stateTime', 'logisticsUpdateTime', 'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType',
-                       'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser']]
+                       'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks']]
             print(df)
             # print('正在更新临时表中......')
             df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
@@ -1323,7 +1323,8 @@ class QueryTwo(Settings):
             				    h.`questionTime` 问题时间,
             				    h.`service` 下单人,
             				    h.`cloneUser` 克隆人,
-            				    h.`chooser` 选品人
+            				    h.`chooser` 选品人,
+            				    h.`logisticsRemarks` 物流状态注释
                             FROM d1_cpy h
                                 LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
                                 LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
