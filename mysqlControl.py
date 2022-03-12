@@ -507,7 +507,7 @@ class MysqlControl(Settings):
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             except Exception as e:
                 print('插入失败：', str(Exception) + str(e))
-            print('-' * 25 + '写入完成' + '-' * 25)
+            print('-' * 20 + '写入完成' + '-' * 20)
         return '写入完成'
 
     def creatMyOrderSlTWO(self, team, begin, end):  # 最近两个月的更新订单信息
@@ -759,7 +759,7 @@ class MysqlControl(Settings):
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             except Exception as e:
                 print('插入失败：', str(Exception) + str(e))
-            print('-' * 25 + '更新完成' + '-' * 25)
+            print('-' * 20 + '更新完成' + '-' * 20)
         return '更新完成'
 
     def connectOrder(self, team, month_last, month_yesterday, month_begin):

@@ -446,13 +446,13 @@ class QueryUpdate(Settings):
 
         print('正在获取 上月产品前十（总） 信息…………')
         sql1 = '''SELECT *
-				FROM (
-				    (SELECT *,concat(ROUND(IF(已处理数量 = 0,NULL,已处理数量)  / 工单数量 * 100,2),'%') as 处理占比
-				    FROM (SELECT ss.年月, ss.币种, ss.团队, CONCAT(ss.产品id,'#',ss.产品名称) as  产品信息,
+                FROM (
+                    (SELECT *,concat(ROUND(IF(已处理数量 = 0,NULL,已处理数量)  / 工单数量 * 100,2),'%') as 处理占比
+                    FROM (SELECT ss.年月, ss.币种, ss.团队, CONCAT(ss.产品id,'#',ss.产品名称) as  产品信息,
                                 IF(ss.商品数量 = 0,NULL,ss.商品数量) as 商品数量,
                                 IF(换货数量 = 0,NULL,换货数量) as 换货数量,
                                 IF(退货数量 = 0,NULL,退货数量) as 退货数量,
-						        IF((IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量)) = 0,NULL,(IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量))) as 已处理数量,
+                                IF((IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量)) = 0,NULL,(IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量))) as 已处理数量,
                                 IF(工单数量 = 0,NULL,工单数量) as 工单数量				
                         FROM product_info ss
                     LEFT JOIN
@@ -476,15 +476,15 @@ class QueryUpdate(Settings):
                         WHERE ss.团队 = '合计'
                         GROUP BY ss.年月,ss.币种,ss.团队,ss.产品id
                         ORDER BY ss.年月,ss.币种,工单数量 DESC
-				    ) s
-				)
-				UNION all
-				(SELECT *,concat(ROUND(IF(已处理数量 = 0,NULL,已处理数量)  / 工单数量 * 100,2),'%') as 处理占比
-				    FROM (SELECT ss.年月, ss.币种, ss.团队,  CONCAT(ss.产品id,'#',ss.产品名称) as  产品信息,
+                    ) s
+                )
+                UNION all
+                (SELECT *,concat(ROUND(IF(已处理数量 = 0,NULL,已处理数量)  / 工单数量 * 100,2),'%') as 处理占比
+                    FROM (SELECT ss.年月, ss.币种, ss.团队,  CONCAT(ss.产品id,'#',ss.产品名称) as  产品信息,
                                 IF(ss.商品数量 = 0,NULL,ss.商品数量) as 商品数量,
                                 IF(换货数量 = 0,NULL,换货数量) as 换货数量,
                                 IF(退货数量 = 0,NULL,退货数量) as 退货数量,
-						        IF((IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量)) = 0,NULL,(IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量))) as 已处理数量,
+                                IF((IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量)) = 0,NULL,(IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量))) as 已处理数量,
                                 IF(工单数量 = 0,NULL,工单数量) as 工单数量
                         FROM product_info ss
                     LEFT JOIN
@@ -509,14 +509,14 @@ class QueryUpdate(Settings):
                         GROUP BY ss.年月,ss.币种,ss.团队,ss.产品id 
                         ORDER BY ss.年月,ss.币种,ss.团队,工单数量 DESC
                     ) s
-				)
-				) sx;'''
+                )
+                ) sx;'''
         df1 = pd.read_sql_query(sql=sql1, con=self.engine1)
         listT.append(df1)
         print('正在获取 上月产品前十（明细） 信息…………')
         sql2 = '''SELECT s.年月, s.币种, s.团队,s.产品id, s.商品数量, s.换货数量, s.退货数量,s.已处理数量,s.工单数量,
                         concat(ROUND(IF(已处理数量 = 0,NULL,已处理数量)  / 工单数量 * 100,2),'%') as 处理占比,
-				        IF(下错订单 = 0,NULL,下错订单) 下错订单,concat(ROUND(IF(下错订单 = 0,NULL,下错订单) / 工单数量 * 100,2),'%') as 占比,
+                        IF(下错订单 = 0,NULL,下错订单) 下错订单,concat(ROUND(IF(下错订单 = 0,NULL,下错订单) / 工单数量 * 100,2),'%') as 占比,
                         IF(重复订单 = 0,NULL,重复订单) 重复订单,concat(ROUND(IF(重复订单 = 0,NULL,重复订单) / 工单数量 * 100,2),'%') as 占比,
                         IF(尺寸不合 = 0,NULL,尺寸不合) 尺寸不合,concat(ROUND(IF(尺寸不合 = 0,NULL,尺寸不合) / 工单数量 * 100,2),'%') as 占比,
                         IF(尺码偏大 = 0,NULL,尺码偏大) 尺码偏大,concat(ROUND(IF(尺码偏大 = 0,NULL,尺码偏大) / 工单数量 * 100,2),'%') as 占比,
@@ -537,7 +537,7 @@ class QueryUpdate(Settings):
                         IF(无订购 = 0,NULL,无订购) 无订购,concat(ROUND(IF(无订购 = 0,NULL,无订购) / 工单数量 * 100,2),'%') as 占比,
                         IF(无理由拒收退货 = 0,NULL,无理由拒收退货) 无理由拒收退货,concat(ROUND(IF(无理由拒收退货 = 0,NULL,无理由拒收退货) / 工单数量 * 100,2),'%') as 占比,
                         IF(已在其他地方购买 = 0,NULL,已在其他地方购买) 已在其他地方购买,concat(ROUND(IF(已在其他地方购买 = 0,NULL,已在其他地方购买) / 工单数量 * 100,2),'%') as 占比,
-                        
+
                         IF(做工瑕疵 = 0,NULL,做工瑕疵) 做工瑕疵,concat(ROUND(IF(做工瑕疵 = 0,NULL,做工瑕疵) / 工单数量 * 100,2),'%') as 占比,
                         IF(修改规格 = 0,NULL,修改规格) 修改规格,concat(ROUND(IF(修改规格 = 0,NULL,修改规格) / 工单数量 * 100,2),'%') as 占比,
                         IF(取消订单 = 0,NULL,取消订单) 取消订单,concat(ROUND(IF(取消订单 = 0,NULL,取消订单) / 工单数量 * 100,2),'%') as 占比,
@@ -559,11 +559,11 @@ class QueryUpdate(Settings):
                         IF(产品丢失 = 0,NULL,产品丢失) 产品丢失,concat(ROUND(IF(产品丢失 = 0,NULL,产品丢失) / 工单数量 * 100,2),'%') as 占比,
                         IF(尺寸容量与页面描述不符 = 0,NULL,尺寸容量与页面描述不符) 尺寸容量与页面描述不符,concat(ROUND(IF(尺寸容量与页面描述不符 = 0,NULL,尺寸容量与页面描述不符) / 工单数量 * 100,2),'%') as 占比,
                         IF(其他 = 0,NULL,其他) 其他,concat(ROUND(IF(其他 = 0,NULL,其他) / 工单数量 * 100,2),'%') as 占比
-				    FROM (SELECT ss.年月, ss.币种, ss.团队, CONCAT(ss.产品id,'#',ss.产品名称) 产品id, 
+                    FROM (SELECT ss.年月, ss.币种, ss.团队, CONCAT(ss.产品id,'#',ss.产品名称) 产品id, 
                                 IF(ss.商品数量 = 0,NULL,ss.商品数量) as 商品数量,
                                 IF(换货数量 = 0,NULL,换货数量) as 换货数量,
                                 IF(退货数量 = 0,NULL,退货数量) as 退货数量,
-						        IF((IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量)) = 0,NULL,(IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量))) as 已处理数量,
+                                IF((IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量)) = 0,NULL,(IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量))) as 已处理数量,
                                 IF(工单数量 = 0,NULL,工单数量) as 工单数量,
                                 下错订单,重复订单,尺寸不合,尺码偏大,尺码偏小,价格较高,产品质量不合格,产品瑕疵,漏发错发,产品不符合客户预期,与网站不符,中国制造,
                                 非正品拒收,产品到货无法使用,客户不会使用该产品,客户自身原因,没有产品说明书,不喜欢,无订购,无理由拒收退货,已在其他地方购买,
@@ -584,48 +584,48 @@ class QueryUpdate(Settings):
                         ) cx2 ON ss.年月 = cx2.年月 AND ss.币种 = cx2.币种 AND ss.团队 = cx2.团队 AND ss.产品id = cx2.产品id
                     LEFT JOIN
                         (SELECT DATE_FORMAT(提交时间,'%Y%m') as 年月,币种,'合计' 所属团队,产品id,COUNT(订单编号) 工单单量,SUM(数量) as 工单数量,
-										SUM(IF(`问题类型` = '下错订单',数量,0)) AS 下错订单,
-                        				SUM(IF(`问题类型` = '重复订单',数量,0)) AS 重复订单,
-                        				SUM(IF(`问题类型` = '尺寸不合',数量,0)) AS 尺寸不合,
-                        				SUM(IF(`问题类型` = '尺码偏大',数量,0)) AS 尺码偏大,
-                        				SUM(IF(`问题类型` = '尺码偏小',数量,0)) AS 尺码偏小,
-                        				SUM(IF(`问题类型` = '价格较高',数量,0)) AS 价格较高,
-                        				SUM(IF(`问题类型` = '产品质量不合格',数量,0)) AS 产品质量不合格,
-                        				SUM(IF(`问题类型` = '产品瑕疵',数量,0)) AS 产品瑕疵,
-                        				SUM(IF(`问题类型` = '漏发错发',数量,0)) AS 漏发错发,
-                        				SUM(IF(`问题类型` = '产品不符合客户预期',数量,0)) AS 产品不符合客户预期,
-                        				SUM(IF(`问题类型` = '与网站不符',数量,0)) AS 与网站不符,
-                        				SUM(IF(`问题类型` = '中国制造',数量,0)) AS 中国制造,
-                        				SUM(IF(`问题类型` = '非正品拒收',数量,0)) AS 非正品拒收,
-                        				SUM(IF(`问题类型` = '产品到货无法使用',数量,0)) AS 产品到货无法使用,
-                        				SUM(IF(`问题类型` = '客户不会使用该产品',数量,0)) AS 客户不会使用该产品,
-                        				SUM(IF(`问题类型` = '客户自身原因',数量,0)) AS 客户自身原因,
-                        				SUM(IF(`问题类型` = '没有产品说明书',数量,0)) AS 没有产品说明书,
-                        				SUM(IF(`问题类型` = '不喜欢',数量,0)) AS 不喜欢,
-                        				SUM(IF(`问题类型` = '无订购',数量,0)) AS 无订购,
-                        				SUM(IF(`问题类型` = '无理由拒收退货',数量,0)) AS 无理由拒收退货,
-                        				SUM(IF(`问题类型` = '已在其他地方购买',数量,0)) AS 已在其他地方购买,
-                        				SUM(IF(`问题类型` = '做工瑕疵',数量,0)) AS 做工瑕疵,
-                        				SUM(IF(`问题类型` = '修改规格',数量,0)) AS 修改规格,
-                        				SUM(IF(`问题类型` = '取消订单',数量,0)) AS 取消订单,
-                        				SUM(IF(`问题类型` = '功效与广告不符',数量,0)) AS 功效与广告不符,
-                        				SUM(IF(`问题类型` = '包装/商品损坏/有污渍',数量,0)) AS 包装商品损坏有污渍,
-                        				SUM(IF(`问题类型` = '修改收货信息',数量,0)) AS 修改收货信息,
-                        				SUM(IF(`问题类型` = '材质与广告不符',数量,0)) AS 材质与广告不符,
-                        				SUM(IF(`问题类型` = '没有效果',数量,0)) AS 没有效果,
-                        				SUM(IF(`问题类型` = '已留言取消订单',数量,0)) AS 已留言取消订单,
-                        				SUM(IF(`问题类型` = '物流反馈客诉件',数量,0)) AS 物流反馈客诉件,
-                        				SUM(IF(`问题类型` = '款式与广告不符',数量,0)) AS 款式与广告不符,
-                        				SUM(IF(`问题类型` = '功能与广告不符',数量,0)) AS 功能与广告不符,
-                        				SUM(IF(`问题类型` = '无证书',数量,0)) AS 无证书,
-                        				SUM(IF(`问题类型` = '商品使用后过敏',数量,0)) AS 商品使用后过敏,
-                        				SUM(IF(`问题类型` = '不需要',数量,0)) AS 不需要,
-                        				SUM(IF(`问题类型` = '非正品',数量,0)) AS 非正品,
-                        				SUM(IF(`问题类型` = '物流时间长',数量,0)) AS 物流时间长,
-                        				SUM(IF(`问题类型` = '过期',数量,0)) AS 过期,
-                        				SUM(IF(`问题类型` = '产品丢失',数量,0)) AS 产品丢失,
-                        				SUM(IF(`问题类型` = '尺寸/容量与页面描述不符',数量,0)) AS 尺寸容量与页面描述不符,
-                        				SUM(IF(`问题类型` = '其他',数量,0)) AS 其他
+                                        SUM(IF(`问题类型` = '下错订单',数量,0)) AS 下错订单,
+                                        SUM(IF(`问题类型` = '重复订单',数量,0)) AS 重复订单,
+                                        SUM(IF(`问题类型` = '尺寸不合',数量,0)) AS 尺寸不合,
+                                        SUM(IF(`问题类型` = '尺码偏大',数量,0)) AS 尺码偏大,
+                                        SUM(IF(`问题类型` = '尺码偏小',数量,0)) AS 尺码偏小,
+                                        SUM(IF(`问题类型` = '价格较高',数量,0)) AS 价格较高,
+                                        SUM(IF(`问题类型` = '产品质量不合格',数量,0)) AS 产品质量不合格,
+                                        SUM(IF(`问题类型` = '产品瑕疵',数量,0)) AS 产品瑕疵,
+                                        SUM(IF(`问题类型` = '漏发错发',数量,0)) AS 漏发错发,
+                                        SUM(IF(`问题类型` = '产品不符合客户预期',数量,0)) AS 产品不符合客户预期,
+                                        SUM(IF(`问题类型` = '与网站不符',数量,0)) AS 与网站不符,
+                                        SUM(IF(`问题类型` = '中国制造',数量,0)) AS 中国制造,
+                                        SUM(IF(`问题类型` = '非正品拒收',数量,0)) AS 非正品拒收,
+                                        SUM(IF(`问题类型` = '产品到货无法使用',数量,0)) AS 产品到货无法使用,
+                                        SUM(IF(`问题类型` = '客户不会使用该产品',数量,0)) AS 客户不会使用该产品,
+                                        SUM(IF(`问题类型` = '客户自身原因',数量,0)) AS 客户自身原因,
+                                        SUM(IF(`问题类型` = '没有产品说明书',数量,0)) AS 没有产品说明书,
+                                        SUM(IF(`问题类型` = '不喜欢',数量,0)) AS 不喜欢,
+                                        SUM(IF(`问题类型` = '无订购',数量,0)) AS 无订购,
+                                        SUM(IF(`问题类型` = '无理由拒收退货',数量,0)) AS 无理由拒收退货,
+                                        SUM(IF(`问题类型` = '已在其他地方购买',数量,0)) AS 已在其他地方购买,
+                                        SUM(IF(`问题类型` = '做工瑕疵',数量,0)) AS 做工瑕疵,
+                                        SUM(IF(`问题类型` = '修改规格',数量,0)) AS 修改规格,
+                                        SUM(IF(`问题类型` = '取消订单',数量,0)) AS 取消订单,
+                                        SUM(IF(`问题类型` = '功效与广告不符',数量,0)) AS 功效与广告不符,
+                                        SUM(IF(`问题类型` = '包装/商品损坏/有污渍',数量,0)) AS 包装商品损坏有污渍,
+                                        SUM(IF(`问题类型` = '修改收货信息',数量,0)) AS 修改收货信息,
+                                        SUM(IF(`问题类型` = '材质与广告不符',数量,0)) AS 材质与广告不符,
+                                        SUM(IF(`问题类型` = '没有效果',数量,0)) AS 没有效果,
+                                        SUM(IF(`问题类型` = '已留言取消订单',数量,0)) AS 已留言取消订单,
+                                        SUM(IF(`问题类型` = '物流反馈客诉件',数量,0)) AS 物流反馈客诉件,
+                                        SUM(IF(`问题类型` = '款式与广告不符',数量,0)) AS 款式与广告不符,
+                                        SUM(IF(`问题类型` = '功能与广告不符',数量,0)) AS 功能与广告不符,
+                                        SUM(IF(`问题类型` = '无证书',数量,0)) AS 无证书,
+                                        SUM(IF(`问题类型` = '商品使用后过敏',数量,0)) AS 商品使用后过敏,
+                                        SUM(IF(`问题类型` = '不需要',数量,0)) AS 不需要,
+                                        SUM(IF(`问题类型` = '非正品',数量,0)) AS 非正品,
+                                        SUM(IF(`问题类型` = '物流时间长',数量,0)) AS 物流时间长,
+                                        SUM(IF(`问题类型` = '过期',数量,0)) AS 过期,
+                                        SUM(IF(`问题类型` = '产品丢失',数量,0)) AS 产品丢失,
+                                        SUM(IF(`问题类型` = '尺寸/容量与页面描述不符',数量,0)) AS 尺寸容量与页面描述不符,
+                                        SUM(IF(`问题类型` = '其他',数量,0)) AS 其他
                             FROM 工单收集表 th
                             GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种, 产品id
                             ORDER BY DATE_FORMAT(提交时间,'%Y%m') DESC,币种, 工单单量 DESC
@@ -633,13 +633,13 @@ class QueryUpdate(Settings):
                         WHERE ss.团队 = '合计'
                         GROUP BY ss.年月,ss.币种,ss.团队,ss.产品id
                         ORDER BY ss.年月,ss.币种,工单数量 DESC
-				    ) s
-						GROUP BY s.年月,s.币种,s.团队,s.产品id;'''
+                    ) s
+                        GROUP BY s.年月,s.币种,s.团队,s.产品id;'''
         df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
         listT.append(df2)
         sql3 = '''SELECT s.年月, s.币种, s.团队,s.产品id, s.商品数量, s.换货数量, s.退货数量,s.已处理数量,s.工单数量,
                         concat(ROUND(IF(已处理数量 = 0,NULL,已处理数量) / 工单数量 * 100,2),'%') as 处理占比,
-				        IF(下错订单 = 0,NULL,下错订单) 下错订单,concat(ROUND(IF(下错订单 = 0,NULL,下错订单) / 工单数量 * 100,2),'%') as 占比,
+                        IF(下错订单 = 0,NULL,下错订单) 下错订单,concat(ROUND(IF(下错订单 = 0,NULL,下错订单) / 工单数量 * 100,2),'%') as 占比,
                         IF(重复订单 = 0,NULL,重复订单) 重复订单,concat(ROUND(IF(重复订单 = 0,NULL,重复订单) / 工单数量 * 100,2),'%') as 占比,
                         IF(尺寸不合 = 0,NULL,尺寸不合) 尺寸不合,concat(ROUND(IF(尺寸不合 = 0,NULL,尺寸不合) / 工单数量 * 100,2),'%') as 占比,
                         IF(尺码偏大 = 0,NULL,尺码偏大) 尺码偏大,concat(ROUND(IF(尺码偏大 = 0,NULL,尺码偏大) / 工单数量 * 100,2),'%') as 占比,
@@ -660,7 +660,7 @@ class QueryUpdate(Settings):
                         IF(无订购 = 0,NULL,无订购) 无订购,concat(ROUND(IF(无订购 = 0,NULL,无订购) / 工单数量 * 100,2),'%') as 占比,
                         IF(无理由拒收退货 = 0,NULL,无理由拒收退货) 无理由拒收退货,concat(ROUND(IF(无理由拒收退货 = 0,NULL,无理由拒收退货) / 工单数量 * 100,2),'%') as 占比,
                         IF(已在其他地方购买 = 0,NULL,已在其他地方购买) 已在其他地方购买,concat(ROUND(IF(已在其他地方购买 = 0,NULL,已在其他地方购买) / 工单数量 * 100,2),'%') as 占比,
-                        
+
                         IF(做工瑕疵 = 0,NULL,做工瑕疵) 做工瑕疵,concat(ROUND(IF(做工瑕疵 = 0,NULL,做工瑕疵) / 工单数量 * 100,2),'%') as 占比,
                         IF(修改规格 = 0,NULL,修改规格) 修改规格,concat(ROUND(IF(修改规格 = 0,NULL,修改规格) / 工单数量 * 100,2),'%') as 占比,
                         IF(取消订单 = 0,NULL,取消订单) 取消订单,concat(ROUND(IF(取消订单 = 0,NULL,取消订单) / 工单数量 * 100,2),'%') as 占比,
@@ -682,11 +682,11 @@ class QueryUpdate(Settings):
                         IF(产品丢失 = 0,NULL,产品丢失) 产品丢失,concat(ROUND(IF(产品丢失 = 0,NULL,产品丢失) / 工单数量 * 100,2),'%') as 占比,
                         IF(尺寸容量与页面描述不符 = 0,NULL,尺寸容量与页面描述不符) 尺寸容量与页面描述不符,concat(ROUND(IF(尺寸容量与页面描述不符 = 0,NULL,尺寸容量与页面描述不符) / 工单数量 * 100,2),'%') as 占比,
                         IF(其他 = 0,NULL,其他) 其他,concat(ROUND(IF(其他 = 0,NULL,其他) / 工单数量 * 100,2),'%') as 占比
-				    FROM (SELECT ss.年月, ss.币种, ss.团队, CONCAT(ss.产品id,'#',ss.产品名称) 产品id, 
+                    FROM (SELECT ss.年月, ss.币种, ss.团队, CONCAT(ss.产品id,'#',ss.产品名称) 产品id, 
                                 IF(ss.商品数量 = 0,NULL,ss.商品数量) as 商品数量,
                                 IF(换货数量 = 0,NULL,换货数量) as 换货数量,
                                 IF(退货数量 = 0,NULL,退货数量) as 退货数量,
-						        IF((IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量)) = 0,NULL,(IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量))) as 已处理数量,
+                                IF((IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量)) = 0,NULL,(IF(换货数量 IS NULL, 0,换货数量) + IF(退货数量 IS NULL, 0,退货数量))) as 已处理数量,
                                 IF(工单数量 = 0,NULL,工单数量) as 工单数量,
                                 下错订单,重复订单,尺寸不合,尺码偏大,尺码偏小,价格较高,产品质量不合格,产品瑕疵,漏发错发,产品不符合客户预期,与网站不符,中国制造,
                                 非正品拒收,产品到货无法使用,客户不会使用该产品,客户自身原因,没有产品说明书,不喜欢,无订购,无理由拒收退货,已在其他地方购买,
@@ -707,48 +707,48 @@ class QueryUpdate(Settings):
                         ) cx2 ON ss.年月 = cx2.年月 AND ss.币种 = cx2.币种 AND ss.团队 = cx2.团队 AND ss.产品id = cx2.产品id
                     LEFT JOIN
                         (SELECT DATE_FORMAT(提交时间,'%Y%m') as 年月,币种,所属团队,产品id,COUNT(订单编号) 工单单量,SUM(数量) as 工单数量,
-										SUM(IF(`问题类型` = '下错订单',数量,0)) AS 下错订单,
-                        				SUM(IF(`问题类型` = '重复订单',数量,0)) AS 重复订单,
-                        				SUM(IF(`问题类型` = '尺寸不合',数量,0)) AS 尺寸不合,
-                        				SUM(IF(`问题类型` = '尺码偏大',数量,0)) AS 尺码偏大,
-                        				SUM(IF(`问题类型` = '尺码偏小',数量,0)) AS 尺码偏小,
-                        				SUM(IF(`问题类型` = '价格较高',数量,0)) AS 价格较高,
-                        				SUM(IF(`问题类型` = '产品质量不合格',数量,0)) AS 产品质量不合格,
-                        				SUM(IF(`问题类型` = '产品瑕疵',数量,0)) AS 产品瑕疵,
-                        				SUM(IF(`问题类型` = '漏发错发',数量,0)) AS 漏发错发,
-                        				SUM(IF(`问题类型` = '产品不符合客户预期',数量,0)) AS 产品不符合客户预期,
-                        				SUM(IF(`问题类型` = '与网站不符',数量,0)) AS 与网站不符,
-                        				SUM(IF(`问题类型` = '中国制造',数量,0)) AS 中国制造,
-                        				SUM(IF(`问题类型` = '非正品拒收',数量,0)) AS 非正品拒收,
-                        				SUM(IF(`问题类型` = '产品到货无法使用',数量,0)) AS 产品到货无法使用,
-                        				SUM(IF(`问题类型` = '客户不会使用该产品',数量,0)) AS 客户不会使用该产品,
-                        				SUM(IF(`问题类型` = '客户自身原因',数量,0)) AS 客户自身原因,
-                        				SUM(IF(`问题类型` = '没有产品说明书',数量,0)) AS 没有产品说明书,
-                        				SUM(IF(`问题类型` = '不喜欢',数量,0)) AS 不喜欢,
-                        				SUM(IF(`问题类型` = '无订购',数量,0)) AS 无订购,
-                        				SUM(IF(`问题类型` = '无理由拒收退货',数量,0)) AS 无理由拒收退货,
-                        				SUM(IF(`问题类型` = '已在其他地方购买',数量,0)) AS 已在其他地方购买,
-                        				SUM(IF(`问题类型` = '做工瑕疵',数量,0)) AS 做工瑕疵,
-                        				SUM(IF(`问题类型` = '修改规格',数量,0)) AS 修改规格,
-                        				SUM(IF(`问题类型` = '取消订单',数量,0)) AS 取消订单,
-                        				SUM(IF(`问题类型` = '功效与广告不符',数量,0)) AS 功效与广告不符,
-                        				SUM(IF(`问题类型` = '包装/商品损坏/有污渍',数量,0)) AS 包装商品损坏有污渍,
-                        				SUM(IF(`问题类型` = '修改收货信息',数量,0)) AS 修改收货信息,
-                        				SUM(IF(`问题类型` = '材质与广告不符',数量,0)) AS 材质与广告不符,
-                        				SUM(IF(`问题类型` = '没有效果',数量,0)) AS 没有效果,
-                        				SUM(IF(`问题类型` = '已留言取消订单',数量,0)) AS 已留言取消订单,
-                        				SUM(IF(`问题类型` = '物流反馈客诉件',数量,0)) AS 物流反馈客诉件,
-                        				SUM(IF(`问题类型` = '款式与广告不符',数量,0)) AS 款式与广告不符,
-                        				SUM(IF(`问题类型` = '功能与广告不符',数量,0)) AS 功能与广告不符,
-                        				SUM(IF(`问题类型` = '无证书',数量,0)) AS 无证书,
-                        				SUM(IF(`问题类型` = '商品使用后过敏',数量,0)) AS 商品使用后过敏,
-                        				SUM(IF(`问题类型` = '不需要',数量,0)) AS 不需要,
-                        				SUM(IF(`问题类型` = '非正品',数量,0)) AS 非正品,
-                        				SUM(IF(`问题类型` = '物流时间长',数量,0)) AS 物流时间长,
-                        				SUM(IF(`问题类型` = '过期',数量,0)) AS 过期,
-                        				SUM(IF(`问题类型` = '产品丢失',数量,0)) AS 产品丢失,
-                        				SUM(IF(`问题类型` = '尺寸/容量与页面描述不符',数量,0)) AS 尺寸容量与页面描述不符,
-                        				SUM(IF(`问题类型` = '其他',数量,0)) AS 其他
+                                        SUM(IF(`问题类型` = '下错订单',数量,0)) AS 下错订单,
+                                        SUM(IF(`问题类型` = '重复订单',数量,0)) AS 重复订单,
+                                        SUM(IF(`问题类型` = '尺寸不合',数量,0)) AS 尺寸不合,
+                                        SUM(IF(`问题类型` = '尺码偏大',数量,0)) AS 尺码偏大,
+                                        SUM(IF(`问题类型` = '尺码偏小',数量,0)) AS 尺码偏小,
+                                        SUM(IF(`问题类型` = '价格较高',数量,0)) AS 价格较高,
+                                        SUM(IF(`问题类型` = '产品质量不合格',数量,0)) AS 产品质量不合格,
+                                        SUM(IF(`问题类型` = '产品瑕疵',数量,0)) AS 产品瑕疵,
+                                        SUM(IF(`问题类型` = '漏发错发',数量,0)) AS 漏发错发,
+                                        SUM(IF(`问题类型` = '产品不符合客户预期',数量,0)) AS 产品不符合客户预期,
+                                        SUM(IF(`问题类型` = '与网站不符',数量,0)) AS 与网站不符,
+                                        SUM(IF(`问题类型` = '中国制造',数量,0)) AS 中国制造,
+                                        SUM(IF(`问题类型` = '非正品拒收',数量,0)) AS 非正品拒收,
+                                        SUM(IF(`问题类型` = '产品到货无法使用',数量,0)) AS 产品到货无法使用,
+                                        SUM(IF(`问题类型` = '客户不会使用该产品',数量,0)) AS 客户不会使用该产品,
+                                        SUM(IF(`问题类型` = '客户自身原因',数量,0)) AS 客户自身原因,
+                                        SUM(IF(`问题类型` = '没有产品说明书',数量,0)) AS 没有产品说明书,
+                                        SUM(IF(`问题类型` = '不喜欢',数量,0)) AS 不喜欢,
+                                        SUM(IF(`问题类型` = '无订购',数量,0)) AS 无订购,
+                                        SUM(IF(`问题类型` = '无理由拒收退货',数量,0)) AS 无理由拒收退货,
+                                        SUM(IF(`问题类型` = '已在其他地方购买',数量,0)) AS 已在其他地方购买,
+                                        SUM(IF(`问题类型` = '做工瑕疵',数量,0)) AS 做工瑕疵,
+                                        SUM(IF(`问题类型` = '修改规格',数量,0)) AS 修改规格,
+                                        SUM(IF(`问题类型` = '取消订单',数量,0)) AS 取消订单,
+                                        SUM(IF(`问题类型` = '功效与广告不符',数量,0)) AS 功效与广告不符,
+                                        SUM(IF(`问题类型` = '包装/商品损坏/有污渍',数量,0)) AS 包装商品损坏有污渍,
+                                        SUM(IF(`问题类型` = '修改收货信息',数量,0)) AS 修改收货信息,
+                                        SUM(IF(`问题类型` = '材质与广告不符',数量,0)) AS 材质与广告不符,
+                                        SUM(IF(`问题类型` = '没有效果',数量,0)) AS 没有效果,
+                                        SUM(IF(`问题类型` = '已留言取消订单',数量,0)) AS 已留言取消订单,
+                                        SUM(IF(`问题类型` = '物流反馈客诉件',数量,0)) AS 物流反馈客诉件,
+                                        SUM(IF(`问题类型` = '款式与广告不符',数量,0)) AS 款式与广告不符,
+                                        SUM(IF(`问题类型` = '功能与广告不符',数量,0)) AS 功能与广告不符,
+                                        SUM(IF(`问题类型` = '无证书',数量,0)) AS 无证书,
+                                        SUM(IF(`问题类型` = '商品使用后过敏',数量,0)) AS 商品使用后过敏,
+                                        SUM(IF(`问题类型` = '不需要',数量,0)) AS 不需要,
+                                        SUM(IF(`问题类型` = '非正品',数量,0)) AS 非正品,
+                                        SUM(IF(`问题类型` = '物流时间长',数量,0)) AS 物流时间长,
+                                        SUM(IF(`问题类型` = '过期',数量,0)) AS 过期,
+                                        SUM(IF(`问题类型` = '产品丢失',数量,0)) AS 产品丢失,
+                                        SUM(IF(`问题类型` = '尺寸/容量与页面描述不符',数量,0)) AS 尺寸容量与页面描述不符,
+                                        SUM(IF(`问题类型` = '其他',数量,0)) AS 其他
                             FROM 工单收集表 th
                             GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种, 所属团队, 产品id
                             ORDER BY DATE_FORMAT(提交时间,'%Y%m') DESC,币种, 所属团队 , 工单单量 DESC
@@ -757,10 +757,9 @@ class QueryUpdate(Settings):
                         GROUP BY ss.年月,ss.币种,ss.团队,ss.产品id 
                         ORDER BY ss.年月,ss.币种,ss.团队,工单数量 DESC
                     ) s
-					GROUP BY s.年月,s.币种,s.团队,s.产品id;'''
+                    GROUP BY s.年月,s.币种,s.团队,s.产品id;'''
         df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
         listT.append(df3)
-
 
         print('正在获取 第二部分 信息…………')
         print('正在获取 总体单量 信息…………')
@@ -904,7 +903,7 @@ class QueryUpdate(Settings):
                     FROM 工单收集表
                     GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种
                 ) s3 ON s1.年月 = s3.年月 AND s1.币种 = s3.币种 AND s1.团队 = s3.所属团队;'''
-        df6= pd.read_sql_query(sql=sql6, con=self.engine1)
+        df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
         listT.append(df6)
         print('正在获取 总体金额 信息…………')
         sql7 = '''SELECT s1.`年月`,s1.`币种`,s1.`团队`,
@@ -976,7 +975,7 @@ class QueryUpdate(Settings):
                     FROM 工单收集表
                     GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种
                 ) s3 ON s1.年月 = s3.年月 AND s1.币种 = s3.币种 AND s1.团队 = s3.所属团队;'''
-        df7= pd.read_sql_query(sql=sql7, con=self.engine1)
+        df7 = pd.read_sql_query(sql=sql7, con=self.engine1)
         listT.append(df7)
 
         print('正在获取 第三部分 信息…………')
@@ -1006,7 +1005,7 @@ class QueryUpdate(Settings):
                         GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种, 所属团队
                 ) s1
                LEFT JOIN
-					(SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,团队,
+                    (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,团队,
                             SUM(IF(`占比` = '0%',1,0)) AS '0%单量',
                             SUM(IF(`占比` = '<10%',1,0)) AS '<10%单量',
                             SUM(IF(`占比` = '<20%',1,0)) AS '<20%单量',
@@ -1077,8 +1076,8 @@ class QueryUpdate(Settings):
                     FROM 工单收集表
                     GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种, 所属团队
                 ) s3
-				LEFT JOIN
-					(SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,团队,
+                LEFT JOIN
+                    (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,团队,
                             SUM(IF(`占比` = '0%',克隆后金额,0)) AS '0%单量',
                             SUM(IF(`占比` = '<10%',克隆后金额,0)) AS '<10%单量',
                             SUM(IF(`占比` = '<20%',克隆后金额,0)) AS '<20%单量',
@@ -1121,7 +1120,7 @@ class QueryUpdate(Settings):
                     ) th
                     GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 团队
                 ) s2 ON s3.年月 = s2.年月 AND s3.币种 = s2.币种 AND s3.所属团队 = s2.团队;'''
-        df6= pd.read_sql_query(sql=sql6, con=self.engine1)
+        df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
         listT.append(df6)
         print('正在获取 分团队金额 信息…………')
         sql7 = '''SELECT s3.`年月`,s3.`币种`,s3.`所属团队`,
@@ -1148,8 +1147,8 @@ class QueryUpdate(Settings):
                     FROM 工单收集表
                     GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种, 所属团队
                 ) s3
-				LEFT JOIN
-					(SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,团队,
+                LEFT JOIN
+                    (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,团队,
                             SUM(IF(`占比` = '0%',金额,0)) AS '0%单量',
                             SUM(IF(`占比` = '<10%',金额,0)) AS '<10%单量',
                             SUM(IF(`占比` = '<20%',金额,0)) AS '<20%单量',
@@ -1192,24 +1191,299 @@ class QueryUpdate(Settings):
                     ) th
                     GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种, 团队
                 ) s2 ON s3.年月 = s2.年月 AND s3.币种 = s2.币种 AND s3.所属团队 = s2.团队;'''
-        df7= pd.read_sql_query(sql=sql7, con=self.engine1)
+        df7 = pd.read_sql_query(sql=sql7, con=self.engine1)
         listT.append(df7)
 
         print('正在写入excel…………')
         today = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         file_path = 'G:\\输出文件\\\\客服处理汇总 {}.xlsx'.format(today)
         sheet_name = ['总团队', '分团队', '分团队2', '总体单量', '总体克隆金额', '总体金额', '分团队单量', '分团队克隆金额', '分团队金额']
-        df0 = pd.DataFrame([])                                      # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)                        # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')       # 初始化写入对象
-        book = load_workbook(file_path)                             # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book                                          # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
         for i in range(len(listT)):
             listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-        if 'Sheet1' in book.sheetnames:                             # 删除新建文档时的第一个工作表
+        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
             del book['Sheet1']
         writer.save()
         writer.close()
+        # try:
+        #     print('正在运行表宏…………')
+        #     app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
+        #     app.display_alerts = False
+        #     wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+        #     wbsht1 = app.books.open(file_path)
+        #     wbsht.macro('zl_report_day')()
+        #     wbsht1.save()
+        #     wbsht1.close()
+        #     wbsht.close()
+        #     app.quit()
+        # except Exception as e:
+        #     print('运行失败：', str(Exception) + str(e))
+        print('----已写入excel ')
+
+
+    # 客服介入订单处理结果报告
+    def month_reporrt_data(self):
+        data_now = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y%m')
+        listT = []  # 查询sql的结果 存放池
+        print('正在获取 采购异常-压单-丢件-扣件 信息…………')
+        sql = '''SELECT *
+            FROM (
+                    (SELECT '采购异常' AS 工作,NULL 日期, 单量,客服介入量,单量-发货量 AS 删除单量,concat(ROUND((单量-发货量) / 客服介入量 * 100,2),'%') AS 删除率, 发货量,签收量,在途量,concat(ROUND(签收量 / 单量 * 100,2),'%') AS 签收率
+                    FROM (SELECT '采购异常' AS 采购异常,  COUNT(s.`订单编号`) AS 单量, COUNT(s.`订单编号`) AS 客服介入量,
+					            SUM(IF(s.`系统订单状态` IN ('已完成','已退货(销售)','已发货','已退货(物流)'),1,0)) AS 发货量,
+					            SUM(IF(s.`系统物流状态` = '已签收',1,0)) AS 签收量,  SUM(IF(s.`系统订单状态` = '已发货',1,0)) AS 在途量
+		                FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`
+					            FROM (SELECT * 
+								    FROM 采购异常 
+								    WHERE id IN (SELECT MAX(id) FROM 采购异常 w WHERE w.`处理时间` BETWEEN DATE_ADD(curdate()-day(curdate())+1,interval -1 month) AND last_day(date_add(curdate()-day(curdate())+1,interval -1 month))  
+								    GROUP BY 订单编号) 
+								    ORDER BY id
+						        ) cg
+					    LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
+		                ) s
+                    ) ss
+                )
+                UNION ALL
+                ( SELECT '压单' AS 工作,NULL 日期, 单量,客服介入量,单量-发货量 AS 删除单量,concat(ROUND((单量-发货量)  / 客服介入量 * 100,2),'%') AS 删除率, 发货量,签收量,在途量,concat(ROUND(签收量 / 单量 * 100,2),'%') AS 签收率
+                    FROM ( SELECT COUNT(s.`订单编号`) AS 单量, COUNT(s.`订单编号`) AS 客服介入量,
+			                    SUM(IF(s.`系统订单状态` IN ('已完成','已退货(销售)','已发货','已退货(物流)'),1,0)) AS 发货量,
+			                    SUM(IF(s.`系统物流状态` = '已签收',1,0)) AS 签收量,  SUM(IF(s.`系统订单状态` = '已发货',1,0)) AS 在途量
+                        FROM ( SELECT gt.*
+			                    FROM (SELECT cg.订单编号
+						        FROM 压单反馈 cg
+						        WHERE cg.`反馈时间` BETWEEN DATE_ADD(curdate()-day(curdate())+1,interval -1 month) AND last_day(date_add(curdate()-day(curdate())+1,interval -1 month)) 
+			                    )  lp
+			            LEFT JOIN gat_order_list gt ON lp.`订单编号` = gt.`订单编号`
+	                    ) s
+                    ) ss
+                )
+                UNION ALL
+                (SELECT ss.处理结果,NULL 日期, 单量,客服介入量,单量-发货量 AS 删除单量,concat(ROUND((单量-发货量)  / 客服介入量 * 100,2),'%') AS 删除率, 发货量,签收量,在途量,concat(ROUND(签收量 / 单量 * 100,2),'%') AS 签收率
+                    FROM (SELECT 处理结果, COUNT(lp.`订单编号`) AS 单量, COUNT(lp.`订单编号`) AS 客服介入量
+			                FROM 丢件_破损_扣货 lp
+			                WHERE lp.`登记时间` BETWEEN DATE_ADD(curdate()-day(curdate())+1,interval -1 month) AND last_day(date_add(curdate()-day(curdate())+1,interval -1 month)) 
+			                GROUP BY lp.`处理结果`
+                    ) ss
+                    LEFT JOIN
+                    (SELECT 处理结果, SUM(IF(s.`系统订单状态` IN ('已完成','已退货(销售)','已发货','已退货(物流)'),1,0)) AS 发货量,
+			                SUM(IF(s.`系统物流状态` = '已签收',1,0)) AS 签收量, SUM(IF(s.`系统订单状态` = '已发货',1,0)) AS 在途量
+                    FROM (SELECT lp.`处理结果`, gt.*
+			                FROM 丢件_破损_扣货 lp
+			                LEFT JOIN gat_order_list gt ON lp.`新订单编号` = gt.`订单编号` 
+			                WHERE lp.`登记时间` BETWEEN DATE_ADD(curdate()-day(curdate())+1,interval -1 month) AND last_day(date_add(curdate()-day(curdate())+1,interval -1 month)) AND lp.`新订单编号` IS NOT NULL
+                    ) s
+                    GROUP BY s.处理结果
+                    ) ss1 ON ss.`处理结果` = ss1.`处理结果`
+                )
+            ) sx;'''.format(data_now, 'gat_zqsb')
+        df1 = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df1)
+
+        print('正在获取 市场--客诉 信息…………')
+        sql2 = '''SELECT '港台' AS '市场--客诉件', NULL 日期, 单量, 挽单量, concat(ROUND(挽单量 / 单量 * 100,2),'%') AS 挽单率, 	挽单发货量, 签收量,	concat(ROUND(签收量 / 挽单量 * 100,2),'%') AS 签收率	
+                FROM (SELECT '客诉件' AS 客诉件, COUNT(s.`订单编号`) AS 单量, 
+						SUM(IF(s.`处理方案` = '赠品' or s.`处理方案` LIKE '%补发%' or s.`处理方案` LIKE '%换货%',1,0)) AS 挽单量,
+						SUM(IF(s.`处理方案` = '赠品' or s.`处理方案` LIKE '%补发%' or s.`处理方案` LIKE '%换货%',价格,0)) AS 挽单金额,
+						SUM(IF((s.`处理方案` = '赠品' or s.`处理方案` LIKE '%补发%' or s.`处理方案` LIKE '%换货%') AND s.`系统订单状态` IN ('已完成','已退货(销售)','已发货','已退货(物流)'),1,0)) AS 挽单发货量,
+						SUM(IF((s.`处理方案` = '赠品' or s.`处理方案` LIKE '%补发%' or s.`处理方案` LIKE '%换货%') AND s.`系统物流状态` = '已签收',1,0)) AS 签收量
+		            FROM (SELECT lp.*,gt.系统订单状态,gt.系统物流状态,gt.`价格`
+					        FROM (SELECT *
+								    FROM 物流客诉件 
+								    WHERE id IN (SELECT MAX(id) FROM 物流客诉件 w WHERE w.`处理时间` BETWEEN DATE_ADD(curdate()-day(curdate())+1,interval -1 month) AND last_day(date_add(curdate()-day(curdate())+1,interval -1 month)) 
+								    GROUP BY 订单编号) 
+								    ORDER BY id
+					        ) lp
+					    LEFT JOIN gat_order_list gt ON lp.`订单编号` = gt.`订单编号`
+		            ) s
+                ) ss;'''.format(data_now, 'gat_zqsb')
+        df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
+        listT.append(df2)
+
+        print('正在获取 市场--拒收订单 信息…………')
+        sql3 = '''SELECT '港台' AS '市场--拒收订单', NULL 日期,已完结拒收单量 AS 拒收单量,客服联系单量,	concat(ROUND(客服联系单量 / 已完结拒收单量 * 100,2),'%') AS 联系率,	客服挽单量,
+                        concat(ROUND(客服挽单量 / 客服有效联系量 * 100,2),'%') AS 挽单率, 挽单发货量,签收量,concat(ROUND(签收量 / 客服挽单量 * 100,2),'%') AS 签收率
+                FROM (SELECT '拒收订单' 拒收订单, SUM(IF(最终状态 = "拒收" AND EXTRACT(YEAR_MONTH FROM `完结状态时间`) = DATE_FORMAT( DATE_ADD(curdate(),interval -day(curdate()) day), '%Y%m'),1,0)) as 已完结拒收单量
+			            FROM ((SELECT 年月, 订单编号,最终状态,完结状态时间 FROM gat_zqsb g WHERE g.`年月` = DATE_FORMAT( DATE_ADD(curdate(),interval -day(curdate()) day), '%Y%m'))
+						        UNION
+						        (SELECT 年月, 订单编号,最终状态,完结状态时间 FROM gat_zqsb g WHERE g.`年月` = DATE_FORMAT( CURDATE( ),'%Y%m'))
+			            ) lp
+		        ) ss
+                LEFT JOIN
+		        (SELECT '拒收订单' 拒收订单, COUNT(lp.`订单编号`) AS 客服联系单量, SUM(IF(lp.`核实原因` NOT IN ('无人接听','无效号码'),1,0)) AS 客服有效联系量
+			        FROM 拒收核实 lp
+			        WHERE lp.`处理日期` BETWEEN DATE_ADD(curdate()-day(curdate())+1,interval -1 month)  AND  last_day(date_add(curdate()-day(curdate())+1,interval -1 month))
+		        ) ss1  ON ss.`拒收订单` = ss1.`拒收订单`
+                LEFT JOIN
+		        (SELECT '拒收订单' 拒收订单, COUNT(s.`订单编号`) AS 客服挽单量, SUM(IF(gt.`系统订单状态` IN ('已完成','已退货(销售)','已发货','已退货(物流)'),1,0)) AS 挽单发货量, SUM(IF(gt.`系统物流状态` = '已签收',1,0)) AS 签收量
+			        FROM (SELECT *
+						    FROM 拒收核实 js
+						    WHERE (js.`处理日期` BETWEEN DATE_ADD(curdate()-day(curdate())+1,interval -1 month)  AND  last_day(date_add(curdate()-day(curdate())+1,interval -1 month))) 
+							AND (js.`再次克隆下单` IS NOT NULL AND js.`再次克隆下单` <> '')
+			        ) s
+			        LEFT JOIN gat_order_list gt ON s.`再次克隆下单` = gt.`订单编号` 
+		        ) ss2 ON ss.`拒收订单` = ss2.`拒收订单`;'''.format(data_now, 'gat_zqsb')
+        df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
+        listT.append(df3)
+
+        print('正在获取 市场--派送问题件 信息…………')
+        sql4 = '''SELECT '港台' AS '市场--派送问题件', NULL 日期, 物流反馈问题件总量, 签收, 	concat(ROUND(签收 / 物流反馈问题件总量 * 100,2),'%') AS 签收率, 客服联系单量,签收量,
+			            concat(ROUND(签收量 / 客服联系单量 * 100,2),'%') AS 客服联系签收率,	核实后再派单量, 核实后再派单签收量,	
+			            concat(ROUND(核实后再派单签收量 / 核实后再派单量 * 100,2),'%') AS 核实后再派单签收率
+		        FROM (SELECT '派送问题件' AS 派送问题件,  COUNT(s.`订单编号`) AS 物流反馈问题件总量, 
+							SUM(IF(s.`系统物流状态` = '已签收',1,0)) AS 签收,
+							SUM(IF(s.`处理结果` NOT like '%无人接听%' AND s.`处理结果` NOT like '%已签收%' AND s.`处理结果` NOT like '%无效号码%',1,0)) AS 客服联系单量,
+							SUM(IF(s.`处理结果` NOT like '%无人接听%' AND s.`处理结果` NOT like '%已签收%' AND s.`处理结果` NOT like '%无效号码%' AND s.`系统物流状态` = '已签收',1,0)) AS 签收量,
+							SUM(IF(s.`处理结果` like '%送货%' OR s.`处理结果` like '%配送%' OR s.`处理结果` like '%自取%',1,0)) AS 核实后再派单量,
+							SUM(IF((s.`处理结果` like '%送货%' OR s.`处理结果` like '%配送%' OR s.`处理结果` like '%自取%') AND s.`系统物流状态` = '已签收',1,0)) AS 核实后再派单签收量
+				    FROM (SELECT lp.*,gt.系统订单状态,gt.系统物流状态
+							FROM (SELECT * 
+										FROM 物流问题件 
+										WHERE id IN (SELECT MAX(id) FROM 物流问题件 w WHERE w.`处理时间` BETWEEN DATE_ADD(curdate()-day(curdate())+1,interval -1 month) AND last_day(date_add(curdate()-day(curdate())+1,interval -1 month))
+										GROUP BY 订单编号) 
+										ORDER BY id
+							) lp
+					        LEFT JOIN gat_order_list gt ON lp.`订单编号` = gt.`订单编号`
+				    ) s
+	            ) ss;'''.format(data_now, 'gat_zqsb')
+        df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
+        listT.append(df4)
+
+        print('正在获取 市场--邮件 信息…………')
+        df5 = pd.DataFrame([['', '', '', '', '', '']], columns=['市场--邮件', '日期', '月回复量（客服回复的邮件量）', '工单量（当月工单录入总量，不区分售中和售后）', '工单已完成量（已处理完成的工单里）','工单已完成率'])
+        listT.append(df5)
+
+        print('正在获取 市场--退换货 信息…………')
+        sql6 = '''SELECT '港台' AS '市场--退换货', NULL 日期, 
+			            SUM(IF(售后类型 = '换货' AND 占比 =0,1,0)) AS '0元换货单量',
+			            SUM(IF(售后类型 = '换货' AND 占比 <>0,1,0)) AS '非0元换货单量',
+			            SUM(IF(售后类型 = '补发' AND 占比 =0,1,0)) AS '0元补发单量',
+			            SUM(IF(售后类型 = '补发' AND 占比 <>0,1,0)) AS '非0元补发单量',
+			            SUM(IF(售后类型 = '退货' AND 占比 >0.5,1,0)) AS '全额退款单量（退款大于50%）',
+			            SUM(IF(售后类型 = '退货' AND 占比 <=0.5,1,0)) AS '部分退款量（退款小于50%）'			
+                FROM (SELECT *, IF(金额 = 0,1,IF(售后类型 = '退货',退款金额/金额,克隆后金额/金额)) AS 占比
+			            FROM 退换货表 g
+			            WHERE g.`导入时间` BETWEEN TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -1 month)) AND TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY))
+                ) s;'''.format(data_now, 'gat_zqsb')
+        df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
+        listT.append(df6)
+
+        print('正在获取 市场-问题订单 信息…………')
+        sql7 = '''SELECT '港台' AS '市场--问题订单', NULL 日期, 问题订单, concat(ROUND(转化有效订单 / 问题订单 * 100,2),'%') AS 转化率, 转化有效订单,
+			            concat(ROUND(转化有效订单签收 / 转化有效订单 * 100,2),'%') AS 转化有效订单签收率, 签收订单
+                FROM (SELECT 日期,COUNT(订单编号) AS 问题订单,
+						    SUM(IF(g.`系统订单状态` NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 转化有效订单,
+						    SUM(IF((g.`系统订单状态` NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货')) AND g.`系统物流状态` = '已签收',1,0)) AS 转化有效订单签收,
+						    SUM(IF(g.`系统物流状态` = '已签收',1,0)) AS 签收订单,
+						    SUM(IF(g.`系统订单状态` = '已删除',1,0)) AS 已删除
+			        FROM gat_order_list g
+			        WHERE (g.`日期` BETWEEN DATE_ADD(curdate()-day(curdate())+1,interval -1 month)  AND  last_day(date_add(curdate()-day(curdate())+1,interval -1 month)) ) 
+			            AND (g.`问题时间` BETWEEN TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -1 month))  AND TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY))) 
+			            AND g.`问题原因` IS NOT NULL
+                ) s;'''.format(data_now, 'gat_zqsb')
+        df7 = pd.read_sql_query(sql=sql7, con=self.engine1)
+        listT.append(df7)
+
+        print('正在获取 市场--line 信息…………')
+        df8 = pd.DataFrame([['', '', '', '', '', '', '', '', '']], columns=['市场--邮件', '日期', '加入客户量','有效客户量','封锁客户量','对话量','接收的讯息','传送的讯息','发送占接收比'])
+        listT.append(df8)
+
+        print('正在获取 市场--zendesk 信息…………')
+        df9 = pd.DataFrame([['', '', '', '', '', '', '']], columns=['市场--邮件', '日期', '接待量','总咨询量','处理占比','评价量','满意度'])
+        listT.append(df9)
+
+        print('正在获取 总订单-审核率-删单率-问题转化率 信息…………')
+        sql10 = '''SELECT NULL 工作数量, 年月,币种 AS 市场, COUNT(订单编号)  as 总订单量,
+						SUM(IF(gs.`系统订单状态` <> '已删除',1,0)) AS 有效订单量,
+						concat(ROUND(SUM(IF(gs.`系统订单状态` <> '已删除',1,0)) / COUNT(订单编号) * 100,2),'%') as 有效订单转化率,
+						SUM(IF(gs.`审单类型` = '是',1,0)) as 自动审单量,
+						SUM(IF(gs.`审单类型` = '是' AND gs.`系统订单状态` = '已删除',1,0)) as 自动审核订单删除量,
+						SUM(IF(gs.`审单类型` = '否' AND gs.`系统订单状态` = '已删除',1,0)) as 人工审核订单删除量,
+						SUM(IF(gs.`系统订单状态` = '已删除',1,0)) as 总删除量,
+						
+						SUM(IF(gs.`系统物流状态` = '已签收',1,0)) AS 总订单签收量,
+						SUM(IF(gs.`系统订单状态` = '已发货',1,0)) AS 总订单在途量,
+						SUM(IF(gs.`系统订单状态` IN ('待审核','问题订单','已转采购','未支付','支付失败','截单'),1,0)) AS 总订单未发货量,
+						
+						SUM(IF(gs.`审单类型` = '是' AND gs.`系统物流状态` = '已签收',1,0)) AS 自动审单签收量,
+						SUM(IF(gs.`审单类型` = '是' AND gs.`系统订单状态` = '已发货',1,0)) AS 自动审单在途量,
+						SUM(IF(gs.`审单类型` = '是' AND gs.`系统订单状态` IN ('待审核','问题订单','已转采购','未支付','支付失败','截单'),1,0)) AS 自动审单未发货量,
+						
+						SUM(IF(gs.`审单类型` = '否' AND gs.`系统物流状态` = '已签收',1,0)) AS 人工签收量,
+						SUM(IF(gs.`审单类型` = '否' AND gs.`系统订单状态` = '已发货',1,0)) AS 人工在途量,
+						SUM(IF(gs.`审单类型` = '否' AND gs.`系统订单状态` IN ('待审核','问题订单','已转采购','未支付','支付失败','截单'),1,0)) AS 人工未发货量
+			FROM  gat_order_list gs
+			WHERE gs.`年月` >= DATE_FORMAT( DATE_ADD(curdate(),interval -day(curdate()) day), '%Y%m' )
+			GROUP BY gs.`年月`,gs.币种
+			ORDER BY gs.`年月`,币种;'''.format(data_now, 'gat_zqsb')
+        df10 = pd.read_sql_query(sql=sql10, con=self.engine1)
+        listT.append(df10)
+
+        print('正在写入excel…………')
+        today = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        file_path = 'G:\\输出文件\\\\工作数量 {}.xlsx'.format(today)
+
+        writer2 = pd.ExcelWriter(file_path, engine='openpyxl')
+        df1.to_excel(writer2, index=False)                  # 采购
+        df2.to_excel(writer2, index=False, startrow=10)     # 客诉
+        df3.to_excel(writer2, index=False, startrow=14)     # 拒收
+        df4.to_excel(writer2, index=False, startrow=18)     # 派送问题件
+        df5.to_excel(writer2, index=False, startrow=22)     # 邮件
+
+        df6.to_excel(writer2, index=False, startrow=26)     # 退换货
+        df7.to_excel(writer2, index=False, startrow=30)     # 问题订单
+        df8.to_excel(writer2, index=False, startrow=34)     # line
+        df9.to_excel(writer2, index=False, startrow=38)     # zendesk
+        df10.to_excel(writer2, index=False, startcol=16)    # 审核率
+        writer2.save()
+        writer2.close()
+
+        wb = load_workbook(file_path)
+        sheet = wb.get_sheet_by_name("Sheet1")
+        sheet.column_dimensions['A'].width = 15.82
+        sheet.column_dimensions['B'].width = 8.38
+        sheet.column_dimensions['C'].width = 8.38
+        sheet.column_dimensions['D'].width = 10.5
+        sheet.column_dimensions['E'].width = 10.5
+        sheet.column_dimensions['F'].width = 9.88
+        sheet.column_dimensions['J'].width = 9.88
+        sheet.column_dimensions['K'].width = 12
+        sheet.column_dimensions['P'].width = 8.38
+        sheet.column_dimensions['Q'].width = 8.38
+        sheet.column_dimensions['R'].width = 8.38
+        sheet.column_dimensions['S'].width = 8.38
+        sheet.column_dimensions['T'].width = 8.38
+        sheet.column_dimensions['U'].width = 8.38
+        sheet.column_dimensions['V'].width = 8.38
+        sheet.column_dimensions['W'].width = 8.38
+        sheet.column_dimensions['X'].width = 8.38
+        sheet.column_dimensions['Y'].width = 8.38
+        sheet.column_dimensions['Z'].width = 8.38
+        sheet.column_dimensions['AA'].width = 8.38
+        sheet.column_dimensions['AB'].width = 8.38
+        sheet.column_dimensions['AC'].width = 8.38
+        sheet.column_dimensions['AD'].width = 8.38
+        sheet.column_dimensions['AE'].width = 8.38
+        sheet.column_dimensions['AF'].width = 8.38
+        sheet.column_dimensions['AG'].width = 8.38
+        wb.save(file_path)
+
+        # sheet_name = ['工作数量']
+        # df0 = pd.DataFrame([])                                      # 创建空的dataframe数据框
+        # df0.to_excel(file_path, index=False)                        # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')       # 初始化写入对象
+        # book = load_workbook(file_path)                             # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book                                          # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # for i in range(len(listT)):
+        #     listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+        # if 'Sheet1' in book.sheetnames:                             # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+
         # try:
         #     print('正在运行表宏…………')
         #     app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
@@ -1362,7 +1636,7 @@ if __name__ == '__main__':
         3、 获取工单和退换货的客服处理记录；
         4、 拒收核实-查询需要的产品id；  获取前 记得上传发过的核实表和返回的核实表；以及客诉件和问题件表
     '''
-    select = 4
+    select = 6
     if int(select) == 1:
         m.readFormHost('202110', '拒收核实')        # 上传每日核实过的
         m.readFormHost('202110', '拒收缓存')        # 上传核实的表
@@ -1375,7 +1649,7 @@ if __name__ == '__main__':
         print(begin)
         end = datetime.date(2021, 12, 31)
         print(end)
-        for i in range((end - begin).days):  # 按天循环获取订单状态
+        for i in range((end - begin).days):     # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
             upload = str(day)
             startday = str(day).replace('-', '')
@@ -1383,14 +1657,19 @@ if __name__ == '__main__':
             m.readFormHost(startday, '其他')
 
     elif int(select) == 4:
-        m.readFormHost('202110', '其他')
-        m.writeSql()
-
-    elif int(select) == 5:
         m.readFormHost('202110', '拒收核实')
         m.readFormHost('202110', '拒收缓存')
         m.readFormHost('202110', '其他')
         m.jushou()
+
+    elif int(select) == 5:
+        m.readFormHost('202110', '其他')
+        m.writeSql()                    # 月客服介入订单处理结果报告
+
+    elif int(select) == 6:
+        m.month_reporrt_data()                    # 月工作数量
+
+
 
 
 

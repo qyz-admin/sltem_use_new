@@ -25,7 +25,7 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
 '''
 # 初始化时间设置
 updata = '全部'           #  后台获取全部（两月）、部分更新（近五天）
-if team in ('gat', 'slsc', 'sl_r9b'):
+if team in ('ga9t', 'slsc', 'sl_r9b'):
     # 更新时间
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
@@ -40,11 +40,11 @@ if team in ('gat', 'slsc', 'sl_r9b'):
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    begin = datetime.date(2022, 2, 12)
-    end = datetime.date(2022, 2, 13)
+    begin = datetime.date(2022, 2, 23)
+    end = datetime.date(2022, 3, 12)
     # 导出时间
     month_last = '2022-01-01'
-    month_yesterday = '2022-01-02'
+    month_yesterday = '2022-03-12'
     month_begin = '2021-12-01'
 print('****** 更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 导出起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
@@ -98,7 +98,7 @@ m.creatMyOrderSl(team)                                      # 最近五天的全
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 
 
-if team == 'ga9t':
+if team == 'gat':
     print('---------------------------------- 单点更新部分：--------------------------------')
     sso = QueryTwo('+86-18538110674', 'qyz04163510', '1343')
     sso.orderInfo(team, updata, begin, end)

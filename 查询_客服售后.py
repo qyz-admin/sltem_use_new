@@ -260,6 +260,6 @@ if __name__ == '__main__':
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # 1、手动导入状态
     for team in ['gat']:
-        m.readFormHost(team)
+        m.readFormHost(team, last_month)
 
     print('查询耗时：', datetime.datetime.now() - start)

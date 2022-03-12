@@ -1,8 +1,8 @@
 import pandas as pd
-import os,shutil
+import os, shutil
 import datetime
 import xlwings
-import win32api,win32con
+import win32api, win32con
 import requests
 import json
 import sys
@@ -69,7 +69,7 @@ class QueryUpdate(Settings):
             filePath = os.path.join(path, dir)
             if dir[:2] != '~$':
                 print(filePath)
-                if '需发货的改派订单' in dir or '订单检索' in dir:
+                if '需发货的改派订单' in dir or '订单检索' in dir or '需发货改派订单' in dir:
                     write = '需发货'
                 self.wbsheetHost(filePath, team, write, last_time)
                 os.remove(filePath)
