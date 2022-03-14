@@ -3,6 +3,7 @@ import os
 import xlwings
 import numpy as np
 import datetime
+import zhconv          # transform2_zh_hant：转为繁体;transform2_zh_hans：转为简体
 from mysqlControl import MysqlControl
 class ExcelControl():
     '''
@@ -302,6 +303,8 @@ class ExcelControl():
             df.drop(labels=needDrop, axis=1, inplace=True)
             df.dropna(axis=0, subset=['运单编号'], inplace=True)
             # print(df.columns)
+            if team == 'gat':
+                df['物流状态'] = zhconv.convert(df['物流状态'], 'zh-hans')
             if team == 'slrb' or team == 'sl_rb':
                 try:
                     # df['状态时间'] = df['状态时间'].str.strip()

@@ -25,7 +25,7 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
 '''
 # 初始化时间设置
 updata = '全部'           #  后台获取全部（两月）、部分更新（近五天）
-if team in ('ga9t', 'slsc', 'sl_r9b'):
+if team in ('gat', 'slsc', 'sl_r9b'):
     # 更新时间
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
@@ -93,15 +93,15 @@ print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
 print('---------------------------------- 数据库更新部分：--------------------------------')
-m.creatMyOrderSlTWO(team, begin, end)                       # 最近两个月的 部分内容 更新信息
-m.creatMyOrderSl(team)                                      # 最近五天的全部订单信息
+# m.creatMyOrderSlTWO(team, begin, end)                       # 最近两个月的 部分内容 更新信息
+# m.creatMyOrderSl(team)                                      # 最近五天的全部订单信息
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 
 
 if team == 'gat':
     print('---------------------------------- 单点更新部分：--------------------------------')
-    sso = QueryTwo('+86-18538110674', 'qyz04163510', '1343')
-    sso.orderInfo(team, updata, begin, end)
+    # sso = QueryTwo('+86-18538110674', 'qyz04163510', '1343')
+    # sso.orderInfo(team, updata, begin, end)
     print('更新耗时：', datetime.datetime.now() - start)
 
     print('---------------------------------- 导出部分：--------------------------------')
