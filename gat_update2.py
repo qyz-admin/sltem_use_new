@@ -3526,7 +3526,7 @@ class QueryUpdate(Settings):
                             concat(ROUND(SUM(改派签收) / SUM(改派完成) * 100,2),'%') as 改派完成签收,
                             concat(ROUND(SUM(改派签收) / SUM(改派单量) * 100,2),'%') as 改派总计签收,
                             concat(ROUND(SUM(改派完成) / SUM(改派单量) * 100,2),'%') as 改派完成占比,
-							concat(ROUND(SUM(直发单量) / 改派总单量 * 100,2),'%') as 改派品类占比
+							concat(ROUND(SUM(改派单量) / 改派总单量 * 100,2),'%') as 改派品类占比
                     FROM(SELECT cx.年月 月份, cx.币种 地区, cx.家族, cx.父级分类,
                             总订单量, 
                                 COUNT(cx.订单编号) as 总单量,

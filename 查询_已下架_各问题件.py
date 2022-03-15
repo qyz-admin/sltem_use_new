@@ -1242,9 +1242,13 @@ if __name__ == '__main__':
         print('创建成功')
         file_path = mkpath + '\\导运单号\\{} 龟山无运单号.xlsx'.format(time_path.strftime('%m.%d'))
         file_path2 = mkpath + '\\导运单号\\{} 立邦无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+        file_path3 = mkpath + '\\导运单号\\{} 天马无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+        file_path4 = mkpath + '\\导运单号\\{} 速派无运单号.xlsx'.format(time_path.strftime('%m.%d'))
         df = pd.DataFrame([['', '']], columns=['订单编号', '物流单号'])
         df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
         df.to_excel(file_path2, sheet_name='查询', index=False, engine='xlsxwriter')
+        df.to_excel(file_path3, sheet_name='查询', index=False, engine='xlsxwriter')
+        df.to_excel(file_path4, sheet_name='查询', index=False, engine='xlsxwriter')
         print('创建文件')
     else:
         print(mkpath + ' 目录已存在')
@@ -1272,7 +1276,7 @@ if __name__ == '__main__':
         timeStart, timeEnd = m.readInfo('派送问题件')
         m.waybill_deliveryList(timeStart, timeEnd)                        # 查询更新-派送问题件
 
-    elif int(select) == 909:
+    elif int(select) == 99:
         timeStart, timeEnd = m.readInfo('物流问题件')
         m.waybill_InfoQuery('2021-12-01', '2021-12-01')             # 查询更新-物流问题件
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
@@ -1320,12 +1324,12 @@ if __name__ == '__main__':
     '''
     # timeStart, timeEnd = m.readInfo('物流问题件')
 
-    # m.waybill_InfoQuery('2021-12-01', '2022-01-12')         # 查询更新-物流问题件
+    # m.waybill_InfoQuery('2022-03-14', '2022-03-14')          # 查询更新-物流问题件
 
     # timeStart, timeEnd = m.readInfo('派送问题件')
     # m.waybill_deliveryList(timeStart, timeEnd)         # 查询更新-派送问题件
 
-    # m.waybill_Query('2022-03-04', '2022-03-04')              # 查询更新-物流客诉件
+    # m.waybill_Query('2022-03-14', '2022-03-14')              # 查询更新-物流客诉件
 
     # timeStart, timeEnd = m.readInfo('采购异常')
     # m.ssale_Query('2022-02-28', '2022-03-01')                    # 查询更新-采购问题件（一、简单查询）
