@@ -295,7 +295,7 @@ class ExcelControl():
                 else:
                     unnecessary += 1
         # print(df.columns)
-        # print(df)
+        # print(88)
         # print(needDrop)
         if necessary >= 5:
             # print(df['订单编号'])
@@ -303,8 +303,10 @@ class ExcelControl():
             df.drop(labels=needDrop, axis=1, inplace=True)
             df.dropna(axis=0, subset=['运单编号'], inplace=True)
             # print(df.columns)
-            if team == 'gat':
-                df['物流状态'] = zhconv.convert(df['物流状态'], 'zh-hans')
+            # if team == 'gat':
+            #     print(88)
+            #     print(df['物流状态'])
+            #     df['物流状态'] = zhconv.convert(df['物流状态'], 'zh-hans')
             if team == 'slrb' or team == 'sl_rb':
                 try:
                     # df['状态时间'] = df['状态时间'].str.strip()
@@ -351,12 +353,19 @@ class ExcelControl():
                 df = df[~(df['订单编号'].str.contains('BJ|GK|KD|NB|NR|TG|TR|XM'))]
                 df.reset_index(drop=True, inplace=True)
 
-            if '新竹' in shtName or '7-11' in shtName or '711' in shtName:       # 添加上线时间
+            if '新竹' in shtName or '7-11' in shtName or '711' in shtName:       # 添加上线时间新竹
                 df.insert(0, '上线时间', '')
-                if '清关时间' in df.columns:
+                if '清关时间' in df.columns or '''清关时间
+''' in df.columns:
                     df['上线时间'] = df['清关时间'].copy()
                 else:
                     df['上线时间'] = df['出货时间'].copy()
+                # print(11)
+                # print(df['上线时间'])
+                # print(df['清关时间'])
+            if '协来运' in shtName:  # 添加上线时间新竹
+                df.insert(0, '上线时间', '')
+                df['上线时间'] = df['出货时间'].copy()
             if '重出明细' in shtName or '重出明细' in shtName:                       # 添加上线时间  天马改派
                 df.insert(0, '上线时间', '')
                 df['上线时间'] = df['出货时间'].copy()

@@ -460,6 +460,7 @@ class MysqlControl(Settings):
                             null 规格中文,
                             a.ship_state 省洲,
                             null 审单类型,
+                            null 拉黑率,
                             a.del_reason 删除原因,
                             null 删除时间,
                             a.question_reason 问题原因,

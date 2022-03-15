@@ -1258,6 +1258,10 @@ class QueryTwo(Settings):
                     result['productId'] = ''
                     result['spec'] = ''
                     result['chooser'] = ''
+                if '拉黑率' in result['autoVerifyTip']:
+                    result['autoVerifyTip'] = (result['autoVerifyTip'].split('%')[0]).split(',拉黑率')[1] + '%'
+                else:
+                    result['autoVerifyTip'] = ''
                 quest = ''
                 for re in result['questionReason']:
                     quest = quest + ';' + re
@@ -1286,7 +1290,7 @@ class QueryTwo(Settings):
             df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId',
                        'spec', 'quantity', 'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime',
                        'finishTime', 'stateTime', 'logisticsUpdateTime', 'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType',
-                       'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks']]
+                       'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks','autoVerifyTip']]
             print(df)
             # print('正在更新临时表中......')
             df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
@@ -1317,6 +1321,7 @@ class QueryTwo(Settings):
                                 h.`shipInfo.shipState` 省洲,
             				    h.`spec` 规格中文,
             				    h.`autoVerify` 审单类型,
+            				    h.`autoVerifyTip` 拉黑率,
             				    h.`delReason` 删除原因,
             				    h.`delTime` 删除时间,
             				    h.`questionReason` 问题原因,
@@ -1355,6 +1360,7 @@ class QueryTwo(Settings):
                                 a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`),
                                 a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
                                 a.`审单类型`= IF(b.`审单类型` = '', NULL, IF(b.`审单类型` like '%自动审单%','是','否')),
+                                a.`拉黑率`= IF(b.`拉黑率` = '', '0.00%', b.`拉黑率`),
                                 a.`删除原因`= IF(b.`删除原因` = '', NULL,  b.`删除原因`),
                                 a.`删除时间`= IF(b.`删除时间` = '', NULL,  b.`删除时间`),
                                 a.`问题原因`= IF(b.`问题原因` = '', NULL,  b.`问题原因`),
