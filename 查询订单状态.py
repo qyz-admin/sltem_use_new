@@ -487,7 +487,7 @@ if __name__ == '__main__':
     # upload = '查询-订单号'
     # m.trans_way_cost(team)  # 同产品下的规格运费查询
     '''
-    select = 2
+    select = 3
     if int(select) == 1:
         if week.isoweekday() == 1 or week.isoweekday() == 3 or week.isoweekday() == 5:
             upload = '查询-运单号'
@@ -495,7 +495,12 @@ if __name__ == '__main__':
     elif int(select) == 2:
         m.readFormHost('查询运费')
         m.trans_way_cost_new(team)  # 同产品下的规格运费查询
-
+    elif int(select) == 3:
+        if week.isoweekday() == 1 or week.isoweekday() == 3 or week.isoweekday() == 5:
+            upload = '查询-运单号'
+            m.readFormHost(upload)
+        m.readFormHost('查询运费')
+        m.trans_way_cost_new(team)  # 同产品下的规格运费查询
 
     print('输出耗时：', datetime.datetime.now() - start)
     win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒", win32con.MB_OK)

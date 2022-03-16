@@ -40,8 +40,8 @@ if team in ('gat', 'slsc', 'sl_r9b'):
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    begin = datetime.date(2022, 2, 23)
-    end = datetime.date(2022, 3, 12)
+    begin = datetime.date(2022, 3, 1)
+    end = datetime.date(2022, 3, 16)
     # 导出时间
     month_last = '2022-01-01'
     month_yesterday = '2022-03-12'
@@ -94,11 +94,11 @@ print('导入耗时：', datetime.datetime.now() - start)
 # TODO---数据库分段读取---
 print('---------------------------------- 数据库更新部分：--------------------------------')
 m.creatMyOrderSlTWO(team, begin, end)                       # 最近两个月的 部分内容 更新信息
-# m.creatMyOrderSl(team)                                      # 最近五天的全部订单信息
+m.creatMyOrderSl(team)                                      # 最近五天的全部订单信息
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 
 
-if team == 'ga9t':
+if team == 'gat':
     print('---------------------------------- 单点更新部分：--------------------------------')
     sso = QueryTwo('+86-18538110674', 'qyz04163510', '1343')
     sso.orderInfo(team, updata, begin, end)

@@ -1258,8 +1258,12 @@ class QueryTwo(Settings):
                     result['productId'] = ''
                     result['spec'] = ''
                     result['chooser'] = ''
-                if '拉黑率' in result['autoVerifyTip']:
-                    result['autoVerifyTip'] = (result['autoVerifyTip'].split('%')[0]).split(',拉黑率')[1] + '%'
+                if '拉黑00率' in result['autoVerifyTip']:
+                    t2 = result['autoVerifyTip'].split(';')
+                    for y in t2:
+                        if '拉黑率' in y and '%' in y:
+                            result['autoVerifyTip'] = y.split(',拉黑率')[1]
+                            # result['autoVerifyTip'] = (result['autoVerifyTip'].split('%')[0]).split(',拉黑率')[1] + '%'
                 else:
                     result['autoVerifyTip'] = ''
                 quest = ''
