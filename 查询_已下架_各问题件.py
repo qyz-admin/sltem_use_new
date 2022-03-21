@@ -203,7 +203,7 @@ class QueryTwo(Settings, Settings_sso):
             rq = pd.to_datetime(rq['处理时间'][0])
             last_time = (rq + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
             now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        print('起止时间：' + team + last_time + ' - ' + now_time)
+        print('******************起止时间：' + team + last_time + ' - ' + now_time + ' ******************')
         return last_time, now_time
 
     # 查询更新（新后台的获取-物流问题件）
@@ -1240,14 +1240,16 @@ if __name__ == '__main__':
         os.makedirs(mkpath + "\\签收率")
         os.makedirs(mkpath + "\\物流表")
         print('创建成功')
-        file_path = mkpath + '\\导运单号\\{} 龟山无运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path2 = mkpath + '\\导运单号\\{} 立邦无运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path3 = mkpath + '\\导运单号\\{} 天马无运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path4 = mkpath + '\\导运单号\\{} 速派无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+        file_path = mkpath + '\\导运单号\\{} 龟山 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+        file_path2 = mkpath + '\\导运单号\\{} 立邦 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+        file_path3 = mkpath + '\\导运单号\\{} 天马 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+        file_path31 = mkpath + '\\导运单号\\{} 天马 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
+        file_path4 = mkpath + '\\导运单号\\{} 速派 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
         df = pd.DataFrame([['', '']], columns=['订单编号', '物流单号'])
         df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
         df.to_excel(file_path2, sheet_name='查询', index=False, engine='xlsxwriter')
         df.to_excel(file_path3, sheet_name='查询', index=False, engine='xlsxwriter')
+        df.to_excel(file_path31, sheet_name='查询', index=False, engine='xlsxwriter')
         df.to_excel(file_path4, sheet_name='查询', index=False, engine='xlsxwriter')
         print('创建文件')
     else:

@@ -222,6 +222,7 @@ class QueryTwoLower(Settings, Settings_sso):
                         db.insert(0, '处理时间', rq)
                     db = db[['订单编号', '处理时间', '备注（压单核实是否需要）']]
                     db.rename(columns={'备注（压单核实是否需要）': '处理结果'}, inplace=True)
+                    db.dropna(axis=0, subset=['处理结果'], how='any', inplace=True)
                     db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
                     # sql = '''update 压单表 a, customer b set a.`处理时间` = b.`处理时间`, a.`处理结果` = b.`处理结果` where a.`订单编号`= b.`订单编号`;'''
                     sql = '''REPLACE INTO 压单表_已核实(订单编号,处理时间,处理结果,记录时间) 
@@ -476,7 +477,7 @@ class QueryTwoLower(Settings, Settings_sso):
                             订单金额 AS '代收貨款限數字',NULL '指定配送日期YYYYMMDD範例: 20140220    ->2月20號', NULL '指定配送時間範例:   1   (上午 -> 09~13) 2   (下午 -> 13~17)3   (晚上 -> 17~20)',
 			                订单编号 , 商品规格, 产品id AS '产品ID', NULL '原运单号', 团队,下架时间,统计时间
                     FROM 已下架表 yx
-                    WHERE yx.记录时间 >= TIMESTAMP(CURDATE()) AND yx.物流渠道 = '龟山备货';'''
+                    WHERE yx.记录时间 >= TIMESTAMP(CURDATE()) AND yx.物流渠道 = '龟山备货' AND yx.`新运单号` IS NULL;'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             if df is not None and len(df) > 0:
                 df.to_excel('G:\\输出文件\\{} 龟山备货.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
@@ -654,14 +655,16 @@ if __name__ == '__main__':
         os.makedirs(mkpath + "\\签收率")
         os.makedirs(mkpath + "\\物流表")
         print('创建成功')
-        file_path = mkpath + '\\导运单号\\{} 龟山无运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path2 = mkpath + '\\导运单号\\{} 立邦无运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path3 = mkpath + '\\导运单号\\{} 天马无运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path4 = mkpath + '\\导运单号\\{} 速派无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+        file_path = mkpath + '\\导运单号\\{} 龟山 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+        file_path2 = mkpath + '\\导运单号\\{} 立邦 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+        file_path3 = mkpath + '\\导运单号\\{} 天马 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+        file_path31 = mkpath + '\\导运单号\\{} 天马 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
+        file_path4 = mkpath + '\\导运单号\\{} 速派 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
         df = pd.DataFrame([['', '']], columns=['订单编号', '物流单号'])
         df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
         df.to_excel(file_path2, sheet_name='查询', index=False, engine='xlsxwriter')
         df.to_excel(file_path3, sheet_name='查询', index=False, engine='xlsxwriter')
+        df.to_excel(file_path31, sheet_name='查询', index=False, engine='xlsxwriter')
         df.to_excel(file_path4, sheet_name='查询', index=False, engine='xlsxwriter')
         print('创建文件')
     else:

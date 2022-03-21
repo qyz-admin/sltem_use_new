@@ -487,7 +487,7 @@ if __name__ == '__main__':
     # upload = '查询-订单号'
     # m.trans_way_cost(team)  # 同产品下的规格运费查询
     '''
-    select = 3
+    select = 2
     if int(select) == 1:
         if week.isoweekday() == 1 or week.isoweekday() == 3 or week.isoweekday() == 5:
             upload = '查询-运单号'
