@@ -499,7 +499,7 @@ class QueryUpdate(Settings):
                 print('运行失败：', str(Exception) + str(e))
             print('运行成功…………')
         else:
-            print('今日无需获取预估签收率的数据！！！')
+            print('今日  无需获取预估签收率的数据！！！')
 
         print('正在获取同产品各团队对比的数据......')
         week: datetime = datetime.datetime.now()
@@ -568,7 +568,7 @@ class QueryUpdate(Settings):
                 print('运行失败：', str(Exception) + str(e))
             print('运行成功…………')
         else:
-            print('今日无需获取 同产品各团队对比 的数据！！！')
+            print('今日  无需获取 同产品各团队对比 的数据！！！')
 
     # 新版签收率-报表(自己看的) - 单量计算
     def gat_new(self, team, month_last, month_yesterday):  # 报表各团队近两个月的物流数据
