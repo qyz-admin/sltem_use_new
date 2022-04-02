@@ -787,54 +787,54 @@ class MysqlControl(Settings):
                     'slgat_hfh': 'giikinliujun@163.com',
                     'slgat_hs': 'giikinliujun@163.com',
                     'slsc': 'sunyaru@giikin.com'}
-        # if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat0', 'slgat', 'slgat_hfh', 'slgat_hs'):
-        #     month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-        #     month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
-        #     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
-        #     print(month_begin)
-        # else:
-        #     month_last = '2021-06-01'
-        #     month_yesterday = '2021-07-31'
-        #     month_begin = '2021-02-01'
+        if team in ('slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat0', 'slgat', 'slgat_hfh', 'slgat_hs'):
+            month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+            month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
+            month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
+            print(month_begin)
+        else:
+            month_last = '2021-06-01'
+            month_yesterday = '2021-07-31'
+            month_begin = '2021-02-01'
         print('正在检查父级分类为空的信息---')
-        # sql = '''SELECT 订单编号,商品id,
-		# 		        dp.product_id, dp.`name` product_name, dp.third_cate_id,
-        #                 dc.ppname cate, dc.pname second_cate, dc.`name` third_cate
-        #         FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-        #             FROM {0}_order_list sl
-        #             WHERE sl.`日期`> '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
-		# 	        ) s
-        #         LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
-        #         LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''.format(team, month_begin)
-        # df = pd.read_sql_query(sql=sql, con=self.engine1)
-        # df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
-        # print('正在更新父级分类的详情…………')
-        # sql = '''update {0}_order_list a, tem_product_id b
-        #     		    set a.`父级分类`= IF(b.`cate` = '', a.`父级分类`, b.`cate`),
-        #     				a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
-        #     				a.`三级分类`= IF(b.`third_cate` = '', a.`三级分类`, b.`third_cate`)
-        #     			where a.`订单编号`= b.`订单编号`;'''.format(team)
-        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
-        # print('更新完成+++')
-        #
-        # print('正在检查产品id为空的信息---')
-        # sql = '''SELECT 订单编号,商品id,
-		# 		        dp.product_id, dp.`name` product_name, dp.third_cate_id
-        #         FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-        #             FROM {0}_order_list sl
-        #             WHERE sl.`日期`> '{1}' AND (sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
-		# 	        ) s
-        #         LEFT JOIN dim_product_gat dp ON dp.product_id = s.`产品id`;'''.format(
-        #     team, month_begin)
-        # df = pd.read_sql_query(sql=sql, con=self.engine1)
-        # df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
-        # print('正在更新产品详情…………')
-        # sql = '''update {0}_order_list a, tem_product_id b
-        #     		    set a.`产品id`= IF(b.`product_id` = '',a.`产品id`, b.`product_id`),
-        #     		        a.`产品名称`= IF(b.`product_name` = '',a.`产品名称`, b.`product_name`)
-        #     			where a.`订单编号`= b.`订单编号`;'''.format(team)
-        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        # print('更新完成+++')
+        sql = '''SELECT 订单编号,商品id,
+				        dp.product_id, dp.`name` product_name, dp.third_cate_id,
+                        dc.ppname cate, dc.pname second_cate, dc.`name` third_cate
+                FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
+                    FROM {0}_order_list sl
+                    WHERE sl.`日期`> '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+			        ) s
+                LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
+                LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''.format(team, month_begin)
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
+        print('正在更新父级分类的详情…………')
+        sql = '''update {0}_order_list a, tem_product_id b
+            		    set a.`父级分类`= IF(b.`cate` = '', a.`父级分类`, b.`cate`),
+            				a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
+            				a.`三级分类`= IF(b.`third_cate` = '', a.`三级分类`, b.`third_cate`)
+            			where a.`订单编号`= b.`订单编号`;'''.format(team)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=1000)
+        print('更新完成+++')
+
+        print('正在检查产品id为空的信息---')
+        sql = '''SELECT 订单编号,商品id,
+				        dp.product_id, dp.`name` product_name, dp.third_cate_id
+                FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
+                    FROM {0}_order_list sl
+                    WHERE sl.`日期`> '{1}' AND (sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+			        ) s
+                LEFT JOIN dim_product_gat dp ON dp.product_id = s.`产品id`;'''.format(
+            team, month_begin)
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
+        print('正在更新产品详情…………')
+        sql = '''update {0}_order_list a, tem_product_id b
+            		    set a.`产品id`= IF(b.`product_id` = '',a.`产品id`, b.`product_id`),
+            		        a.`产品名称`= IF(b.`product_name` = '',a.`产品名称`, b.`product_name`)
+            			where a.`订单编号`= b.`订单编号`;'''.format(team)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        print('更新完成+++')
 
         token = 'fc246aa95068f486c7d11368d12e0dbb'  # 补充查询产品信息需要
         if team == 'slxmt':  # 新马物流查询函数导出

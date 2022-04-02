@@ -236,7 +236,7 @@ class QueryUpdate(Settings):
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                 print('更新完成+++')
 
-        print('正在检查产品id为空的信息---')
+        print('正在第一次检查产品id为空的信息---')
         sql = '''SELECT 订单编号,商品id,dp.product_id, dp.`name` product_name, dp.third_cate_id
                 FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
                         FROM {0}_order_list sl
@@ -3168,6 +3168,7 @@ class QueryUpdate(Settings):
             wbsht1.close()
             wbsht.close()
             app.quit()
+            app.quit()
         except Exception as e:
             print('运行失败：', str(Exception) + str(e))
         new_path = 'F:\\神龙签收率\\' + (datetime.datetime.now()).strftime('%m.%d') + '\\签收率\\{} {} 物流品类-签收率.xlsx'.format(today, match[team])
@@ -3198,6 +3199,7 @@ class QueryUpdate(Settings):
             wbsht1.save()
             wbsht1.close()
             wbsht.close()
+            app.quit()
             app.quit()
         except Exception as e:
             print('运行失败：', str(Exception) + str(e))
@@ -5697,7 +5699,10 @@ ORDER BY 日期31天;'''.format()     # 港台查询函数导出
         df0 = pd.read_sql_query(sql=sql, con=self.engine1)
         listT.append(df0)
         print('正在获取 周报表 数据内容…………')
-        sql = '''SELECT 日期31天, ss.*, ss1.*, ss2.*, ss3.*
+        sql = '''SELECT 日期31天, ss.正常出货, ss.删除订单, ss.实际签收, 
+				        ss1.约派送, ss1.核实拒收, ss1.再派签收, 
+				        ss2.挽回单数, ss2.未确认, ss2.退款单数, ss2.实际挽回单数, 
+				        ss3.正常发货, ss3.取消订单
                 FROM date
                 LEFT JOIN
 		            (SELECT 日期 AS 系统问题,
@@ -5724,7 +5729,7 @@ ORDER BY 日期31天;'''.format()     # 港台查询函数导出
 	                (SELECT 处理时间 AS 物流问题,
 					        COUNT(订单编号) AS 物流问题总量,
 					        SUM(IF(ks.`处理结果` LIKE '%送货%' or ks.`处理结果` LIKE '%配送%' or ks.`处理结果` LIKE '%自取%',1,0)) AS 约派送,
-					        SUM(IF(ks.`处理结果` LIKE '%拒收%' ,1,0)) AS 核实拒收,
+					        SUM(IF(ks.`处理结果` LIKE '%拒收%' OR ks.`处理结果` LIKE '%无人接听%' OR ks.`处理结果` LIKE '%无效号码%',1,0)) AS 核实拒收,
 					        SUM(IF((ks.`处理结果` LIKE '%送货%' or ks.`处理结果` LIKE '%配送%') AND ks.`系统物流状态` LIKE '已签收%',1,0)) AS 再派签收,
 					        SUM(IF(ks.`处理结果` LIKE '%无人接听%',1,0)) AS 未接听,
 					        SUM(IF(ks.`处理结果` LIKE '%无效号码%',1,0)) AS 无效号码
@@ -8516,15 +8521,15 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    if team == 'gat':
+    if team == 'ga9t':
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
         month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
     else:
-        month_last = '2022-01-01'
-        month_old = '2022-01-01'        # 获取-每日-报表 开始的时间
-        month_yesterday = '2022-03-07'
+        month_last = '2022-02-01'
+        month_old = '2022-02-01'        # 获取-每日-报表 开始的时间
+        month_yesterday = '2022-03-31'
 
     last_time = '2021-01-01'
     write = '本期'

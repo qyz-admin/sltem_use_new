@@ -1290,8 +1290,8 @@ if __name__ == '__main__':
         for team in [1, 2]:
             m.orderReturnList_Query(team, timeStart, timeEnd)       # 查询更新-退换货
 
-        timeStart, timeEnd = m.readInfo('拒收问题件')
-        m.order_js_Query(timeStart, timeEnd)                        # 查询更新-拒收问题件
+        # timeStart, timeEnd = m.readInfo('拒收问题件')
+        # m.order_js_Query(timeStart, timeEnd)                        # 查询更新-拒收问题件-·123456
 
         timeStart, timeEnd = m.readInfo('派送问题件')
         m.waybill_deliveryList(timeStart, timeEnd)                        # 查询更新-派送问题件
@@ -1319,7 +1319,12 @@ if __name__ == '__main__':
         m.my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
         m.my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
 
-
+    '''
+    # -----------------------------------------------自动获取 上架表保存 状态运行（四）-----------------------------------------
+    '''
+    # if int(select) == 99:
+    #     m.my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
+    #     m.my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
 
     '''
     # -----------------------------------------------测试部分-----------------------------------------

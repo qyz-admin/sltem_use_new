@@ -277,6 +277,52 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
         return data
 
+    # 后台补充产品信息
+    def productInfo(self, proId):  # 进入订单检索界面
+        print('+++正在查询订单信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getProductList&page=1&pageSize=10&productName=&status=&source=&isSensitive=&isGift=&isDistribution=&chooserId=&buyerId='
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsProductSearch'}
+        data = {}
+        data.update({'productId': proId})
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        ordersDict = []
+        try:
+            for result in req['data']['list']:
+                # 添加新的字典键-值对，为下面的重新赋值用
+                result['cate_id'] = 0
+                result['second_cate_id'] = 0
+                result['third_cate_id'] = 0
+                result['cate_id'] = (result['categorys']).split('>')[2]
+                result['second_cate_id'] = (result['categorys']).split('>')[1]
+                result['third_cate_id'] = (result['categorys']).split('>')[0]
+                ordersDict.append(result)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+            self.orderInfoQuery(ord)
+        data = pd.json_normalize(ordersDict)
+        data['name'] = data['name'].str.strip()
+        data['cate_id'] = data['cate_id'].str.strip()
+        data['second_cate_id'] = data['second_cate_id'].str.strip()
+        data['third_cate_id'] = data['third_cate_id'].str.strip()
+        data = data[['id', 'name', 'cate_id', 'second_cate_id', 'third_cate_id', 'status', 'price', 'selectionName',
+                     'sellerCount', 'buyerName', 'saleCount', 'logisticsCost', 'lender', 'isGift', 'createTime',
+                     'categorys', 'image']]
+        data.columns = ['产品id', '产品名称', '一级分类', '二级分类', '三级分类', '产品状态', '价格(￥)', '选品人',
+                        '供应商数', '采购人', '商品数', 'logisticsCost', '出借人', '特殊信息', '添加时间',
+                        '产品分类', '产品图片']
+        print('++++++本批次查询成功+++++++')
+        print('*' * 50)
+        return data
+
 
 if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')

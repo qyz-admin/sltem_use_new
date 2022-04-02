@@ -489,7 +489,6 @@ if __name__ == '__main__':
     '''
     select = 2
     if int(select) == 1:
-        if week.isoweekday() == 1 or week.isoweekday() == 3 or week.isoweekday() == 5:
             upload = '查询-运单号'
             m.readFormHost(upload)
     elif int(select) == 2:

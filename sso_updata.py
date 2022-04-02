@@ -31,7 +31,9 @@ class QueryTwo(Settings):
         self.password = password
         self.userID = userID
         # self._online()
+
         self._online_Two()
+
         # self._online_Threed()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -756,16 +758,21 @@ class QueryTwo(Settings):
                     db = None
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                     # db.rename(columns={'规格(中文)': '规格中文'})
-                    columns = list(db.columns)  # 获取数据的标题名，转为列表
+                    # columns = list(db.columns)  # 获取数据的标题名，转为列表
                     # print(columns)
-                    columns_value = ['商品链接', '收货人', '拉黑率', '电话长度', '邮编长度', '配送地址', '地址翻译',
-                                     '邮箱', '留言', '审核人', '预选物流公司(新)', '是否api下单', '特价', '异常提示', '删除原因',
-                                     '备注', '删除人', 'IP', '超商店铺ID', '超商店铺名称', '超商网点地址', '超商类型',
-                                     '市/区', '优化师', '问题原因', '审单类型', '是否克隆', '代下单客服',
-                                     '改派的原运单号', '改派的下架时间']
-                    for column_val in columns_value:
-                        if column_val in columns:
-                            db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
+                    # columns_value = ['商品链接', '收货人', '拉黑率', '电话长度', '邮编长度', '配送地址', '地址翻译',
+                    #                  '邮箱', '留言', '审核人', '预选物流公司(新)', '是否api下单', '特价', '异常提示', '删除原因',
+                    #                  '备注', '删除人', 'IP', '超商店铺ID', '超商店铺名称', '超商网点地址', '超商类型',
+                    #                  '市/区', '优化师', '问题原因', '审单类型', '是否克隆', '代下单客服',
+                    #                  '改派的原运单号', '改派的下架时间']
+                    # for column_val in columns_value:
+                    #     if column_val in columns:
+                    #         db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
+                    db = db[['订单编号', '平台', '币种', '运营团队', '商品类型', '产品id', '产品名称', '出货单名称', '联系电话', '拉黑率', '邮编','是否低价',
+                             '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型', '商品分类', '商品ID',
+                             '订单类型', '物流状态', '异常提示', '重量', '删除原因', '父级分类', '转采购时间', '发货时间', '收货时间', '上线时间', '完成时间',
+                             '删除人', 'IP', '体积', '省洲', '运输方式', '优化师', '问题原因', '审单类型', '代下单客服', '改派的下架时间', '克隆人','站点ID',
+                             '选品人', '设计师', '运费', '服务费', '拒收原因', '克隆时间']]
                     db['运单号'] = db['运单号'].str.strip()                     # 去掉运单号中的前后空字符串
                     db['物流渠道'] = db['物流渠道'].str.strip()
                     db['产品名称'] = db['产品名称'].str.split('#', expand=True)[1]
@@ -804,6 +811,9 @@ class QueryTwo(Settings):
             				        数量,
             				        h.联系电话 电话号码,
             				        h.运单号 运单编号,
+            				        null 查件单号,
+            				        h.订单状态 系统订单状态,
+            				        IF(h.`物流状态` in ('发货中'), null, h.`物流状态`) 系统物流状态,
             				        IF(h.`订单类型` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
             				        h.物流渠道 物流方式,
             				        dim_trans_way.simple_name 物流名称,
@@ -833,11 +843,26 @@ class QueryTwo(Settings):
             				        h.体积 包裹体积,
             				        邮编,
             				        h.转采购时间 添加物流单号时间,
-            				        h.`规格中文` 规格中文,
+            				        null 规格中文,
             				        h.省洲 省洲,
-            				        h.订单状态 系统订单状态,
-            				        IF(h.`物流状态` in ('发货中'), null, h.`物流状态`) 系统物流状态,
-            				        h.上线时间 上线时间
+            				        null 审单类型,
+            				        null 拉黑率,
+            				        null 删除原因,
+            				        null 删除时间,
+            				        null 问题原因,
+            				        null 问题时间,
+            				        null 下单人,
+            				        null 克隆人,
+            				        null 下架类型,
+            				        null 下架时间,
+            				        null 物流提货时间,
+            				        null 物流发货时间,
+            				        h.上线时间 上线时间,
+            				        null 国内清关时间,
+            				        null 目的清关时间,
+            				        null 回款时间,
+                                    null IP,
+            				        null 选品人
                             FROM d1_host h 
                             LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
                             LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -1314,6 +1339,7 @@ class QueryTwo(Settings):
             				    h.`saleId` 商品id,
             				    h.`productId` 产品id,
             		            h.`saleProduct` 产品名称,
+            		            h.amount 价格,
             				    h.verifyTime 审核时间,
             				    h.transferTime 转采购时间,
             				    h.onlineTime 上线时间,
@@ -1356,6 +1382,7 @@ class QueryTwo(Settings):
                                 a.`商品id`= IF(b.`商品id` = '', a.`商品id`, b.`商品id`),
                                 a.`产品id`= IF(b.`产品id` = '', a.`产品id`, b.`产品id`),
                                 a.`产品名称`= IF(b.`产品名称` = '', a.`产品名称`, b.`产品名称`),
+                                a.`价格`= IF(b.`价格` = '', a.`价格`, b.`价格`),
                                 a.`审核时间`= IF(b.`审核时间` = '', NULL, b.`审核时间`),
                                 a.`上线时间`= IF(b.`上线时间` = '' or b.`上线时间` = '0000-00-00 00:00:00' , NULL, b.`上线时间`),
                                 a.`仓储扫描时间`= IF(b.`仓储扫描时间` = '', NULL, b.`仓储扫描时间`),
@@ -1587,59 +1614,62 @@ if __name__ == '__main__':
     #     query = '导入'         # 导入；，更新--->>数据更新切换
     #     m.readFormHost(team, query)
     # 2、手动更新状态
-    for team in ['gat']:
-        query = '更新'         # 导入；，更新--->>数据更新切换
-        m.readFormHost(team, query)
+
+    select = 1
+    if int(select) == 1:
+        for team in ['gat']:
+            query = '导入'         # 导入；，更新--->>数据更新切换
+            m.readFormHost(team, query)
 
 
+    elif int(select) == 2:
+        # -----------------------------------------------系统导入状态运行（二）-----------------------------------------
+        #   台湾token, 日本token, 新马token：  f5dc2a3134c17a2e970977232e1aae9b
+        #   泰国token： 83583b29fc24ec0529082ff7928246a6
 
-    # -----------------------------------------------系统导入状态运行（二）-----------------------------------------
-    #   台湾token, 日本token, 新马token：  f5dc2a3134c17a2e970977232e1aae9b
-    #   泰国token： 83583b29fc24ec0529082ff7928246a6
+        begin = datetime.date(2021, 10, 1)       # 1、手动设置时间；若无法查询，切换代理和直连的网络
+        print(begin)
+        end = datetime.date(2021, 10, 31)
+        print(end)
+        # yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 2、自动设置时间
+        # mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
+        # begin = datetime.date(yy, mm, 1)
+        # print(begin)
+        # yy2 = int(datetime.datetime.now().strftime('%Y'))
+        # mm2 = int(datetime.datetime.now().strftime('%m'))
+        # dd2 = int(datetime.datetime.now().strftime('%d'))
+        # end = datetime.date(yy2, mm2, dd2)
+        # print(end)
+        print(datetime.datetime.now())
 
-    begin = datetime.date(2021, 10, 1)       # 1、手动设置时间；若无法查询，切换代理和直连的网络
-    print(begin)
-    end = datetime.date(2021, 10, 31)
-    print(end)
-    # yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))  # 2、自动设置时间
-    # mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
-    # begin = datetime.date(yy, mm, 1)
-    # print(begin)
-    # yy2 = int(datetime.datetime.now().strftime('%Y'))
-    # mm2 = int(datetime.datetime.now().strftime('%m'))
-    # dd2 = int(datetime.datetime.now().strftime('%d'))
-    # end = datetime.date(yy2, mm2, dd2)
-    # print(end)
-    print(datetime.datetime.now())
-
-    team = 'gat_order_list'     # 获取单号表
-    team2 = 'gat_order_list'    # 更新单号表
-    searchType = '订单号'  # 运单号，订单号   查询切换
-    print('++++++正在获取 ' + match1[team] + ' 信息++++++')
-    for i in range((end - begin).days):  # 按天循环获取订单状态
-        day = begin + datetime.timedelta(days=i)
-        yesterday = str(day) + ' 23:59:59'
-        last_month = str(day)
-        now_month = str(day)
-        print('正在更新 ' + match1[team] + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
-        # m.orderInfo(searchType, team, team2, last_month)
+        team = 'gat_order_list'     # 获取单号表
+        team2 = 'gat_order_list'    # 更新单号表
+        searchType = '订单号'  # 运单号，订单号   查询切换
+        print('++++++正在获取 ' + match1[team] + ' 信息++++++')
+        for i in range((end - begin).days):  # 按天循环获取订单状态
+            day = begin + datetime.timedelta(days=i)
+            yesterday = str(day) + ' 23:59:59'
+            last_month = str(day)
+            now_month = str(day)
+            print('正在更新 ' + match1[team] + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
+            # m.orderInfo(searchType, team, team2, last_month)
 
 
-    for i in range((end - begin).days):  # 按天循环获取订单状态
-        print(i)
-        last_month = begin + datetime.timedelta(days=5 * i)
-        now_month = begin + datetime.timedelta(days=(i+1) * 5)
-        if end >= now_month:
-            print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
-            # m.orderInfo_th(searchType, team, team2, last_month, now_month)
-        else:
-            now_month = last_month + datetime.timedelta(days=(end - last_month).days)
-            print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
-            # m.orderInfo_th(searchType, team, team2, last_month, now_month)
-            break
+        for i in range((end - begin).days):  # 按天循环获取订单状态
+            print(i)
+            last_month = begin + datetime.timedelta(days=5 * i)
+            now_month = begin + datetime.timedelta(days=(i+1) * 5)
+            if end >= now_month:
+                print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
+                # m.orderInfo_th(searchType, team, team2, last_month, now_month)
+            else:
+                now_month = last_month + datetime.timedelta(days=(end - last_month).days)
+                print('正在更新 ' + str(last_month) + ' 号 --- ' + str(now_month) + ' 号信息…………')
+                # m.orderInfo_th(searchType, team, team2, last_month, now_month)
+                break
 
-    # m.orderInfoQuery('NR112151454534728', '订单号', 'gat_order_list', 'gat_order_list')  # 进入订单检索界面
+        # m.orderInfoQuery('NR112151454534728', '订单号', 'gat_order_list', 'gat_order_list')  # 进入订单检索界面
 
-    m.orderInfoQuery('GT203090849067593')  # 进入订单检索界面
+        m.orderInfoQuery('GT203090849067593')  # 进入订单检索界面
 
-    # print('更新耗时：', datetime.datetime.now() - start)
+        # print('更新耗时：', datetime.datetime.now() - start)

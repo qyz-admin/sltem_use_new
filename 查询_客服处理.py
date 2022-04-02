@@ -1669,9 +1669,8 @@ if __name__ == '__main__':
     elif int(select) == 6:
         m.month_reporrt_data()                    # 月工作数量
 
-
-
-
+    elif int(select) == 7:
+        m.month_reporrt_data()                    # 月工作数量
 
     print('输出耗时：', datetime.datetime.now() - start)
 
