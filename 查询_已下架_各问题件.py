@@ -935,7 +935,7 @@ class QueryTwo(Settings, Settings_sso):
         data = {'page': 1, 'pageSize': 500, 'orderPrefix': None, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
                 'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
-                'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': None, 'finishTimeStart': None,
+                'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': 99, 'finishTimeStart': None,
                 'finishTimeEnd': None, 'traceTimeStart': timeStart + ' 00:00:00', 'traceTimeEnd': timeEnd + ' 23:59:59','newCloneNumber': None}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
         # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
@@ -1290,8 +1290,8 @@ if __name__ == '__main__':
         for team in [1, 2]:
             m.orderReturnList_Query(team, timeStart, timeEnd)       # 查询更新-退换货
 
-        # timeStart, timeEnd = m.readInfo('拒收问题件')
-        # m.order_js_Query(timeStart, timeEnd)                        # 查询更新-拒收问题件-·123456
+        timeStart, timeEnd = m.readInfo('拒收问题件')
+        m.order_js_Query(timeStart, timeEnd)                        # 查询更新-拒收问题件-·123456
 
         timeStart, timeEnd = m.readInfo('派送问题件')
         m.waybill_deliveryList(timeStart, timeEnd)                        # 查询更新-派送问题件

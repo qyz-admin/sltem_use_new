@@ -944,7 +944,7 @@ class MysqlControl(Settings):
                     AND a.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                     ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
         elif team in ('gat'):
-            # self.d.productIdInfo(token, '订单号', team)   # 产品id详情更新   （参数一需要手动更换）
+            self.d.productIdInfo(token, '订单号', team)   # 产品id详情更新   （参数一需要手动更换）
             # self.d.cateIdInfo(token, team)  # 进入产品检索界面（参数一需要手动更换）
             sql = '''DELETE FROM gat_zqsb
                             WHERE gat_zqsb.`订单编号` IN (SELECT 订单编号

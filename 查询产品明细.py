@@ -22,7 +22,7 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  
 
 
 # -*- coding:utf-8 -*-
-class QueryTwo(Settings, Settings_sso):
+class QueryTwoT(Settings, Settings_sso):
     def __init__(self, userMobile, password):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
@@ -277,8 +277,45 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
         return data
 
+
+
+
     # 后台补充产品信息
-    def productInfo(self, proId):  # 进入订单检索界面
+    def productInfo(self, team):  # 进入查询界面，
+        print('正在获取需要更新的产品id信息')
+        start = datetime.datetime.now()
+        month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
+        sql = '''SELECT DISTINCT 产品id  FROM {0}_order_list sl 
+          WHERE sl.`日期`>= '{1}' 
+            AND (sl.`产品名称` IS NULL or sl.`父级分类` IS NULL)
+            AND (sl.`系统订单状态` NOT IN ('已删除','问题订单','支付失败','未支付'));'''.format(team, month_begin)
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        if ordersDict.empty:
+            print('无需要更新的产品id信息！！！')
+            return
+        productId = list(ordersDict['产品id'])
+        print('获取耗时：', datetime.datetime.now() - start)
+        max_count = len(productId)
+        print(max_count)
+        if max_count > 0:
+            df = pd.DataFrame([['', '', '', '', '']], columns=['id', 'name', 'cate_id', 'second_cate_id', 'third_cate_id'])
+            dlist = []
+            for proId in productId:
+                print(proId)
+                data = self.productQuery(proId)
+                dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+            dp.to_sql('tem_product', con=self.engine1, index=False, if_exists='replace')
+            sql = '''update gat_order_list a, tem_product b
+                    set a.`产品名称`= IF(b.`name` = '', a.`产品名称`, b.`name`),
+                        a.`父级分类`= IF(b.`cate_id` = '', a.`父级分类`, b.`cate_id`),
+                    a.`二级分类`= IF(b.`second_cate_id` = '', a.`二级分类`, b.`second_cate_id`),
+                    a.`三级分类`= IF(b.`third_cate_id` = '', a.`三级分类`, b.`third_cate_id`)
+                  where a.`产品id`= b.`产品id`;'''
+            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('共有 ' + str(len(dp)) + '条 成功更新+++++++')
+
+    def productQuery(self, proId):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getProductList&page=1&pageSize=10&productName=&status=&source=&isSensitive=&isGift=&isDistribution=&chooserId=&buyerId='
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
@@ -293,11 +330,9 @@ class QueryTwo(Settings, Settings_sso):
         req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
-        # print(req)
         ordersDict = []
         try:
-            for result in req['data']['list']:
-                # 添加新的字典键-值对，为下面的重新赋值用
+            for result in req['data']['list']:          # 添加新的字典键-值对，为下面的重新赋值用
                 result['cate_id'] = 0
                 result['second_cate_id'] = 0
                 result['third_cate_id'] = 0
@@ -313,24 +348,20 @@ class QueryTwo(Settings, Settings_sso):
         data['cate_id'] = data['cate_id'].str.strip()
         data['second_cate_id'] = data['second_cate_id'].str.strip()
         data['third_cate_id'] = data['third_cate_id'].str.strip()
-        data = data[['id', 'name', 'cate_id', 'second_cate_id', 'third_cate_id', 'status', 'price', 'selectionName',
-                     'sellerCount', 'buyerName', 'saleCount', 'logisticsCost', 'lender', 'isGift', 'createTime',
-                     'categorys', 'image']]
-        data.columns = ['产品id', '产品名称', '一级分类', '二级分类', '三级分类', '产品状态', '价格(￥)', '选品人',
-                        '供应商数', '采购人', '商品数', 'logisticsCost', '出借人', '特殊信息', '添加时间',
-                        '产品分类', '产品图片']
+        data = data[['id', 'name', 'cate_id', 'second_cate_id', 'third_cate_id']]
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         return data
 
 
 if __name__ == '__main__':
-    m = QueryTwo('+86-18538110674', 'qyz04163510')
+    m = QueryTwoT('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # 1、手动导入状态
-    for team in ['gat']:
-        m.readFormHost(team)
+    # for team in ['gat']:
+    #     m.readFormHost(team)
+    m.productInfo('gat')
 
     print('查询耗时：', datetime.datetime.now() - start)

@@ -17,6 +17,7 @@ from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, \
     Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
+from 查询产品明细 import QueryTwoT
 
 from mysqlControl import MysqlControl
 # -*- coding:utf-8 -*-
@@ -266,7 +267,9 @@ class QueryUpdate(Settings):
         if ordersDict.empty:
             print(' ****** 没有要补充的信息; ****** ')
         else:
-            print('！！！ 请再次补充缺少的数据！！！')
+            print('！！！ 请再次补充缺少的数据中！！！')
+            lw = QueryTwoT('+86-18538110674', 'qyz04163510')
+            lw.productInfo(team)
 
         if team in ('gat'):
             sql = '''DELETE FROM gat_zqsb
@@ -8521,7 +8524,7 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    if team == 'ga9t':
+    if team == 'gat':
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
