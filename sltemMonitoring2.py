@@ -170,6 +170,7 @@ class SltemMonitoring(Settings):
                  '品牌-马来西亚': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  '品牌-新加坡': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  '品牌-菲律宾': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
+                 '港台-台湾':'"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队", "火凤凰-港台(繁体)", "神龙-低价", "神龙-主页运营1组", "神龙-运营1组", "神龙-主页运营"',
                  '神龙-香港': '"神龙家族-港澳台"',
                  '神龙-台湾': '"神龙家族-港澳台"',
                  '小虎队-香港': '"金鹏家族-小虎队"',
@@ -185,7 +186,7 @@ class SltemMonitoring(Settings):
         # 初始化配置
         start: datetime = datetime.datetime.now()
         family = ""
-        if team in ('神龙火凤凰-台湾', '神龙-香港', '神龙-台湾', '火凤凰-香港', '火凤凰-台湾', '小虎队-香港', '小虎队-台湾', '神龙运营1组-台湾'):
+        if team in ('港台-台湾', '神龙火凤凰-台湾', '神龙-香港', '神龙-台湾', '火凤凰-香港', '火凤凰-台湾', '小虎队-香港', '小虎队-台湾', '神龙运营1组-台湾'):
             family = 'qsb_gat'
         elif team in ('品牌-日本', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾', '品牌-台湾', '品牌-香港'):
             family = 'qsb_slsc'
@@ -201,6 +202,9 @@ class SltemMonitoring(Settings):
         now_month_new = ''
         now_month_old = ''
         if ready == '本期宏':
+            now_month_new = rq['年月'][0]
+            now_month_old = rq['年月'][1]
+        elif ready == '本期上月宏':
             now_month_new = rq['年月'][0]
             now_month_old = rq['年月'][1]
         elif ready == '上期宏':
@@ -221,6 +225,9 @@ class SltemMonitoring(Settings):
         last_month_new = ''
         last_month_old = ''
         if ready == '本期宏':
+            last_month_new = rq['年月'][0]
+            last_month_old = rq['年月'][1]
+        elif ready == '本期上月宏':
             last_month_new = rq['年月'][0]
             last_month_old = rq['年月'][1]
         elif ready == '上期宏':
@@ -684,15 +691,15 @@ class SltemMonitoring(Settings):
                         print('修改失败：', str(Exception) + str(e) + df[column_val])
             listTValue.append(df)
         print('查询耗时：', datetime.datetime.now() - start)
-        today = datetime.date.today().strftime('%Y.%m.%d')
+        today = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         sheet_name = ['签率(天)_', '签率(月)_', '签率(旬)_', '签率(总)_', '物流(天)_', '物流(月)_', '时效(天)_', '时效(旬)_',
                       '时效(总)_']  # 生成的工作表的表名
         file_Path = []  # 发送邮箱文件使用
         filePath = ''
         if "品牌" in team:
-            filePath = 'F:\\查询\\品牌监控\\{} {} 监控表.xlsx'.format(today, team)
-        elif "神龙" in team or "火凤凰" in team or "小虎队" in team:
-            filePath = 'F:\\查询\\港台监控\\{} {} 监控表.xlsx'.format(today, team)
+            filePath = 'F:\\查询\\品牌监控\\{}{} {} 监控表.xlsx'.format(today, team, ready)
+        elif "神龙" in team or "火凤凰" in team or "小虎队" in team or "港台" in team:
+            filePath = 'F:\\查询\\港台监控\\{}{} {} 监控表.xlsx'.format(today, team, ready)
         if os.path.exists(filePath):                            # 判断是否有需要的表格，进行初始化创建
             print("正在清除重复文件......")
             os.remove(filePath)
@@ -716,6 +723,8 @@ class SltemMonitoring(Settings):
         wbsht1 = app.books.open(filePath)
         if ready == '本期宏':
             wbsht.macro('sl_总监控运行')()
+        elif ready == '本期上月宏':
+            wbsht.macro('sl_总监控运行3')()
         else:
             wbsht.macro('sl_总监控运行3')()
         wbsht1.save()
@@ -800,21 +809,22 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2022.03.01'
-    now_month = '2022.03.31'
+    last_month = '2022.03.08'
+    now_month = '2022.04.08'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传
 
     # 测试监控运行（二）-- 第一种手动方式
-    m.order_Monitoring('港台')        # 各月缓存（整体一）
+    # m.order_Monitoring('港台')        # 各月缓存（整体一）
     # for team in ['神龙-台湾', '神龙-香港', '神龙运营1组-台湾', '火凤凰-台湾', '火凤凰-香港', '小虎队-台湾']:
-    for team in ['神龙-台湾', '神龙-香港', '神龙运营1组-台湾', '火凤凰-台湾', '火凤凰-香港']:
+    for team in ['火凤凰-台湾', '火凤凰-香港', '神龙-台湾', '神龙-香港', '神龙运营1组-台湾', '港台-台湾']:
     # for team in ['火凤凰-香港']:
     # for team in ['神龙火凤凰-台湾']:
         now_month = now_month.replace('.', '-')           # 修改配置时间
         last_month = last_month.replace('.', '-')
         m.sl_Monitoring(team, now_month, last_month, '本期宏')      # 输出数据--每月正常使用的时间（二）
+        m.sl_Monitoring(team, now_month, last_month, '本期上月宏')      # 输出数据--每月正常使用的时间（二）
         # m.sl_Monitoring(team, now_month, last_month, '上期宏')      # 输出数据--每月正常使用的时间（二）
 
 

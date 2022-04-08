@@ -355,7 +355,7 @@ class QueryTwoLower(Settings, Settings_sso):
     # 进入已下架界面
     def order_lower(self, timeStart, timeEnd, auto_time):  # 进入已下架界面
         start: datetime = datetime.datetime.now()
-        team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓']
+        team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓', '协来运', '协来运（废弃）']
         # team_whid = ['速派八股仓']
         team_stock_type = [1, 2]
         # team_stock_type = [2]
@@ -369,7 +369,10 @@ class QueryTwoLower(Settings, Settings_sso):
                  '香港易速配': 134,
                  '龟山-神龙备货': 166,
                  '龟山-火凤凰备货': 198,
-                 '天马顺丰仓': 204}
+                 '天马顺丰仓': 204,
+                 '协来运': 241,
+                 '协来运（废弃）': 49
+                  }
         if auto_time == '自动':
             # sql = '''SELECT DISTINCT 统计时间 FROM 已下架表 d GROUP BY 统计时间 ORDER BY 统计时间 DESC'''
             # rq = pd.read_sql_query(sql=sql, con=self.engine1)

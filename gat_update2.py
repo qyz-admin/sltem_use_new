@@ -70,7 +70,7 @@ class QueryUpdate(Settings):
             filePath = os.path.join(path, dir)
             if dir[:2] != '~$':
                 print(filePath)
-                if '需发货的改派订单' in dir or '订单检索' in dir or '需发货改派订单' in dir:
+                if '需发货的改派订单' in dir or '需发货改派订单' in dir:
                     write = '需发货'
                 self.wbsheetHost(filePath, team, write, last_time)
                 os.remove(filePath)
@@ -378,7 +378,8 @@ class QueryUpdate(Settings):
             							IF(d.`物流方式` LIKE '台湾-天马-黑猫%','天马黑猫',
             							IF(d.`物流方式` LIKE '台湾-易速配-龟山%' OR d.`物流方式` LIKE '台湾-易速配-新竹%' OR d.`物流方式` = '易速配','龟山',
             							IF(d.`物流方式` LIKE '台湾-速派-新竹%' OR d.`物流方式` LIKE '台湾-速派-711超商%','速派',
-            							IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', d.`物流方式`)))  )  )  )  )  )  )  )
+            							IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', 
+            							IF(d.`物流方式` LIKE '台湾-铱熙无敌-新竹改派%','台湾-优美宇通-新竹改派', d.`物流方式`))))  )  )  )  )  )  )  )
                         WHERE d.`是否改派` ='改派';'''
         print('正在修改-改派的物流渠道…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
@@ -603,7 +604,8 @@ class QueryUpdate(Settings):
             							IF(d.`物流方式` LIKE '台湾-天马-黑猫%','天马黑猫',
             							IF(d.`物流方式` LIKE '台湾-易速配-龟山%' OR d.`物流方式` LIKE '台湾-易速配-新竹%' OR d.`物流方式` = '易速配','龟山',
             							IF(d.`物流方式` LIKE '台湾-速派-新竹%' OR d.`物流方式` LIKE '台湾-速派-711超商%','速派',
-            							IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', d.`物流方式`)))  )  )  )  )  )  )  )
+            							IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', 
+            							IF(d.`物流方式` LIKE '台湾-铱熙无敌-新竹改派%','台湾-优美宇通-新竹改派', d.`物流方式`))))  )  )  )  )  )  )  )
                         WHERE d.`是否改派` ='改派';'''
         print('正在修改-改派的物流渠道…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
@@ -3285,7 +3287,8 @@ class QueryUpdate(Settings):
     							IF(d.`物流方式` LIKE '台湾-天马-黑猫%','天马黑猫',
     							IF(d.`物流方式` LIKE '台湾-易速配-龟山%' OR d.`物流方式` LIKE '台湾-易速配-新竹%' OR d.`物流方式` = '易速配','龟山',
     							IF(d.`物流方式` LIKE '台湾-速派-新竹%' OR d.`物流方式` LIKE '台湾-速派-711超商%','速派', 
-    							IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', d.`物流方式`)))  )  )  )  )  )  )  )
+    							IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', 
+    							IF(d.`物流方式` LIKE '台湾-铱熙无敌-新竹改派%','台湾-优美宇通-新竹改派', d.`物流方式`))))  )  )  )  )  )  )  )
                 WHERE d.`是否改派` ='改派';'''
         print('正在修改-改派的物流渠道…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
@@ -8541,7 +8544,7 @@ if __name__ == '__main__':
     m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
     m.qsb_new(team, month_old)                                    # 获取-每日-报表
     m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收表
-    m.phone_report()                                        # 获取电话核实日报表 周报表
+    # m.phone_report()                                        # 获取电话核实日报表 周报表
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id
     # m.address_repot(team, month_last, month_yesterday)                       #  获取-地区签收率-报表

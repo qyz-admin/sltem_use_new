@@ -731,6 +731,8 @@ class QueryTwo(Settings):
             if dir[:2] != '~$':
                 print(filePath)
                 self.wbsheetHost(filePath, team, query)
+                os.remove(filePath)
+                print('已清除上传文件…………')
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
     def wbsheetHost(self, filePath, team, query):
