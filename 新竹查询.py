@@ -193,17 +193,25 @@ class QueryTwo(Settings, Settings_sso):
                 # print(data)
                 return data
             if "ctl00_ContentFrame_lblInvoiceNo" in str(val):
+                result['序号'] = index
                 result['查货号码'] = str(val).split(r'ctl00_ContentFrame_lblInvoiceNo">')[1].split('</')[0]
                 result['查货时间'] = str(val).split('時間：')[1].split('</')[0]
                 res = result['查货号码'].strip()
                 res2 = result['查货时间']
             if "L_time" in str(val):
-                pattern = re.compile(r'<[^>]+>',re.S)
-                L_time = str(val).split('L_time">')[1].split('</')[0]
-                L_cls = str(val).split('L_cls">')[1]
-                L_cls = pattern.sub('', L_cls)
+                if "貨件已退回" in str(val):
+                    # pattern = re.compile(r'<[^>]+>', re.S)
+                    L_time = str(val).split('ctl00_L_time">')[1].split('</')[0]
+                    L_cls = str(val).split(')">')[1]
+                    L_cls = L_cls.split('</u>')[0].replace('<font color="blue"><u color="blue">',' ')
+                else:
+                    pattern = re.compile(r'<[^>]+>', re.S)
+                    L_time = str(val).split('L_time">')[1].split('</')[0]
+                    L_cls = str(val).split('L_cls">')[1]
+                    L_cls = pattern.sub('', L_cls)
                 # print(L_time) 
-                # print(res) 
+                # print(res)
+                result['序号'] = index
                 result['查货号码'] = res
                 result['查货时间'] = res2
                 result['轨迹时间'] = L_time

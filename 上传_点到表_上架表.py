@@ -120,7 +120,7 @@ class QueryTwo(Settings, Settings_sso):
                     elif team == 'gat_waybill_list':
                         sql = '''REPLACE INTO {0}({1},添加时间,记录时间) SELECT *, CURDATE() 添加时间,NOW() 记录时间 FROM customer;'''.format(team,columns)
                         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-                        self.waybill_info()
+                        # self.waybill_info()
                         # self.waybill_updata()
                         print('++++成功导出订单跟进明细')
                 else:
@@ -154,12 +154,6 @@ class QueryTwo(Settings, Settings_sso):
         else:
             ord = ','.join(orderId[0:max_count])
             dp = self.order_Info_Query(ord)
-        dp.columns = ['订单编号', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '拉黑率', '电话长度',
-                      '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
-                      '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
-                      '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '克隆人', '克隆ID', '发货仓库',
-                      '是否发送短信',
-                      '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间', '异常提示']
         dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
         print('正在更新订单跟进表中......')
         sql = '''update {0} a, customer b
@@ -170,7 +164,7 @@ class QueryTwo(Settings, Settings_sso):
                             a.`上线时间`= IF(b.`上线时间` = '' or b.`上线时间` = '0000-00-00 00:00:00' , NULL, b.`上线时间`),
                             a.`完成时间`= IF(b.`完成时间` = '' or b.`完成时间` = '0000-00-00 00:00:00' , NULL, b.`完成时间`)
                 where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('查询耗时：', datetime.datetime.now() - start)
 
     def waybill_updata(self):
@@ -226,23 +220,24 @@ class QueryTwo(Settings, Settings_sso):
 
         print('正在获取 订单跟进明细表…………')
         sql = '''SELECT ss.*,
-				            g.`下单时间` AS 物流下单时间,
+				           g.`下单时间` AS 物流下单时间,
 				           g.`核重时间` AS 物流核重时间,
 				           g.`物流状态` AS 物流核重状态,
 				           g.`末条时间` AS 物流末条时间,
 				           g.`末条信息` AS 物流末条信息,
 				           gg.物流提货时间 AS 物流提货时间,
 				           gg.物流发货时间 AS 物流发货时间,
-				           gg.上线时间 AS 物流上线时间,
-				           gg.系统订单状态 AS 系统订单状态,
-				           gg.系统物流状态 AS 系统物流状态
+				           z.上线时间 AS 物流上线时间,
+						   z.最终状态,
+						   z.签收表物流状态	 
            FROM ( SELECT *,IF(出库时间 IS NULL,'出库',IF(提货时间 IS NULL,'提货',IF(上线时间 IS NULL,'上线',IF(完成时间 IS NULL,'完成',完成时间)))) AS 节点类型,
 					        IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',IF(物流 LIKE '%天马%','台湾-天马-新竹&711',IF(物流 LIKE '%优美宇通%','台湾-优美宇通-新竹代收普货&特货',物流))) AS 物流未完成
 	            FROM gat_waybill_list s
 	            WHERE s.`添加时间` = CURDATE()
            ) ss
            LEFT JOIN gat_logisitis_googs g ON ss.订单编号 = g.订单编号
-           LEFT JOIN gat_order_list gg ON ss.订单编号 = gg.订单编号'''.format()
+           LEFT JOIN gat_order_list gg ON ss.订单编号 = gg.订单编号
+		   LEFT JOIN gat_zqsb z ON ss.订单编号 = z.订单编号; '''.format()
         df2 = pd.read_sql_query(sql=sql, con=self.engine1)
         listT.append(df2)
 
@@ -327,7 +322,7 @@ class QueryTwo(Settings, Settings_sso):
 
 
 
-    def order_Info_Query(self, ord):  # 进入订单检索界面
+    def order_Info_Query(self, ord):  # 更新订单跟进 的状态信息
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
@@ -394,14 +389,14 @@ class QueryTwo(Settings, Settings_sso):
         data = pd.json_normalize(ordersdict)
         df = None
         try:
-            df = data[['orderNumber', 'currency', 'area', 'productId', 'saleProduct', 'saleName', 'spec',
-                    'shipInfo.shipName', 'shipInfo.shipPhone', 'percent', 'phoneLength', 'shipInfo.shipAddress',
-                    'amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime',
-                    'logisticsName', 'dpeStyle', 'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName',
-                    'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime',
-                    'finishTime', 'refundTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer',
-                    'autoVerify', 'cloneUser', 'isClone', 'warehouse', 'smsStatus', 'logisticsControl',
-                    'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName', 'update_time', 'autoVerifyTip']]
+            df = data[['orderNumber', 'currency', 'area', 'productId', 'saleName', 'shipInfo.shipName', 'shipInfo.shipPhone', 'percent',
+                       'amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime',
+                       'logisticsName', 'dpeStyle', 'reassignmentTypeName', 'logisticsStatus', 'deliveryTime', 'onlineTime', 'finishTime',
+                       'logisticsUpdateTime', 'stateTime', 'update_time']]
+            df.columns = ['订单编号', '币种', '运营团队', '产品id', '产品名称', '收货人', '联系电话', '拉黑率',
+                          '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间',
+                          '物流渠道', '货物类型', '订单类型', '物流状态', '发货时间', '上线时间', '完成时间',
+                          '物流更新时间', '状态时间', '更新时间']
         except Exception as e:
             print('------查询为空')
         print('++++++本批次查询成功+++++++')
@@ -417,7 +412,7 @@ if __name__ == '__main__':
     '''
     m.waybill_info()
 
-    select = 8
+    select = 3
     if int(select) == 1:
         team = 'gat_logisitis_googs'
         m.readFormHost(team)

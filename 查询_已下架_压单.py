@@ -355,23 +355,23 @@ class QueryTwoLower(Settings, Settings_sso):
     # 进入已下架界面
     def order_lower(self, timeStart, timeEnd, auto_time):  # 进入已下架界面
         start: datetime = datetime.datetime.now()
-        team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓', '协来运', '协来运（废弃）']
-        # team_whid = ['速派八股仓']
-        team_stock_type = [1, 2]
-        # team_stock_type = [2]
+        # team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓', '协来运', '协来运（废弃）']
+        team_whid = ['协来运']
+        # team_stock_type = [1, 2]
+        team_stock_type = [2]
         match = {1: 'SKU库存',
                  2: '组合库存',
                  3: '混合库存'}
         match2 = {'龟山易速配': 70,
-                 '速派八股仓': 95,
-                 '天马新竹仓': 102,
-                 '立邦香港顺丰': 117,
-                 '香港易速配': 134,
-                 '龟山-神龙备货': 166,
-                 '龟山-火凤凰备货': 198,
-                 '天马顺丰仓': 204,
-                 '协来运': 241,
-                 '协来运（废弃）': 49
+                  '速派八股仓': 95,
+                  '天马新竹仓': 102,
+                  '立邦香港顺丰': 117,
+                  '香港易速配': 134,
+                  '龟山-神龙备货': 166,
+                  '龟山-火凤凰备货': 198,
+                  '天马顺丰仓': 204,
+                  '协来运': 241,
+                  '协来运（废弃）': 49
                   }
         if auto_time == '自动':
             # sql = '''SELECT DISTINCT 统计时间 FROM 已下架表 d GROUP BY 统计时间 ORDER BY 统计时间 DESC'''
@@ -427,6 +427,7 @@ class QueryTwoLower(Settings, Settings_sso):
         # req = req.text.encode('utf-8').decode("unicode_escape")
         # print('+++已成功发送请求......')              # 转码使用
         req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
+        # print(req)
         max_count = req['data']
         if max_count != []:
             ordersDict = []
@@ -456,6 +457,8 @@ class QueryTwoLower(Settings, Settings_sso):
                             result['waill_name'] = '龟山备货'
                         elif '天马顺丰仓' in result['whid']:
                             result['waill_name'] = '天马顺丰'
+                        elif '协来运' in result['whid']:
+                            result['waill_name'] = '协来运'
                     # print(result)
                     ordersDict.append(result)
             except Exception as e:
