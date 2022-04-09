@@ -389,11 +389,11 @@ class QueryTwo(Settings, Settings_sso):
         data = pd.json_normalize(ordersdict)
         df = None
         try:
-            df = data[['orderNumber', 'currency', 'area', 'productId', 'saleName', 'shipInfo.shipName', 'shipInfo.shipPhone', 'percent',
+            df = data[['orderNumber', 'currency', 'area', 'productId', 'saleName', 'percent',
                        'amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime',
                        'logisticsName', 'dpeStyle', 'reassignmentTypeName', 'logisticsStatus', 'deliveryTime', 'onlineTime', 'finishTime',
                        'logisticsUpdateTime', 'stateTime', 'update_time']]
-            df.columns = ['订单编号', '币种', '运营团队', '产品id', '产品名称', '收货人', '联系电话', '拉黑率',
+            df.columns = ['订单编号', '币种', '运营团队', '产品id', '产品名称', '拉黑率',
                           '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间',
                           '物流渠道', '货物类型', '订单类型', '物流状态', '发货时间', '上线时间', '完成时间',
                           '物流更新时间', '状态时间', '更新时间']
