@@ -95,11 +95,10 @@ print('导入耗时：', datetime.datetime.now() - start)
 print('---------------------------------- 数据库更新部分：--------------------------------')
 # m.creatMyOrderSlTWO(team, begin, end)                       # 最近两个月的 部分内容 更新信息
 # m.creatMyOrderSl(team)                                      # 最近五天的全部订单信息
-# qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
 print('获取-更新 耗时：', datetime.datetime.now() - start)
+qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
 
-
-if team == 'gat':
+if team == 'ga9t':
     print('---------------------------------- 单点更新部分：--------------------------------')
     sso = QueryTwo('+86-18538110674', 'qyz04163510', '1343')
     sso.readFormHost('gat', '导入')  # 导入新增的订单 line运营

@@ -3,13 +3,39 @@ import time
 import win32api,win32con
 import sys
 import requests
+import json
+from sqlalchemy import create_engine
+from settings import Settings
+import pandas as pd
+from dateutil.relativedelta import relativedelta
 
 class Settings_sso():
     def __init__(self):
+        self.SS = Settings()
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.userMobile = '+86-18538110674'
         self.password = 'qyz04163510'
         self.userID = '1343'
+        self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.SS.mysql1['user'],
+                                                                                    self.SS.mysql1['password'],
+                                                                                    self.SS.mysql1['host'],
+                                                                                    self.SS.mysql1['port'],
+                                                                                    self.SS.mysql1['datebase']))
+        self.engine2 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.SS.mysql2['user'],
+                                                                                    self.SS.mysql2['password'],
+                                                                                    self.SS.mysql2['host'],
+                                                                                    self.SS.mysql2['port'],
+                                                                                    self.SS.mysql2['datebase']))
+        self.engine20 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.SS.mysql20['user'],
+                                                                                    self.SS.mysql20['password'],
+                                                                                    self.SS.mysql20['host'],
+                                                                                    self.SS.mysql20['port'],
+                                                                                    self.SS.mysql20['datebase']))
+        self.engine3 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.SS.mysql3['user'],
+                                                                                    self.SS.mysql3['password'],
+                                                                                    self.SS.mysql3['host'],
+                                                                                    self.SS.mysql3['port'],
+                                                                                    self.SS.mysql3['datebase']))
         # 单点系统登录使用
     def sso_online_Two(self):  # 登录系统保持会话状态
         print(datetime.datetime.now())
@@ -391,7 +417,262 @@ class Settings_sso():
         print(datetime.datetime.now())
         print('*' * 100)
 
+        # 查询订单更新 以订单编号 （单点系统）
 
+    # 查询订单更新 以订单编号（单点系统）
+    def updata(self, sql, sql2, team,data_df,data_df2):
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        self.sso_online_Two()
+        print('正在获取需 更新订单信息…………')
+        start = datetime.datetime.now()
+        db = pd.read_sql_query(sql=sql, con=self.engine1)
+        if db.empty:
+            print('无需要更新订单信息！！！')
+            return
+        print(db['订单编号'][0])
+        orderId = list(db['订单编号'])
+        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+        if max_count > 500:
+            ord = ', '.join(orderId[0:500])
+            df = self._updata(ord,data_df,data_df2)
+            dlist = []
+            n = 0
+            while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
+                n = n + 500
+                ord = ','.join(orderId[n:n + 500])
+                data = self._updata(ord,data_df,data_df2)
+                dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+        else:
+            ord = ','.join(orderId[0:max_count])
+            dp = self._updata(ord,data_df,data_df2)
+        print('正在写入临时缓存表......')
+        dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+        dp.to_excel('G:\\输出文件\\订单-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        print('查询已导出+++')
+        print('正在更新订单跟进表中......')
+        pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
+        print('更新耗时：', datetime.datetime.now() - start)
+        # 更新订单跟进 的状态信息
+    def _updata(self, ord,data_df,data_df2):
+        print('+++正在查询订单信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'page': 1, 'pageSize': 500, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None,'email': None,
+                'ip': None, 'productIds': None, 'saleIds': None, 'payType': None, 'logisticsId': None,'logisticsStyle':None,
+                'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None, 'emailStatus':None,
+                'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '','warehouse': None,
+                'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None,'tuan': None, 'tuanStatus': None,
+                'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None,'volumeStart': None, 'chooser_id': None,
+                'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None,
+                'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None,
+                'sortField': None, 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None}
+        data.update({'orderPrefix': ord,
+                     'shippingNumber': None})
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        ordersdict = []
+        # print('正在处理json数据转化为dataframe…………')
+        try:
+            for result in req['data']['list']:
+                result['saleId'] = 0  # 添加新的字典键-值对，为下面的重新赋值用
+                result['saleName'] = 0
+                result['productId'] = 0
+                result['saleProduct'] = 0
+                result['spec'] = 0
+                result['chooser'] = 0
+                result['saleId'] = result['specs'][0]['saleId']
+                result['saleName'] = result['specs'][0]['saleName']
+                result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+                result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
+                result['spec'] = result['specs'][0]['spec']
+                result['chooser'] = result['specs'][0]['chooser']
+                quest = ''
+                for re in result['questionReason']:
+                    quest = quest + ';' + re
+                result['questionReason'] = quest
+                delr = ''
+                for re in result['delReason']:
+                    delr = delr + ';' + re
+                result['delReason'] = delr
+                auto = ''
+                for re in result['autoVerify']:
+                    auto = auto + ';' + re
+                result['autoVerify'] = auto
+                ordersdict.append(result)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        data = pd.json_normalize(ordersdict)
+        df = None
+        try:
+            df = data[data_df]
+            df.columns = data_df2
+        except Exception as e:
+            print('------查询为空')
+        print('++++++本批次查询成功+++++++')
+        print('*' * 50)
+        return df
+
+    # 查询压单更新 以订单编号（仓储的获取）
+    def updata_yadan(self, sql, sql2, team, data_df, data_df2):  # 进入压单检索界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        self.sso_online_cang()
+        print('正在获取需 更新订单信息…………')
+        start = datetime.datetime.now()
+        db = pd.read_sql_query(sql=sql, con=self.engine1)
+        if db.empty:
+            print('无需要更新订单信息！！！')
+            return
+        print(db['订单编号'][0])
+        orderId = list(db['订单编号'])
+        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+        if max_count > 500:
+            ord = ', '.join(orderId[0:500])
+            df = self._updata_yadan(ord, data_df, data_df2)
+            dlist = []
+            n = 0
+            while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
+                n = n + 500
+                ord = ','.join(orderId[n:n + 500])
+                data = self._updata_yadan(ord, data_df, data_df2)
+                dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+        else:
+            ord = ','.join(orderId[0:max_count])
+            dp = self._updata_yadan(ord, data_df, data_df2)
+        print('正在写入临时缓存表......')
+        dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+        dp.to_excel('G:\\输出文件\\压单-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        print('查询已导出+++')
+        print('正在更新订单跟进表中......')
+        pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
+        print('更新耗时：', datetime.datetime.now() - start)
+    def _updata_yadan(self, ord,data_df,data_df2):  # 进入压单检索界面
+        print('+++正在查询订单信息中')
+        timeStart = ((datetime.datetime.now() + datetime.timedelta(days=1)) - relativedelta(months=2)).strftime('%Y-%m-%d')
+        timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
+        url = r'http://gwms-v3.giikin.cn/order/pressure/index'
+        r_header = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+            'origin': 'http://gwms-v3.giikin.cn',
+            'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
+        data = {'page': 1,
+                'limit': 500,
+                'startDate': timeStart + ' 00:00:00',
+                'endDate': timeEnd + ' 23:59:59',
+                'selectStr': '1=1 and oc.order_number in (' + ord + ')'
+                }
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
+        max_count = req['count']
+        if max_count != [] or max_count != 0:
+            ordersdict = []
+            try:
+                for result in req['data']:
+                    ordersdict.append(result)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            data = pd.json_normalize(ordersdict)
+            data = data[data_df]
+            data.columns = data_df2
+        else:
+            data = None
+            print('****** 没有信息！！！')
+        return data
+
+    # 查询出库更新 以订单编号（仓储的获取）
+    def updata_chuku(self, sql, sql2, team, data_df, data_df2):  # 进入压单检索界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        self.sso_online_cang()
+        print('正在获取需 更新订单信息…………')
+        start = datetime.datetime.now()
+        db = pd.read_sql_query(sql=sql, con=self.engine1)
+        if db.empty:
+            print('无需要更新订单信息！！！')
+            return
+        print(db['订单编号'][0])
+        orderId = list(db['订单编号'])
+        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+        if max_count > 500:
+            ord = ', '.join(orderId[0:500])
+            df = self._updata_yadan(ord, data_df, data_df2)
+            dlist = []
+            n = 0
+            while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
+                n = n + 500
+                ord = ','.join(orderId[n:n + 500])
+                data = self._updata_yadan(ord, data_df, data_df2)
+                dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+        else:
+            ord = ','.join(orderId[0:max_count])
+            dp = self._updata_yadan(ord, data_df, data_df2)
+        print('正在写入临时缓存表......')
+        dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+        dp.to_excel('G:\\输出文件\\出库-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        print('查询已导出+++')
+        print('正在更新订单跟进表中......')
+        pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
+        print('更新耗时：', datetime.datetime.now() - start)
+        # 进入运单扫描导出 界面
+    def _updata_chuku(self, ord,data_df,data_df2):
+        print('+++正在查询订单信息中')
+        timeStart = ((datetime.datetime.now() + datetime.timedelta(days=1)) - relativedelta(months=2)).strftime('%Y-%m-%d')
+        timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
+        url = r'http://gwms-v3.giikin.cn/order/delivery/deliverylog'
+        r_header = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+            'origin': 'http://gwms-v3.giikin.cn',
+            'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
+        data = {'page': 1,
+                'limit': 500,
+                'startDate': timeStart + ' 00:00:00',
+                'endDate': timeEnd + ' 23:59:59',
+                'selectStr': '1=1 and bs.order_number in (' + ord + ')'
+                }
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
+        max_count = req['count']
+        if max_count != [] or max_count != 0:
+            ordersdict = []
+            try:
+                for result in req['data']:
+                    ordersdict.append(result)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            data = pd.json_normalize(ordersdict)
+            data = data[data_df]
+            data.columns = data_df2
+        else:
+            data = None
+            print('****** 没有信息！！！')
+        return data
+
+
+
+    def test(self):
+        sql = '''SELECT 订单编号 FROM customer;'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        print(df)
+        df.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
 if __name__ == '__main__':
     m = Settings_sso()
-    m.sso_online_Two()
+    # m.sso_online_Two()
+    m.test()

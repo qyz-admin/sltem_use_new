@@ -160,19 +160,101 @@ class QueryTwo(Settings, Settings_sso):
                         set a.`运单编号`= IF(b.`运单编号` = '', NULL, b.`运单编号`),
                             a.`订单状态`= IF(b.`订单状态` = '', NULL, b.`订单状态`),
                             a.`物流状态`= IF(b.`物流状态` = '', NULL, b.`物流状态`),
-                            a.`出库时间`= IF(b.`发货时间` = '', NULL, b.`发货时间`),
+                            a.`出库时间`= IF(b.`发货时间` = '' or b.`发货时间` = '0000-00-00 00:00:00' , NULL, b.`发货时间`),
                             a.`上线时间`= IF(b.`上线时间` = '' or b.`上线时间` = '0000-00-00 00:00:00' , NULL, b.`上线时间`),
                             a.`完成时间`= IF(b.`完成时间` = '' or b.`完成时间` = '0000-00-00 00:00:00' , NULL, b.`完成时间`)
                 where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
         # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('查询耗时：', datetime.datetime.now() - start)
+    def order_Info_Query(self, ord):  # 更新订单跟进 的状态信息
+        print('+++正在查询订单信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'page': 1, 'pageSize': 500,
+                'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None,
+                'type': None, 'collId': None, 'isClone': None,
+                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '',
+                'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
+                'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
+                'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None,
+                'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
+                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None}
+        data.update({'orderPrefix': ord,
+                    'shippingNumber': None})
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        ordersdict = []
+        # print('正在处理json数据转化为dataframe…………')
+        try:
+            for result in req['data']['list']:
+                result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
+                result['saleName'] = 0
+                result['productId'] = 0
+                result['saleProduct'] = 0
+                result['spec'] = 0
+                result['chooser'] = 0
+                result['saleId'] = result['specs'][0]['saleId']
+                result['saleName'] = result['specs'][0]['saleName']
+                result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+                result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
+                result['spec'] = result['specs'][0]['spec']
+                result['chooser'] = result['specs'][0]['chooser']
+                quest = ''
+                for re in result['questionReason']:
+                    quest = quest + ';' + re
+                result['questionReason'] = quest
+                delr = ''
+                for re in result['delReason']:
+                    delr = delr + ';' + re
+                result['delReason'] = delr
+                auto = ''
+                for re in result['autoVerify']:
+                    auto = auto + ';' + re
+                result['autoVerify'] = auto
+                ordersdict.append(result)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+            # time.sleep(10)
+            # print(team)
+            # print(searchType)
+            # self.readFormHost(team, searchType)
+            # self.orderInfoQuery(ord, searchType)
+        #     self.q.put(result)
+        # for i in range(len(req['data']['list'])):
+        #     ordersdict.append(self.q.get())
+        data = pd.json_normalize(ordersdict)
+        df = None
+        try:
+            df = data[['orderNumber', 'currency', 'area', 'productId', 'saleName', 'percent',
+                       'amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime',
+                       'logisticsName', 'dpeStyle', 'reassignmentTypeName', 'logisticsStatus', 'deliveryTime', 'onlineTime', 'finishTime',
+                       'logisticsUpdateTime', 'stateTime', 'update_time']]
+            df.columns = ['订单编号', '币种', '运营团队', '产品id', '产品名称', '拉黑率',
+                          '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间',
+                          '物流渠道', '货物类型', '订单类型', '物流状态', '发货时间', '上线时间', '完成时间',
+                          '物流更新时间', '状态时间', '更新时间']
+        except Exception as e:
+            print('------查询为空')
+        print('++++++本批次查询成功+++++++')
+        print('*' * 50)
+        return df
 
+
+    # 订单跟进明细
     def waybill_updata(self):
         today = datetime.date.today().strftime('%Y.%m.%d')
         listT = []  # 查询sql的结果 存放池
         print('正在获取 订单跟进汇总…………')
         sql = '''SELECT IFNULL(物流未完成, '总计') 物流未完成,出库,提货,上线,完成,合计
-                FROM( SELECT 物流未完成,
+                FROM( SELECT IFNULL(物流未完成, '总计') 物流未完成,
                             sum(IF(节点类型 = '出库',1,0)) AS 出库,
                             sum(IF(节点类型 = '提货',1,0)) AS 提货,
                             sum(IF(节点类型 = '上线',1,0)) AS 上线,
@@ -182,7 +264,7 @@ class QueryTwo(Settings, Settings_sso):
                                     IF(上线时间 IS NULL,'上线',IF(完成时间 IS NULL,'完成',完成时间)))) AS 节点类型,
 																	IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',
 																		IF(物流 LIKE '%天马%','台湾-天马-新竹&711',
-																		IF(物流 LIKE '%优美宇通%','台湾-优美宇通-新竹代收普货&特货',物流))) AS 物流未完成
+																		IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-优美宇通-新竹代收普货&特货',物流))) AS 物流未完成
                         FROM gat_waybill_list s
                         WHERE s.`添加时间` = CURDATE()
                     ) ss
@@ -191,7 +273,7 @@ class QueryTwo(Settings, Settings_sso):
                 ) sss
                 GROUP BY 物流未完成
                 ORDER BY FIELD(物流未完成,'台湾-立邦普货头程-易速配尾程','台湾-优美宇通-新竹代收普货&特货','台湾-速派-新竹&711超商',
-                            '台湾-天马-新竹&711','合计');'''.format()
+                            '台湾-天马-新竹&711','总计');'''.format()
         df0 = pd.read_sql_query(sql=sql, con=self.engine1)
         listT.append(df0)
 
@@ -205,7 +287,7 @@ class QueryTwo(Settings, Settings_sso):
                                             IF(上线时间 IS NULL,'上线',IF(完成时间 IS NULL,'完成',完成时间)))) AS 节点类型,
 											IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',
 											IF(物流 LIKE '%天马%','台湾-天马-新竹&711',
-											IF(物流 LIKE '%优美宇通%','台湾-优美宇通-新竹代收普货&特货',物流))) AS 物流未完成
+											IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-优美宇通-新竹代收普货&特货',物流))) AS 物流未完成
                                     FROM gat_waybill_list s
                                     WHERE s.`添加时间` = CURDATE()
                                     ) ss
@@ -220,24 +302,16 @@ class QueryTwo(Settings, Settings_sso):
 
         print('正在获取 订单跟进明细表…………')
         sql = '''SELECT ss.*,
-				           g.`下单时间` AS 物流下单时间,
-				           g.`核重时间` AS 物流核重时间,
-				           g.`物流状态` AS 物流核重状态,
-				           g.`末条时间` AS 物流末条时间,
-				           g.`末条信息` AS 物流末条信息,
-				           gg.物流提货时间 AS 物流提货时间,
-				           gg.物流发货时间 AS 物流发货时间,
-				           z.上线时间 AS 物流上线时间,
-						   z.最终状态,
-						   z.签收表物流状态	 
-           FROM ( SELECT *,IF(出库时间 IS NULL,'出库',IF(提货时间 IS NULL,'提货',IF(上线时间 IS NULL,'上线',IF(完成时间 IS NULL,'完成',完成时间)))) AS 节点类型,
-					        IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',IF(物流 LIKE '%天马%','台湾-天马-新竹&711',IF(物流 LIKE '%优美宇通%','台湾-优美宇通-新竹代收普货&特货',物流))) AS 物流未完成
+				        g.`下单时间` AS 物流下单时间, g.`核重时间` AS 物流核重时间, g.`物流状态` AS 物流核重状态, g.`末条时间` AS 物流末条时间, g.`末条信息` AS 物流末条信息,
+						z.出货时间 as 物流出货时间, z.上线时间 AS 物流上线时间, z.签收表物流状态, z.最终状态
+           FROM ( SELECT *,
+						IF(出库时间 IS NULL,'出库',IF(提货时间 IS NULL,'提货',IF(上线时间 IS NULL,'上线',IF(完成时间 IS NULL,'完成',完成时间)))) AS 节点类型,
+						IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',IF(物流 LIKE '%天马%','台湾-天马-新竹&711',IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-优美宇通-新竹代收普货&特货',物流))) AS 物流未完成
 	            FROM gat_waybill_list s
 	            WHERE s.`添加时间` = CURDATE()
            ) ss
            LEFT JOIN gat_logisitis_googs g ON ss.订单编号 = g.订单编号
-           LEFT JOIN gat_order_list gg ON ss.订单编号 = gg.订单编号
-		   LEFT JOIN gat_zqsb z ON ss.订单编号 = z.订单编号; '''.format()
+		   LEFT JOIN gat_zqsb z ON ss.订单编号 = z.订单编号;'''.format()
         df2 = pd.read_sql_query(sql=sql, con=self.engine1)
         listT.append(df2)
 
@@ -322,86 +396,7 @@ class QueryTwo(Settings, Settings_sso):
 
 
 
-    def order_Info_Query(self, ord):  # 更新订单跟进 的状态信息
-        print('+++正在查询订单信息中')
-        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-                    'origin': 'https: // gimp.giikin.com',
-                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
-        data = {'page': 1, 'pageSize': 500,
-                'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None,
-                'type': None, 'collId': None, 'isClone': None,
-                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '',
-                'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
-                'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
-                'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None,
-                'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
-                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None}
-        data.update({'orderPrefix': ord,
-                    'shippingNumber': None})
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
-        print('+++已成功发送请求......')
-        req = json.loads(req.text)  # json类型数据转换为dict字典
-        ordersdict = []
-        # print('正在处理json数据转化为dataframe…………')
-        try:
-            for result in req['data']['list']:
-                result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
-                result['saleName'] = 0
-                result['productId'] = 0
-                result['saleProduct'] = 0
-                result['spec'] = 0
-                result['chooser'] = 0
-                result['saleId'] = result['specs'][0]['saleId']
-                result['saleName'] = result['specs'][0]['saleName']
-                result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
-                result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
-                result['spec'] = result['specs'][0]['spec']
-                result['chooser'] = result['specs'][0]['chooser']
-                quest = ''
-                for re in result['questionReason']:
-                    quest = quest + ';' + re
-                result['questionReason'] = quest
-                delr = ''
-                for re in result['delReason']:
-                    delr = delr + ';' + re
-                result['delReason'] = delr
-                auto = ''
-                for re in result['autoVerify']:
-                    auto = auto + ';' + re
-                result['autoVerify'] = auto
-                ordersdict.append(result)
-        except Exception as e:
-            print('转化失败： 重新获取中', str(Exception) + str(e))
-            # time.sleep(10)
-            # print(team)
-            # print(searchType)
-            # self.readFormHost(team, searchType)
-            # self.orderInfoQuery(ord, searchType)
-        #     self.q.put(result)
-        # for i in range(len(req['data']['list'])):
-        #     ordersdict.append(self.q.get())
-        data = pd.json_normalize(ordersdict)
-        df = None
-        try:
-            df = data[['orderNumber', 'currency', 'area', 'productId', 'saleName', 'percent',
-                       'amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime',
-                       'logisticsName', 'dpeStyle', 'reassignmentTypeName', 'logisticsStatus', 'deliveryTime', 'onlineTime', 'finishTime',
-                       'logisticsUpdateTime', 'stateTime', 'update_time']]
-            df.columns = ['订单编号', '币种', '运营团队', '产品id', '产品名称', '拉黑率',
-                          '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间',
-                          '物流渠道', '货物类型', '订单类型', '物流状态', '发货时间', '上线时间', '完成时间',
-                          '物流更新时间', '状态时间', '更新时间']
-        except Exception as e:
-            print('------查询为空')
-        print('++++++本批次查询成功+++++++')
-        print('*' * 50)
-        return df
+
 
 if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')
@@ -412,7 +407,7 @@ if __name__ == '__main__':
     '''
     m.waybill_info()
 
-    select = 3
+    select = 9
     if int(select) == 1:
         team = 'gat_logisitis_googs'
         m.readFormHost(team)
