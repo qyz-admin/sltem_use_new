@@ -128,7 +128,10 @@ class QueryTwo(Settings, Settings_sso):
             wb.close()
         app.quit()
 
+    # 更新订单状态
     def waybill_info(self):
+        # lw = Settings_sso()
+        # lw.sso_online_Two()
         print('正在更新 订单跟进 信息…………')
         start = datetime.datetime.now()
         sql = '''SELECT 订单编号 FROM {0} s WHERE s.`添加时间` = CURDATE();'''.format('gat_waybill_list')
@@ -157,14 +160,11 @@ class QueryTwo(Settings, Settings_sso):
         dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
         print('正在更新订单跟进表中......')
         sql = '''update {0} a, customer b
-                        set a.`运单编号`= IF(b.`运单编号` = '', NULL, b.`运单编号`),
+                        set a.`运单编号`= IF(b.`运单号` = '', NULL, b.`运单号`),
                             a.`订单状态`= IF(b.`订单状态` = '', NULL, b.`订单状态`),
-                            a.`物流状态`= IF(b.`物流状态` = '', NULL, b.`物流状态`),
-                            a.`出库时间`= IF(b.`发货时间` = '' or b.`发货时间` = '0000-00-00 00:00:00' , NULL, b.`发货时间`),
-                            a.`上线时间`= IF(b.`上线时间` = '' or b.`上线时间` = '0000-00-00 00:00:00' , NULL, b.`上线时间`),
-                            a.`完成时间`= IF(b.`完成时间` = '' or b.`完成时间` = '0000-00-00 00:00:00' , NULL, b.`完成时间`)
+                            a.`物流状态`= IF(b.`物流状态` = '', NULL, b.`物流状态`)
                 where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
-        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('查询耗时：', datetime.datetime.now() - start)
     def order_Info_Query(self, ord):  # 更新订单跟进 的状态信息
         print('+++正在查询订单信息中')
@@ -247,6 +247,42 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
         return df
 
+    # 更新压单状态
+    def chuhuo_info(self):
+        print('正在更新 压单订单 信息…………')
+        start = datetime.datetime.now()
+        # 获取更新订单的语句
+        sql = '''SELECT 订单编号 FROM {0} s WHERE s.`添加时间` = CURDATE() and s.`出库时间` IS NULL;'''.format('gat_waybill_list')
+        data_df = ['order_number', 'goods_id', 'goods_name', 'currency_id', 'area_id', 'ydtime', 'purid', 'other_reason',
+                 'buyer', 'intime', 'addtime', 'is_lower', 'below_time', 'cate']
+        data_df2 = ['订单编号', '产品ID', '产品名称', '币种', '团队', '反馈时间', '压单原因', '其他原因',
+                    '采购员', '入库时间', '下单时间', '是否下架', '下架时间', '品类']
+        # 获取更新表的语句
+        sql2 = '''update {0} a, cache b
+                set a.`订单状态`= '压单'
+                where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
+        # 调用更新库 函数
+        up = Settings_sso()
+        team = 'gat'
+        up.updata_yadan(sql, sql2, team, data_df, data_df2)
+        print('更新完成…………')
+
+        print('正在更新 出库订单 信息…………')
+        # 获取更新订单的语句
+        sql = '''SELECT 订单编号 FROM {0} s WHERE s.`添加时间` = CURDATE() and s.`出库时间` IS NULL and s.`订单状态`<> '压单';'''.format('gat_waybill_list')
+        data_df = ['order_number', 'addtime', 'billno', 'status_desc']
+        data_df2 = ['订单编号', '运单扫描时间', '运单编号', '扫描状态']
+        # 获取更新表的语句
+        sql2 = '''update {0} a, cache b
+                set a.`订单状态`= '今日出库'
+                where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
+        # 调用更新库 函数
+        up = Settings_sso()
+        team = 'gat'
+        up.updata_chuku(sql, sql2, team, data_df, data_df2)
+        print('更新完成…………')
+
+        print('查询耗时：', datetime.datetime.now() - start)
 
     # 订单跟进明细
     def waybill_updata(self):
@@ -279,15 +315,17 @@ class QueryTwo(Settings, Settings_sso):
 
         print('正在获取 订单跟进明细…………')
         sql = '''SELECT *,null 原因汇总
-                FROM( SELECT s1.*,单量
+                FROM( SELECT s1.*,单量,
+							IF(压单量 = 0,NULL,压单量) AS 是否压单,
+							IF(今日出库量 = 0,NULL,今日出库量) AS 今日出库
                     FROM gat_waybill s1
-                    LEFT JOIN ( SELECT 物流未完成,节点类型, COUNT(订单编号) AS 单量
+                    LEFT JOIN ( SELECT 物流未完成,节点类型, COUNT(订单编号) AS 单量,SUM(IF(订单状态 = '压单',1,0)) AS 压单量,SUM(IF(订单状态 = '今日出库',1,0)) AS 今日出库量
                                 FROM( SELECT *,
                                             IF(出库时间 IS NULL,'出库',IF(提货时间 IS NULL,'提货',
                                             IF(上线时间 IS NULL,'上线',IF(完成时间 IS NULL,'完成',完成时间)))) AS 节点类型,
-											IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',
-											IF(物流 LIKE '%天马%','台湾-天马-新竹&711',
-											IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-优美宇通-新竹代收普货&特货',物流))) AS 物流未完成
+											                      IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',
+											                      IF(物流 LIKE '%天马%','台湾-天马-新竹&711',
+											                      IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-优美宇通-新竹代收普货&特货',物流))) AS 物流未完成
                                     FROM gat_waybill_list s
                                     WHERE s.`添加时间` = CURDATE()
                                     ) ss
@@ -405,19 +443,28 @@ if __name__ == '__main__':
     # -----------------------------------------------查询状态运行（一）-----------------------------------------
     # 1、 点到表上传 team = 'gat_logisitis_googs'；2、上架表上传；；3、订单跟进上传 team = 'gat_waybill_list'--->>数据更新切换
     '''
-    m.waybill_info()
 
-    select = 9
+    select = 5
     if int(select) == 1:
         team = 'gat_logisitis_googs'
         m.readFormHost(team)
+
     elif int(select) == 2:
         print("2-->>> 正在按时间查询+++")
         timeStart = '2022-03-28'
         timeEnd = '2022-03-29'
         # m.order_TimeQuery(timeStart, timeEnd)
-    elif int(select) == 3:
+
+    elif int(select) == 4:
+        team = 'gat_waybill_list'
+        m.readFormHost(team)
+        m.waybill_info()
+        m.chuhuo_info()
+
+    elif int(select) == 5:
         team = 'gat_waybill_list'
         m.readFormHost(team)
         m.waybill_updata()
+
+
     print('查询耗时：', datetime.datetime.now() - start)

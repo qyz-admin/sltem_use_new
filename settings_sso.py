@@ -534,22 +534,22 @@ class Settings_sso():
         orderId = list(db['订单编号'])
         max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
         if max_count > 500:
-            ord = ', '.join(orderId[0:500])
+            ord = "', '".join(orderId[0:500])
             df = self._updata_yadan(ord, data_df, data_df2)
             dlist = []
             n = 0
             while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
                 n = n + 500
-                ord = ','.join(orderId[n:n + 500])
+                ord = "', '".join(orderId[n:n + 500])
                 data = self._updata_yadan(ord, data_df, data_df2)
                 dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
         else:
-            ord = ','.join(orderId[0:max_count])
+            ord = "', '".join(orderId[0:max_count])
             dp = self._updata_yadan(ord, data_df, data_df2)
         print('正在写入临时缓存表......')
         dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
-        dp.to_excel('G:\\输出文件\\压单-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        dp.to_excel('G:\\输出文件\\压单反馈-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         print('查询已导出+++')
         print('正在更新订单跟进表中......')
         pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
@@ -567,8 +567,9 @@ class Settings_sso():
                 'limit': 500,
                 'startDate': timeStart + ' 00:00:00',
                 'endDate': timeEnd + ' 23:59:59',
-                'selectStr': '1=1 and oc.order_number in (' + ord + ')'
+                'selectStr': "1=1 and oc.order_number in ('" + ord + "')"
                 }
+        # print(data)
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
@@ -606,19 +607,19 @@ class Settings_sso():
         orderId = list(db['订单编号'])
         max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
         if max_count > 500:
-            ord = ', '.join(orderId[0:500])
-            df = self._updata_yadan(ord, data_df, data_df2)
+            ord = "', '".join(orderId[0:500])
+            df = self._updata_chuku(ord, data_df, data_df2)
             dlist = []
             n = 0
             while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
                 n = n + 500
-                ord = ','.join(orderId[n:n + 500])
-                data = self._updata_yadan(ord, data_df, data_df2)
+                ord = "', '".join(orderId[n:n + 500])
+                data = self._updata_chuku(ord, data_df, data_df2)
                 dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
         else:
-            ord = ','.join(orderId[0:max_count])
-            dp = self._updata_yadan(ord, data_df, data_df2)
+            ord = "', '".join(orderId[0:max_count])
+            dp = self._updata_chuku(ord, data_df, data_df2)
         print('正在写入临时缓存表......')
         dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
         dp.to_excel('G:\\输出文件\\出库-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
@@ -640,7 +641,7 @@ class Settings_sso():
                 'limit': 500,
                 'startDate': timeStart + ' 00:00:00',
                 'endDate': timeEnd + ' 23:59:59',
-                'selectStr': '1=1 and bs.order_number in (' + ord + ')'
+                'selectStr': "1=1 and bs.order_number in ('" + ord + "')"
                 }
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,

@@ -604,7 +604,7 @@ if __name__ == '__main__':
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
-        searchType = '运单号'
+        searchType = '订单号'
         m.readFormHost(team, searchType)        # 导入；，更新--->>数据更新切换
     elif int(select) == 2:
         print("2-->>> 正在按时间查询+++")
