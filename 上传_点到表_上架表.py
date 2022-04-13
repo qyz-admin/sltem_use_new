@@ -298,9 +298,9 @@ class QueryTwo(Settings, Settings_sso):
                             COUNT(订单编号) AS 合计
                     FROM( SELECT *,IF(出库时间 IS NULL,'出库',IF(提货时间 IS NULL,'提货',
                                     IF(上线时间 IS NULL,'上线',IF(完成时间 IS NULL,'完成',完成时间)))) AS 节点类型,
-																	IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',
-																		IF(物流 LIKE '%天马%','台湾-天马-新竹&711',
-																		IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-优美宇通-新竹代收普货&特货',物流))) AS 物流未完成
+									IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',
+									IF(物流 LIKE '%天马%','台湾-天马-新竹&711',
+									IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹普货&特货',物流))) AS 物流未完成
                         FROM gat_waybill_list s
                         WHERE s.`添加时间` = CURDATE()
                     ) ss
@@ -308,8 +308,7 @@ class QueryTwo(Settings, Settings_sso):
                     WITH ROLLUP
                 ) sss
                 GROUP BY 物流未完成
-                ORDER BY FIELD(物流未完成,'台湾-立邦普货头程-易速配尾程','台湾-优美宇通-新竹代收普货&特货','台湾-速派-新竹&711超商',
-                            '台湾-天马-新竹&711','总计');'''.format()
+                ORDER BY FIELD(物流未完成,'台湾-立邦普货头程-易速配尾程','台湾-速派-新竹&711超商', '台湾-天马-新竹&711','台湾-铱熙无敌-新竹普货&特货','总计');'''.format()
         df0 = pd.read_sql_query(sql=sql, con=self.engine1)
         listT.append(df0)
 
@@ -317,23 +316,31 @@ class QueryTwo(Settings, Settings_sso):
         sql = '''SELECT *,null 原因汇总
                 FROM( SELECT s1.*,单量,
 							IF(压单量 = 0,NULL,压单量) AS 是否压单,
-							IF(今日出库量 = 0,NULL,今日出库量) AS 今日出库
+							IF(今日出库量 = 0,NULL,今日出库量) AS 今日出库,
+							IF(取消量 = 0,NULL,取消量) AS 取消量,
+							IF(物流已上线 = 0,NULL,物流已上线) AS 物流已上线,
+							IF(物流已提货待出货 = 0,NULL,物流已提货待出货) AS 物流已提货待出货,
+							IF(物流已出货待上线 = 0,NULL,物流已出货待上线) AS 物流已出货待上线
                     FROM gat_waybill s1
-                    LEFT JOIN ( SELECT 物流未完成,节点类型, COUNT(订单编号) AS 单量,SUM(IF(订单状态 = '压单',1,0)) AS 压单量,SUM(IF(订单状态 = '今日出库',1,0)) AS 今日出库量
-                                FROM( SELECT *,
-                                            IF(出库时间 IS NULL,'出库',IF(提货时间 IS NULL,'提货',
-                                            IF(上线时间 IS NULL,'上线',IF(完成时间 IS NULL,'完成',完成时间)))) AS 节点类型,
-											                      IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',
-											                      IF(物流 LIKE '%天马%','台湾-天马-新竹&711',
-											                      IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-优美宇通-新竹代收普货&特货',物流))) AS 物流未完成
+                    LEFT JOIN ( SELECT 物流未完成,节点类型, COUNT(订单编号) AS 单量,SUM(IF(订单状态 = '压单',1,0)) AS 压单量,SUM(IF(订单状态 = '今日出库',1,0)) AS 今日出库量,
+										SUM(IF(订单状态 = '已删除',1,0)) AS 取消量,
+										SUM(IF(节点类型 = '上线' AND 物流出货时间 IS NULL,1,0)) AS 物流已提货待出货,
+										SUM(IF(节点类型 = '上线' AND 物流出货时间 IS NOT NULL AND 最终状态 <> '在途',1,0)) AS 物流已出货待上线,
+										SUM(IF(节点类型 = '上线' AND 最终状态 = '在途',1,0)) AS 物流已上线
+                                FROM( SELECT s.*,z.最终状态,z.出货时间 AS 物流出货时间,
+                                            IF(s.出库时间 IS NULL,'出库',IF(s.提货时间 IS NULL,'提货',
+                                            IF(s.上线时间 IS NULL,'上线',IF(s.完成时间 IS NULL,'完成',s.完成时间)))) AS 节点类型,
+											IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',
+											IF(物流 LIKE '%天马%','台湾-天马-新竹&711',
+											IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹普货&特货',物流))) AS 物流未完成
                                     FROM gat_waybill_list s
+									LEFT JOIN gat_zqsb z ON s.订单编号 = z.订单编号
                                     WHERE s.`添加时间` = CURDATE()
-                                    ) ss
+                                ) ss
                                 GROUP BY 物流未完成,节点类型
                     ) s2 ON s1.物流=s2.物流未完成 AND s1.节点类型=s2.节点类型
                 ) g
-                ORDER BY FIELD(物流,'台湾-立邦普货头程-易速配尾程','台湾-优美宇通-新竹代收普货&特货','台湾-速派-新竹&711超商',
-                            '台湾-天马-新竹&711','合计'),
+                ORDER BY FIELD(物流,'台湾-立邦普货头程-易速配尾程','台湾-速派-新竹&711超商', '台湾-天马-新竹&711','台湾-铱熙无敌-新竹普货&特货','合计'),
                         FIELD(节点类型,'出库','提货','上线','完成','合计');'''.format()
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
         listT.append(df1)
@@ -464,6 +471,8 @@ if __name__ == '__main__':
     elif int(select) == 5:
         team = 'gat_waybill_list'
         m.readFormHost(team)
+        m.waybill_info()
+        m.chuhuo_info()
         m.waybill_updata()
 
 
