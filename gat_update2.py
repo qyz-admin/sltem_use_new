@@ -260,8 +260,8 @@ class QueryUpdate(Settings):
         print('正在综合检查 父级分类、产品id 为空的信息---')
         sql = '''SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
                 FROM gat_order_list sl
-                WHERE sl.`日期`> '2021-12-01' 
-                    AND (sl.`父级分类` IS NULL or sl.`父级分类`= '' OR sl.`产品名称` IS NULL or sl.`产品名称`= '') 
+                WHERE sl.`日期`> '2021-12-01'
+                    AND (sl.`父级分类` IS NULL or sl.`父级分类`= '' OR sl.`产品名称` IS NULL or sl.`产品名称`= '')
                     AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'));'''.format(team, month_begin)
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
         if ordersDict.empty:
@@ -285,7 +285,10 @@ class QueryUpdate(Settings):
                             IF(ISNULL(a.上线时间), IF(b.上线时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), null,b.上线时间), a.上线时间) 上线时间, 系统订单状态,
                             IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
                             IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                            IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线' or (物流方式 like '%天马%' and c.签收表物流状态 = '在途'), IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , c.标准物流状态), 系统物流状态), '已退货') 最终状态,
+                            IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), 
+                                                        IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , 
+                                                            IF(物流方式 like '%天马%' and c.签收表物流状态 = '在途','未上线', c.标准物流状态)
+                                                        ), 系统物流状态), '已退货') 最终状态,
                             IF(是否改派='二次改派', '改派', 是否改派) 是否改派,
                             物流方式,物流名称,null 运输方式,null 货物类型,是否低价,付款方式,产品id,产品名称,父级分类, 二级分类,三级分类, 下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB, null 价格区间, null 包裹重量, null 包裹体积,null 邮编, 
                             IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, null 签收表订单编号, null 签收表运单编号, null 原运单号, b.物流状态 签收表物流状态, null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, 添加物流单号时间,
@@ -388,9 +391,9 @@ class QueryUpdate(Settings):
 
         print('正在获取---' + match[team] + ' ---全部数据内容…………')
         sql = '''SELECT * FROM {0}_zqsb a WHERE a.日期 >= '{1}' AND a.日期 <= '{2}' ORDER BY a.`下单时间`;'''.format(team, month_last, month_yesterday)     # 港台查询函数导出
-        # df = pd.read_sql_query(sql=sql, con=self.engine1)
-        # print('正在写入---' + match[team] + ' ---临时缓存…………')             # 备用临时缓存表
-        # df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        print('正在写入---' + match[team] + ' ---临时缓存…………')             # 备用临时缓存表
+        df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
 
         for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-小虎队"|slgat_jp', '"神龙-运营1组"|slgat_run'):
             tem1 = tem.split('|')[0]
@@ -3255,6 +3258,7 @@ class QueryUpdate(Settings):
     def qsb_new(self, team, month_last):  # 报表各团队近两个月的物流数据
         month_now = datetime.datetime.now().strftime('%Y-%m-%d')
         match = {'gat': '港台-每日'}
+        not_team = '"红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营","神龙-主页运营"'
         # if team == 'ga9t':
         #     month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         #     month_now = datetime.datetime.now().strftime('%Y-%m-%d')
@@ -3376,13 +3380,13 @@ class QueryUpdate(Settings):
                                 SUM(IF(`是否改派` = '改派',1,0)) as 改派总订单
                             FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
                                     FROM gat_zqsb cc
-                                    where cc.日期 >= '{0}' and cc.`运单编号` is not null AND cc.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")
+                                    where cc.日期 >= '{0}' and cc.`运单编号` is not null AND cc.团队 NOT IN ({2})
                             ) cx	
 							LEFT JOIN 
 							(SELECT 年月,币种,家族,count(订单编号) as 总订单量
 								FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",cc.团队)))))) as 家族 
 										FROM gat_order_list cc 
-										WHERE  cc.日期 = DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND cc.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")
+										WHERE  cc.日期 = DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND cc.团队 NOT IN ({2})
 								) dg  
 								GROUP BY dg.年月,dg.币种,dg.家族
 							) cx2 
@@ -3396,7 +3400,7 @@ class QueryUpdate(Settings):
                 ORDER BY 月份 DESC,
                         FIELD( 地区, '台湾', '香港', '总计' ),
                         FIELD( 家族, '神龙', '火凤凰', '小虎队', '神龙运营1组', '红杉', '金狮', '总计'),
-                        直发总订单 DESC;'''.format(month_last, team)
+                        直发总订单 DESC;'''.format(month_last, team, not_team)
         df0 = pd.read_sql_query(sql=sql0, con=self.engine1)
         listT.append(df0)
 
@@ -3416,14 +3420,14 @@ class QueryUpdate(Settings):
                             FROM  gat_order_list gs
                             LEFT JOIN (SELECT 币种, COUNT(订单编号)  as 总订单量
         					            FROM  gat_order_list gss
-        					            WHERE gss.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND gss.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")
+        					            WHERE gss.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND gss.团队 NOT IN ({0})
         					            GROUP BY gss.`币种`
         					) gs2 ON gs.`币种` = gs2.`币种`
                             WHERE gs.`日期` = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
                             GROUP BY gs.`币种`,gs.`删除原因`
                             WITH ROLLUP
                             HAVING gs.`币种` IS NOT null
-                            ORDER BY gs.币种,单量 DESC;'''
+                            ORDER BY gs.币种,单量 DESC;'''.format(not_team)
         df01 = pd.read_sql_query(sql=sql01, con=self.engine1)
         listT.append(df01)
 
@@ -3460,7 +3464,7 @@ class QueryUpdate(Settings):
 									SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 									SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                             FROM gat_zqsb_cache cx
-							WHERE cx.`运单编号` is not null AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")                      
+							WHERE cx.`运单编号` is not null AND cx.团队 NOT IN ({1})                     
                             GROUP BY cx.年月,cx.币种, cx.家族
                         ) s
 						GROUP BY 月份,地区,家族
@@ -3469,7 +3473,7 @@ class QueryUpdate(Settings):
                 ORDER BY 月份 DESC,
                         FIELD( 地区, '台湾', '香港', '总计' ),
                         FIELD( 家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
-                        总单量 DESC;'''.format(team)
+                        总单量 DESC;'''.format(team, not_team)
         df10 = pd.read_sql_query(sql=sql10, con=self.engine1)
         listT.append(df10)
         # 2、各月各团队---分旬
@@ -3505,7 +3509,7 @@ class QueryUpdate(Settings):
 									SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 									SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                             FROM gat_zqsb_cache cx
-							WHERE cx.`运单编号` is not null AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")                
+							WHERE cx.`运单编号` is not null AND cx.团队 NOT IN ({1})               
                             GROUP BY cx.年月,cx.旬,cx.币种, cx.家族
                         ) s
 						GROUP BY 月份,旬,地区,家族
@@ -3514,7 +3518,7 @@ class QueryUpdate(Settings):
                 ORDER BY 月份 DESC,旬,
                         FIELD( 地区, '台湾', '香港', '总计' ),
                         FIELD( 家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
-                        总单量 DESC;'''.format(team)
+                        总单量 DESC;'''.format(team, not_team)
         df11 = pd.read_sql_query(sql=sql11, con=self.engine1)
         listT.append(df11)
 
@@ -3558,13 +3562,13 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM (SELECT 年月,币种,家族,父级分类,订单编号,最终状态,价格RMB,是否改派
 							    FROM gat_zqsb_cache cc 
-								WHERE  cc.`运单编号` is not null AND cc.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")
+								WHERE  cc.`运单编号` is not null AND cc.团队 NOT IN ({2})
 							) cx 
                         LEFT JOIN 
 							( SELECT 币种,家族,年月,count(订单编号) as 总订单量,SUM(IF(`是否改派`= '直发',1,0)) as 直发总单量,SUM(IF(`是否改派` = '改派',1,0)) as 改派总单量
 							    FROM (SELECT 年月,币种,家族,订单编号,是否改派
 										FROM gat_zqsb_cache cc 
-										WHERE  cc.`运单编号` is not null AND cc.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")
+										WHERE  cc.`运单编号` is not null AND cc.团队 NOT IN ({2})
 									) dg  
 								GROUP BY dg.币种,dg.家族,dg.年月
 							) cx2 ON cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族 AND  cx.年月 = cx2.年月   
@@ -3577,7 +3581,7 @@ class QueryUpdate(Settings):
                     FIELD( 地区, '台湾', '香港', '总计' ),
                     FIELD( 家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
                     FIELD( 父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
-                    总单量 DESC;'''.format(month_last, team)
+                    总单量 DESC;'''.format(month_last, team, not_team)
         df20 = pd.read_sql_query(sql=sql20, con=self.engine1)
         listT.append(df20)
         # 4、各团队-各物流
@@ -3613,7 +3617,7 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM gat_zqsb_cache cx
-						WHERE  cx.`运单编号` is not null  AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")       
+						WHERE  cx.`运单编号` is not null  AND cx.团队 NOT IN ({2})       
 						GROUP BY cx.年月,cx.币种,cx.是否改派,cx.家族,cx.物流方式
                     ) s
 					GROUP BY 月份,地区,是否改派,家族,物流方式
@@ -3629,7 +3633,7 @@ class QueryUpdate(Settings):
                                             '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
                                             '香港-立邦-顺丰','香港-易速配-顺丰','香港-易速配-顺丰YC','香港-森鸿-SH渠道','香港-森鸿-顺丰渠道', 
                                             '龟山','森鸿','速派','天马顺丰','天马新竹','香港-立邦-改派','香港-森鸿-改派','香港-易速配-改派','总计'),
-                            总单量 DESC;'''.format(month_last, team)
+                            总单量 DESC;'''.format(month_last, team, not_team)
         df21 = pd.read_sql_query(sql=sql21, con=self.engine1)
         listT.append(df21)
 
@@ -3666,7 +3670,7 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM gat_zqsb_cache cx
-						WHERE  cx.`运单编号` is not null AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")                 
+						WHERE  cx.`运单编号` is not null AND cx.团队 NOT IN ({2})                 
                         GROUP BY cx.年月,cx.币种,cx.家族,cx.订单来源
                         ) s
 					GROUP BY 月份,地区,家族,平台
@@ -3676,7 +3680,7 @@ class QueryUpdate(Settings):
                     FIELD(地区, '台湾', '香港', '总计' ),
                     FIELD(家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
                     FIELD(平台, 'google', 'facebook', 'line', 'native',  'Criteo', 'tiktok', 'yahoo','facebookpage','recommend','postsaleclone','recomm','shangwutong','总计' ),
-                    总单量 DESC;'''.format(month_last, team)
+                    总单量 DESC;'''.format(month_last, team, not_team)
         df30 = pd.read_sql_query(sql=sql30, con=self.engine1)
         listT.append(df30)
         # 6、各平台-各团队
@@ -3712,7 +3716,7 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM gat_zqsb_cache cx
-						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")                       
+						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null AND cx.团队 NOT IN ({2})
                         GROUP BY cx.年月,cx.币种,cx.订单来源,cx.家族
                         ) s
 					GROUP BY 月份,地区,平台,家族
@@ -3722,7 +3726,7 @@ class QueryUpdate(Settings):
                     FIELD(地区, '台湾', '香港', '总计' ),
                     FIELD(平台, 'google', 'facebook', 'line', 'native',  'Criteo', 'tiktok', 'yahoo','facebookpage','recommend','postsaleclone','recomm','shangwutong','总计' ),
                     FIELD(家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
-                    总单量 DESC;'''.format(month_last, team)
+                    总单量 DESC;'''.format(month_last, team,not_team)
         df31 = pd.read_sql_query(sql=sql31, con=self.engine1)
         listT.append(df31)
 
@@ -3759,7 +3763,7 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM gat_zqsb_cache cx
-						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null  AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")               
+						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null  AND cx.团队 NOT IN ({2})               
                         GROUP BY cx.年月,cx.币种,cx.父级分类,cx.家族
                         ) s
 					GROUP BY 月份,地区,父级分类,家族
@@ -3769,7 +3773,7 @@ class QueryUpdate(Settings):
                     FIELD(地区, '台湾', '香港', '总计' ),
                     FIELD(父级分类, '居家百货', '电子电器', '服饰', '医药保健', '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
                     FIELD(家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
-                    总单量 DESC;'''.format(month_last, team)
+                    总单量 DESC;'''.format(month_last, team,not_team)
         df40 = pd.read_sql_query(sql=sql40, con=self.engine1)
         listT.append(df40)
         # 8、各物流-各团队
@@ -3805,7 +3809,7 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM gat_zqsb_cache cx
-						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null  AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")                         
+						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null  AND cx.团队 NOT IN ({2})                         
                         GROUP BY cx.年月,cx.币种,cx.是否改派,cx.物流方式,cx.家族
                         ) s
 					GROUP BY 月份, 地区, 是否改派, 物流方式, 家族
@@ -3819,7 +3823,7 @@ class QueryUpdate(Settings):
                     FIELD(物流方式, '台湾-大黄蜂普货头程-森鸿尾程','台湾-大黄蜂普货头程-易速配尾程', '台湾-立邦普货头程-森鸿尾程','台湾-立邦普货头程-易速配尾程', '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
                                 '香港-立邦-顺丰','香港-森鸿-SH渠道','香港-森鸿-顺丰渠道','香港-易速配-顺丰', '龟山','森鸿','速派','天马顺丰','天马新竹','香港-立邦-改派','香港-森鸿-改派','香港-易速配-改派','总计' ),
                     FIELD(家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
-                    总单量 DESC;'''.format(month_last, team)
+                    总单量 DESC;'''.format(month_last, team, not_team)
         df41 = pd.read_sql_query(sql=sql41, con=self.engine1)
         listT.append(df41)
 
@@ -3904,7 +3908,7 @@ class QueryUpdate(Settings):
                                 SUM(IF(家族 = '金狮' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 金狮完成,
                                 SUM(IF(家族 = '金狮' AND 是否改派 = '改派',1,0)) as 金狮改派
                             FROM gat_zqsb_cache cc
-						    WHERE cc.日期 >= '{0}' and cc.`运单编号` is not null AND cc.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")
+						    WHERE cc.日期 >= '{0}' and cc.`运单编号` is not null AND cc.团队 NOT IN ({2})
                             GROUP BY cc.年月,cc.币种,cc.产品id
 					    ) s
 						GROUP BY 月份,地区,产品id		
@@ -3912,7 +3916,7 @@ class QueryUpdate(Settings):
 					) ss
                    ORDER BY FIELD(月份,DATE_FORMAT(CURDATE(),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 2 MONTH),'%Y%m'),'总计'),
                             FIELD(地区,'台湾','香港','总计'),
-                            总单量 DESC;'''.format(month_last, team)
+                            总单量 DESC;'''.format(month_last, team, not_team)
         df50 = pd.read_sql_query(sql=sql50, con=self.engine1)
         listT.append(df50)
 
@@ -4008,7 +4012,7 @@ class QueryUpdate(Settings):
                                 SUM(IF(年月 = 202202 AND 最终状态 = "已签收",1,0)) as 02签收量,
                                 SUM(IF(年月 = 202202 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 02完成量							
                         FROM gat_zqsb_cache cx
-                        where cx.`运单编号` is not null AND cx.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")
+                        where cx.`运单编号` is not null AND cx.团队 NOT IN ({0})
                         GROUP BY cx.家族,cx.币种,cx.产品id
                     ) s
 					GROUP BY s.家族,s.地区,s.产品id
@@ -4016,7 +4020,7 @@ class QueryUpdate(Settings):
 				) ss
                 ORDER BY FIELD(ss.`家族`,'神龙','火凤凰','小虎队', '神龙运营1组','红杉','金狮','总计'),
                         FIELD(ss.地区, '台湾', '香港', '总计' ),
-                        ss.总单量 DESC;'''
+                        ss.总单量 DESC;'''.format(not_team)
         df51 = pd.read_sql_query(sql=sql51, con=self.engine1)
         listT.append(df51)
 
@@ -8549,7 +8553,7 @@ if __name__ == '__main__':
     m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
     m.qsb_new(team, month_old)                                    # 获取-每日-报表
     m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收表
-    m.phone_report()                                        # 获取电话核实日报表 周报表
+    # m.phone_report()                                        # 获取电话核实日报表 周报表
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id
     # m.address_repot(team, month_last, month_yesterday)                       #  获取-地区签收率-报表

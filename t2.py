@@ -93,10 +93,10 @@ print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
 print('---------------------------------- 数据库更新部分：--------------------------------')
-m.creatMyOrderSlTWO(team, begin, end)                       # 最近两个月的 部分内容 更新信息
-m.creatMyOrderSl(team)                                      # 最近五天的全部订单信息
+# m.creatMyOrderSlTWO(team, begin, end)                       # 最近两个月的 部分内容 更新信息
+m.creatMyOrderSl(team, begin, end)                                       # 最近两月的全部订单信息
 print('获取-更新 耗时：', datetime.datetime.now() - start)
-# qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
+qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
 
 if team == 'gat':
     print('---------------------------------- 单点更新部分：--------------------------------')

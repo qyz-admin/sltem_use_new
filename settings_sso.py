@@ -549,8 +549,14 @@ class Settings_sso():
             dp = self._updata_yadan(ord, data_df, data_df2)
         print('正在写入临时缓存表......')
         dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
-        dp.to_excel('G:\\输出文件\\压单反馈-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         print('查询已导出+++')
+        sql = '''SELECT c.*,DATEDIFF(curdate(),入库时间) 压单天数,IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',
+							IF(物流 LIKE '%天马%','台湾-天马-新竹&711',
+							IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹普货&特货',物流))) AS 物流方式
+				FROM `cache` c
+				LEFT JOIN gat_waybill_list g ON c.订单编号 = g.订单编号;'''
+        df1 = pd.read_sql_query(sql=sql, con=self.engine1)
+        df1.to_excel('G:\\输出文件\\压单反馈-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         print('正在更新订单跟进表中......')
         pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
         print('更新耗时：', datetime.datetime.now() - start)
@@ -622,8 +628,8 @@ class Settings_sso():
             dp = self._updata_chuku(ord, data_df, data_df2)
         print('正在写入临时缓存表......')
         dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
-        dp.to_excel('G:\\输出文件\\出库-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         print('查询已导出+++')
+        dp.to_excel('G:\\输出文件\\出库-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         print('正在更新订单跟进表中......')
         pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
         print('更新耗时：', datetime.datetime.now() - start)

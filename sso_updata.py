@@ -1193,7 +1193,7 @@ class QueryTwo(Settings):
         print('单日查询耗时：', datetime.datetime.now() - start)
 
 
-    # 更新团队订单明细（新后台的获取  方法一的更新）
+    # 更新团队订单明细（新后台的获取  方法一的全部更新）
     def orderInfo(self, team, updata, begin, end):  # 进入订单检索界面
         # print('正在获取需要订单信息......')
         match1 = {'gat': '港台',
@@ -1408,7 +1408,7 @@ class QueryTwo(Settings):
         print('*************************本批次更新成功***********************************')
 
 
-    # 更新团队订单明细（新后台的获取  方法二的更新）
+    # 更新团队订单明细（新后台的获取  方法二的部分更新）
     def orderInfo_th(self, searchType, team, team2, last_month, now_month):  # 进入订单检索界面，
         # print('正在获取需要订单信息......')
         start = datetime.datetime.now()
@@ -1513,7 +1513,6 @@ class QueryTwo(Settings):
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=20000)
         print('单日查询耗时：', datetime.datetime.now() - start)
         print('*************************本批次查询成功***********************************')
-
     def orderInfoQuery_th(self, ord, searchType):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'

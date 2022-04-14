@@ -250,34 +250,34 @@ class MysqlControl(Settings):
 
 
 
-    def creatMyOrderSl(self, team):  # 最近五天的全部订单信息
+    def creatMyOrderSl(self, team, begin, end) :  # 最近五天的全部订单信息
         match = {'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队", "火凤凰-港台(繁体)", "神龙-低价", "神龙-主页运营1组", "神龙-运营1组", "神龙-主页运营"',
                  'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"'
                  }
         # 12-1月的
-        if team in ('slsc', 'gat', 'sl_rb'):
-            # 获取日期时间
-            sql = 'SELECT MAX(`日期`) 日期 FROM {0}_order_list;'.format(team)
-            rq = pd.read_sql_query(sql=sql, con=self.engine1)
-            rq = pd.to_datetime(rq['日期'][0])
-            yy = int((rq - datetime.timedelta(days=4)).strftime('%Y'))
-            mm = int((rq - datetime.timedelta(days=4)).strftime('%m'))
-            dd = int((rq - datetime.timedelta(days=4)).strftime('%d'))
-            # print(dd)
-            begin = datetime.date(yy, mm, dd)
-            print(begin)
-            yy2 = int(datetime.datetime.now().strftime('%Y'))
-            mm2 = int(datetime.datetime.now().strftime('%m'))
-            dd2 = int(datetime.datetime.now().strftime('%d'))
-            end = datetime.date(yy2, mm2, dd2)
-            print(end)
-        else:
-            # 11-12月的
-            begin = datetime.date(2022, 2, 12)
-            print(begin)
-            end = datetime.date(2022, 2, 13)
-            print(end)
+        # if team in ('slsc', 'gat', 'sl_rb'):
+        #     # 获取日期时间
+        #     sql = 'SELECT MAX(`日期`) 日期 FROM {0}_order_list;'.format(team)
+        #     rq = pd.read_sql_query(sql=sql, con=self.engine1)
+        #     rq = pd.to_datetime(rq['日期'][0])
+        #     yy = int((rq - datetime.timedelta(days=4)).strftime('%Y'))
+        #     mm = int((rq - datetime.timedelta(days=4)).strftime('%m'))
+        #     dd = int((rq - datetime.timedelta(days=4)).strftime('%d'))
+        #     # print(dd)
+        #     begin = datetime.date(yy, mm, dd)
+        #     print(begin)
+        #     yy2 = int(datetime.datetime.now().strftime('%Y'))
+        #     mm2 = int(datetime.datetime.now().strftime('%m'))
+        #     dd2 = int(datetime.datetime.now().strftime('%d'))
+        #     end = datetime.date(yy2, mm2, dd2)
+        #     print(end)
+        # else:
+        #     # 11-12月的
+        #     begin = datetime.date(2022, 2, 12)
+        #     print(begin)
+        #     end = datetime.date(2022, 2, 13)
+        #     print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
             # print(str(day))
@@ -427,7 +427,7 @@ class MysqlControl(Settings):
                 --            a.order_status 系统订单状态id,
                 --            IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
                             os.name 系统订单状态,
-                            ls.name 系统物流状态,
+                            IF(ls.name ='发货中', null, ls.name) 系统物流状态,
                             IF(a.second=0,'直发','改派') 是否改派,
                             dim_trans_way.all_name 物流方式,
                             dim_trans_way.simple_name 物流名称,
