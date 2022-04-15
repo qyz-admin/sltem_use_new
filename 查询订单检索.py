@@ -23,7 +23,7 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  
 
 
 # -*- coding:utf-8 -*-
-class QueryTwo(Settings, Settings_sso):
+class QueryOrder(Settings, Settings_sso):
     def __init__(self, userMobile, password):
         Settings.__init__(self)
         Settings_sso.__init__(self)
@@ -681,7 +681,7 @@ class QueryTwo(Settings, Settings_sso):
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
-    m = QueryTwo('+86-18538110674', 'qyz04163510')
+    m = QueryOrder('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     # -----------------------------------------------查询状态运行（一）-----------------------------------------

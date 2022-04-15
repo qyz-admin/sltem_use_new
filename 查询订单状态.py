@@ -7,7 +7,7 @@ import win32com.client as win32
 import requests
 import json
 import sys
-from sso_updata import QueryTwo
+from sso_updata import Query_sso_updata
 from queue import Queue
 from dateutil.relativedelta import relativedelta
 from threading import Thread #  使用 threading 模块创建线程

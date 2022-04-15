@@ -20,7 +20,6 @@ from settings_sso import Settings_sso
 from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, Color,Alignment ,PatternFill # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
-from 查询订单检索 import QueryTwo as  QueryOne
 
 # -*- coding:utf-8 -*-
 class QueryTwo(Settings, Settings_sso):
@@ -132,7 +131,7 @@ class QueryTwo(Settings, Settings_sso):
     def waybill_info(self):
         # lw = Settings_sso()
         # lw.sso_online_Two()
-        print('正在更新 订单跟进 信息…………')
+        print('正在更新 订单跟进 信息……………………………………………………………………………………………………………………………………………………………………………………')
         start = datetime.datetime.now()
         sql = '''SELECT 订单编号 FROM {0} s WHERE s.`添加时间` = CURDATE();'''.format('gat_waybill_list')
         db = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -249,7 +248,7 @@ class QueryTwo(Settings, Settings_sso):
 
     # 更新压单状态
     def chuhuo_info(self):
-        print('正在更新 压单订单 信息…………')
+        print('正在更新 压单订单 信息…………………………………………………………………………………………………………………………………………………………………………………………………………')
         start = datetime.datetime.now()
         # 获取更新订单的语句
         sql = '''SELECT 订单编号 FROM {0} s WHERE s.`添加时间` = CURDATE() and s.`出库时间` IS NULL;'''.format('gat_waybill_list')
@@ -267,7 +266,7 @@ class QueryTwo(Settings, Settings_sso):
         up.updata_yadan(sql, sql2, team, data_df, data_df2)
         print('更新完成…………')
 
-        print('正在更新 出库订单 信息…………')
+        print('正在更新 出库订单 信息…………………………………………………………………………………………………………………………………………………………………………………………………………')
         # 获取更新订单的语句
         sql = '''SELECT 订单编号 FROM {0} s WHERE s.`添加时间` = CURDATE() and s.`出库时间` IS NULL and s.`订单状态`<> '压单';'''.format('gat_waybill_list')
         data_df = ['order_number', 'addtime', 'billno', 'status_desc']
@@ -288,7 +287,7 @@ class QueryTwo(Settings, Settings_sso):
     def waybill_updata(self):
         today = datetime.date.today().strftime('%Y.%m.%d')
         listT = []  # 查询sql的结果 存放池
-        print('正在获取 订单跟进汇总…………')
+        print('正在获取 订单跟进汇总……………………………………………………')
         sql = '''SELECT IFNULL(物流未完成, '总计') 物流未完成,出库,提货,上线,完成,合计
                 FROM( SELECT IFNULL(物流未完成, '总计') 物流未完成,
                             sum(IF(节点类型 = '出库',1,0)) AS 出库,
@@ -312,7 +311,7 @@ class QueryTwo(Settings, Settings_sso):
         df0 = pd.read_sql_query(sql=sql, con=self.engine1)
         listT.append(df0)
 
-        print('正在获取 订单跟进明细…………')
+        print('正在获取 订单跟进明细……………………………………………………')
         sql = '''SELECT *,null 原因汇总
                 FROM( SELECT s1.*,单量,
 							IF(压单量 = 0,NULL,压单量) AS 是否压单,
@@ -345,7 +344,7 @@ class QueryTwo(Settings, Settings_sso):
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
         listT.append(df1)
 
-        print('正在获取 订单跟进明细表…………')
+        print('正在获取 订单跟进明细表…………………………………………')
         sql = '''SELECT ss.*,
 				        g.`下单时间` AS 物流下单时间, g.`核重时间` AS 物流核重时间, g.`物流状态` AS 物流核重状态, g.`末条时间` AS 物流末条时间, g.`末条信息` AS 物流末条信息,
 						z.出货时间 as 物流出货时间, z.上线时间 AS 物流上线时间, z.签收表物流状态, z.最终状态

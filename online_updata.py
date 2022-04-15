@@ -84,9 +84,16 @@ class QueryTwo(Settings, Settings_sso):
             wb = app.books.open(filePath, update_links=False, read_only=True)
             for sht in wb.sheets:
                 try:
+                    tem = ''
                     db = None
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
-                    db = db[['运单编号']]
+                    columns_value = list(db.columns)                             # 获取数据的标题名，转为列表
+                    for column_val in columns_value:
+                        if '运单编号' == column_val:
+                            tem = column_val
+                        elif '运单号' == column_val:
+                            tem = column_val
+                    db = db[[tem]]
                     db.dropna(axis=0, how='any', inplace=True)                  # 空值（缺失值），将空值所在的行/列删除后
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
@@ -94,16 +101,16 @@ class QueryTwo(Settings, Settings_sso):
                     print(db)
                     print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
                     # 将获取到的运单号 查询轨迹
-                    self.Search_online(db, isReal)
+                    self.Search_online(db, isReal, tem)
                 else:
                     print('----------数据为空,查询失败：' + sht.name)
             wb.close()
         app.quit()
 
     #  查询运单轨迹-按订单查询（一）
-    def Search_online(self, db, isReal):
+    def Search_online(self, db, isReal, tem):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        orderId = list(db['运单编号'])
+        orderId = list(db[tem])
         print(orderId)
         max_count = len(orderId)                 # 使用len()获取列表的长度，上节学的
         if max_count > 0:
@@ -387,7 +394,7 @@ if __name__ == '__main__':
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 
     '''
-    isReal = 0
+    isReal = 1
     select = 1
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")

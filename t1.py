@@ -5,7 +5,7 @@ from excelControl import ExcelControl
 from mysqlControl import MysqlControl
 from wlMysql import WlMysql
 from wlExecl import WlExecl
-from sso_updata import QueryTwo
+from sso_updata import Query_sso_updata
 from gat_update2 import QueryUpdate
 import datetime
 from dateutil.relativedelta import relativedelta
