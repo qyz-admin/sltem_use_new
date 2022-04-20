@@ -1285,14 +1285,20 @@ class Query_sso_updata(Settings):
                     result['productId'] = ''
                     result['spec'] = ''
                     result['chooser'] = ''
-                if '拉黑00率' in result['autoVerifyTip']:
-                    t2 = result['autoVerifyTip'].split(';')
-                    for y in t2:
-                        if '拉黑率' in y and '%' in y:
-                            result['autoVerifyTip'] = y.split(',拉黑率')[1]
-                            # result['autoVerifyTip'] = (result['autoVerifyTip'].split('%')[0]).split(',拉黑率')[1] + '%'
+                result['auto_VerifyTip'] = ''
+                if result['autoVerifyTip'] == "":
+                    result['auto_VerifyTip'] = '0.00%'
                 else:
-                    result['autoVerifyTip'] = ''
+                    if '未读到拉黑表记录' in result['autoVerifyTip']:
+                        result['auto_VerifyTip'] = '0.00%'
+                    else:
+                        if '拉黑率问题' not in result['autoVerifyTip']:
+                            t2 = result['autoVerifyTip'].split(',拉黑率')[1]
+                            result['auto_VerifyTip'] = t2.split('%;')[0] + '%'
+                        else:
+                            t2 = result['autoVerifyTip'].split('拒收订单量：')[1]
+                            t2 = t2.split('%;')[0]
+                            result['auto_VerifyTip'] = t2.split('拉黑率')[1] + '%'
                 quest = ''
                 for re in result['questionReason']:
                     quest = quest + ';' + re
@@ -1321,7 +1327,7 @@ class Query_sso_updata(Settings):
             df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId',
                        'spec', 'quantity', 'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime',
                        'finishTime', 'stateTime', 'logisticsUpdateTime', 'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType',
-                       'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks','autoVerifyTip']]
+                       'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks', 'auto_VerifyTip']]
             print(df)
             # print('正在更新临时表中......')
             df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
@@ -1353,7 +1359,7 @@ class Query_sso_updata(Settings):
                                 h.`shipInfo.shipState` 省洲,
             				    h.`spec` 规格中文,
             				    h.`autoVerify` 审单类型,
-            				    h.`autoVerifyTip` 拉黑率,
+            				    h.`auto_VerifyTip` 拉黑率,
             				    h.`delReason` 删除原因,
             				    h.`delTime` 删除时间,
             				    h.`questionReason` 问题原因,

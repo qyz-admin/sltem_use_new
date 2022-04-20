@@ -350,7 +350,7 @@ class QueryTwo(Settings, Settings_sso):
 						z.出货时间 as 物流出货时间, z.上线时间 AS 物流上线时间, z.签收表物流状态, z.最终状态
            FROM ( SELECT *,
 						IF(出库时间 IS NULL,'出库',IF(提货时间 IS NULL,'提货',IF(上线时间 IS NULL,'上线',IF(完成时间 IS NULL,'完成',完成时间)))) AS 节点类型,
-						IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',IF(物流 LIKE '%天马%','台湾-天马-新竹&711',IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-优美宇通-新竹代收普货&特货',物流))) AS 物流未完成
+						IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',IF(物流 LIKE '%天马%','台湾-天马-新竹&711',IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹普货&特货',物流))) AS 物流未完成
 	            FROM gat_waybill_list s
 	            WHERE s.`添加时间` = CURDATE()
            ) ss
@@ -450,7 +450,7 @@ if __name__ == '__main__':
     # 1、 点到表上传 team = 'gat_logisitis_googs'；2、上架表上传；；3、订单跟进上传 team = 'gat_waybill_list'--->>数据更新切换
     '''
 
-    select = 5
+    select = 1
     if int(select) == 1:
         team = 'gat_logisitis_googs'
         m.readFormHost(team)

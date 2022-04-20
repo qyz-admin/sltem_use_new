@@ -31,7 +31,8 @@ class QueryOrder(Settings, Settings_sso):
         self.q = Queue(maxsize=10)  # 多线程调用的函数不能用return返回值，用来保存返回值
         self.userMobile = userMobile
         self.password = password
-        self.sso_online_Two()
+        # self.sso_online_Two()
+        self._online_Two()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -110,6 +111,7 @@ class QueryOrder(Settings, Settings_sso):
                     if max_count > 500:
                         ord = ', '.join(orderId[0:500])
                         df = self.orderInfoQuery(ord, searchType)
+                        # print(df)
                         dlist = []
                         n = 0
                         while n < max_count-500:                                # 这里用到了一个while循环，穿越过来的
@@ -118,6 +120,7 @@ class QueryOrder(Settings, Settings_sso):
                             data = self.orderInfoQuery(ord, searchType)
                             dlist.append(data)
                         print('正在写入......')
+                        # print(dlist)
                         dp = df.append(dlist, ignore_index=True)
                     else:
                         ord = ','.join(orderId[0:max_count])
@@ -126,8 +129,9 @@ class QueryOrder(Settings, Settings_sso):
                                   '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
                                   '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
                                   '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
-                                  '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间', '异常提示']
-                    dp.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+                                  '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间', '异常提示', '异常拉黑率',
+                                  '拉黑率总量','拉黑率签收','拉黑率拒收']
+                    dp.to_excel('G:\\输出文件\\文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
                     print('查询已导出+++')
                 else:
                     print('----------数据为空,查询失败：' + sht.name)
@@ -284,7 +288,7 @@ class QueryOrder(Settings, Settings_sso):
     def orderInfoQuery(self, ord, searchType):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
         data = {'page': 1, 'pageSize': 500,
@@ -310,6 +314,7 @@ class QueryOrder(Settings, Settings_sso):
         req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
         ordersdict = []
         # print('正在处理json数据转化为dataframe…………')
         try:
@@ -338,6 +343,28 @@ class QueryOrder(Settings, Settings_sso):
                 for re in result['autoVerify']:
                     auto = auto + ';' + re
                 result['autoVerify'] = auto
+
+                result['auto_VerifyTip'] = ''
+                result['auto_VerifyTip_zl'] = ''
+                result['auto_VerifyTip_qs'] = ''
+                result['auto_VerifyTip_js'] = ''
+                if result['autoVerifyTip'] == "":
+                    result['auto_VerifyTip'] = '0.00%'
+                else:
+                    if '未读到拉黑表记录' in result['autoVerifyTip']:
+                        result['auto_VerifyTip'] = '0.00%'
+                    else:
+                        t3 = result['autoVerifyTip']
+                        result['auto_VerifyTip_zl'] = (t3.split('订单配送总量：')[1]).split(',')[0]
+                        result['auto_VerifyTip_qs'] = (t3.split('送达订单量：')[1]).split(',')[0]
+                        result['auto_VerifyTip_js'] = (t3.split('拒收订单量：')[1]).split(',')[0]
+                        if '拉黑率问题' not in result['autoVerifyTip']:
+                            t2 = result['autoVerifyTip'].split(',拉黑率')[1]
+                            result['auto_VerifyTip'] = t2.split('%;')[0] + '%'
+                        else:
+                            t2 = result['autoVerifyTip'].split('拒收订单量：')[1]
+                            t2 = t2.split('%;')[0]
+                            result['auto_VerifyTip'] = t2.split('拉黑率')[1] + '%'
                 ordersdict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
@@ -358,8 +385,8 @@ class QueryOrder(Settings, Settings_sso):
                     'logisticsName', 'dpeStyle', 'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName',
                     'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime',
                     'finishTime', 'refundTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer',
-                    'autoVerify', 'cloneUser', 'isClone', 'warehouse', 'smsStatus', 'logisticsControl',
-                    'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName', 'update_time', 'autoVerifyTip']]
+                    'autoVerify', 'cloneUser', 'isClone', 'warehouse', 'smsStatus', 'logisticsControl','logisticsRefuse', 'logisticsUpdateTime',
+                    'stateTime', 'collDomain', 'typeName', 'update_time', 'autoVerifyTip','auto_VerifyTip','auto_VerifyTip_zl','auto_VerifyTip_qs','auto_VerifyTip_js']]
         except Exception as e:
             print('------查询为空')
         print('++++++本批次查询成功+++++++')
@@ -682,6 +709,7 @@ class QueryOrder(Settings, Settings_sso):
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
     m = QueryOrder('+86-18538110674', 'qyz04163510')
+    # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     # -----------------------------------------------查询状态运行（一）-----------------------------------------
@@ -690,7 +718,7 @@ if __name__ == '__main__':
     # searchType = '订单号'运单号
     # m.readFormHost(team, searchType)        # 导入；，更新--->>数据更新切换
     # 2、按时间查询状态
-    # m.order_TimeQuery('2021-11-01', '2021-11-09')
+    # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
 
     select = 1                                  # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:

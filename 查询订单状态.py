@@ -20,6 +20,7 @@ from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
 
 from mysqlControl import MysqlControl
+from settings_sso import Settings_sso
 # -*- coding:utf-8 -*-
 class QueryUpdate(Settings):
     def __init__(self):
@@ -346,7 +347,6 @@ class QueryUpdate(Settings):
         df.to_excel('G:\\输出文件\\{} 运费-查询{}.xlsx'.format(output, rq),
                     sheet_name='查询', index=False)
         print('----已写入excel')
-
     def trans_way_cost_new(self, team):
         match = {'gat': '港台', 'slsc': '品牌'}
         output = datetime.datetime.now().strftime('%m.%d')
@@ -471,6 +471,72 @@ class QueryUpdate(Settings):
         #             sheet_name='查询', index=False)
         # print('----已写入excel')
 
+    def onrount_online(self, team):
+        print('正在获取查询 在途-未上线 数据…………')
+        rq = datetime.datetime.now().strftime('%Y%m%d')
+        month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
+        sql = '''SELECT 日期,团队,币种,订单编号,运单编号,是否改派,物流方式, 系统订单状态,系统物流状态,物流状态,签收表物流状态,
+                        最终状态,下单时间,审核时间,仓储扫描时间,出货时间,上线时间,状态时间,完结状态时间,在途未上线
+                FROM ( SELECT *, IF(最终状态 = '在途',
+						    IF(币种 = '香港',IF((出货时间 IS NULL AND 仓储扫描时间 <= DATE_SUB(CURDATE(), INTERVAL 2 DAY)) OR 
+                                              (出货时间 IS NOT NULL AND 仓储扫描时间 <= DATE_SUB(CURDATE(), INTERVAL 3 DAY)),1,0)
+                                          ,IF((出货时间 IS NULL AND 仓储扫描时间 <= DATE_SUB(CURDATE(), INTERVAL 4 DAY)) OR 
+                                              (出货时间 IS NOT NULL AND 仓储扫描时间 <= DATE_SUB(CURDATE(), INTERVAL 5 DAY)),1,0)),                
+                            IF(币种 = '香港',IF((出货时间 IS NULL AND 仓储扫描时间 <= DATE_SUB(CURDATE(), INTERVAL 1 DAY)) OR 
+                                              (出货时间 IS NOT NULL AND 仓储扫描时间 <= DATE_SUB(CURDATE(), INTERVAL 2 DAY)),1,0)
+                                          ,IF((出货时间 IS NULL AND 仓储扫描时间 <= DATE_SUB(CURDATE(), INTERVAL 2 DAY)) OR 
+                                              (出货时间 IS NOT NULL AND 仓储扫描时间 <= DATE_SUB(CURDATE(), INTERVAL 3 DAY)),1,0))
+                            ) AS 在途未上线
+						FROM (SELECT * FROM gat_zqsb gz WHERE gz.年月>= '{0}' AND gz.最终状态 IN ('在途','未上线')) ss
+                ) ss
+                WHERE 在途未上线= 1;'''.format(month_begin)
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+        print('正在获取更新 在途-未上线 数据…………')
+        # 获取更新订单的语句
+        sql = '''SELECT 订单编号 FROM customer;'''
+        data_df = ['orderNumber',  'orderStatus', 'logisticsStatus']
+        data_df2 = ['订单编号',  '订单状态', '物流状态']
+        # 获取更新表的语句
+        sql2 = '''update customer a, cache b
+                set a.`系统订单状态`= IF(b.`订单状态` = '', NULL, b.`订单状态`),
+                    a.`系统物流状态`= IF(b.`物流状态` = '', NULL, b.`物流状态`)
+                where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
+        # 调用更新库 函数
+        up = Settings_sso()
+        up.updata(sql, sql2, team, data_df, data_df2)
+        print('更新完成…………')
+
+        print('正在获取写入excel内容…………')
+        sql = '''SELECT 订单编号,运单编号,  是否改派,发货时间,物流方式,最终状态
+                FROM (  SELECT c.订单编号,c.运单编号,c.系统订单状态,  c.系统物流状态, c.是否改派,  c.仓储扫描时间 AS 发货时间, 物流方式, b.出货时间 AS 新出货时间,
+                                IF(ISNULL(系统物流状态), IF(ISNULL(标准物流状态) OR 标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , 标准物流状态), 系统物流状态) AS 最终状态
+                        FROM customer c
+                        LEFT JOIN (SELECT *
+                                    FROM gat
+                                    WHERE id IN (SELECT MAX(id) FROM gat WHERE gat.添加时间 > '2020-01-01 00:00:00' GROUP BY 运单编号)
+                                    ORDER BY id
+                        ) b ON c.`运单编号` = b.`运单编号`
+                        LEFT JOIN gat_logisitis_match g ON b.物流状态 = g.签收表物流状态
+                ) s
+                WHERE 最终状态 NOT IN ('拒收','已签收');'''.format()
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        print('正在写入excel…………')
+        print(df)
+        waybill = ['天马', '速派', '易速配', '铱熙无敌']
+        for wy in waybill:
+            db1 = df[(df['物流方式'].str.contains(wy))]
+            db2 = db1[(db1['最终状态'].str.contains('在途'))]
+            db3 = db1[(db1['最终状态'].str.contains('未上线'))]
+
+            file_path = 'H:\\桌面\\需要用到的文件\\文件夹\\{0}{1} 在途/未上线.xlsx'.format(rq, wy)
+            writer2 = pd.ExcelWriter(file_path, engine='openpyxl')
+            db2[['订单编号', '运单编号', '是否改派', '发货时间']].to_excel(writer2, sheet_name='在途', index=False, startrow=1)
+            db3[['订单编号', '运单编号', '是否改派', '发货时间']].to_excel(writer2, sheet_name='未上线', index=False, startrow=1)
+            writer2.save()
+            writer2.close()
+        print('----已写入excel')
+
 
 if __name__ == '__main__':
     m = QueryUpdate()
@@ -487,7 +553,7 @@ if __name__ == '__main__':
     # upload = '查询-订单号'
     # m.trans_way_cost(team)  # 同产品下的规格运费查询
     '''
-    select = 2
+    select = 1
     if int(select) == 1:
             upload = '查询-运单号'
             m.readFormHost(upload)
