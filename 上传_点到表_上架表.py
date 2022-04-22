@@ -281,6 +281,21 @@ class QueryTwo(Settings, Settings_sso):
         up.updata_chuku(sql, sql2, team, data_df, data_df2)
         print('更新完成…………')
 
+        # print('正在更新 提货订单 信息…………………………………………………………………………………………………………………………………………………………………………………………………………')
+        # # 获取更新订单的语句
+        # sql = '''SELECT 订单编号 FROM {0} s WHERE s.`添加时间` = CURDATE() and s.`出库时间` IS NULL and s.`订单状态`<> '压单';'''.format('gat_waybill_list')
+        # data_df = ['order_number', 'addtime', 'billno', 'status_desc']
+        # data_df2 = ['订单编号', '运单扫描时间', '运单编号', '扫描状态']
+        # # 获取更新表的语句
+        # sql2 = '''update {0} a, cache b
+        #         set a.`订单状态`= '今日出库'
+        #         where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
+        # # 调用更新库 函数
+        # up = Settings_sso()
+        # team = 'gat'
+        # up.updata_chuku(sql, sql2, team, data_df, data_df2)
+        # print('更新完成…………')
+
         print('查询耗时：', datetime.datetime.now() - start)
 
     # 订单跟进明细
@@ -316,12 +331,14 @@ class QueryTwo(Settings, Settings_sso):
                 FROM( SELECT s1.*,单量,
 							IF(压单量 = 0,NULL,压单量) AS 是否压单,
 							IF(今日出库量 = 0,NULL,今日出库量) AS 今日出库,
+							IF(今日提货量 = 0,NULL,今日提货量) AS 今日提货,
 							IF(取消量 = 0,NULL,取消量) AS 取消量,
 							IF(物流已上线 = 0,NULL,物流已上线) AS 物流已上线,
 							IF(物流已提货待出货 = 0,NULL,物流已提货待出货) AS 物流已提货待出货,
 							IF(物流已出货待上线 = 0,NULL,物流已出货待上线) AS 物流已出货待上线
                     FROM gat_waybill s1
                     LEFT JOIN ( SELECT 物流未完成,节点类型, COUNT(订单编号) AS 单量,SUM(IF(订单状态 = '压单',1,0)) AS 压单量,SUM(IF(订单状态 = '今日出库',1,0)) AS 今日出库量,
+                                        SUM(IF(节点类型 = '提货' AND 出库时间 >= TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 1 DAY)),1,0)) AS 今日提货量,
 										SUM(IF(订单状态 = '已删除',1,0)) AS 取消量,
 										SUM(IF(节点类型 = '上线' AND 物流出货时间 IS NULL,1,0)) AS 物流已提货待出货,
 										SUM(IF(节点类型 = '上线' AND 物流出货时间 IS NOT NULL AND 最终状态 <> '在途',1,0)) AS 物流已出货待上线,
@@ -450,7 +467,7 @@ if __name__ == '__main__':
     # 1、 点到表上传 team = 'gat_logisitis_googs'；2、上架表上传；；3、订单跟进上传 team = 'gat_waybill_list'--->>数据更新切换
     '''
 
-    select = 1
+    select = 5
     if int(select) == 1:
         team = 'gat_logisitis_googs'
         m.readFormHost(team)

@@ -201,7 +201,15 @@ class QueryTwo(Settings, Settings_sso):
             if "L_time" in str(val):
                 if "貨件已退回" in str(val):
                     # pattern = re.compile(r'<[^>]+>', re.S)
-                    L_time = str(val).split('ctl00_L_time">')[1].split('</')[0]
+                    L_time = str(val).split('L_time">')[1].split('</')[0]
+                    L_cls = str(val).split(')">')[1]
+                    L_cls = L_cls.split('</u>')[0].replace('<font color="blue"><u color="blue">',' ')
+                elif "送達。貨物件" in str(val):
+                    L_time = str(val).split('L_time">')[1].split('</')[0]
+                    L_cls = str(val).split('L_cls">')[1]
+                    L_cls = L_cls.split('。</')[0].replace('</a>',' ')
+                elif "原貨號：" in str(val):
+                    L_time = str(val).split('L_time">')[1].split('</')[0]
                     L_cls = str(val).split(')">')[1]
                     L_cls = L_cls.split('</u>')[0].replace('<font color="blue"><u color="blue">',' ')
                 else:
@@ -223,6 +231,7 @@ class QueryTwo(Settings, Settings_sso):
         data.dropna(axis=0, how='any', inplace=True)
         data.sort_values(by="轨迹时间", inplace=True, ascending=True)  # inplace: 原地修改; ascending：升序
         # print(data)
+        # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         # data.to_excel('G:\\输出文件\\新竹快递 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         return data
 

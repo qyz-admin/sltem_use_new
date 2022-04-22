@@ -785,7 +785,7 @@ class Settings_sso():
         print('正在写入临时缓存表......')
         dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
         print('查询已导出+++')
-        sql = '''SELECT c.*,DATEDIFF(curdate(),入库时间) 压单天数,IF(DATEDIFF(curdate(),入库时间) > 5,'5天以前',null) AS 5天以前,
+        sql = '''SELECT DISTINCT c.*,DATEDIFF(curdate(),入库时间) 压单天数,IF(DATEDIFF(curdate(),入库时间) > 5,'5天以前',null) AS 5天以前,
                             IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',
 							IF(物流 LIKE '%天马%','台湾-天马-新竹&711',
 							IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹普货&特货',物流))) AS 物流方式
@@ -908,6 +908,93 @@ class Settings_sso():
             print('****** 没有信息！！！')
         return data
 
+    # 查询提货更新 以订单编号（仓储的获取）
+    def updata_tihuo(self, sql, sql2, team, data_df, data_df2):  # 进入压单检索界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        self.sso_online_cang()
+        print('正在获取需 更新订单信息…………')
+        start = datetime.datetime.now()
+        db = pd.read_sql_query(sql=sql, con=self.engine1)
+        if db.empty:
+            print('无需要更新订单信息！！！')
+            return
+        print(db['订单编号'][0])
+        orderId = list(db['订单编号'])
+        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+        if max_count > 500:
+            ord = "', '".join(orderId[0:500])
+            df = self._updata_tihuo(ord, data_df, data_df2)
+            dlist = []
+            n = 0
+            while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
+                n = n + 500
+                ord = "', '".join(orderId[n:n + 500])
+                data = self._updata_tihuo(ord, data_df, data_df2)
+                dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+        else:
+            ord = "', '".join(orderId[0:max_count])
+            dp = self._updata_tihuo(ord, data_df, data_df2)
+        print('正在写入临时缓存表......')
+        dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+        print('查询已导出+++')
+        dp.to_excel('G:\\输出文件\\提货-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        print('正在更新订单跟进表中......')
+        pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
+        print('更新耗时：', datetime.datetime.now() - start)
+        # 进入运单扫描导出 界面
+    def _updata_tihuo(self, ord):
+        print('+++正在查询订单信息中')
+        self.sso_online_cang()
+        timeStart = ((datetime.datetime.now() + datetime.timedelta(days=1)) - relativedelta(months=2)).strftime('%Y-%m-%d')
+        timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
+        url = r'http://gwms-v3.giikin.cn/roo/meta/page?'
+        r_header = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+            'origin': 'http://gwms-v3.giikin.cn',
+            'Referer': 'http://gwms-v3.giikin.cn/roo/meta/index/listId/46'}
+        data = {'sEcho': 12, 'iColumns': 11, 'sColumns': ',, , , , , , , , ,', 'iDisplayStart': 0, 'iDisplayLength': 10, 'mDataProp_0': 'id', 'sSearch_0': None, 'bRegex_0': False,
+                'bSearchable_0': True, 'bSortable_0': False,'mDataProp_1': 'billno', 'sSearch_1': None, 'bRegex_1': False, 'bSearchable_1': True, 'bSortable_1': True, 'mDataProp_2': 'order_number',
+                'sSearch_2': None, 'bRegex_2': False, 'bSearchable_2': True, 'bSortable_2': False, 'mDataProp_3': 'result', 'sSearch_3': None, 'bRegex_3': False, 'bSearchable_3': True,
+                'bSortable_3': False, 'mDataProp_4': 'uid', 'sSearch_4': None, 'bRegex_4': False, 'bSearchable_4': True, 'bSortable_4': False, 'mDataProp_5': 'country_code',
+                'sSearch_5': None,'bRegex_5': False, 'bSearchable_5': True, 'bSortable_5': False, 'mDataProp_6': 'intime', 'sSearch_6': None, 'bRegex_6': False, 'bSearchable_6': True,
+                'bSortable_6': False, 'mDataProp_7': 'logistics_id',  'sSearch_7':None, 'bRegex_7': False,  'bSearchable_7': True, 'bSortable_7': False, 'mDataProp_8': 'country',
+                'sSearch_8': None, 'bRegex_8': False, 'bSearchable_8': True,  'bSortable_8': False, 'mDataProp_9': 'is_exception',  'sSearch_9': None, 'bRegex_9': False,
+                'bSearchable_9': True, 'bSortable_9': False, 'mDataProp_10': 'is_deal', 'sSearch_10': None, 'bRegex_10': False,  'bSearchable_10': True,  'bSortable_10': False,
+                'sSearch': None, 'bRegex': False, 'iSortCol_0': 0, 'sSortDir_0': 'desc','iSortingCols': 1, 'listId': 46,
+                'startDate': timeStart + ' 00:00:00',
+                'endDate': timeEnd + ' 23:59:59',
+                'queryStr': 'a.order_number=' + ord + 'and 1=1',
+                '_': 1650449914790
+                }
+        print(data)
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        # req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
+        print(req)
+        print(req.text)
+        print(req.headers)
+
+        # max_count = req['count']
+        # if max_count != [] or max_count != 0:
+        #     ordersdict = []
+        #     try:
+        #         for result in req['data']:
+        #             ordersdict.append(result)
+        #     except Exception as e:
+        #         print('转化失败： 重新获取中', str(Exception) + str(e))
+        #     data = pd.json_normalize(ordersdict)
+        #     data = data[data_df]
+        #     data.columns = data_df2
+        # else:
+        #     data = None
+        #     print('****** 没有信息！！！')
+        return data
+
 
 
     def test(self):
@@ -918,4 +1005,5 @@ class Settings_sso():
 if __name__ == '__main__':
     m = Settings_sso()
     # m.sso_online_Two()
-    m.test()
+    # m.test()
+    m._updata_tihuo('GT203071558538478')

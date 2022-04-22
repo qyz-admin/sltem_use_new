@@ -220,13 +220,13 @@ class QueryTwoLower(Settings, Settings_sso):
                     print('++++正在导入查询：' + sht.name + '表； 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
                     if '处理时间' not in db.columns:
                         db.insert(0, '处理时间', rq)
-                    db = db[['订单编号', '处理时间', '备注（压单核实是否需要）']]
+                    db = db[['订单编号', '处理时间', '备注（压单核实是否需要）','处理人']]
                     db.rename(columns={'备注（压单核实是否需要）': '处理结果'}, inplace=True)
                     db.dropna(axis=0, subset=['处理结果'], how='any', inplace=True)
                     db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
                     # sql = '''update 压单表 a, customer b set a.`处理时间` = b.`处理时间`, a.`处理结果` = b.`处理结果` where a.`订单编号`= b.`订单编号`;'''
-                    sql = '''REPLACE INTO 压单表_已核实(订单编号,处理时间,处理结果,记录时间) 
-                            SELECT 订单编号,处理时间,处理结果,NOW() 记录时间 
+                    sql = '''REPLACE INTO 压单表_已核实(订单编号,处理时间,处理结果,处理人, 记录时间) 
+                            SELECT 订单编号,处理时间,处理结果,IF(处理人 = '' OR 处理人 IS NULL,'-',处理人) 处理人, NOW() 记录时间 
                             FROM customer;'''
                     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                     print('++++成功导入：' + sht.name + '--->>>到压单表')

@@ -336,6 +336,11 @@ class QueryUpdate(Settings):
                         ) ss
                         WHERE 是否改派 = '改派' AND (系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单')) OR 是否改派 IS NULL
                         ORDER BY FIELD(物流渠道,'龟山','龟山备货','天马顺丰','天马新竹','速派','立邦');'''
+        sql = '''SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
+				FROM (SELECT * FROM 已下架表  x WHERE x.记录时间 >=  TIMESTAMP(CURDATE()) AND x.币种 = '台币')  xj
+                LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
+                LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
+                WHERE 最终状态 NOT IN ("已签收","拒收","已退货","理赔","自发头程丢件","在途") or 最终状态 IS NULL;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df = df.loc[df["币种"] == "台币"]
         df.to_excel('F:\\神龙签收率\\(未发货) 改派-物流\\{} 改派未发货.xlsx'.format(today), sheet_name='台湾', index=False)
@@ -367,9 +372,9 @@ class QueryUpdate(Settings):
         print(month_last)
         print(month_yesterday)
         sql = '''UPDATE gat_zqsb d
-                        SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', 
-                                            IF(d.`物流方式` LIKE '台湾-优美宇通-新竹代收普货','台湾-铱熙无敌-新竹普货', 
-                                            IF(d.`物流方式` LIKE '台湾-优美宇通-新竹代收特货','台湾-铱熙无敌-新竹特货', d.`物流方式`))) )
+                        SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', 
+                                                IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', 
+                                                IF(d.`物流方式` LIKE '%优美宇通%' or d.`物流方式` LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹', d.`物流方式`)) )
                         WHERE d.`是否改派` ='直发';'''
         print('正在修改-直发的物流渠道…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
@@ -595,7 +600,7 @@ class QueryUpdate(Settings):
         print(month_last)
         print(month_yesterday)
         sql = '''UPDATE gat_zqsb d
-                        SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', IF(d.`物流方式` LIKE '台湾-优美宇通-新竹代收普货','台湾-铱熙无敌-新竹普货', IF(d.`物流方式` LIKE '台湾-优美宇通-新竹代收特货','台湾-铱熙无敌-新竹特货', d.`物流方式`))) )
+                        SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', IF(d.`物流方式` LIKE '%优美宇通%' or d.`物流方式` LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹', d.`物流方式`)) )
                         WHERE d.`是否改派` ='直发';'''
         print('正在修改-直发的物流渠道…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
@@ -3279,9 +3284,9 @@ class QueryUpdate(Settings):
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
         sql = '''UPDATE gat_zqsb d
-                        SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', 
-                                            IF(d.`物流方式` LIKE '台湾-优美宇通-新竹代收普货','台湾-铱熙无敌-新竹普货', 
-                                            IF(d.`物流方式` LIKE '台湾-优美宇通-新竹代收特货','台湾-铱熙无敌-新竹特货', d.`物流方式`))) )
+                        SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', 
+                                                IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', 
+                                                IF(d.`物流方式` LIKE '%优美宇通%' or d.`物流方式` LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹', d.`物流方式`)) )
                         WHERE d.`是否改派` ='直发';'''
         print('正在修改-直发的物流渠道…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
