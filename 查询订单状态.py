@@ -492,6 +492,7 @@ class QueryUpdate(Settings):
                 WHERE 在途未上线= 1;'''.format(month_begin)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+        df.to_excel('F:\\神龙签收率\\(物   流) 在途未上线-订单催促\\{} 在途未上线(催促).xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         print('正在获取更新 在途-未上线 数据…………')
         # 获取更新订单的语句
         sql = '''SELECT 订单编号 FROM customer;'''
@@ -521,7 +522,7 @@ class QueryUpdate(Settings):
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入excel…………')
         # print(df)
-        waybill = ['天马&天马', '速派&速派', '易速配&龟山|天马', '铱熙无敌&协来运', '香港&立邦']
+        waybill = ['天马&天马', '速派&速派', '龟山|易速配&易速配', '铱熙无敌&协来运', '香港&立邦']
         # waybill = ['立邦']
         for wy in waybill:
             wy1 = wy.split('&')[0]
@@ -555,7 +556,7 @@ if __name__ == '__main__':
     # upload = '查询-订单号'
     # m.trans_way_cost(team)  # 同产品下的规格运费查询
     '''
-    select = 2
+    select = 4
     if int(select) == 1:
             upload = '查询-运单号'
             m.readFormHost(upload)

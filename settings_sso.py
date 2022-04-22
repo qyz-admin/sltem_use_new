@@ -948,11 +948,11 @@ class Settings_sso():
         self.sso_online_cang()
         timeStart = ((datetime.datetime.now() + datetime.timedelta(days=1)) - relativedelta(months=2)).strftime('%Y-%m-%d')
         timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
+        # timeStart = '2022-04-22'
+        # timeEnd = '2022-04-22'
         url = r'http://gwms-v3.giikin.cn/roo/meta/page?'
-        r_header = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
-            'origin': 'http://gwms-v3.giikin.cn',
-            'Referer': 'http://gwms-v3.giikin.cn/roo/meta/index/listId/46'}
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gwms-v3.giikin.cn/roo/meta/index/listId/46'}
         data = {'sEcho': 12, 'iColumns': 11, 'sColumns': ',, , , , , , , , ,', 'iDisplayStart': 0, 'iDisplayLength': 10, 'mDataProp_0': 'id', 'sSearch_0': None, 'bRegex_0': False,
                 'bSearchable_0': True, 'bSortable_0': False,'mDataProp_1': 'billno', 'sSearch_1': None, 'bRegex_1': False, 'bSearchable_1': True, 'bSortable_1': True, 'mDataProp_2': 'order_number',
                 'sSearch_2': None, 'bRegex_2': False, 'bSearchable_2': True, 'bSortable_2': False, 'mDataProp_3': 'result', 'sSearch_3': None, 'bRegex_3': False, 'bSearchable_3': True,
@@ -964,8 +964,8 @@ class Settings_sso():
                 'sSearch': None, 'bRegex': False, 'iSortCol_0': 0, 'sSortDir_0': 'desc','iSortingCols': 1, 'listId': 46,
                 'startDate': timeStart + ' 00:00:00',
                 'endDate': timeEnd + ' 23:59:59',
-                'queryStr': 'a.order_number=' + ord + 'and 1=1',
-                '_': 1650449914790
+                'queryStr': 'a.order_number=' + "'" + ord + "'"
+                # '_': 1650620225353
                 }
         print(data)
         proxy = '39.105.167.0:40005'  # 使用代理服务器
