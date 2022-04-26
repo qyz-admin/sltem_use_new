@@ -1337,7 +1337,7 @@ class Query_sso_updata(Settings):
             				    h.quantity 数量,
             				    h.`shipInfo.shipPhone` 电话号码,
             				    UPPER(h.wayBillNumber) 运单编号,
-            				    IF(h.logisticsName LIKE "台湾-天马-711" AND LENGTH(h.wayBillNumber)=20, CONCAT(861,RIGHT(h.wayBillNumber,8)), UPPER(h.wayBillNumber)) 查件单号,
+            				    IF(h.logisticsName LIKE "台湾-天马-711" AND LENGTH(h.wayBillNumber)=20, CONCAT(861,RIGHT(h.wayBillNumber,8)), IF(h.logisticsName LIKE "台湾-速派-新竹改派" AND h.wayBillNumber LIKE "A%",RIGHT(h.wayBillNumber,LENGTH(h.wayBillNumber)-1),UPPER(h.wayBillNumber))) 查件单号,
             				    h.orderStatus 系统订单状态,
             				    IF(h.`logisticsStatus` in ('发货中'), null, h.`logisticsStatus`) 系统物流状态,
             				    IF(h.`reassignmentTypeName` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,

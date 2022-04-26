@@ -6,7 +6,7 @@ import win32com.client as win32
 import requests
 import json
 import sys
-from sso_updata import QueryTwo
+from sso_updata import Query_sso_updata
 from queue import Queue
 from dateutil.relativedelta import relativedelta
 from threading import Thread #  使用 threading 模块创建线程
@@ -1314,14 +1314,14 @@ class QueryUpdate(Settings):
 		        ) ss
                 LEFT JOIN
 		        (SELECT '拒收订单' 拒收订单, COUNT(lp.`订单编号`) AS 客服联系单量, SUM(IF(lp.`核实原因` NOT IN ('无人接听','无效号码'),1,0)) AS 客服有效联系量
-			        FROM 拒收核实 lp
-			        WHERE lp.`处理日期` BETWEEN DATE_ADD(curdate()-day(curdate())+1,interval -1 month)  AND  last_day(date_add(curdate()-day(curdate())+1,interval -1 month))
+			        FROM 拒收问题件 lp
+			        WHERE lp.`处理时间` BETWEEN DATE_ADD(curdate()-day(curdate())+1,interval -1 month)  AND  last_day(date_add(curdate()-day(curdate())+1,interval -1 month))
 		        ) ss1  ON ss.`拒收订单` = ss1.`拒收订单`
                 LEFT JOIN
 		        (SELECT '拒收订单' 拒收订单, COUNT(s.`订单编号`) AS 客服挽单量, SUM(IF(gt.`系统订单状态` IN ('已完成','已退货(销售)','已发货','已退货(物流)'),1,0)) AS 挽单发货量, SUM(IF(gt.`系统物流状态` = '已签收',1,0)) AS 签收量
 			        FROM (SELECT *
-						    FROM 拒收核实 js
-						    WHERE (js.`处理日期` BETWEEN DATE_ADD(curdate()-day(curdate())+1,interval -1 month)  AND  last_day(date_add(curdate()-day(curdate())+1,interval -1 month))) 
+						    FROM 拒收问题件 js
+						    WHERE (js.`处理时间` BETWEEN DATE_ADD(curdate()-day(curdate())+1,interval -1 month)  AND  last_day(date_add(curdate()-day(curdate())+1,interval -1 month))) 
 							AND (js.`再次克隆下单` IS NOT NULL AND js.`再次克隆下单` <> '')
 			        ) s
 			        LEFT JOIN gat_order_list gt ON s.`再次克隆下单` = gt.`订单编号` 
@@ -1442,7 +1442,8 @@ class QueryUpdate(Settings):
         writer2.close()
 
         wb = load_workbook(file_path)
-        sheet = wb.get_sheet_by_name("Sheet1")
+        # sheet = wb.get_sheet_by_name("Sheet1")
+        sheet = wb["Sheet1"]
         sheet.column_dimensions['A'].width = 15.82
         sheet.column_dimensions['B'].width = 8.38
         sheet.column_dimensions['C'].width = 8.38
@@ -1636,7 +1637,7 @@ if __name__ == '__main__':
         3、 获取工单和退换货的客服处理记录；
         4、 拒收核实-查询需要的产品id；  获取前 记得上传发过的核实表和返回的核实表；以及客诉件和问题件表
     '''
-    select = 5
+    select = 6
     if int(select) == 1:
         m.readFormHost('202110', '拒收核实')        # 上传每日核实过的
         m.readFormHost('202110', '拒收缓存')        # 上传核实的表

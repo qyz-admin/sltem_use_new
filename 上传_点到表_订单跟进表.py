@@ -30,7 +30,7 @@ class QueryTwo(Settings, Settings_sso):
         self.q = Queue(maxsize=10)  # 多线程调用的函数不能用return返回值，用来保存返回值
         self.userMobile = userMobile
         self.password = password
-        self.sso_online_Two()
+        # self.sso_online_Two()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -131,6 +131,7 @@ class QueryTwo(Settings, Settings_sso):
     def waybill_info(self):
         # lw = Settings_sso()
         # lw.sso_online_Two()
+        self.sso_online_Two()
         print('正在更新 订单跟进 信息……………………………………………………………………………………………………………………………………………………………………………………')
         start = datetime.datetime.now()
         sql = '''SELECT 订单编号 FROM {0} s WHERE s.`添加时间` = CURDATE();'''.format('gat_waybill_list')
@@ -262,8 +263,7 @@ class QueryTwo(Settings, Settings_sso):
                 where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
         # 调用更新库 函数
         up = Settings_sso()
-        team = 'gat'
-        up.updata_yadan(sql, sql2, team, data_df, data_df2)
+        up.updata_yadan(sql, sql2, 'gat', data_df, data_df2)
         print('更新完成…………')
 
         print('正在更新 出库订单 信息…………………………………………………………………………………………………………………………………………………………………………………………………………')
@@ -277,23 +277,21 @@ class QueryTwo(Settings, Settings_sso):
                 where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
         # 调用更新库 函数
         up = Settings_sso()
-        team = 'gat'
-        up.updata_chuku(sql, sql2, team, data_df, data_df2)
+        up.updata_chuku(sql, sql2, 'gat', data_df, data_df2)
         print('更新完成…………')
 
         # print('正在更新 提货订单 信息…………………………………………………………………………………………………………………………………………………………………………………………………………')
         # # 获取更新订单的语句
-        # sql = '''SELECT 订单编号 FROM {0} s WHERE s.`添加时间` = CURDATE() and s.`出库时间` IS NULL and s.`订单状态`<> '压单';'''.format('gat_waybill_list')
-        # data_df = ['order_number', 'addtime', 'billno', 'status_desc']
-        # data_df2 = ['订单编号', '运单扫描时间', '运单编号', '扫描状态']
+        # sql = '''SELECT 订单编号 FROM {0} s WHERE s.`添加时间` = CURDATE() and s.`提货时间` IS NULL;'''.format('gat_waybill_list')
+        # data_df = ['order_number', 'billno', 'country_code', 'intime', 'logistics_id', 'is_exception', 'is_deal']
+        # data_df2 = ['订单编号', '运单编号', '币种', '提货时间', '物流渠道', '是否异常', '是否处理']
         # # 获取更新表的语句
         # sql2 = '''update {0} a, cache b
-        #         set a.`订单状态`= '今日出库'
+        #         set a.`订单状态`= '今日提货'
         #         where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
         # # 调用更新库 函数
         # up = Settings_sso()
-        # team = 'gat'
-        # up.updata_chuku(sql, sql2, team, data_df, data_df2)
+        # up.updata_tihuo(sql, sql2, 'gat', data_df, data_df2)
         # print('更新完成…………')
 
         print('查询耗时：', datetime.datetime.now() - start)
@@ -486,8 +484,8 @@ if __name__ == '__main__':
 
     elif int(select) == 5:
         team = 'gat_waybill_list'
-        m.readFormHost(team)
-        m.waybill_info()
+        # m.readFormHost(team)
+        # m.waybill_info()
         m.chuhuo_info()
         m.waybill_updata()
 

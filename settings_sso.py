@@ -782,20 +782,23 @@ class Settings_sso():
         else:
             ord = "', '".join(orderId[0:max_count])
             dp = self._updata_yadan(ord, data_df, data_df2)
-        print('正在写入临时缓存表......')
-        dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
-        print('查询已导出+++')
-        sql = '''SELECT DISTINCT c.*,DATEDIFF(curdate(),入库时间) 压单天数,IF(DATEDIFF(curdate(),入库时间) > 5,'5天以前',null) AS 5天以前,
-                            IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',
-							IF(物流 LIKE '%天马%','台湾-天马-新竹&711',
-							IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹普货&特货',物流))) AS 物流方式
-				FROM `cache` c
-				LEFT JOIN gat_waybill_list g ON c.订单编号 = g.订单编号;'''
-        df1 = pd.read_sql_query(sql=sql, con=self.engine1)
-        df1.to_excel('G:\\输出文件\\压单反馈-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-        print('正在更新订单跟进表中......')
-        pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
-        print('更新耗时：', datetime.datetime.now() - start)
+        if dp == None:
+            print('查询为空，不需更新+++')
+        else:
+            print('正在写入临时缓存表......')
+            dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+            print('查询已导出+++')
+            sql = '''SELECT DISTINCT c.*,DATEDIFF(curdate(),入库时间) 压单天数,IF(DATEDIFF(curdate(),入库时间) > 5,'5天以前',null) AS 5天以前,
+                                IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',
+                                IF(物流 LIKE '%天马%','台湾-天马-新竹&711',
+                                IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹普货&特货',物流))) AS 物流方式
+                    FROM `cache` c
+                    LEFT JOIN gat_waybill_list g ON c.订单编号 = g.订单编号;'''
+            df1 = pd.read_sql_query(sql=sql, con=self.engine1)
+            df1.to_excel('G:\\输出文件\\压单反馈-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            print('正在更新订单跟进表中......')
+            pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
+            print('更新耗时：', datetime.datetime.now() - start)
     def _updata_yadan(self, ord,data_df,data_df2):  # 进入压单检索界面
         print('+++正在查询订单信息中')
         timeStart = ((datetime.datetime.now() + datetime.timedelta(days=1)) - relativedelta(months=2)).strftime('%Y-%m-%d')
@@ -820,7 +823,7 @@ class Settings_sso():
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
         max_count = req['count']
-        if max_count != [] or max_count != 0:
+        if max_count != [] and max_count != 0:
             ordersdict = []
             try:
                 for result in req['data']:
@@ -862,13 +865,16 @@ class Settings_sso():
         else:
             ord = "', '".join(orderId[0:max_count])
             dp = self._updata_chuku(ord, data_df, data_df2)
-        print('正在写入临时缓存表......')
-        dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
-        print('查询已导出+++')
-        dp.to_excel('G:\\输出文件\\出库-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-        print('正在更新订单跟进表中......')
-        pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
-        print('更新耗时：', datetime.datetime.now() - start)
+        if dp == None:
+            print('查询为空，不需更新+++')
+        else:
+            print('正在写入临时缓存表......')
+            dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+            print('查询已导出+++')
+            dp.to_excel('G:\\输出文件\\出库-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            print('正在更新订单跟进表中......')
+            pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
+            print('更新耗时：', datetime.datetime.now() - start)
         # 进入运单扫描导出 界面
     def _updata_chuku(self, ord,data_df,data_df2):
         print('+++正在查询订单信息中')
@@ -893,7 +899,7 @@ class Settings_sso():
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
         max_count = req['count']
-        if max_count != [] or max_count != 0:
+        if max_count != [] and max_count != 0:
             ordersdict = []
             try:
                 for result in req['data']:
@@ -921,31 +927,31 @@ class Settings_sso():
         print(db['订单编号'][0])
         orderId = list(db['订单编号'])
         max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
-        if max_count > 500:
-            ord = "', '".join(orderId[0:500])
-            df = self._updata_tihuo(ord, data_df, data_df2)
+        if max_count > 0:
+            df = pd.DataFrame([['','','','','','','']], columns=data_df2)
             dlist = []
-            n = 0
-            while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
-                n = n + 500
-                ord = "', '".join(orderId[n:n + 500])
+            for ord in orderId:
+                print(ord)
                 data = self._updata_tihuo(ord, data_df, data_df2)
                 dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
         else:
-            ord = "', '".join(orderId[0:max_count])
-            dp = self._updata_tihuo(ord, data_df, data_df2)
+            dp = None
         print('正在写入临时缓存表......')
-        dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
-        print('查询已导出+++')
+        print(dp)
         dp.to_excel('G:\\输出文件\\提货-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-        print('正在更新订单跟进表中......')
-        pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
+        if dp.empty:
+            print('查询为空，不需更新+++')
+        else:
+            # dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+            print('查询已导出+++')
+            # dp.to_excel('G:\\输出文件\\提货-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            # print('正在更新订单跟进表中......')
+            # pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
         print('更新耗时：', datetime.datetime.now() - start)
         # 进入运单扫描导出 界面
-    def _updata_tihuo(self, ord):
+    def _updata_tihuo(self, ord, data_df, data_df2):
         print('+++正在查询订单信息中')
-        self.sso_online_cang()
         timeStart = ((datetime.datetime.now() + datetime.timedelta(days=1)) - relativedelta(months=2)).strftime('%Y-%m-%d')
         timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
         # timeStart = '2022-04-22'
@@ -967,32 +973,39 @@ class Settings_sso():
                 'queryStr': 'a.order_number=' + "'" + ord + "'"
                 # '_': 1650620225353
                 }
-        print(data)
+        # print(data)
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
-        # req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
         print(req)
-        print(req.text)
-        print(req.headers)
-
-        # max_count = req['count']
-        # if max_count != [] or max_count != 0:
-        #     ordersdict = []
-        #     try:
-        #         for result in req['data']:
-        #             ordersdict.append(result)
-        #     except Exception as e:
-        #         print('转化失败： 重新获取中', str(Exception) + str(e))
-        #     data = pd.json_normalize(ordersdict)
-        #     data = data[data_df]
-        #     data.columns = data_df2
-        # else:
-        #     data = None
-        #     print('****** 没有信息！！！')
+        req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
+        print(req)
+        max_count = req['iTotalRecords']
+        print(max_count)
+        if max_count != [] and max_count != '0' and max_count != 0:
+            ordersdict = []
+            try:
+                req_data = req['aaData']
+                result = next(reversed(req_data))
+                # for result in req['aaData']:
+                # 方法三（最佳方法）
+                # next(reversed(od))  # get the last key
+                # next(reversed(od.items()))  # get the last item
+                # next(iter(od))  # get the first key
+                # next(iter(od.items()))  # get the first item
+                ordersdict.append(result)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            data = pd.json_normalize(ordersdict)
+            data = data[data_df]
+            data.columns = data_df2
+            print(data)
+        else:
+            data = None
+            print('****** 没有信息！！！')
         return data
 
 
@@ -1006,4 +1019,4 @@ if __name__ == '__main__':
     m = Settings_sso()
     # m.sso_online_Two()
     # m.test()
-    m._updata_tihuo('GT203071558538478')
+    m._updata_tihuo('GT203302314025681','','')
