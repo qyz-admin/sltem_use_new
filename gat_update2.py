@@ -430,7 +430,7 @@ class QueryUpdate(Settings):
 
         print('正在获取预估签收率的数据......')
         week: datetime = datetime.datetime.now()
-        if week.isoweekday() == 2 or week.isoweekday() == 4:
+        if week.isoweekday() == 0 or week.isoweekday() == 0:
             time_path: datetime = datetime.datetime.now()
             mkpath = "F:\\神龙签收率\\A预估签收率\\" + time_path.strftime('%m.%d')
             isExists = os.path.exists(mkpath)

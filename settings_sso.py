@@ -782,7 +782,7 @@ class Settings_sso():
         else:
             ord = "', '".join(orderId[0:max_count])
             dp = self._updata_yadan(ord, data_df, data_df2)
-        if dp == None:
+        if dp.empty:
             print('查询为空，不需更新+++')
         else:
             print('正在写入临时缓存表......')
@@ -865,7 +865,7 @@ class Settings_sso():
         else:
             ord = "', '".join(orderId[0:max_count])
             dp = self._updata_chuku(ord, data_df, data_df2)
-        if dp == None:
+        if dp.empty:
             print('查询为空，不需更新+++')
         else:
             print('正在写入临时缓存表......')

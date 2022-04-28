@@ -484,8 +484,8 @@ if __name__ == '__main__':
 
     elif int(select) == 5:
         team = 'gat_waybill_list'
-        # m.readFormHost(team)
-        # m.waybill_info()
+        m.readFormHost(team)
+        m.waybill_info()
         m.chuhuo_info()
         m.waybill_updata()
 
