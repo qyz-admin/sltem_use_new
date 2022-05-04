@@ -8541,15 +8541,15 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    if team == 'gat':
+    if team == 'g9at':
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
         month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
     else:
-        month_last = '2022-02-01'
-        month_old = '2022-02-01'        # 获取-每日-报表 开始的时间
-        month_yesterday = '2022-03-31'
+        month_last = '2022-03-01'
+        month_old = '2022-03-01'        # 获取-每日-报表 开始的时间
+        month_yesterday = '2022-04-30'
 
     last_time = '2021-01-01'
     write = '本期'
@@ -8558,7 +8558,7 @@ if __name__ == '__main__':
     m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
     m.qsb_new(team, month_old)                                    # 获取-每日-报表
     m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收表
-    m.phone_report()                                        # 获取电话核实日报表 周报表
+    # m.phone_report()                                        # 获取电话核实日报表 周报表
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id
     # m.address_repot(team, month_last, month_yesterday)                       #  获取-地区签收率-报表
