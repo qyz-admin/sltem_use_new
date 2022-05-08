@@ -25,14 +25,15 @@ from bs4 import BeautifulSoup # 抓标签里面元素的方法
 
 # -*- coding:utf-8 -*-
 class QueryTwoLower(Settings, Settings_sso):
-    def __init__(self, userMobile, password):
+    def __init__(self, userMobile, password, login_TmpCode):
         Settings.__init__(self)
         Settings_sso.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
         self.userMobile = userMobile
         self.password = password
-        self.sso_online_cang()
+        # self.sso_online_cang()
+        self.sso_online_cang_handle(login_TmpCode)
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -642,7 +643,7 @@ class QueryTwoLower(Settings, Settings_sso):
         return data
 
 if __name__ == '__main__':
-    m = QueryTwoLower('+86-18538110674', 'qyz04163510')
+    m = QueryTwoLower('+86-18538110674', 'qyz35100416')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     '''

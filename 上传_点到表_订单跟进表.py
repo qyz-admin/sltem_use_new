@@ -128,10 +128,11 @@ class QueryTwo(Settings, Settings_sso):
         app.quit()
 
     # 更新订单状态
-    def waybill_info(self):
+    def waybill_info(self, login_TmpCode):
         # lw = Settings_sso()
         # lw.sso_online_Two()
-        self.sso_online_Two()
+        # self.sso_online_Two()
+        self.sso__online_handle(login_TmpCode)
         print('正在更新 订单跟进 信息……………………………………………………………………………………………………………………………………………………………………………………')
         start = datetime.datetime.now()
         sql = '''SELECT 订单编号 FROM {0} s WHERE s.`添加时间` = CURDATE();'''.format('gat_waybill_list')
@@ -248,7 +249,7 @@ class QueryTwo(Settings, Settings_sso):
         return df
 
     # 更新压单状态
-    def chuhuo_info(self):
+    def chuhuo_info(self,login_TmpCode,login_TmpCode2):
         print('正在更新 压单订单 信息…………………………………………………………………………………………………………………………………………………………………………………………………………')
         start = datetime.datetime.now()
         # 获取更新订单的语句
@@ -263,7 +264,7 @@ class QueryTwo(Settings, Settings_sso):
                 where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
         # 调用更新库 函数
         up = Settings_sso()
-        up.updata_yadan(sql, sql2, 'gat', data_df, data_df2)
+        up.updata_yadan(sql, sql2, 'gat', data_df, data_df2,login_TmpCode)
         print('更新完成…………')
 
         print('正在更新 出库订单 信息…………………………………………………………………………………………………………………………………………………………………………………………………………')
@@ -277,7 +278,7 @@ class QueryTwo(Settings, Settings_sso):
                 where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
         # 调用更新库 函数
         up = Settings_sso()
-        up.updata_chuku(sql, sql2, 'gat', data_df, data_df2)
+        up.updata_chuku(sql, sql2, 'gat', data_df, data_df2,login_TmpCode2)
         print('更新完成…………')
 
         # print('正在更新 提货订单 信息…………………………………………………………………………………………………………………………………………………………………………………………………………')
@@ -458,7 +459,7 @@ class QueryTwo(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    m = QueryTwo('+86-18538110674', 'qyz04163510')
+    m = QueryTwo('+86-18538110674', 'qyz35100416')
     start: datetime = datetime.datetime.now()
     '''
     # -----------------------------------------------查询状态运行（一）-----------------------------------------
@@ -479,14 +480,15 @@ if __name__ == '__main__':
     elif int(select) == 4:
         team = 'gat_waybill_list'
         m.readFormHost(team)
-        m.waybill_info()
-        m.chuhuo_info()
+        m.waybill_info('login_TmpCode')
+        m.chuhuo_info('login_TmpCode','login_TmpCode2')
 
     elif int(select) == 5:
         team = 'gat_waybill_list'
+        login_TmpCode = ''
         m.readFormHost(team)
-        m.waybill_info()
-        m.chuhuo_info()
+        m.waybill_info(login_TmpCode)
+        m.chuhuo_info('login_TmpCode','login_TmpCode2')
         m.waybill_updata()
 
 

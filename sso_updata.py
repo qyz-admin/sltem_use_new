@@ -23,16 +23,18 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, \
 
 # -*- coding:utf-8 -*-
 class Query_sso_updata(Settings):
-    def __init__(self, userMobile, password, userID):
+    def __init__(self, userMobile, password, userID, login_TmpCode):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
         self.userMobile = userMobile
         self.password = password
         self.userID = userID
+        self.login_TmpCode = login_TmpCode
         # self._online()
 
-        self._online_Two()
+        # self._online_Two()
+        self.sso__online_handle()
 
         # self._online_Threed()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
@@ -254,7 +256,7 @@ class Query_sso_updata(Settings):
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
-                'araToken': '0#19171637544299948385570258461637545377418833G01447E2DCD07109775CD567044AE05FC09628C',
+                'araToken': '0#19171646622570440595157649661651738562272219G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
                 'araScene': 'login',
                 'captchaImgCode': '',
                 'captchaSessionId': '',
@@ -708,6 +710,151 @@ class Query_sso_updata(Settings):
         print('++++++已成功登录++++++')
         print('*' * 50)
 
+    def sso__online_handle(self):  # 手动输入token 登录系统保持会话状态
+        print(datetime.datetime.now())
+        print('正在登录后台系统中......')
+        # print('一、获取-钉钉用户信息......')
+        # url = r'https://login.dingtalk.com/login/login_with_pwd'
+        # data = {'mobile': self.userMobile,
+        #         'pwd': self.password,
+        #         'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
+        #         'pdmToken': '',
+        #         'araAppkey': '1917',
+        #         'araToken': '0#19171646622570440595157649661651738562272219G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
+        #         'araScene': 'login',
+        #         'captchaImgCode': '',
+        #         'captchaSessionId': '',
+        #         'type': 'h5'}
+        # r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+        #     'Origin': 'https://login.dingtalk.com',
+        #     'Referer': 'https://login.dingtalk.com/'}
+        # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+        # print(req)
+        # req = req.json()
+        # print(req)
+        # # req_url = req['data']
+        # # loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
+        # if 'data' in req.keys():
+        #     try:
+        #         req_url = req['data']
+        #         loginTmpCode = req_url.split('loginTmpCode=')[1]  # 获取loginTmpCode值
+        #     except Exception as e:
+        #         print('重新启动： 3分钟后', str(Exception) + str(e))
+        #         time.sleep(300)
+        #         self.sso_online_Two()
+        # elif 'message' in req.keys():
+        #     info = req['message']
+        #     win32api.MessageBox(0, "登录失败: " + info, "错误 提醒", win32con.MB_ICONSTOP)
+        #     sys.exit()
+        # else:
+        #     print('请检查失败原因：', str(req))
+        #     win32api.MessageBox(0, "请检查失败原因: 是否触发了验证码； 或者3分钟后再尝试登录！！！", "错误 提醒", win32con.MB_ICONSTOP)
+        #     sys.exit()
+        # print('******已获取loginTmpCode值: ' + str(loginTmpCode))
+
+        loginTmpCode = self.login_TmpCode
+        print('1、加载： ' + 'https://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html')
+        url = r'https://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html'
+        data = {'tmpCode': loginTmpCode,
+                'system': 18,
+                'url': '',
+                'ticker': '',
+                'companyId': 1}
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Origin': 'https://login.dingtalk.com',
+                    'Referer': 'http://gsso.giikin.com/admin/login/logout.html'}
+        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+        # print(req)
+        # print(req.text)
+        # print(req.headers)
+        # print('******获取登录页面url成功： /oapi.dingtalk.com/connect/oauth2/sns_authorize?')
+
+        time.sleep(1)
+        print('2、加载： ' + 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?')
+        url = 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode&loginTmpCode=' + loginTmpCode
+        url = req.text
+        data = {'tmpCode': loginTmpCode,
+                'system': 1,
+                'url': '',
+                'ticker': '',
+                'companyId': 1}
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gsso.giikin.com/'}
+        req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False)
+        # print(req)
+        # print(req.headers)
+
+        time.sleep(1)
+        print('3、加载： ' + 'http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode?')
+        url = req.headers['Location']
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gsso.giikin.com/'}
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        # print(req)
+        # print(req.headers)
+
+        print('4.1、加载： ' + 'https://gsso.giikin.com:443/admin/dingtalk_service/getunionidbytempcode?')
+        index_system3 = req.headers['Location']
+        # print(index_system3)
+        url = index_system3.replace(':443', '')
+        # print(url)
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gsso.giikin.com/'}
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        # print(req)
+        # print(req.headers)
+
+        time.sleep(1)
+        print('4.2、加载： ' + 'https://gimp.giikin.com')
+        url = req.headers['Location']
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gsso.giikin.com/'}
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        index = req.headers['Location']
+        # print(req)
+        # print(req.headers)
+
+        time.sleep(1)
+        print('5、加载： ' + 'https://gimp.giikin.com/portal/index/index.html')
+        url = 'https://gimp.giikin.com' + index
+        # print(url)
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gsso.giikin.com/'}
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        # print(req)
+        # print(req.headers)
+
+        time.sleep(1)
+        print('6、加载： ' + 'https://gsso.giikin.com/admin/login/index.html')
+        url = req.headers['Location']
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gsso.giikin.com/'}
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        # print(req)
+        # print(req.headers)
+
+        time.sleep(1)
+        print('7、加载： ' + 'https://gimp.giikin.com/portal/index/index.html?_ticker')
+        url = req.headers['Location']
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gsso.giikin.com/'}
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        # print(req)
+        print(req.headers)
+
+        # time.sleep(1)
+        # print('（4.3）加载/gimp.giikin.com:443/portal/index/index.html页面......')
+        # url = req.headers['Location']
+        # r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+        #             'Referer': 'http://gsso.giikin.com/'}
+        # req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        # print(5050)
+        # print(req)
+        # print(req.headers)
+
+        print('++++++已成功登录++++++' + str(req))
+        print(datetime.datetime.now())
+        print('*' * 100)
     # 获取签收表内容
     def readFormHost(self, team, query):
         match3 = {'新加坡': 'slxmt',
@@ -723,7 +870,10 @@ class Query_sso_updata(Settings):
         if team == 'slsc':
             path = r'D:\Users\Administrator\Desktop\需要用到的文件\品牌数据源'
         else:
-            path = r'D:\Users\Administrator\Desktop\需要用到的文件\数据库'
+            if query == '导入':
+                path = r'D:\Users\Administrator\Desktop\需要用到的文件\数据库导入'
+            else:
+                path = r'D:\Users\Administrator\Desktop\需要用到的文件\数据库'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -731,7 +881,7 @@ class Query_sso_updata(Settings):
             if dir[:2] != '~$':
                 print(filePath)
                 self.wbsheetHost(filePath, team, query)
-                os.remove(filePath)
+                # os.remove(filePath)
                 print('已清除上传文件…………')
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
@@ -759,22 +909,22 @@ class Query_sso_updata(Settings):
                 try:
                     db = None
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
-                    # db.rename(columns={'规格(中文)': '规格中文'})
-                    # columns = list(db.columns)  # 获取数据的标题名，转为列表
+                    db.rename(columns={'规格(中文)': '规格中文'}, inplace=True)
+                    columns = list(db.columns)  # 获取数据的标题名，转为列表
                     # print(columns)
-                    # columns_value = ['商品链接', '收货人', '拉黑率', '电话长度', '邮编长度', '配送地址', '地址翻译',
-                    #                  '邮箱', '留言', '审核人', '预选物流公司(新)', '是否api下单', '特价', '异常提示', '删除原因',
-                    #                  '备注', '删除人', 'IP', '超商店铺ID', '超商店铺名称', '超商网点地址', '超商类型',
-                    #                  '市/区', '优化师', '问题原因', '审单类型', '是否克隆', '代下单客服',
-                    #                  '改派的原运单号', '改派的下架时间']
-                    # for column_val in columns_value:
-                    #     if column_val in columns:
-                    #         db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
-                    db = db[['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '联系电话', '拉黑率', '邮编','是否低价',
-                             '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型', '商品分类', '商品ID',
-                             '订单类型', '物流状态', '异常提示', '重量', '删除原因', '父级分类', '转采购时间', '发货时间', '收货时间', '上线时间', '完成时间',
-                             '删除人', 'IP', '体积', '省洲', '运输方式', '优化师', '问题原因', '审单类型', '代下单客服', '改派的下架时间', '克隆人','站点ID',
-                             '选品人', '设计师', '运费', '服务费', '拒收原因', '克隆时间']]
+                    columns_value = ['商品链接', '收货人', '电话长度', '邮编长度', '配送地址', '地址翻译',
+                                     '邮箱', '留言', '', '预选物流公司(新)', '是否api下单', '特价', '市 / 区', '是否发送邮件',
+                                     '备注', '是否发送短信', '商品合计', '超商店铺ID', '超商店铺名称', '超商网点地址', '超商类型',
+                                     '市/区', '优化师', '纬经度', '通关码', '站点域名', '品名英文',
+                                     '简站', '地址类型']
+                    for column_val in columns_value:
+                        if column_val in columns:
+                            db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
+                    # db = db[['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '联系电话', '拉黑率', '邮编','是否低价',
+                    #          '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型', '商品分类', '商品ID',
+                    #          '订单类型', '物流状态', '异常提示', '重量', '删除原因', '父级分类', '转采购时间', '发货时间', '收货时间', '上线时间', '完成时间',
+                    #          '删除人', 'IP', '体积', '省洲', '运输方式', '优化师', '问题原因', '审单类型', '代下单客服', '改派的下架时间', '克隆人','站点ID',
+                    #          '选品人', '设计师', '运费', '服务费', '拒收原因', '克隆时间']]
                     db['运单号'] = db['运单号'].str.strip()                     # 去掉运单号中的前后空字符串
                     db['物流渠道'] = db['物流渠道'].str.strip()
                     db['产品名称'] = db['产品名称'].str.split('#', expand=True)[1]
@@ -813,7 +963,7 @@ class Query_sso_updata(Settings):
             				        数量,
             				        h.联系电话 电话号码,
             				        h.运单号 运单编号,
-            				        null 查件单号,
+            				        IF(h.物流渠道 LIKE "台湾-天马-711" AND LENGTH(h.运单号)=20, CONCAT(861,RIGHT(h.运单号,8)), IF(h.物流渠道 LIKE "台湾-速派-新竹改派" AND h.运单号 LIKE "A%",RIGHT(h.运单号,LENGTH(h.运单号)-1),UPPER(h.运单号))) 查件单号,
             				        h.订单状态 系统订单状态,
             				        IF(h.`物流状态` in ('发货中'), null, h.`物流状态`) 系统物流状态,
             				        IF(h.`订单类型` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
@@ -845,26 +995,26 @@ class Query_sso_updata(Settings):
             				        h.体积 包裹体积,
             				        邮编,
             				        h.转采购时间 添加物流单号时间,
-            				        null 规格中文,
+            				        h.规格中文,
             				        h.省洲 省洲,
-            				        null 审单类型,
-            				        null 拉黑率,
-            				        null 删除原因,
+            				        IF(h.审单类型 like '%自动审单%','是','否') 审单类型,
+            				        h.拉黑率,
+            				        h.删除原因,
             				        null 删除时间,
-            				        null 问题原因,
+            				        h.问题原因,
             				        null 问题时间,
-            				        null 下单人,
-            				        null 克隆人,
+            				        h.代下单客服 下单人,
+            				        h.克隆人,
             				        null 下架类型,
-            				        null 下架时间,
-            				        null 物流提货时间,
+            				        h.改派的下架时间 下架时间,
+            				        h.收货时间 物流提货时间,
             				        null 物流发货时间,
             				        h.上线时间 上线时间,
             				        null 国内清关时间,
             				        null 目的清关时间,
             				        null 回款时间,
-                                    null IP,
-            				        null 选品人
+                                    h.IP,
+            				        h.选品人
                             FROM d1_host h 
                             LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
                             LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -1136,27 +1286,38 @@ class Query_sso_updata(Settings):
                 df.to_sql('d1_host_cp', con=self.engine1, index=False, if_exists='replace')
                 print('正在更新总表中......')
                 sql = '''update {0}_order_list a, d1_host_cp b
-                                    set a.`币种`=b.`币种`,
-                                        a.`数量`=b.`数量`,
-            		                    a.`电话号码`=b.`电话号码` ,
-            		                    a.`运单编号`= IF(b.`运单编号` = '', NULL, b.`运单编号`),
-            		                    a.`系统订单状态`= IF(b.`系统订单状态` = '', NULL, b.`系统订单状态`),
-            		                    a.`系统物流状态`= IF(b.`系统物流状态` = '', NULL, b.`系统物流状态`),
-            		                    a.`是否改派`= b.`是否改派`,
-            		                    a.`物流方式`= IF(b.`物流方式` = '', NULL, b.`物流方式`),
-            		                    a.`物流名称`= IF(b.`物流名称` = '', NULL, b.`物流名称`),
-            		                    a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),
-                                        a.`商品id`= IF(b.`商品ID` = '', NULL, b.`商品ID`),
-                                        a.`产品id`= IF(b.`产品id` = '', NULL, b.`产品id`),
-                                        a.`产品名称`= IF(b.`产品名称` = '', NULL, b.`产品名称`),
-            		                    a.`审核时间`= IF(b.`审核时间` = '', NULL, b.`审核时间`),
-            		                    a.`仓储扫描时间`= IF(b.`仓储扫描时间` = '', NULL, b.`仓储扫描时间`),
-            		                    a.`上线时间`= IF(b.`上线时间` = '', NULL, b.`上线时间`),
-            		                    a.`完结状态时间`= IF(b.`完结状态时间` = '', NULL, b.`完结状态时间`),
-            		                    a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`),
-            		                    a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
-            		                    a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`)
-            		                where a.`订单编号`= b.`订单编号`;'''.format(team)
+                            set a.`币种`= b.`币种`,
+                                a.`数量`= b.`数量`,
+                                a.`电话号码`= b.`电话号码` ,
+                                a.`运单编号`= IF(b.`运单编号` = '', NULL, b.`运单编号`),
+                                a.`查件单号`= IF(b.`查件单号` = '', NULL, b.`查件单号`),
+                                a.`系统订单状态`= IF(b.`系统订单状态` = '', NULL, b.`系统订单状态`),
+                                a.`系统物流状态`= IF(b.`系统物流状态` = '' or b.`系统物流状态` = '发货中', NULL, b.`系统物流状态`),
+                                a.`是否改派`= b.`是否改派`,
+                                a.`物流方式`= IF(b.`物流方式` = '',NULL, b.`物流方式`),
+                                a.`物流名称`= IF(b.`物流名称` = '', NULL, b.`物流名称`),
+                                a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),
+                                a.`商品id`= IF(b.`商品id` = '', a.`商品id`, b.`商品id`),
+                                a.`产品id`= IF(b.`产品id` = '', a.`产品id`, b.`产品id`),
+                                a.`产品名称`= IF(b.`产品名称` = '', a.`产品名称`, b.`产品名称`),
+                                a.`价格`= IF(b.`价格` = '', a.`价格`, b.`价格`),
+                                a.`审核时间`= IF(b.`审核时间` = '', NULL, b.`审核时间`),
+                                a.`上线时间`= IF(b.`上线时间` = '' or b.`上线时间` = '0000-00-00 00:00:00' , NULL, b.`上线时间`),
+                                a.`仓储扫描时间`= IF(b.`仓储扫描时间` = '', NULL, b.`仓储扫描时间`),
+                                a.`完结状态时间`= IF(b.`完结状态时间` = '', NULL, b.`完结状态时间`),
+                                a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`),
+                                a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`),
+                                a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
+                                a.`审单类型`= IF(b.`审单类型` = '', NULL, IF(b.`审单类型` like '%自动审单%','是','否')),
+                                a.`拉黑率`= IF(b.`拉黑率` = '', '0.00%', b.`拉黑率`),
+                                a.`删除原因`= IF(b.`删除原因` = '', NULL,  b.`删除原因`),
+                                a.`删除时间`= IF(b.`删除时间` = '', NULL,  b.`删除时间`),
+                                a.`问题原因`= IF(b.`问题原因` = '', NULL,  b.`问题原因`),
+                                a.`问题时间`= IF(b.`问题时间` = '', NULL,  b.`问题时间`),
+                                a.`下单人`= IF(b.`下单人` = '', NULL,  b.`下单人`),
+                                a.`克隆人`= IF(b.`克隆人` = '', NULL,  b.`克隆人`),
+                                a.`选品人`= IF(b.`选品人` = '', NULL,  b.`选品人`)
+                    where a.`订单编号`=b.`订单编号`;'''.format(team)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             except Exception as e:
                 print('更新失败：', str(Exception) + str(e))
@@ -1807,7 +1968,7 @@ class Query_sso_updata(Settings):
         return df
 
 if __name__ == '__main__':
-    m = Query_sso_updata('+86-18538110674', 'qyz04163510', 1343)
+    m = Query_sso_updata('+86-18538110674', 'qyz35100416', 1343,'')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台',
               'gat_order_list': '港台',

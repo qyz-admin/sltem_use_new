@@ -24,7 +24,7 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  
 
 # -*- coding:utf-8 -*-
 class QueryOrder(Settings, Settings_sso):
-    def __init__(self, userMobile, password):
+    def __init__(self, userMobile, password, login_TmpCode):
         Settings.__init__(self)
         Settings_sso.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
@@ -32,7 +32,8 @@ class QueryOrder(Settings, Settings_sso):
         self.userMobile = userMobile
         self.password = password
         # self.sso_online_Two()
-        self._online_Two()
+        # self._online_Two()
+        self.sso__online_handle(login_TmpCode)
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -708,7 +709,7 @@ class QueryOrder(Settings, Settings_sso):
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
-    m = QueryOrder('+86-18538110674', 'qyz04163510')
+    m = QueryOrder('+86-18538110674', 'qyz35100416','')
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}

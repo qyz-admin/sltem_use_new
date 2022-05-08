@@ -471,7 +471,7 @@ class QueryUpdate(Settings):
         #             sheet_name='查询', index=False)
         # print('----已写入excel')
 
-    def onrount_online(self, team):
+    def onrount_online(self, team, login_TmpCode):
         print('正在获取查询 在途-未上线 数据…………')
         rq = datetime.datetime.now().strftime('%Y.%m.%d')
         month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
@@ -505,7 +505,7 @@ class QueryUpdate(Settings):
                 where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
         # 调用更新库 函数
         up = Settings_sso()
-        up.updata(sql, sql2, team, data_df, data_df2)
+        up.updata(sql, sql2, team, data_df, data_df2, login_TmpCode)
         print('更新完成…………')
 
         print('正在获取写入excel内容…………')
@@ -521,6 +521,19 @@ class QueryUpdate(Settings):
                 WHERE 最终状态 NOT IN ('拒收','已签收');'''.format()
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入excel…………')
+        file_pathT = 'G:\\输出文件\\{0}-在途未上线总表.xlsx'.format(rq)
+        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        df0.to_excel(file_pathT, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
+        book = load_workbook(file_pathT)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        df[(df['最终状态'].str.contains('在途'))].to_excel(excel_writer=writer, sheet_name='在途', index=False)
+        df[(df['最终状态'].str.contains('未上线'))].to_excel(excel_writer=writer, sheet_name='未上线', index=False)
+        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            del book['Sheet1']
+        writer.save()
+        writer.close()
+
         # print(df)
         waybill = ['天马&天马', '速派&速派', '龟山|易速配&易速配', '铱熙无敌&协来运', '香港&立邦']
         # waybill = ['立邦']
@@ -556,23 +569,27 @@ if __name__ == '__main__':
     # upload = '查询-订单号'
     # m.trans_way_cost(team)  # 同产品下的规格运费查询
     '''
-    select = 4
+    select = 2
     if int(select) == 1:
             upload = '查询-运单号'
             m.readFormHost(upload)
+
     elif int(select) == 2:
         m.readFormHost('查询运费')
         m.trans_way_cost_new(team)  # 同产品下的规格运费查询
+
     elif int(select) == 3:
         if week.isoweekday() == 1 or week.isoweekday() == 3 or week.isoweekday() == 5:
             upload = '查询-运单号'
             m.readFormHost(upload)
         m.readFormHost('查询运费')
         m.trans_way_cost_new(team)  # 同产品下的规格运费查询
+
     elif int(select) == 4:
         upload = '查询-运单号'    # 获取在途未上线 催促的
         team = 'gat'
-        m.onrount_online(team)
+        login_TmpCode = ''
+        m.onrount_online(team, login_TmpCode)
 
     print('输出耗时：', datetime.datetime.now() - start)
     win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒", win32con.MB_OK)

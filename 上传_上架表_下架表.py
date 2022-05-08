@@ -235,7 +235,7 @@ class Updata_return_bill(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    m = Updata_return_bill('+86-18538110674', 'qyz04163510')
+    m = Updata_return_bill('+86-18538110674', 'qyz35100416')
     start: datetime = datetime.datetime.now()
     '''
     # -----------------------------------------------查询状态运行（一）-----------------------------------------

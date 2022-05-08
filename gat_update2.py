@@ -268,8 +268,8 @@ class QueryUpdate(Settings):
             print(' ****** 没有要补充的信息; ****** ')
         else:
             print('！！！ 请再次补充缺少的数据中！！！')
-            lw = QueryTwoT('+86-18538110674', 'qyz04163510')
-            lw.productInfo(team)
+            # lw = QueryTwoT('+86-18538110674', 'qyz35100416')
+            # lw.productInfo(team)
 
         if team in ('gat'):
             sql = '''DELETE FROM gat_zqsb
@@ -8541,7 +8541,7 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    if team == 'g9at':
+    if team == 'gat':
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间

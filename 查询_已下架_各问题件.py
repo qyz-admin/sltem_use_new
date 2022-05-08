@@ -27,14 +27,15 @@ from 查询_已下架_压单 import QueryTwoLower
 
 # -*- coding:utf-8 -*-
 class QueryTwo(Settings, Settings_sso):
-    def __init__(self, userMobile, password):
+    def __init__(self, userMobile, password, login_TmpCode):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
         self.userMobile = userMobile
         self.password = password
         # self._online()
-        self.sso_online_Two()
+        # self.sso_online_Two()
+        self.sso__online_handle(login_TmpCode)
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -1014,7 +1015,7 @@ class QueryTwo(Settings, Settings_sso):
             print('获取每日新增核实拒收表......')
             rq = datetime.datetime.now().strftime('%m.%d')
             sql = '''SELECT 处理时间,IF(团队 LIKE "%红杉%","红杉",IF(团队 LIKE "火凤凰%","火凤凰",IF(团队 LIKE "神龙家族%","神龙",IF(团队 LIKE "金狮%","金狮",IF(团队 LIKE "神龙-主页运营1组%","神龙主页运营",IF(团队 LIKE "金鹏%","小虎队",团队)))))) as 团队,
-                            js.订单编号,产品id,产品名称,下单时间,完结状态时间,电话号码,核实原因,具体原因,NULL 通话截图,NULL ID,再次克隆下单,NULL 备注,处理人
+                            js.订单编号,产品id,产品名称,下单时间,完结状态时间,电话号码,核实原因 as 问题类型,具体原因 as 核实原因,备注 as 具体原因,NULL 通话截图,NULL ID,再次克隆下单,NULL 备注,处理人
                     FROM (SELECT * FROM 拒收问题件 WHERE 记录时间 >= TIMESTAMP(CURDATE())) js
                     LEFT JOIN gat_order_list g ON js.订单编号= g.订单编号;'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -1036,10 +1037,10 @@ class QueryTwo(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerRejection'}
-        data = {'page': 1, 'pageSize': 500, 'orderPrefix': None, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
+        data = {'page': n, 'pageSize': 500, 'orderPrefix': None, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
                 'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
-                'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': None, 'finishTimeStart': None,
+                'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': 99, 'finishTimeStart': None,
                 'finishTimeEnd': None, 'traceTimeStart': timeStart + ' 00:00:00', 'traceTimeEnd': timeEnd + ' 23:59:59', 'newCloneNumber': None}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
         # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
@@ -1288,7 +1289,8 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    m = QueryTwo('+86-18538110674', 'qyz04163510')
+    login_TmpCode = ''
+    m = QueryTwo('+86-18538110674', 'qyz35100416',login_TmpCode)
     start: datetime = datetime.datetime.now()
 
     select = 99
@@ -1335,7 +1337,8 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 已下架 状态运行（二）-----------------------------------------
     '''
     if int(select) == 99:
-        lw = QueryTwoLower('+86-18538110674', 'qyz04163510')
+        login_TmpCode = ''
+        lw = QueryTwoLower('+86-18538110674', 'qyz35100416', login_TmpCode)
         start: datetime = datetime.datetime.now()
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 自动时 输入的时间无效；切为不自动时，有效
 
@@ -1377,7 +1380,7 @@ if __name__ == '__main__':
         # m.orderReturnList_Query(team, '2022-02-15', '2022-02-16')           # 查询更新-退换货
 
     # timeStart, timeEnd = m.readInfo('拒收问题件')
-    # m.order_js_Query('2022-02-24', '2022-02-24')            # 查询更新-拒收问题件
+    # m.order_js_Query('2022-04-28', '2022-05-04')            # 查询更新-拒收问题件
 
 
 
