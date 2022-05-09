@@ -1289,55 +1289,62 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    login_TmpCode = ''
-    m = QueryTwo('+86-18538110674', 'qyz35100416',login_TmpCode)
-    start: datetime = datetime.datetime.now()
-
     select = 99
-    if int(select) == 1:
-        timeStart, timeEnd = m.readInfo('物流问题件')
-        m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
-    elif int(select) == 2:
-        timeStart, timeEnd = m.readInfo('物流客诉件')
-        m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
-    elif int(select) == 3:
-        timeStart, timeEnd = m.readInfo('采购异常')
-        # m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
-        # m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
-        m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))  # 查询更新-采购问题件（一、简单查询）
-    elif int(select) == 4:
-        timeStart, timeEnd = m.readInfo('派送问题件')
-        m.waybill_deliveryList(timeStart, timeEnd)                        # 查询更新-派送问题件
+    if int(select) == 909:
+        login_TmpCode = 'aecb7f09a12e39729a4c559c4fdeb319'
+        m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode)
+        start: datetime = datetime.datetime.now()
 
-    elif int(select) == 99:
-        timeStart, timeEnd = m.readInfo('物流问题件')
-        m.waybill_InfoQuery('2021-12-01', '2021-12-01')             # 查询更新-物流问题件
-        m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
+        if int(select) == 1:
+            timeStart, timeEnd = m.readInfo('物流问题件')
+            m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
+        elif int(select) == 2:
+            timeStart, timeEnd = m.readInfo('物流客诉件')
+            m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
+        elif int(select) == 3:
+            timeStart, timeEnd = m.readInfo('采购异常')
+            # m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
+            # m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
+            m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))  # 查询更新-采购问题件（一、简单查询）
+        elif int(select) == 4:
+            timeStart, timeEnd = m.readInfo('派送问题件')
+            m.waybill_deliveryList(timeStart, timeEnd)                        # 查询更新-派送问题件
 
-        timeStart, timeEnd = m.readInfo('物流客诉件')
-        m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
+        elif int(select) == 99:
+            timeStart, timeEnd = m.readInfo('物流问题件')
+            m.waybill_InfoQuery('2021-12-01', '2021-12-01')             # 查询更新-物流问题件
+            m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
+            # m.waybill_InfoQuery('2022-04-28', '2022-05-08')                     # 查询更新-物流问题件
 
-        timeStart, timeEnd = m.readInfo('退换货表')
-        for team in [1, 2]:
-            m.orderReturnList_Query(team, timeStart, timeEnd)       # 查询更新-退换货
+            timeStart, timeEnd = m.readInfo('物流客诉件')
+            m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
+            # m.waybill_Query('2022-04-28', '2022-05-08')                        # 查询更新-物流客诉件
 
-        timeStart, timeEnd = m.readInfo('拒收问题件')
-        m.order_js_Query(timeStart, timeEnd)                        # 查询更新-拒收问题件-·123456
+            timeStart, timeEnd = m.readInfo('退换货表')
+            for team in [1, 2]:
+                # m.orderReturnList_Query(team, timeStart, timeEnd)       # 查询更新-退换货
+                m.orderReturnList_Query(team, '2021-12-01', '2021-12-01')       # 查询更新-退换货
 
-        timeStart, timeEnd = m.readInfo('派送问题件')
-        m.waybill_deliveryList(timeStart, timeEnd)                        # 查询更新-派送问题件
+            timeStart, timeEnd = m.readInfo('拒收问题件')
+            m.order_js_Query(timeStart, timeEnd)                        # 查询更新-拒收问题件-·123456
+            # m.order_js_Query('2022-04-28', '2022-05-08')                        # 查询更新-拒收问题件-·123456
 
-        timeStart, timeEnd = m.readInfo('采购异常')
-        m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
-        # m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
-        # m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
-    print('查询耗时：', datetime.datetime.now() - start)
+            timeStart, timeEnd = m.readInfo('派送问题件')
+            m.waybill_deliveryList(timeStart, timeEnd)                        # 查询更新-派送问题件
+            # m.waybill_deliveryList('2022-04-28', '2022-05-08')                       # 查询更新-派送问题件
+
+            timeStart, timeEnd = m.readInfo('采购异常')
+            m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
+            # m.ssale_Query('2022-04-28', datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
+            # m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
+            # m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
+        print('查询耗时：', datetime.datetime.now() - start)
 
     '''
     # -----------------------------------------------自动获取 已下架 状态运行（二）-----------------------------------------
     '''
-    if int(select) == 99:
-        login_TmpCode = ''
+    if int(select) == 909:
+        login_TmpCode = '1ce2568ef2bb380398a0f02b8ed3e2a9'
         lw = QueryTwoLower('+86-18538110674', 'qyz35100416', login_TmpCode)
         start: datetime = datetime.datetime.now()
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 自动时 输入的时间无效；切为不自动时，有效
@@ -1348,6 +1355,9 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------
     '''
     if int(select) == 99:
+        login_TmpCode = 'aecb7f09a12e39729a4c559c4fdeb319'
+        m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode)
+        start: datetime = datetime.datetime.now()
         m.my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
         m.my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
 
@@ -1384,4 +1394,4 @@ if __name__ == '__main__':
 
 
 
-    print('查询耗时：', datetime.datetime.now() - start)
+    # print('查询耗时：', datetime.datetime.now() - start)

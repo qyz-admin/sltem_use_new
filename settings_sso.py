@@ -871,7 +871,7 @@ class Settings_sso():
                     'Origin': 'https://login.dingtalk.com',
                     'Referer': 'http://gsso.giikin.com/admin/login/logout.html'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
-        print(req.text)
+        # print(req.text)
         print('******获取登录页面url成功： /oapi.dingtalk.com/connect/oauth2/sns_authorize?')
 
         time.sleep(1)
@@ -885,7 +885,8 @@ class Settings_sso():
                 'companyId': 1}
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
-        req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False)
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        # print(req.headers)
         gimp = req.headers['Location']
 
         time.sleep(1)
@@ -901,7 +902,7 @@ class Settings_sso():
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': gimp}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        # print(req.headers)
+        print(req.headers)
         print('++++++已成功登录++++++' + str(req))
         print(datetime.datetime.now())
         print('*' * 100)
