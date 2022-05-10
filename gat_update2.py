@@ -268,8 +268,8 @@ class QueryUpdate(Settings):
             print(' ****** 没有要补充的信息; ****** ')
         else:
             print('！！！ 请再次补充缺少的数据中！！！')
-            # lw = QueryTwoT('+86-18538110674', 'qyz35100416')
-            # lw.productInfo(team)
+            lw = QueryTwoT('+86-18538110674', 'qyz35100416')
+            lw.productInfo(team)
 
         if team in ('gat'):
             sql = '''DELETE FROM gat_zqsb

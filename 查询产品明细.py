@@ -30,7 +30,8 @@ class QueryTwoT(Settings, Settings_sso):
         self.userMobile = userMobile
         self.password = password
         # self._online()
-        self.sso_online_Two()
+        # self.sso_online_Two()
+        self.sso__online_auto()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],

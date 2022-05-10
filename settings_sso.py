@@ -861,7 +861,7 @@ class Settings_sso():
         #"https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoag6pwcnuxvwto821j&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gwms-v3.giikin.cn/tool/dingtalk_service/getunionidbytempcode&loginTmpCode=59d3a6ee423937ebab33d44b476007a4"
         driver = webdriver.Chrome(r'C:\Program Files\Google\Chrome\Application\chromedriver.exe')
         driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoag6pwcnuxvwto821j&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gwms-v3.giikin.cn/tool/dingtalk_service/getunionidbytempcode')
-        driver.implicitly_wait(5)
+        time.sleep(3)
         js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
                     data: { mobile: '+86-18538110674',
                             pwd: 'qyz35100416',
@@ -897,7 +897,8 @@ class Settings_sso():
                     '''
         element = driver.find_element('id', 'mobile')
         driver.execute_script(js, element)
-        driver.implicitly_wait(5)
+        # driver.implicitly_wait(5)
+        time.sleep(3)
         login_TmpCode = driver.execute_script('return document.documentElement.getElementsByClassName("noGoto")[0].textContent;')
         print('loginTmpCode值: ' + login_TmpCode)
         driver.quit()
@@ -996,7 +997,8 @@ class Settings_sso():
         # 模拟打开浏览器 获取token
         driver = webdriver.Chrome(r'C:\Program Files\Google\Chrome\Application\chromedriver.exe')
         driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
-        driver.implicitly_wait(5)
+        # driver.implicitly_wait(5)
+        time.sleep(3)
         js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
                     data: { mobile: '+86-18538110674',
                             pwd: 'qyz35100416',
@@ -1032,7 +1034,8 @@ class Settings_sso():
                     '''
         element = driver.find_element('id', 'mobile')
         driver.execute_script(js, element)
-        driver.implicitly_wait(5)
+        # driver.implicitly_wait(5)
+        time.sleep(3)
         login_TmpCode = driver.execute_script('return document.documentElement.getElementsByClassName("noGoto")[0].textContent;')
         print('loginTmpCode值: ' + login_TmpCode)
         driver.quit()
@@ -1486,7 +1489,8 @@ class Settings_sso():
     def updata_yadan(self, sql, sql2, team, data_df, data_df2,login_TmpCode):  # 进入压单检索界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         # self.sso_online_cang()
-        self.sso_online_cang_handle(login_TmpCode)
+        # self.sso_online_cang_handle(login_TmpCode)
+        self.sso_online_cang_auto()
         print('正在获取需 更新订单信息…………')
         start = datetime.datetime.now()
         db = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -1569,8 +1573,9 @@ class Settings_sso():
     # 查询出库更新 以订单编号（仓储的获取）
     def updata_chuku(self, sql, sql2, team, data_df, data_df2,login_TmpCode):  # 进入压单检索界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        self.sso_online_cang()
-        self.sso_online_cang_handle(login_TmpCode)
+        # self.sso_online_cang()
+        # self.sso_online_cang_handle(login_TmpCode)
+        self.sso_online_cang_auto()
         print('正在获取需 更新订单信息…………')
         start = datetime.datetime.now()
         db = pd.read_sql_query(sql=sql, con=self.engine1)

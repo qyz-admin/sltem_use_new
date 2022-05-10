@@ -99,6 +99,9 @@ class QueryTwo(Settings, Settings_sso):
                             db.insert(0, '物流状态', '')
                             db.insert(0, '末条时间', '')
                             db.insert(0, '末条信息', '')
+                        if '下单时间' not in db.columns:
+                            db.insert(0, '下单时间', '')
+                            db['下单时间'] = db['核重时间'].copy()
                         db = db[['下单时间', '订单编号', '运单编号', '核重时间', '物流状态', '末条时间', '末条信息']]
                         db.dropna(axis=0, how='any', inplace=True)  # 空值（缺失值），将空值所在的行/列删除后
                     elif team == 'gat_waybill_list':
@@ -132,7 +135,8 @@ class QueryTwo(Settings, Settings_sso):
         # lw = Settings_sso()
         # lw.sso_online_Two()
         # self.sso_online_Two()
-        self.sso__online_handle(login_TmpCode)
+        # self.sso__online_handle(login_TmpCode)
+        self.sso__online_auto()
         print('正在更新 订单跟进 信息……………………………………………………………………………………………………………………………………………………………………………………')
         start = datetime.datetime.now()
         sql = '''SELECT 订单编号 FROM {0} s WHERE s.`添加时间` = CURDATE();'''.format('gat_waybill_list')
