@@ -569,7 +569,7 @@ if __name__ == '__main__':
     # upload = '查询-订单号'
     # m.trans_way_cost(team)  # 同产品下的规格运费查询
     '''
-    select = 2
+    select = 4
     if int(select) == 1:
             upload = '查询-运单号'
             m.readFormHost(upload)
@@ -588,8 +588,10 @@ if __name__ == '__main__':
     elif int(select) == 4:
         upload = '查询-运单号'    # 获取在途未上线 催促的
         team = 'gat'
-        login_TmpCode = ''
+        login_TmpCode = '3887347bb3cd3bb88b26d461b35474ca'
         m.onrount_online(team, login_TmpCode)
+
+        
 
     print('输出耗时：', datetime.datetime.now() - start)
     win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒", win32con.MB_OK)

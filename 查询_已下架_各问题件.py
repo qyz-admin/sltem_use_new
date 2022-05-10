@@ -57,7 +57,7 @@ class QueryTwo(Settings, Settings_sso):
                                                                                     self.mysql3['port'],
                                                                                     self.mysql3['datebase']))
         self.e = EmailControl()
-        self.my = MysqlControl()
+        # self.my = MysqlControl()
     def reSetEngine(self):
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -1289,9 +1289,10 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
+    start: datetime = datetime.datetime.now()
     select = 99
     if int(select) == 909:
-        login_TmpCode = 'aecb7f09a12e39729a4c559c4fdeb319'
+        login_TmpCode = '171297dbb5833dbb96dac59850ffaccd'
         m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode)
         start: datetime = datetime.datetime.now()
 
@@ -1343,8 +1344,8 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 已下架 状态运行（二）-----------------------------------------
     '''
-    if int(select) == 909:
-        login_TmpCode = '1ce2568ef2bb380398a0f02b8ed3e2a9'
+    if int(select) == 99:
+        login_TmpCode = 'bfa55c26a6933ce8a3c74e0174dbb739'
         lw = QueryTwoLower('+86-18538110674', 'qyz35100416', login_TmpCode)
         start: datetime = datetime.datetime.now()
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 自动时 输入的时间无效；切为不自动时，有效
@@ -1355,11 +1356,10 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------
     '''
     if int(select) == 99:
-        login_TmpCode = 'aecb7f09a12e39729a4c559c4fdeb319'
-        m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode)
-        start: datetime = datetime.datetime.now()
-        m.my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
-        m.my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
+        my = MysqlControl()
+
+        my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
+        my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
 
     '''
     # -----------------------------------------------自动获取 上架表保存 状态运行（四）-----------------------------------------
@@ -1394,4 +1394,4 @@ if __name__ == '__main__':
 
 
 
-    # print('查询耗时：', datetime.datetime.now() - start)
+    print('查询耗时：', datetime.datetime.now() - start)

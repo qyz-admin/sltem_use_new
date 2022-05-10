@@ -23,14 +23,15 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  
 
 # -*- coding:utf-8 -*-
 class QueryTwo(Settings, Settings_sso):
-    def __init__(self, userMobile, password):
+    def __init__(self, userMobile, password, login_TmpCode):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
         self.userMobile = userMobile
         self.password = password
         # self._online()
-        self.sso_online_Two()
+        # self.sso_online_Two()
+        self.sso__online_handle(login_TmpCode)
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -197,7 +198,7 @@ class QueryTwo(Settings, Settings_sso):
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
         data = pd.json_normalize(ordersDict)
-        data.sort_values(by="track_date", inplace=True, ascending=True)  # inplace: 原地修改; ascending：升序
+        # data.sort_values(by="track_date", inplace=True, ascending=True)  # inplace: 原地修改; ascending：升序
         # data['name'] = data['name'].str.strip()
         # data['cate_id'] = data['cate_id'].str.strip()
         # data['second_cate_id'] = data['second_cate_id'].str.strip()
@@ -386,7 +387,7 @@ class QueryTwo(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    m = QueryTwo('+86-18538110674', 'qyz04163510')
+    m = QueryTwo('+86-18538110674', 'qyz04163510','2501226929713d0ab95d811d0ead9e23')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     '''

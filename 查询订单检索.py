@@ -33,7 +33,8 @@ class QueryOrder(Settings, Settings_sso):
         self.password = password
         # self.sso_online_Two()
         # self._online_Two()
-        self.sso__online_handle(login_TmpCode)
+        self.sso__online_auto()
+        # self.sso__online_handle(login_TmpCode)
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -709,7 +710,7 @@ class QueryOrder(Settings, Settings_sso):
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
-    m = QueryOrder('+86-18538110674', 'qyz35100416','')
+    m = QueryOrder('+86-18538110674', 'qyz35100416','5e35cd9579fe31a89eac01de6eacceec')
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
