@@ -998,7 +998,7 @@ class Settings_sso():
         driver = webdriver.Chrome(r'C:\Program Files\Google\Chrome\Application\chromedriver.exe')
         driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
         # driver.implicitly_wait(5)
-        time.sleep(3)
+        time.sleep(5)
         js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
                     data: { mobile: '+86-18538110674',
                             pwd: 'qyz35100416',
@@ -1013,7 +1013,7 @@ class Settings_sso():
                         },
                         type: 'POST',
                         timeout: '10000',
-                        async:false, 
+                        async:false,
                         beforeSend(xhr, settings) {
                             xhr.setRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
                         },
@@ -1035,12 +1035,13 @@ class Settings_sso():
         element = driver.find_element('id', 'mobile')
         driver.execute_script(js, element)
         # driver.implicitly_wait(5)
-        time.sleep(3)
+        time.sleep(5)
         login_TmpCode = driver.execute_script('return document.documentElement.getElementsByClassName("noGoto")[0].textContent;')
         print('loginTmpCode值: ' + login_TmpCode)
         driver.quit()
 
         loginTmpCode = login_TmpCode
+        # loginTmpCode = 'af8203b900ce347287492b0051fe1e11'
         print('1、加载： ' + 'https://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html')
         url = r'https://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html'
         data = {'tmpCode': loginTmpCode,

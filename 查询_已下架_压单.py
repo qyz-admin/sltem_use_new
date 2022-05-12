@@ -33,7 +33,8 @@ class QueryTwoLower(Settings, Settings_sso):
         self.userMobile = userMobile
         self.password = password
         # self.sso_online_cang()
-        self.sso_online_cang_handle(login_TmpCode)
+        # self.sso_online_cang_handle(login_TmpCode)
+        self.sso_online_cang_auto()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -643,7 +644,7 @@ class QueryTwoLower(Settings, Settings_sso):
         return data
 
 if __name__ == '__main__':
-    m = QueryTwoLower('+86-18538110674', 'qyz35100416')
+    m = QueryTwoLower('+86-18538110674', 'qyz35100416','login_TmpCode')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     '''

@@ -35,7 +35,8 @@ class QueryTwo(Settings, Settings_sso):
         self.password = password
         # self._online()
         # self.sso_online_Two()
-        self.sso__online_handle(login_TmpCode)
+        # self.sso__online_handle(login_TmpCode)
+        self.sso__online_auto()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -1291,7 +1292,7 @@ if __name__ == '__main__':
     '''
     start: datetime = datetime.datetime.now()
     select = 99
-    if int(select) == 909:
+    if int(select) == 99:
         login_TmpCode = '171297dbb5833dbb96dac59850ffaccd'
         m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode)
         start: datetime = datetime.datetime.now()

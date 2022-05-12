@@ -65,7 +65,7 @@ driver.implicitly_wait(5)
 
 page_height = driver.execute_script('return document.documentElement.getElementsByClassName("noGoto")[0].textContent;')
 print(page_height)
-driver.quit()
+# driver.quit()
 
 print(page_height)
 

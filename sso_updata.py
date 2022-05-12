@@ -1014,7 +1014,7 @@ class Query_sso_updata(Settings):
         # print(req.headers)
 
         time.sleep(1)
-        print('6、加载： ' + 'https://gsso.giikin.com/admin/login/index.html')
+        # print('6、加载： ' + 'https://gsso.giikin.com/admin/login/index.html')
         url = req.headers['Location']
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
