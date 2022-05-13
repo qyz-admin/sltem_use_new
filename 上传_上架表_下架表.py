@@ -65,7 +65,7 @@ class Updata_return_bill(Settings, Settings_sso):
                                                                                     self.mysql2['datebase']))
     def readFormHost(self):
         start = datetime.datetime.now()
-        path = r'D:\Users\Administrator\Desktop\需要用到的文件\数据库'
+        path = r'D:\Users\Administrator\Desktop\需要用到的文件\B上下架表'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -197,8 +197,8 @@ class Updata_return_bill(Settings, Settings_sso):
                         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                         print('已导出 并清除 上下架数据不全的订单......')
 
-                    if team == 'ga t_return_bill':
-                        sql = '''SELECT c.运单编号, 退货单号 
+                    if team == 'gat_return_bill':
+                        sql = '''SELECT c.运单编号, 退货单号,DATE_SUB(CURDATE(), INTERVAL -45 DAY) as 免仓期 
                                 FROM customer c
                                 LEFT JOIN  gat_order_list g ON c.订单编号 =g.订单编号
                                 WHERE g.订单编号 IS NOT NULL;'''.format(team)
