@@ -4,6 +4,7 @@ import datetime
 import xlwings
 import win32api, win32con
 import requests
+from os import *
 import json
 import sys
 from queue import Queue
@@ -525,7 +526,7 @@ class QueryUpdate(Settings):
                 os.makedirs(mkpath)
             else:
                 print(mkpath + ' 目录已存在')
-            file_path = mkpath + '\\{} 同产品各团队的对比_使用版.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path = mkpath + '\\{} 同产品各团队对比_神龙.xlsx'.format(time_path.strftime('%m.%d'))
             sql = '''SELECT *
 					FROM(SELECT	IFNULL(月份, '总计') 月份, IFNULL(地区, '总计') 地区, IFNULL(产品id, '总计') 产品id, IFNULL(产品名称, '总计') 产品名称,
 							SUM(神龙单量) 神龙单量, 
@@ -573,7 +574,7 @@ class QueryUpdate(Settings):
                 app.display_alerts = False
                 wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
                 wbsht1 = app.books.open(file_path)
-                wbsht.macro('同产品各团队对比_使用版')()
+                wbsht.macro('同产品各团队对比_使用')()
                 wbsht1.save()
                 wbsht1.close()
                 wbsht.close()
@@ -581,6 +582,64 @@ class QueryUpdate(Settings):
             except Exception as e:
                 print('运行失败：', str(Exception) + str(e))
             print('运行成功…………')
+
+            file_path = mkpath + '\\{} 同产品各团队对比_火凤凰.xlsx'.format(time_path.strftime('%m.%d'))
+            sql = '''SELECT *
+        					FROM(SELECT	IFNULL(月份, '总计') 月份, IFNULL(地区, '总计') 地区, IFNULL(产品id, '总计') 产品id, IFNULL(产品名称, '总计') 产品名称,
+        							SUM(火凤凰单量) 火凤凰单量, 
+                                        concat(ROUND(SUM(火凤凰签收) / SUM(火凤凰总量) * 100,2),'%') as 火凤凰总计签收,
+                                        concat(ROUND(SUM(火凤凰完成) / SUM(火凤凰总量) * 100,2),'%') as 火凤凰完成占比,	
+        							SUM(神龙单量) 神龙单量, 
+                                        concat(ROUND(SUM(神龙签收) / SUM(神龙总量) * 100,2),'%') as 神龙总计签收,
+                                        concat(ROUND(SUM(神龙完成) / SUM(神龙总量) * 100,2),'%') as 神龙完成占比,									
+        							SUM(神龙运营单量) 神龙运营单量, 
+                                        concat(ROUND(SUM(神龙运营签收) / SUM(神龙运营总量) * 100,2),'%') as 神龙运营总计签收,
+                                        concat(ROUND(SUM(神龙运营完成) / SUM(神龙运营总量) * 100,2),'%') as 神龙运营完成占比					
+                                FROM(SELECT 年月 月份,币种 地区, 产品id, 产品名称,
+                                            SUM(IF(家族 = '神龙',1,0)) as 神龙单量,
+        									SUM(IF(家族 = '神龙',价格,0)) as 神龙总量,
+                                            SUM(IF(家族 = '神龙' AND 最终状态 = "已签收",价格,0)) as 神龙签收,
+                                            SUM(IF(家族 = '神龙' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 神龙完成,
+                                            SUM(IF(家族 = '火凤凰',1,0)) as 火凤凰单量,
+        									SUM(IF(家族 = '火凤凰',价格,0)) as 火凤凰总量,
+                                            SUM(IF(家族 = '火凤凰' AND 最终状态 = "已签收",价格,0)) as 火凤凰签收,
+                                            SUM(IF(家族 = '火凤凰' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 火凤凰完成,
+                                            SUM(IF(家族 = '神龙-运营1组',1,0)) as 神龙运营单量,
+        									SUM(IF(家族 = '神龙-运营1组',价格,0)) as 神龙运营总量,
+                                            SUM(IF(家族 = '神龙-运营1组' AND 最终状态 = "已签收",价格,0)) as 神龙运营签收,
+                                            SUM(IF(家族 = '神龙-运营1组' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 神龙运营完成,
+                                            SUM(IF(家族 = '小虎队',1,0)) as 小虎队单量,
+        									SUM(IF(家族 = '小虎队',价格,0)) as 小虎队总量,
+                                            SUM(IF(家族 = '小虎队' AND 最终状态 = "已签收",价格,0)) as 小虎队签收,
+                                            SUM(IF(家族 = '小虎队' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 小虎队完成
+                                    FROM gat_zqsb_cache cc
+        							WHERE cc.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m')
+        							GROUP BY cc.年月,cc.币种,cc.产品id
+        						) s
+        					GROUP BY 月份,地区,产品id		
+        --                   WITH ROLLUP 
+        					) ss
+                           ORDER BY FIELD(月份,DATE_FORMAT(CURDATE(),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 2 MONTH),'%Y%m'),'总计'),
+                                    FIELD(地区,'台湾','香港','总计'),
+                                    火凤凰单量 DESC;'''
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            df.to_excel(file_path, sheet_name='使用', index=False)
+            print('输出成功…………')
+            try:
+                print('正在运行 同产品各团队对比 表宏…………')
+                app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
+                app.display_alerts = False
+                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+                wbsht1 = app.books.open(file_path)
+                wbsht.macro('同产品各团队对比_使用')()
+                wbsht1.save()
+                wbsht1.close()
+                wbsht.close()
+                app.quit()
+            except Exception as e:
+                print('运行失败：', str(Exception) + str(e))
+            print('运行成功…………')
+
         else:
             print('今日  无需获取 同产品各团队对比 的数据！！！')
 
@@ -3433,6 +3492,9 @@ class QueryUpdate(Settings):
             wbsht1.close()
             wbsht.close()
             app.quit()
+
+            print("强制关闭Execl后台进程中......")
+            system('taskkill /F /IM EXCEL.EXE')
         except Exception as e:
             print('运行失败：', str(Exception) + str(e))
         new_path = 'F:\\神龙签收率\\' + (datetime.datetime.now()).strftime('%m.%d') + '\\签收率\\{} {} 产品明细-签收率.xlsx'.format(today, match[team])

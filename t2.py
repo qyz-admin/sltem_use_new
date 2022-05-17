@@ -19,14 +19,14 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
          'slsc': r'D:\Users\Administrator\Desktop\需要用到的文件\品牌',
          'gat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
          'gat_upload': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表 - 单独上传'}
-'''    msyql 语法:      show processlist（查看当前进程）;  
+'''    msyql 语法:      show processlist（查看当前进程）; 
                         set global event_scheduler=0;（关闭定时器）;
 备注：  港台 需整理的表：香港立邦>(明细再copy一份保存) ； 台湾龟山改派>(copy保存为xlsx格式);
 说明：  日本 需整理的表：1、吉客印神龙直发签收表=密码：‘JKTSL’>(明细再copy保存；改派明细不需要);2、直发签收表>(明细再copy保存；3、状态更新需要copy保存);
 '''
 # 初始化时间设置
 updata = '全部'           #  后台获取全部（两月）、部分更新（近五天）
-if team in ('gat', 'slsc', 'sl_r9b'):
+if team in ('ga8t', 'slsc', 'sl_r9b'):
     # 更新时间
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
@@ -41,12 +41,12 @@ if team in ('gat', 'slsc', 'sl_r9b'):
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    begin = datetime.date(2022, 3, 1)
-    end = datetime.date(2022, 3, 31)
+    begin = datetime.date(2022, 5, 1)
+    end = datetime.date(2022, 5, 17)
     # 导出时间
-    month_last = '2022-02-01'
-    month_yesterday = '2022-05-05'
-    month_begin = '2021-02-01'
+    month_last = '2022-04-01'
+    month_yesterday = '2022-05-17'
+    month_begin = '2021-03-01'
 print('****** 更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 导出起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
 
@@ -95,6 +95,7 @@ print('导入耗时：', datetime.datetime.now() - start)
 # TODO---数据库分段读取---
 print('---------------------------------- 数据库更新部分：--------------------------------')
 m.creatMyOrderSl(team, begin, end)                                       # 最近两月的全部订单信息
+# m.connectOrder(team, month_last, month_yesterday, month_begin)      # 停用 最近两个月的订单信息导出
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
     m.creatMyOrderSlTWO(team, begin, end)                               # 停用 最近两个月的 部分内容 更新信息

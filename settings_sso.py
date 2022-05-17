@@ -1388,7 +1388,8 @@ class Settings_sso():
     def updata(self, sql, sql2, team,data_df,data_df2, login_TmpCode):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         # self.sso_online_Two()
-        self.sso__online_handle(login_TmpCode)
+        # self.sso__online_handle(login_TmpCode)
+        self.sso__online_auto()
         print('正在获取需 更新订单信息…………')
         start = datetime.datetime.now()
         db = pd.read_sql_query(sql=sql, con=self.engine1)
