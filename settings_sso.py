@@ -859,6 +859,9 @@ class Settings_sso():
         # # print('******已获取loginTmpCode值: ' + str(loginTmpCode))
         # time.sleep(1)
         #"https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoag6pwcnuxvwto821j&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gwms-v3.giikin.cn/tool/dingtalk_service/getunionidbytempcode&loginTmpCode=59d3a6ee423937ebab33d44b476007a4"
+
+        options = webdriver.ChromeOptions()
+        options.add_argument(r"user-data-dir=C:\Program Files\Google\Chrome\Application\profile")
         driver = webdriver.Chrome(r'C:\Program Files\Google\Chrome\Application\chromedriver.exe')
         driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoag6pwcnuxvwto821j&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gwms-v3.giikin.cn/tool/dingtalk_service/getunionidbytempcode')
         time.sleep(3)
@@ -995,7 +998,10 @@ class Settings_sso():
         # print('******已获取loginTmpCode值: ' + str(loginTmpCode))
 
         # 模拟打开浏览器 获取token
+        options = webdriver.ChromeOptions()
+        options.add_argument(r"user-data-dir=C:\Program Files\Google\Chrome\Application\profile")
         driver = webdriver.Chrome(r'C:\Program Files\Google\Chrome\Application\chromedriver.exe')
+
         driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
         # driver.implicitly_wait(5)
         time.sleep(5)

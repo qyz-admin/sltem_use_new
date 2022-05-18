@@ -1,5 +1,5 @@
 import pandas as pd
-import os
+import os, shutil
 import datetime
 import time
 import xlwings
@@ -18,6 +18,7 @@ from sqlalchemy import create_engine
 from settings import Settings
 from settings_sso import Settings_sso
 from emailControl import EmailControl
+import win32com.client as win32
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, Color,Alignment ,PatternFill # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
 
@@ -109,6 +110,13 @@ class Updata_return_bill(Settings, Settings_sso):
                 self.wbsheetHost(filePath, team, tem_data, tem_day, tem_kuwei)
                 # os.remove(filePath)
                 # print('已清除上传文件！！！！！！')
+
+                excel = win32.gencache.EnsureDispatch('Excel.Application')
+                wb = excel.Workbooks.Open(filePath)
+                file_path = os.path.join(path, "~$ " + dir)
+                wb.SaveAs(file_path, FileFormat=51)              # FileFormat = 51 is for .xlsx extension
+                wb.Close()                                      # FileFormat = 56 is for .xls extension
+                excel.Application.Quit()
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
     def wbsheetHost(self, filePath, team, tem_data,tem_day, tem_kuwei):
@@ -240,14 +248,21 @@ class Updata_return_bill(Settings, Settings_sso):
                     sql = '''REPLACE INTO {0}({1}, 记录时间) SELECT *, NOW() 记录时间 FROM customer;'''.format(team, columns)
                     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                     print('++++：' + sht.name + '表--->>>上传成功')
-                    self.export_data(sht.name, team, tem_data, tem_day, tem_kuwei)
+                    self._export_data(sht.name, team, tem_data, tem_day, tem_kuwei)
                     print('++++----->>>' + sht.name + '：导出完成++++')
                 else:
                     print('----------数据为空,不需导入：' + sht.name)
             wb.close()
         app.quit()
 
-    def export_data(self, shtname, team, tem_data, tem_day, tem_kuwei):
+    def _export_data(self, shtname, team, tem_data, tem_day, tem_kuwei):
+        time_path: datetime = datetime.datetime.now()
+        mkpath = "F:\\神龙签收率\\A导入上架表\\" + time_path.strftime('%m.%d')
+        isExists = os.path.exists(mkpath)
+        if not isExists:
+            os.makedirs(mkpath)
+        else:
+            print(mkpath + ' 目录已存在')
         rq = datetime.datetime.now().strftime('%Y.%m.%d-%H%M%S')
         print('正在检查缓存表......')
         sql = '''SELECT * FROM customer c WHERE c.订单编号 IS  NULL OR c.运单编号 IS  NULL OR c.退货单号 IS  NULL;'''.format(team)
@@ -262,7 +277,7 @@ class Updata_return_bill(Settings, Settings_sso):
 
         print('正在导出表......')
         if team == 'gat_return_bill':
-            if tem_data == '协来运':
+            if tem_data == '协来9运':
                 sql = '''SELECT c.运单编号, 退货单号,date_format(LAST_DAY(DATE_SUB(上架时间,INTERVAL -2 MONTH)), '%Y-%m-02') as 免仓期 
                         FROM customer c
                         LEFT JOIN  gat_order_list g ON c.订单编号 =g.订单编号
@@ -277,10 +292,22 @@ class Updata_return_bill(Settings, Settings_sso):
             if tem_data == '天马':
                 df2 = df[(df['仓库名称'].str.contains('新竹仓'))]
                 df3 = df[(df['仓库名称'].str.contains('顺丰仓'))]
-                df2.to_excel('G:\\输出文件\\{0} 新竹仓导入收货{1}.xlsx'.format(tem_data, rq), sheet_name='查询', index=False, engine='xlsxwriter')
-                df3.to_excel('G:\\输出文件\\{0} 顺丰仓导入收货{1}.xlsx'.format(tem_data, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+
+                old_path = 'G:\\输出文件\\{0} 新竹仓导入收货{1}.xlsx'.format(tem_data, rq)
+                df2.to_excel(old_path, sheet_name='查询', index=False, engine='xlsxwriter')
+                new_path = mkpath + '\\{0} 新竹仓导入收货{1}.xlsx'.format(tem_data, rq)
+                shutil.copyfile(old_path, new_path)
+
+                old_path = 'G:\\输出文件\\{0} 顺丰仓导入收货{1}.xlsx'.format(tem_data, rq)
+                df3.to_excel(old_path, sheet_name='查询', index=False, engine='xlsxwriter')
+                new_path = mkpath + '\\{0} 顺丰仓导入收货{1}.xlsx'.format(tem_data, rq)
+                shutil.copyfile(old_path, new_path)
+
             else:
-                df.to_excel('G:\\输出文件\\{0} 海外仓导入收货{1}.xlsx'.format(tem_data, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+                old_path = 'G:\\输出文件\\{0} 海外仓导入收货{1}.xlsx'.format(tem_data, rq)
+                df.to_excel(old_path, sheet_name='查询', index=False, engine='xlsxwriter')
+                new_path = mkpath + '\\{0} 海外仓导入收货{1}.xlsx'.format(tem_data, rq)
+                shutil.copyfile(old_path, new_path)     # copy到指定位置
             print('...收货表导出')
 
             sql = '''SELECT 退货单号, 退货上架货架
@@ -288,12 +315,18 @@ class Updata_return_bill(Settings, Settings_sso):
                     LEFT JOIN  gat_order_list g ON c.订单编号 =g.订单编号
                     WHERE g.订单编号 IS NOT NULL;'''.format(team)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_excel('G:\\输出文件\\{0} 海外仓导入上架{1}.xlsx'.format(tem_data, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            old_path = 'G:\\输出文件\\{0} 海外仓导入上架{1}.xlsx'.format(tem_data, rq)
+            df.to_excel(old_path, sheet_name='查询', index=False, engine='xlsxwriter')
+            new_path = mkpath + '\\{0} 海外仓导入上架{1}.xlsx'.format(tem_data, rq)
+            shutil.copyfile(old_path, new_path)  # copy到指定位置
             print('...上架表导出')
 
             sql = '''SELECT DISTINCT '{0}' AS 库位名称, 退货上架货架 FROM customer;'''.format(tem_kuwei)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_excel('G:\\输出文件\\{0} 海外仓导入库位{1}.xlsx'.format(tem_data, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            old_path = 'G:\\输出文件\\{0} 海外仓导入库位{1}.xlsx'.format(tem_data, rq)
+            df.to_excel(old_path, sheet_name='查询', index=False, engine='xlsxwriter')
+            new_path = mkpath + '\\{0} 海外仓导入库位{1}.xlsx'.format(tem_data, rq)
+            shutil.copyfile(old_path, new_path)  # copy到指定位置
             print('...库位表导出')
 
         elif team == 'gat_return_bill_over':
@@ -306,7 +339,10 @@ class Updata_return_bill(Settings, Settings_sso):
                         LEFT JOIN  gat_order_list g ON c.订单编号 =g.订单编号
                         WHERE g.订单编号 IS NOT NULL;'''.format(team)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_excel('G:\\输出文件\\{0} 下架表{1}.xlsx'.format(tem_data, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            old_path = 'G:\\输出文件\\{0} 海外仓下架{1}.xlsx'.format(tem_data, rq)
+            df.to_excel(old_path, sheet_name='查询', index=False, engine='xlsxwriter')
+            new_path = mkpath + '\\{0} 海外仓下架{1}.xlsx'.format(tem_data, rq)
+            shutil.copyfile(old_path, new_path)  # copy到指定位置
             print('...下架表导出')
 
     # 检查是否上传

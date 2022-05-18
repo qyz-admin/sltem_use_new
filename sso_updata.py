@@ -898,7 +898,10 @@ class Query_sso_updata(Settings):
         # print('******已获取loginTmpCode值: ' + str(loginTmpCode))
 
         # 模拟打开浏览器 获取token
+        options = webdriver.ChromeOptions()
+        options.add_argument(r"user-data-dir=F:\360\ChromePortable_x64_v770386590\GoogleChromePortable77.0.3865.90(x64)\Data\profile")
         driver = webdriver.Chrome(r'C:\Program Files\Google\Chrome\Application\chromedriver.exe')
+
         driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
         driver.implicitly_wait(5)
         js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",

@@ -3492,14 +3492,14 @@ class QueryUpdate(Settings):
             wbsht1.close()
             wbsht.close()
             app.quit()
-
-            print("强制关闭Execl后台进程中......")
-            system('taskkill /F /IM EXCEL.EXE')
         except Exception as e:
             print('运行失败：', str(Exception) + str(e))
         new_path = 'F:\\神龙签收率\\' + (datetime.datetime.now()).strftime('%m.%d') + '\\签收率\\{} {} 产品明细-签收率.xlsx'.format(today, match[team])
         shutil.copyfile(file_path, new_path)        # copy到指定位置
         print('----已写入excel; 并复制到指定文件夹中')
+
+        print("强制关闭Execl后台进程中......")
+        system('taskkill /F /IM EXCEL.EXE')
 
     # 新版签收率-报表(刘姐看的)- 单量计算
     def qsb_new(self, team, month_last):  # 报表各团队近两个月的物流数据
@@ -8798,8 +8798,8 @@ if __name__ == '__main__':
     m.readFormHost(team, write, last_time)                            # 更新签收表---港澳台（一）
 
     m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
-    m.qsb_new(team, month_old)                                    # 获取-每日-报表
-    m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收表
+    # m.qsb_new(team, month_old)                                    # 获取-每日-报表
+    # m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收表
     m.phone_report()                                        # 获取电话核实日报表 周报表
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id
