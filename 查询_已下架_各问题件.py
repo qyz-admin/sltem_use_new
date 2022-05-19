@@ -1346,10 +1346,12 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 已下架 状态运行（二）-----------------------------------------
     '''
     if int(select) == 99:
-        login_TmpCode = 'bfa55c26a6933ce8a3c74e0174dbb739'
-        lw = QueryTwoLower('+86-18538110674', 'qyz35100416', login_TmpCode)
+        login_TmpCode = '3cb7a134473b3f4c882ea5255f882d61'
+        handle = '手动'
+        lw = QueryTwoLower('+86-18538110674', 'qyz35100416', login_TmpCode,handle)
         start: datetime = datetime.datetime.now()
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 自动时 输入的时间无效；切为不自动时，有效
+        lw.gp_order()                                         # 改派未发货查询
 
         print('查询耗时：', datetime.datetime.now() - start)
 

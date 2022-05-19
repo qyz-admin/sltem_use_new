@@ -25,7 +25,7 @@ from bs4 import BeautifulSoup # 抓标签里面元素的方法
 
 # -*- coding:utf-8 -*-
 class QueryTwoLower(Settings, Settings_sso):
-    def __init__(self, userMobile, password, login_TmpCode):
+    def __init__(self, userMobile, password, login_TmpCode,handle):
         Settings.__init__(self)
         Settings_sso.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
@@ -33,8 +33,10 @@ class QueryTwoLower(Settings, Settings_sso):
         self.userMobile = userMobile
         self.password = password
         # self.sso_online_cang()
-        # self.sso_online_cang_handle(login_TmpCode)
-        self.sso_online_cang_auto()
+        if handle == '手动':
+            self.sso_online_cang_handle(login_TmpCode)
+        else:
+            self.sso_online_cang_auto()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -500,19 +502,31 @@ class QueryTwoLower(Settings, Settings_sso):
     # 改派-查询未发货的订单
     def gp_order(self):
         print('正在查询改派未发货订单…………')
-        listT = []  # 查询sql的结果 存放池
-        sql = '''SELECT xj.*, '未发货' AS 状态
-                FROM 已下架表  xj
-                LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
-			    LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
-                WHERE xj.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) 
-					AND xj.币种 = '台币' AND (最终状态 = '未发货' or 最终状态 IS NULL)  
-					AND  gs.系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单') or gs.系统订单状态 IS NULL;'''
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        listT.append(df)
-        print('正在写入excel…………')
         today = datetime.date.today().strftime('%m.%d')
-        file_path = 'G:\\输出文件\\{} 改派未发货.xlsx'.format(today)
+        listT = []  # 查询sql的结果 存放池
+        sql = '''SELECT *
+                                FROM ( SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
+                                        FROM (SELECT *
+                			                FROM 已下架表  x
+                			                WHERE x.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) AND x.币种 = '台币'
+                                        )  xj
+                                        LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
+                                        LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
+                                        WHERE 最终状态 = '未发货' or 最终状态 IS NULL
+                                ) ss
+                                WHERE 是否改派 = '改派' AND (系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单')) OR 是否改派 IS NULL
+                                ORDER BY FIELD(物流渠道,'龟山','龟山备货','天马顺丰','天马新竹','速派','立邦');'''
+        sql = '''SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
+        				FROM (SELECT * FROM 已下架表  x WHERE x.记录时间 >=  TIMESTAMP(CURDATE()) AND x.币种 = '台币')  xj
+                        LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
+                        LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
+                        WHERE 最终状态 NOT IN ("已签收","拒收","已退货","理赔","自发头程丢件","在途") or 最终状态 IS NULL;'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        df = df.loc[df["币种"] == "台币"]
+        listT.append(df)
+
+        print('正在写入excel…………')
+        file_path = 'F:\\神龙签收率\\(未发货) 改派-物流\\{} 改派未发货.xlsx'.format(today)
         if os.path.exists(file_path):  # 判断是否有需要的表格
             print("正在清除重复文件......")
             os.remove(file_path)
@@ -644,7 +658,7 @@ class QueryTwoLower(Settings, Settings_sso):
         return data
 
 if __name__ == '__main__':
-    m = QueryTwoLower('+86-18538110674', 'qyz35100416','login_TmpCode')
+    m = QueryTwoLower('+86-18538110674', 'qyz35100416','c742d14ac01b3356972293427547df7b','手动')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     '''

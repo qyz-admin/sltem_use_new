@@ -128,6 +128,7 @@ class QueryTwo(Settings, Settings_sso):
         else:
             dp = None
         print(dp)
+        dp = dp[['orderNumber', 'wayBillNumber', 'track_date', 'track_info', 'track_status']]
         dp.to_excel('G:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         print('查询已导出+++')
         print('*' * 50)
@@ -165,6 +166,8 @@ class QueryTwo(Settings, Settings_sso):
         print('++++++查询成功+++++++')
         print('查询耗时：', datetime.datetime.now() - start)
         print('*' * 50)
+
+    #  查询运单轨迹-按订单查询（一）
     def _order_online(self, ord, isReal):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
@@ -184,36 +187,77 @@ class QueryTwo(Settings, Settings_sso):
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
-        ordersDict = []
-        try:
-            if req['data']['list'][0]['list'] == []:
-                # print(req['data']['list'])
-                return None
-            else:
-                for result in req['data']['list']:
-                    for res in result['list']:
-                        res['orderNumber'] = result['order_number']
-                        res['wayBillNumber'] = result['track_no']
-                        # print(res)
-                        ordersDict.append(res)
-        except Exception as e:
-            print('转化失败： 重新获取中', str(Exception) + str(e))
-        data = pd.json_normalize(ordersDict)
-        # data.sort_values(by="track_date", inplace=True, ascending=True)  # inplace: 原地修改; ascending：升序
-        # data['name'] = data['name'].str.strip()
-        # data['cate_id'] = data['cate_id'].str.strip()
-        # data['second_cate_id'] = data['second_cate_id'].str.strip()
-        # data['third_cate_id'] = data['third_cate_id'].str.strip()
-        # data = data[['id', 'name', 'cate_id', 'second_cate_id', 'third_cate_id', 'status', 'price', 'selectionName',
-        #              'sellerCount', 'buyerName', 'saleCount', 'logisticsCost', 'lender', 'isGift', 'createTime',
-        #              'categorys', 'image']]
-        # data.columns = ['产品id', '产品名称', '一级分类', '二级分类', '三级分类', '产品状态', '价格(￥)', '选品人',
-        #                 '供应商数', '采购人', '商品数', 'logisticsCost', '出借人', '特殊信息', '添加时间',
-        #                 '产品分类', '产品图片']
-        # data.to_excel('G:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False,engine='xlsxwriter')
-        print('++++++本批次查询成功+++++++')
-        # print('*' * 50)
-        return data
+        if req['data']['list'] == []:
+            data = self._order_online_data(ord, 0)
+            return data
+        else:
+            ordersDict = []
+            try:
+                if req['data']['list'][0]['list'] == []:
+                    # print(req['data']['list'])
+                    return None
+                else:
+                    for result in req['data']['list']:
+                        for res in result['list']:
+                            res['orderNumber'] = result['order_number']
+                            res['wayBillNumber'] = result['track_no']
+                            if '已核重-集运仓发货' in res['track_info']:
+                                res['fahuo_time'] = res['已核重-集运仓发货']
+                            # print(res)track_info
+                            ordersDict.append(res)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            data = pd.json_normalize(ordersDict)
+            data.sort_values(by=["orderNumber", "track_date"], inplace=True, ascending=[True, True])  # inplace: 原地修改; ascending：升序 （是否升序排序，默认为true，降序则为false。如果是列表，则需和by指定的列表数量相同，指明每一列的排序方式）
+            print('++++++本批次查询成功+++++++')
+            # print('*' * 50)
+            return data
+    # 物流轨迹数据库
+    def _order_online_data(self, ord, isReal):  # 进入订单检索界面
+        print('+++正在查询订单信息中')
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        url = r'https://gimp.giikin.com/service?service=gorder.order&action=getLogisticsTrace'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/logisticsTrajectory'}
+        data = {'numbers': ord,
+                'searchType': 1,
+                'isReal': isReal
+                }
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        if req['data']['list'] == []:
+            data = None
+            return data
+        else:
+            ordersDict = []
+            try:
+                if req['data']['list'][0]['list'] == []:
+                    # print(req['data']['list'])
+                    data = None
+                    return data
+                else:
+                    for result in req['data']['list']:
+                        for res in result['list']:
+                            res['orderNumber'] = result['order_number']
+                            res['wayBillNumber'] = result['track_no']
+                            if '已核重-集运仓发货' in res['track_info']:
+                                res['fahuo_time'] = res['已核重-集运仓发货']
+                            # print(res)track_info
+                            ordersDict.append(res)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            data = pd.json_normalize(ordersDict)
+            data.sort_values(by=["orderNumber", "track_date"], inplace=True, ascending=[True, True])  # inplace: 原地修改; ascending：升序 （是否升序排序，默认为true，降序则为false。如果是列表，则需和by指定的列表数量相同，指明每一列的排序方式）
+            print('++++++本批次查询成功+++++++')
+            # print('*' * 50)
+            return data
 
 
 

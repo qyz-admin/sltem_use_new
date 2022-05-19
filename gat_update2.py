@@ -344,7 +344,7 @@ class QueryUpdate(Settings):
                 WHERE 最终状态 NOT IN ("已签收","拒收","已退货","理赔","自发头程丢件","在途") or 最终状态 IS NULL;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df = df.loc[df["币种"] == "台币"]
-        df.to_excel('F:\\神龙签收率\\(未发货) 改派-物流\\{} 改派未发货.xlsx'.format(today), sheet_name='台湾', index=False)
+        df.to_excel('F:\\神龙签收率\\(未发货) 改派-物流\\{} 改派未发货2.xlsx'.format(today), sheet_name='台湾', index=False)
 
         print('******----已写入excel******')
 
@@ -8798,8 +8798,8 @@ if __name__ == '__main__':
     m.readFormHost(team, write, last_time)                            # 更新签收表---港澳台（一）
 
     m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
-    # m.qsb_new(team, month_old)                                    # 获取-每日-报表
-    # m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收表
+    m.qsb_new(team, month_old)                                    # 获取-每日-报表
+    m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收表
     m.phone_report()                                        # 获取电话核实日报表 周报表
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id

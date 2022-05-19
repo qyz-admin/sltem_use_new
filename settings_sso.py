@@ -871,7 +871,7 @@ class Settings_sso():
                             goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoag6pwcnuxvwto821j&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gwms-v3.giikin.cn/tool/dingtalk_service/getunionidbytempcode',
                             pdmToken: '',
                             araAppkey: '1917',
-                            araToken: '0#19171646622570440595157649661652144581488416G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
+                            araToken: '0#19171646622570440595157649661652956323756714G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
                             araScene: 'login',
                             captchaImgCode: '',
                             captchaSessionId: '',
@@ -1338,19 +1338,20 @@ class Settings_sso():
         # print(req)
         # print(req.headers)
 
-        time.sleep(1)
-        print('4.2、加载： ' + 'https://gimp.giikin.com')
-        url = req.headers['Location']
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
-                    'Referer': 'http://gsso.giikin.com/'}
-        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        index = req.headers['Location']
+        # time.sleep(1)
+        # print('4.2、加载： ' + 'https://gimp.giikin.com')
+        # url = req.headers['Location']
+        # r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+        #             'Referer': 'http://gsso.giikin.com/'}
+        # req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        # index = req.headers['Location']
         # print(req)
         # print(req.headers)
 
         time.sleep(1)
         print('5、加载： ' + 'https://gimp.giikin.com/portal/index/index.html')
-        url = 'https://gimp.giikin.com' + index
+        url = 'https://gimp.giikin.com' + req.headers['Location']
+        # url = 'https://gimp.giikin.com' + index
         # print(url)
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
@@ -1494,11 +1495,15 @@ class Settings_sso():
         return df
 
     # 查询压单更新 以订单编号（仓储的获取）
-    def updata_yadan(self, sql, sql2, team, data_df, data_df2,login_TmpCode):  # 进入压单检索界面
+    def updata_yadan(self, sql, sql2, team, data_df, data_df2,login_TmpCode,handle):  # 进入压单检索界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         # self.sso_online_cang()
         # self.sso_online_cang_handle(login_TmpCode)
-        self.sso_online_cang_auto()
+        if handle == '手动':
+            self.sso_online_cang_handle(login_TmpCode)
+        else:
+            self.sso_online_cang_auto()
+
         print('正在获取需 更新订单信息…………')
         start = datetime.datetime.now()
         db = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -1579,11 +1584,15 @@ class Settings_sso():
         return data
 
     # 查询出库更新 以订单编号（仓储的获取）
-    def updata_chuku(self, sql, sql2, team, data_df, data_df2,login_TmpCode):  # 进入压单检索界面
+    def updata_chuku(self, sql, sql2, team, data_df, data_df2,login_TmpCode,handle):  # 进入压单检索界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         # self.sso_online_cang()
         # self.sso_online_cang_handle(login_TmpCode)
-        self.sso_online_cang_auto()
+        if handle == '手动':
+            self.sso_online_cang_handle(login_TmpCode)
+        else:
+            self.sso_online_cang_auto()
+
         print('正在获取需 更新订单信息…………')
         start = datetime.datetime.now()
         db = pd.read_sql_query(sql=sql, con=self.engine1)

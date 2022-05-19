@@ -131,12 +131,14 @@ class QueryTwo(Settings, Settings_sso):
         app.quit()
 
     # 更新订单状态
-    def waybill_info(self, login_TmpCode):
+    def waybill_info(self, login_TmpCode, handle):
         # lw = Settings_sso()
         # lw.sso_online_Two()
         # self.sso_online_Two()
-        # self.sso__online_handle(login_TmpCode)
-        self.sso__online_auto()
+        if handle == '手动':
+            self.sso__online_handle(login_TmpCode)
+        else:
+            self.sso__online_auto()
         print('正在更新 订单跟进 信息……………………………………………………………………………………………………………………………………………………………………………………')
         start = datetime.datetime.now()
         sql = '''SELECT 订单编号 FROM {0} s WHERE s.`添加时间` = CURDATE();'''.format('gat_waybill_list')
@@ -253,7 +255,7 @@ class QueryTwo(Settings, Settings_sso):
         return df
 
     # 更新压单状态
-    def chuhuo_info(self,login_TmpCode,login_TmpCode2):
+    def chuhuo_info(self,login_TmpCode,login_TmpCode2, handle):
         print('正在更新 压单订单 信息…………………………………………………………………………………………………………………………………………………………………………………………………………')
         start = datetime.datetime.now()
         # 获取更新订单的语句
@@ -268,7 +270,7 @@ class QueryTwo(Settings, Settings_sso):
                 where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
         # 调用更新库 函数
         up = Settings_sso()
-        up.updata_yadan(sql, sql2, 'gat', data_df, data_df2,login_TmpCode)
+        up.updata_yadan(sql, sql2, 'gat', data_df, data_df2,login_TmpCode, handle)
         print('更新完成…………')
 
         print('正在更新 出库订单 信息…………………………………………………………………………………………………………………………………………………………………………………………………………')
@@ -282,7 +284,7 @@ class QueryTwo(Settings, Settings_sso):
                 where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
         # 调用更新库 函数
         up = Settings_sso()
-        up.updata_chuku(sql, sql2, 'gat', data_df, data_df2,login_TmpCode2)
+        up.updata_chuku(sql, sql2, 'gat', data_df, data_df2,login_TmpCode2, handle)
         print('更新完成…………')
 
         # print('正在更新 提货订单 信息…………………………………………………………………………………………………………………………………………………………………………………………………………')
@@ -483,16 +485,18 @@ if __name__ == '__main__':
 
     elif int(select) == 4:
         team = 'gat_waybill_list'
+        handle = '手动'
         m.readFormHost(team)
-        m.waybill_info('login_TmpCode')
-        m.chuhuo_info('login_TmpCode','login_TmpCode2')
+        m.waybill_info('login_TmpCode',handle)
+        m.chuhuo_info('login_TmpCode','login_TmpCode2',handle)
 
     elif int(select) == 5:
         team = 'gat_waybill_list'
-        login_TmpCode = ''
+        login_TmpCode = '8f60a2f666d73bb1ac7afedf7d31cb14'
+        handle = '手动'
         m.readFormHost(team)
-        m.waybill_info(login_TmpCode)
-        m.chuhuo_info('login_TmpCode','login_TmpCode2')
+        # m.waybill_info(login_TmpCode, handle)
+        m.chuhuo_info('bf1f777856353759a718dc1b11680779','8b7afa3e61863e6195aab4485bd4368b', handle)
         m.waybill_updata()
 
 
