@@ -128,7 +128,7 @@ class QueryTwo(Settings, Settings_sso):
         else:
             dp = None
         print(dp)
-        dp = dp[['orderNumber', 'wayBillNumber', 'track_date', 'track_info', 'track_status']]
+        dp = dp[['orderNumber', 'wayBillNumber', 'track_date', '出货上线时间', 'track_info', 'track_status']]
         dp.to_excel('G:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         print('查询已导出+++')
         print('*' * 50)
@@ -199,10 +199,15 @@ class QueryTwo(Settings, Settings_sso):
                 else:
                     for result in req['data']['list']:
                         for res in result['list']:
+                            res['出货上线时间'] = ''
                             res['orderNumber'] = result['order_number']
                             res['wayBillNumber'] = result['track_no']
-                            if '已核重-集运仓发货' in res['track_info']:
-                                res['fahuo_time'] = res['已核重-集运仓发货']
+                            if '.' in res['track_date']:
+                                res['track_date'] = res['track_date'].split('.')[0]
+                            else:
+                                res['track_date'] = res['track_date']
+                            if '已核重-集运仓发货' in res['track_info'] or '顺丰速运 已收取快件' in res['track_info'] or '貨件整理中' in res['track_info'] or '二次出貨貼標' in res['track_info']:
+                                res['出货上线时间'] = res['track_date']
                             # print(res)track_info
                             ordersDict.append(res)
             except Exception as e:
@@ -233,22 +238,25 @@ class QueryTwo(Settings, Settings_sso):
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
         if req['data']['list'] == []:
-            data = None
-            return data
+            return None
         else:
             ordersDict = []
             try:
                 if req['data']['list'][0]['list'] == []:
                     # print(req['data']['list'])
-                    data = None
-                    return data
+                    return None
                 else:
                     for result in req['data']['list']:
                         for res in result['list']:
+                            res['出货上线时间'] = ''
                             res['orderNumber'] = result['order_number']
                             res['wayBillNumber'] = result['track_no']
-                            if '已核重-集运仓发货' in res['track_info']:
-                                res['fahuo_time'] = res['已核重-集运仓发货']
+                            if '.' in res['track_date']:
+                                res['track_date'] = res['track_date'].split('.')[0]
+                            else:
+                                res['track_date'] = res['track_date']
+                            if '已核重-集运仓发货' in res['track_info'] or '顺丰速运 已收取快件' in res['track_info'] or '貨件整理中' in res['track_info'] or '二次出貨貼標' in res['track_info']:
+                                res['出货上线时间'] = res['track_date']
                             # print(res)track_info
                             ordersDict.append(res)
             except Exception as e:

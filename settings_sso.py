@@ -871,7 +871,7 @@ class Settings_sso():
                             goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoag6pwcnuxvwto821j&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gwms-v3.giikin.cn/tool/dingtalk_service/getunionidbytempcode',
                             pdmToken: '',
                             araAppkey: '1917',
-                            araToken: '0#19171646622570440595157649661652956323756714G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
+                            araToken: '0#19171646622570440595157649661653036928565594G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
                             araScene: 'login',
                             captchaImgCode: '',
                             captchaSessionId: '',

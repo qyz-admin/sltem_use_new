@@ -335,7 +335,7 @@ class QueryTwo(Settings, Settings_sso):
         sql = '''SELECT *,null 原因汇总
                 FROM( SELECT s1.*,单量,
 							IF(压单量 = 0,NULL,压单量) AS 是否压单,
-							IF(今日出库量 = 0,NULL,今日出库量) AS 今日出库,
+							IF(今日出库量 = 0,IF(今日提货量 = 0,NULL,今日提货量),今日出库量) AS '今日出库/提货',
 							IF(今日提货量 = 0,NULL,今日提货量) AS 今日提货,
 							IF(取消量 = 0,NULL,取消量) AS 取消量,
 							IF(物流已上线 = 0,NULL,物流已上线) AS 物流已上线,
@@ -495,8 +495,8 @@ if __name__ == '__main__':
         login_TmpCode = '8f60a2f666d73bb1ac7afedf7d31cb14'
         handle = '手动'
         m.readFormHost(team)
-        # m.waybill_info(login_TmpCode, handle)
-        m.chuhuo_info('bf1f777856353759a718dc1b11680779','8b7afa3e61863e6195aab4485bd4368b', handle)
+        m.waybill_info(login_TmpCode, handle)
+        m.chuhuo_info('f845a3f01539365b8b5c1c526e03d09a', '70690bcbc1893deea9061d3ef352d9b5', handle)
         m.waybill_updata()
 
 

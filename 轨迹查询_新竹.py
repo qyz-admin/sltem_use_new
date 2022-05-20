@@ -229,6 +229,7 @@ class QueryTwo(Settings, Settings_sso):
         data = pd.json_normalize(ordersDict)
         # print(data)
         data.dropna(axis=0, how='any', inplace=True)
+        data.sort_values(by=["查货号码", "轨迹时间"], inplace=True, ascending=[True, True])
         # data.sort_values(by="轨迹时间", inplace=True, ascending=True)  # inplace: 原地修改; ascending：升序
         # print(data)
         # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')

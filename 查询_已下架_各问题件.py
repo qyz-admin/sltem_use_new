@@ -1347,11 +1347,11 @@ if __name__ == '__main__':
     '''
     if int(select) == 99:
         login_TmpCode = '3cb7a134473b3f4c882ea5255f882d61'
-        handle = '手动'
+        handle = '手0动'
         lw = QueryTwoLower('+86-18538110674', 'qyz35100416', login_TmpCode,handle)
         start: datetime = datetime.datetime.now()
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 自动时 输入的时间无效；切为不自动时，有效
-        lw.gp_order()                                         # 改派未发货查询
+        # lw.gp_order()                                         # 改派未发货查询
 
         print('查询耗时：', datetime.datetime.now() - start)
 

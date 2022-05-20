@@ -195,6 +195,28 @@ class QueryUpdate(Settings):
         emailAdd = {'gat': 'giikinliujun@163.com',
                     'slsc': 'sunyaru@giikin.com'}
         today = datetime.date.today().strftime('%Y.%m.%d')
+        print('*******正在查询改派未发货订单…………')
+        sql = '''SELECT *
+                                FROM ( SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
+                                        FROM (SELECT *
+                			                FROM 已下架表  x
+                			                WHERE x.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) AND x.币种 = '台币'
+                                        )  xj
+                                        LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
+                                        LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
+                                        WHERE 最终状态 = '未发货' or 最终状态 IS NULL
+                                ) ss
+                                WHERE 是否改派 = '改派' AND (系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单')) OR 是否改派 IS NULL
+                                ORDER BY FIELD(物流渠道,'龟山','龟山备货','天马顺丰','天马新竹','速派','立邦');'''
+        sql = '''SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
+        				FROM (SELECT * FROM 已下架表  x WHERE x.记录时间 >=  TIMESTAMP(CURDATE()) AND x.币种 = '台币')  xj
+                        LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
+                        LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
+                        WHERE 最终状态 NOT IN ("已签收","拒收","已退货","理赔","自发头程丢件","在途") or 最终状态 IS NULL;'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        df = df.loc[df["币种"] == "台币"]
+        df.to_excel('F:\\神龙签收率\\(未发货) 改派-物流\\{} 改派未发货2.xlsx'.format(today), sheet_name='台湾', index=False)
+
         print('正在第一次检查父级分类为空的信息---')
         sql = '''SELECT 订单编号,商品id,dp.`product_id`, dp.`name` product_name, dp.third_cate_id, dc.`ppname` cate, dc.`pname` second_cate, dc.`name` third_cate
                 FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
@@ -323,30 +345,6 @@ class QueryUpdate(Settings):
                    and gz.`审核时间` >= '{0} 00:00:00' AND gz.`日期` >= '{1}';'''.format(month_yesterday, month_last)
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('已清除不参与计算的今日改派订单…………')
-
-        print('*******正在查询改派未发货订单…………')
-        sql = '''SELECT *
-                        FROM ( SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
-                                FROM (SELECT *
-        			                FROM 已下架表  x
-        			                WHERE x.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) AND x.币种 = '台币'
-                                )  xj
-                                LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
-                                LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
-                                WHERE 最终状态 = '未发货' or 最终状态 IS NULL
-                        ) ss
-                        WHERE 是否改派 = '改派' AND (系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单')) OR 是否改派 IS NULL
-                        ORDER BY FIELD(物流渠道,'龟山','龟山备货','天马顺丰','天马新竹','速派','立邦');'''
-        sql = '''SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
-				FROM (SELECT * FROM 已下架表  x WHERE x.记录时间 >=  TIMESTAMP(CURDATE()) AND x.币种 = '台币')  xj
-                LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
-                LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
-                WHERE 最终状态 NOT IN ("已签收","拒收","已退货","理赔","自发头程丢件","在途") or 最终状态 IS NULL;'''
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        df = df.loc[df["币种"] == "台币"]
-        df.to_excel('F:\\神龙签收率\\(未发货) 改派-物流\\{} 改派未发货2.xlsx'.format(today), sheet_name='台湾', index=False)
-
-        print('******----已写入excel******')
 
 
     # 导出总的签收表---各家族-港澳台(三)
@@ -8799,7 +8797,7 @@ if __name__ == '__main__':
 
     m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
     m.qsb_new(team, month_old)                                    # 获取-每日-报表
-    m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收表
+    m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收
     m.phone_report()                                        # 获取电话核实日报表 周报表
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id
