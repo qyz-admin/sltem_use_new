@@ -658,7 +658,7 @@ class QueryTwoLower(Settings, Settings_sso):
         return data
 
 if __name__ == '__main__':
-    m = QueryTwoLower('+86-18538110674', 'qyz35100416','c742d14ac01b3356972293427547df7b','手动')
+    m = QueryTwoLower('+86-18538110674', 'qyz35100416','b7fa321723f43f918a736a8cd947bbba','手动')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     '''

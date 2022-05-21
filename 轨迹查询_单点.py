@@ -169,7 +169,7 @@ class QueryTwo(Settings, Settings_sso):
 
     #  查询运单轨迹-按订单查询（一）
     def _order_online(self, ord, isReal):  # 进入订单检索界面
-        print('+++正在查询订单信息中')
+        print('+++正在实时_搜索轨迹信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getLogisticsTrace'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -184,7 +184,7 @@ class QueryTwo(Settings, Settings_sso):
                    'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
-        print('+++已成功发送请求......')
+        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
         if req['data']['list'] == []:
@@ -214,12 +214,12 @@ class QueryTwo(Settings, Settings_sso):
                 print('转化失败： 重新获取中', str(Exception) + str(e))
             data = pd.json_normalize(ordersDict)
             data.sort_values(by=["orderNumber", "track_date"], inplace=True, ascending=[True, True])  # inplace: 原地修改; ascending：升序 （是否升序排序，默认为true，降序则为false。如果是列表，则需和by指定的列表数量相同，指明每一列的排序方式）
-            print('++++++本批次查询成功+++++++')
+            print('++++++本次获取成功+++++++')
             # print('*' * 50)
             return data
     # 物流轨迹数据库
     def _order_online_data(self, ord, isReal):  # 进入订单检索界面
-        print('+++正在查询订单信息中')
+        print('+++正在_搜索轨迹信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getLogisticsTrace'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -234,7 +234,7 @@ class QueryTwo(Settings, Settings_sso):
                    'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
-        print('+++已成功发送请求......')
+        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
         if req['data']['list'] == []:
@@ -263,7 +263,7 @@ class QueryTwo(Settings, Settings_sso):
                 print('转化失败： 重新获取中', str(Exception) + str(e))
             data = pd.json_normalize(ordersDict)
             data.sort_values(by=["orderNumber", "track_date"], inplace=True, ascending=[True, True])  # inplace: 原地修改; ascending：升序 （是否升序排序，默认为true，降序则为false。如果是列表，则需和by指定的列表数量相同，指明每一列的排序方式）
-            print('++++++本批次查询成功+++++++')
+            print('++++++本次获取成功+++++++')
             # print('*' * 50)
             return data
 

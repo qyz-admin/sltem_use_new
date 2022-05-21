@@ -493,7 +493,7 @@ if __name__ == '__main__':
     elif int(select) == 5:
         team = 'gat_waybill_list'
         login_TmpCode = '8f60a2f666d73bb1ac7afedf7d31cb14'
-        handle = '手动'
+        handle = '手0动'
         m.readFormHost(team)
         m.waybill_info(login_TmpCode, handle)
         m.chuhuo_info('f845a3f01539365b8b5c1c526e03d09a', '70690bcbc1893deea9061d3ef352d9b5', handle)
