@@ -97,7 +97,7 @@ class Updata_return_bill(Settings, Settings_sso):
                     tem_kuwei = '龟山易速配退件库位'
                     tem_day = 60
 
-                elif 'HSA045' in dir:
+                elif 'HSA045-上架表' in dir:
                     team = 'gat_return_bill'
                     tem_data = '协来运'
                     tem_kuwei = '协来运退件库位'
@@ -106,7 +106,7 @@ class Updata_return_bill(Settings, Settings_sso):
                 elif '吉客印签收表' in dir:
                     team = 'gat_return_bill_over'
                     tem_data = '立邦'
-
+                print(tem_data)
                 self.wbsheetHost(filePath, team, tem_data, tem_day, tem_kuwei)
 
                 excel = win32.gencache.EnsureDispatch('Excel.Application')
@@ -132,6 +132,7 @@ class Updata_return_bill(Settings, Settings_sso):
                         db = None
                         db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                         db.dropna(axis=0, how='any', inplace=True)  # 空值（缺失值），将空值所在的行/列删除后
+                        print(db.columns)
                         if tem_data == '速派':
                             if team == 'gat_return_bill':   # 上架表
                                 db.rename(columns={'订单号': '订单编号', '承运单号': '运单编号'}, inplace=True)
@@ -144,6 +145,7 @@ class Updata_return_bill(Settings, Settings_sso):
                                 db = db[['物流渠道', '订单编号', '运单编号', '退货单号', '退货上架货架', '上架时间', '仓库名称', '在仓天数', '末条状态']]
 
                         elif tem_data == '易速配':
+
                             if team == 'gat_return_bill':
                                 db.rename(columns={'内部单号': '订单编号', '原单号': '运单编号', '龟山入库单号': '退货单号', '库位': '退货上架货架'}, inplace=True)
                                 db.insert(0, '物流渠道', tem_data)
@@ -151,6 +153,7 @@ class Updata_return_bill(Settings, Settings_sso):
                                 db = db[['物流渠道', '订单编号', '运单编号', '退货单号', '退货上架货架', '上架时间', '仓库名称']]
 
                         elif tem_data == '协来运':
+                            print(db)
                             if sht.name == 'ALL工作表':
                                 if team == 'gat_return_bill':
                                     drop = {'订单编号': [True, ['訂單號'], []],

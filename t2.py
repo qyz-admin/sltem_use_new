@@ -112,12 +112,12 @@ if team == 'gat' and updata == '全部':
     # sso.readFormHost('gat', '导入')                       # 导入新增的订单 line运营  手动导入
     # sso.orderInfo_append('2022-05-11', '2022-05-11', '')               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
 
-    # sso.orderInfo_append(str(begin), str(end), 179)               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
+    sso.orderInfo_append(str(begin), str(end), 179)               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
     sso.orderInfo(team, updata, begin, end)
     print('更新耗时：', datetime.datetime.now() - start)
 
     print('---------------------------------- 导出部分：--------------------------------')
-    # qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
+    qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
     print('输出耗时：', datetime.datetime.now() - start)
 
 elif team != 'g8at' and updata == '全部':

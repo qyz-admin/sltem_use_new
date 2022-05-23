@@ -5842,7 +5842,7 @@ class QueryUpdate(Settings):
         match = {'gat': '港台'}
         listT = []  # 查询sql的结果 存放池
         print('正在获取 日报表 数据内容…………')
-        sql = '''SELECT 日期31天, ss.*, ss1.*, ss2.*, ss3.*
+        sql = '''SELECT 日期31天, ss.*, ss1.*, ss2.*, ss3.*, ss4.*
 FROM date
 LEFT JOIN
 		(SELECT 日期 AS 系统问题,
@@ -5954,6 +5954,23 @@ LEFT JOIN
 		ORDER BY DATE(s.处理时间) 
 	) gg2 ON gg.`采购异常` = gg2.`采购异常`
 ) ss3 ON  date.`日期31天` = EXTRACT(day FROM ss3.`采购异常`)
+LEFT JOIN
+(SELECT DATE(s.处理时间) AS 拒收问题件,
+					COUNT(订单编号) AS '联系量（有结果）',
+					SUM(IF(s.`再次克隆下单` IS NOT NULL,1,0)) AS 挽单量
+		FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`
+					FROM (SELECT * 
+								FROM 拒收问题件 
+							  WHERE id IN (SELECT MAX(id) FROM 拒收问题件 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号)	
+								ORDER BY id
+						) cg
+					LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
+					WHERE g.币种 = '台湾' 
+		) s
+		WHERE  s.核实原因 <> '未联系上客户'
+		GROUP BY DATE(s.处理时间) 
+		ORDER BY DATE(s.处理时间) 
+	) ss4 ON  date.`日期31天` = EXTRACT(day FROM ss4.`拒收问题件`)
 GROUP BY 日期31天
 ORDER BY 日期31天;'''.format()     # 港台查询函数导出
         df0 = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -5962,7 +5979,8 @@ ORDER BY 日期31天;'''.format()     # 港台查询函数导出
         sql = '''SELECT 日期31天, ss.正常出货, ss.删除订单, ss.实际签收, 
 				        ss1.约派送, ss1.核实拒收, ss1.再派签收, 
 				        ss2.挽回单数, ss2.未确认, ss2.退款单数, ss2.实际挽回单数, 
-				        ss3.正常发货, ss3.取消订单
+				        ss3.正常发货, ss3.取消订单,
+						ss4.`联系量（有结果）`,ss4.挽单量
                 FROM date
                 LEFT JOIN
 		            (SELECT 日期 AS 系统问题,
@@ -6067,6 +6085,23 @@ LEFT JOIN
 		ORDER BY DATE(s.处理时间) 
 	) gg2 ON gg.`采购异常` = gg2.`采购异常`
 ) ss3 ON  date.`日期31天` = EXTRACT(day FROM ss3.`采购异常`)
+LEFT JOIN
+(SELECT DATE(s.处理时间) AS 拒收问题件,
+					COUNT(订单编号) AS '联系量（有结果）',
+					SUM(IF(s.`再次克隆下单` IS NOT NULL,1,0)) AS 挽单量
+		FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`
+					FROM (SELECT * 
+								FROM 拒收问题件 
+								WHERE id IN (SELECT MAX(id) FROM 拒收问题件 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) GROUP BY 订单编号) 
+								ORDER BY id
+						) cg
+					LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
+					WHERE g.币种 = '台湾' 
+		) s
+		WHERE  s.核实原因 <> '未联系上客户'
+		GROUP BY DATE(s.处理时间) 
+		ORDER BY DATE(s.处理时间) 
+	) ss4 ON  date.`日期31天` = EXTRACT(day FROM ss4.`拒收问题件`)
 WHERE ss.系统问题 IS NOT NULL
 GROUP BY 日期31天
 ORDER BY 系统问题;'''.format()  # 港台查询函数导出
