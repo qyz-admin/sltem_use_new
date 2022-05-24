@@ -1248,7 +1248,7 @@ class QueryUpdate(Settings):
                     ) ss
                 )
                 UNION ALL
-                ( SELECT '压单' AS 工作,NULL 日期, 单量,客服介入量,单量-发货量 AS 删除单量,concat(ROUND((单量-发货量)  / 客服介入量 * 100,2),'%') AS 删除率, 发货量,签收量,在途量,concat(ROUND(签收量 / 单量 * 100,2),'%') AS 签收率
+                ( SELECT '压单' AS 工作,NULL 日期, 单量,客服介入量,删除单量,concat(ROUND((删除单量)  / 单量 * 100,2),'%') AS 删除率, 发货量,签收量,在途量,concat(ROUND(签收量 / 单量 * 100,2),'%') AS 签收率
                     FROM ( SELECT COUNT(s.`订单编号`) AS 单量, COUNT(s.`订单编号`) AS 客服介入量,
 			                    SUM(IF(s.`系统订单状态` IN ('已完成','已退货(销售)','已发货','已退货(物流)'),1,0)) AS 发货量,
 			                    SUM(IF(s.`系统物流状态` = '已签收',1,0)) AS 签收量,  SUM(IF(s.`系统订单状态` = '已发货',1,0)) AS 在途量
@@ -1257,7 +1257,11 @@ class QueryUpdate(Settings):
 						        FROM 压单反馈 cg
 						        WHERE cg.`反馈时间` BETWEEN DATE_ADD(curdate()-day(curdate())+1,interval -1 month) AND last_day(date_add(curdate()-day(curdate())+1,interval -1 month)) 
 			                    )  lp
-			            LEFT JOIN gat_order_list gt ON lp.`订单编号` = gt.`订单编号`
+			                LEFT JOIN gat_order_list gt ON lp.`订单编号` = gt.`订单编号`
+			                LEFT JOIN (SELECT * 
+									    FROM 压单表_已核实 
+									    WHERE id IN (SELECT MAX(id) FROM 压单表_已核实 WHERE 压单表_已核实.处理时间 BETWEEN DATE_ADD(curdate()-day(curdate())+1,interval -1 month) AND last_day(date_add(curdate()-day(curdate())+1,interval -1 month)) GROUP BY 订单编号) 
+						    ) yy  ON lp.`订单编号` = yy.`订单编号`
 	                    ) s
                     ) ss
                 )

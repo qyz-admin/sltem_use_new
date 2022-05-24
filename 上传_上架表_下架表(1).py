@@ -242,20 +242,20 @@ class Updata_return_bill(Settings, Settings_sso):
                                 db = None
                     except Exception as e:
                         print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
+                    if db is not None and len(db) > 0:
+                        print('++++正在导入：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                        db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+                        columns = list(db.columns)
+                        columns = ','.join(columns)
+                        sql = '''REPLACE INTO {0}({1}, 记录时间) SELECT *, NOW() 记录时间 FROM customer;'''.format(team, columns)
+                        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                        print('++++：' + sht.name + '表--->>>上传成功')
+                        self._export_data(sht.name, team, tem_data, tem_day, tem_kuwei)
+                        print('++++----->>>' + sht.name + '：导出完成++++')
+                    else:
+                        print('----------数据为空,不需导入：' + sht.name)
                 else:
                     print('----不用导入：' + sht.name)
-                if db is not None and len(db) > 0:
-                    print('++++正在导入：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
-                    db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-                    columns = list(db.columns)
-                    columns = ','.join(columns)
-                    sql = '''REPLACE INTO {0}({1}, 记录时间) SELECT *, NOW() 记录时间 FROM customer;'''.format(team, columns)
-                    pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-                    print('++++：' + sht.name + '表--->>>上传成功')
-                    self._export_data(sht.name, team, tem_data, tem_day, tem_kuwei)
-                    print('++++----->>>' + sht.name + '：导出完成++++')
-                else:
-                    print('----------数据为空,不需导入：' + sht.name)
             wb.close()
         app.quit()
 

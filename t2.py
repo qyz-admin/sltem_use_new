@@ -26,10 +26,10 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
 '''
 # 初始化时间设置
 updata = '全部'           #  后台获取全部（两月）、部分更新（近五天）
-if team in ('gat', 'slsc', 'sl_r9b'):
+if team in ('ga8t', 'slsc', 'sl_r9b'):
     # 更新时间
-    yy = int((datetime.datetime.now() - relativedelta(months=2)).strftime('%Y'))
-    mm = int((datetime.datetime.now() - relativedelta(months=2)).strftime('%m'))
+    yy = int((datetime.datetime.now() - relativedelta(months=1)).strftime('%Y'))
+    mm = int((datetime.datetime.now() - relativedelta(months=1)).strftime('%m'))
     data_begin = datetime.date(yy, mm, 1)  # 数据库更新
     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
@@ -44,9 +44,9 @@ if team in ('gat', 'slsc', 'sl_r9b'):
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    data_begin = datetime.date(2021, 1, 1)
-    begin = datetime.date(2021, 1, 1)
-    end = datetime.date(2022, 5, 21)
+    data_begin = datetime.date(2022, 3, 1)
+    begin = datetime.date(2022, 3, 1)
+    end = datetime.date(2022, 4, 1)
     # 导出时间
     month_last = '2022-04-01'
     month_yesterday = '2022-05-21'
@@ -99,7 +99,7 @@ print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
 print('---------------------------------- 数据库更新部分：--------------------------------')
-m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
+# m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
 # m.connectOrder(team, month_last, month_yesterday, month_begin)      # 停用 最近两个月的订单信息导出
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
@@ -112,12 +112,12 @@ if team == 'gat' and updata == '全部':
     # sso.readFormHost('gat', '导入')                       # 导入新增的订单 line运营  手动导入
     # sso.orderInfo_append('2022-05-11', '2022-05-11', '')               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
 
-    sso.orderInfo_append(str(begin), str(end), 179)               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
+    # sso.orderInfo_append(str(begin), str(end), 179)               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
     sso.orderInfo(team, updata, begin, end)
     print('更新耗时：', datetime.datetime.now() - start)
 
     print('---------------------------------- 导出部分：--------------------------------')
-    qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
+    # qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
     print('输出耗时：', datetime.datetime.now() - start)
 
 elif team != 'g8at' and updata == '全部':
