@@ -27,7 +27,7 @@ from 查询_已下架_压单 import QueryTwoLower
 
 # -*- coding:utf-8 -*-
 class QueryTwo(Settings, Settings_sso):
-    def __init__(self, userMobile, password, login_TmpCode):
+    def __init__(self, userMobile, password, login_TmpCode,handle):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
@@ -36,7 +36,11 @@ class QueryTwo(Settings, Settings_sso):
         # self._online()
         # self.sso_online_Two()
         # self.sso__online_handle(login_TmpCode)
-        self.sso__online_auto()
+        # self.sso__online_auto()
+        if handle == '手动':
+            self.sso__online_handle(login_TmpCode)
+        else:
+            self.sso__online_auto()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -1293,8 +1297,9 @@ if __name__ == '__main__':
     start: datetime = datetime.datetime.now()
     select = 99
     if int(select) == 909:
-        login_TmpCode = '171297dbb5833dbb96dac59850ffaccd'
-        m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode)
+        handle = '手0动'
+        login_TmpCode = '7e00200b074b38be93d83578da27e666'
+        m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode,handle)
         start: datetime = datetime.datetime.now()
 
         if int(select) == 1:
@@ -1346,8 +1351,8 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 已下架 状态运行（二）-----------------------------------------
     '''
     if int(select) == 99:
-        login_TmpCode = 'a19748fea6493f5c817ec80a46e5a9fa'
-        handle = '手动'
+        login_TmpCode = '53ffd428c388386fb04a9cb951211ba3'
+        handle = '手0动'
         lw = QueryTwoLower('+86-18538110674', 'qyz35100416', login_TmpCode,handle)
         start: datetime = datetime.datetime.now()
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 自动时 输入的时间无效；切为不自动时，有效

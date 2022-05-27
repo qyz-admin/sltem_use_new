@@ -132,7 +132,7 @@ class Updata_return_bill(Settings, Settings_sso):
                         db = None
                         db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                         db.dropna(axis=0, how='any', inplace=True)  # 空值（缺失值），将空值所在的行/列删除后
-                        print(db.columns)
+                        # print(db.columns)
                         if tem_data == '速派':
                             if team == 'gat_return_bill':   # 上架表
                                 db.rename(columns={'订单号': '订单编号', '承运单号': '运单编号'}, inplace=True)

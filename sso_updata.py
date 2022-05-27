@@ -23,7 +23,7 @@ from selenium import webdriver
 
 # -*- coding:utf-8 -*-
 class Query_sso_updata(Settings):
-    def __init__(self, userMobile, password, userID, login_TmpCode):
+    def __init__(self, userMobile, password, userID, login_TmpCode,handle):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
@@ -35,8 +35,11 @@ class Query_sso_updata(Settings):
         # self._online_Two()
         # self.sso__online_handle()
         # self._online_Threed()
-        self.sso__online_auto()
-
+        # self.sso__online_auto()
+        if handle == '手动':
+            self.sso__online_handle(login_TmpCode)
+        else:
+            self.sso__online_auto()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -710,7 +713,7 @@ class Query_sso_updata(Settings):
         print('++++++已成功登录++++++')
         print('*' * 50)
 
-    def sso__online_handle(self):  # 手动输入token 登录系统保持会话状态
+    def sso__online_handle(self, login_TmpCode):  # 手动输入token 登录系统保持会话状态
         print(datetime.datetime.now())
         print('正在登录后台系统中......')
         # print('一、获取-钉钉用户信息......')

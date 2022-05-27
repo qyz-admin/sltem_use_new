@@ -496,7 +496,7 @@ if __name__ == '__main__':
         handle = '手0动'
         m.readFormHost(team)
         m.waybill_info(login_TmpCode, handle)
-        m.chuhuo_info('f845a3f01539365b8b5c1c526e03d09a', '70690bcbc1893deea9061d3ef352d9b5', handle)
+        m.chuhuo_info('217b05a1c8e8345fb1476c28f3fb91ee', 'fbb2cfe70910362d8dc937190da35507', handle)
         m.waybill_updata()
 
 

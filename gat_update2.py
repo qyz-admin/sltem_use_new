@@ -195,28 +195,6 @@ class QueryUpdate(Settings):
         emailAdd = {'gat': 'giikinliujun@163.com',
                     'slsc': 'sunyaru@giikin.com'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        print('*******正在查询改派未发货订单…………')
-        sql = '''SELECT *
-                                FROM ( SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
-                                        FROM (SELECT *
-                			                FROM 已下架表  x
-                			                WHERE x.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) AND x.币种 = '台币'
-                                        )  xj
-                                        LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
-                                        LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
-                                        WHERE 最终状态 = '未发货' or 最终状态 IS NULL
-                                ) ss
-                                WHERE 是否改派 = '改派' AND (系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单')) OR 是否改派 IS NULL
-                                ORDER BY FIELD(物流渠道,'龟山','龟山备货','天马顺丰','天马新竹','速派','立邦');'''
-        sql = '''SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
-        				FROM (SELECT * FROM 已下架表  x WHERE x.记录时间 >=  TIMESTAMP(CURDATE()) AND x.币种 = '台币')  xj
-                        LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
-                        LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
-                        WHERE 最终状态 NOT IN ("已签收","拒收","已退货","理赔","自发头程丢件","在途") or 最终状态 IS NULL;'''
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        df = df.loc[df["币种"] == "台币"]
-        df.to_excel('F:\\神龙签收率\\(未发货) 改派-物流\\{} 改派未发货2.xlsx'.format(today), sheet_name='台湾', index=False)
-
         print('正在第一次检查父级分类为空的信息---')
         sql = '''SELECT 订单编号,商品id,dp.`product_id`, dp.`name` product_name, dp.third_cate_id, dc.`ppname` cate, dc.`pname` second_cate, dc.`name` third_cate
                 FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
@@ -336,6 +314,33 @@ class QueryUpdate(Settings):
             new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\{} {} 更新-签收表.xlsx'.format(today,match[team])
             shutil.copyfile(old_path, new_path)     # copy到指定位置
             print('----已写入excel; 并复制到指定文件夹中')
+
+        print('*******正在查询改派未发货订单…………')
+        sql = '''SELECT *
+                                FROM ( SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
+                                        FROM (SELECT *
+                			                FROM 已下架表  x
+                			                WHERE x.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) AND x.币种 = '台币'
+                                        )  xj
+                                        LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
+                                        LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
+                                        WHERE 最终状态 = '未发货' or 最终状态 IS NULL
+                                ) ss
+                                WHERE 是否改派 = '改派' AND (系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单')) OR 是否改派 IS NULL
+                                ORDER BY FIELD(物流渠道,'龟山','龟山备货','天马顺丰','天马新竹','速派','立邦');'''
+        sql = '''SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
+        				FROM (SELECT * FROM 已下架表  x WHERE x.记录时间 >=  TIMESTAMP(CURDATE()) AND x.币种 = '台币')  xj
+                        LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
+                        LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
+                        WHERE 最终状态 NOT IN ("已签收","拒收","已退货","理赔","自发头程丢件","在途") or 最终状态 IS NULL;'''
+        sql= '''SELECT xj.订单编号,xj.下单时间,gz.运单编号,xj.产品id,xj.商品名称,xj.下架时间,xj.仓库,xj.物流渠道,xj.币种,xj.统计时间,xj.记录时间,gz.最终状态,gz.系统订单状态,gz.是否改派 
+                FROM ( SELECT * FROM 已下架表 x WHERE x.记录时间 >= TIMESTAMP ( CURDATE( ) ) AND x.币种 = '台币' 
+	            ) xj
+	            LEFT JOIN d1_gat gz ON xj.订单编号 = gz.订单编号
+                WHERE 最终状态 NOT IN ( "已签收", "拒收", "已退货", "理赔", "自发头程丢件", "在途" ) OR 最终状态 IS NULL;'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        df = df.loc[df["币种"] == "台币"]
+        df.to_excel('F:\\神龙签收率\\(未发货) 改派-物流\\{} 改派未发货2.xlsx'.format(today), sheet_name='台湾', index=False)
 
         print('正在写入' + match[team] + ' 全部签收表中…………')
         sql = 'REPLACE INTO {0}_zqsb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)
@@ -3393,7 +3398,7 @@ class QueryUpdate(Settings):
         listT.append(df21)
 
         # 产品整月-直发 香港
-        print('正在获取---产品整月 香港…………')
+        print('正在获取---产品整月_直发 香港…………')
         sql31 = '''SELECT *
                             FROM(SELECT IFNULL(s1.家族, '合计') 家族,
                                         IFNULL(s1.地区, '合计') 地区,
@@ -3541,7 +3546,7 @@ class QueryUpdate(Settings):
         df31 = pd.read_sql_query(sql=sql31, con=self.engine1)
         listT.append(df31)
         # 产品分旬-直发 香港
-        print('正在获取---产品分旬 香港…………')
+        print('正在获取---产品分旬_直发 香港…………')
         sql32 = '''SELECT *
                             FROM(SELECT 
         						IFNULL(s1.家族, '合计') 家族,
@@ -3694,8 +3699,8 @@ class QueryUpdate(Settings):
         listT.append(df32)
 
         # 产品整月-改派 香港
-        print('正在获取---产品整月 香港…………')
-        sql31 = '''SELECT *
+        print('正在获取---产品整月_改派 香港…………')
+        sql41 = '''SELECT *
                             FROM(SELECT IFNULL(s1.家族, '合计') 家族,
                                         IFNULL(s1.地区, '合计') 地区,
                                         IFNULL(s1.月份, '合计') 月份,
@@ -3839,11 +3844,11 @@ class QueryUpdate(Settings):
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
                         s.总订单 DESC;'''.format(team, month_last, month_yesterday)
-        df31 = pd.read_sql_query(sql=sql31, con=self.engine1)
-        listT.append(df31)
+        df41 = pd.read_sql_query(sql=sql41, con=self.engine1)
+        listT.append(df41)
         # 产品分旬-改派 香港
-        print('正在获取---产品分旬 香港…………')
-        sql32 = '''SELECT *
+        print('正在获取---产品分旬_改派 香港…………')
+        sql42 = '''SELECT *
                             FROM(SELECT 
         						IFNULL(s1.家族, '合计') 家族,
         						IFNULL(s1.地区, '合计') 地区,
@@ -3991,11 +3996,11 @@ class QueryUpdate(Settings):
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
                         FIELD(s.`产品id`,'合计'),
                         s.总订单 DESC;'''.format(team, month_last, month_yesterday)
-        df32 = pd.read_sql_query(sql=sql32, con=self.engine1)
-        listT.append(df32)
+        df42 = pd.read_sql_query(sql=sql42, con=self.engine1)
+        listT.append(df42)
 
         today = datetime.date.today().strftime('%Y.%m.%d')
-        sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品整月香港', '产品分旬台湾', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾', '产品月_直发香港', '产品旬_直发香港', '产品月_改派香港', '产品旬_改派香港']
+        sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品分旬台湾', '产品整月香港', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾']
         print('正在将物流品类写入excel…………')
         file_path = 'G:\\输出文件\\{} {} 物流品类-签收率.xlsx'.format(today, match[team])
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
@@ -4063,22 +4068,24 @@ class QueryUpdate(Settings):
 
         print('正在将产品写入excel…………')
         file_path = 'G:\\输出文件\\{} {} 产品明细-签收率.xlsx'.format(today, match[team])
-        sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品分旬台湾', '产品整月香港', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾']
+        sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾','产品分旬台湾',  '产品整月香港', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾', '产品月_直发香港', '产品旬_直发香港', '产品月_改派香港', '产品旬_改派香港']
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
         book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
         writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        listT[4].to_excel(excel_writer=writer, sheet_name=sheet_name[4], index=False)
-        listT[5].to_excel(excel_writer=writer, sheet_name=sheet_name[5], index=False)
-        listT[6].to_excel(excel_writer=writer, sheet_name=sheet_name[6], index=False)
-        listT[7].to_excel(excel_writer=writer, sheet_name=sheet_name[7], index=False)
-        listT[8].to_excel(excel_writer=writer, sheet_name=sheet_name[8], index=False)
-        listT[9].to_excel(excel_writer=writer, sheet_name=sheet_name[9], index=False)
-        listT[10].to_excel(excel_writer=writer, sheet_name=sheet_name[10], index=False)
-        listT[11].to_excel(excel_writer=writer, sheet_name=sheet_name[11], index=False)
-        listT[12].to_excel(excel_writer=writer, sheet_name=sheet_name[12], index=False)
-        listT[13].to_excel(excel_writer=writer, sheet_name=sheet_name[13], index=False)
+        listT[4].to_excel(excel_writer=writer, sheet_name=sheet_name[4], index=False)       # 产品整月台湾
+        listT[5].to_excel(excel_writer=writer, sheet_name=sheet_name[5], index=False)       # 产品分旬台湾
+        listT[6].to_excel(excel_writer=writer, sheet_name=sheet_name[6], index=False)       # 产品整月香港
+        listT[7].to_excel(excel_writer=writer, sheet_name=sheet_name[7], index=False)       # 产品分旬香港
+        listT[8].to_excel(excel_writer=writer, sheet_name=sheet_name[8], index=False)       # 产品月_直发台湾
+        listT[9].to_excel(excel_writer=writer, sheet_name=sheet_name[9], index=False)       # 产品旬_直发台湾
+        listT[10].to_excel(excel_writer=writer, sheet_name=sheet_name[10], index=False)     # 产品月_改派台湾
+        listT[11].to_excel(excel_writer=writer, sheet_name=sheet_name[11], index=False)     # 产品旬_改派台湾
+        listT[12].to_excel(excel_writer=writer, sheet_name=sheet_name[12], index=False)     # 产品月_直发香港
+        listT[13].to_excel(excel_writer=writer, sheet_name=sheet_name[13], index=False)     # 产品旬_直发香港
+        listT[14].to_excel(excel_writer=writer, sheet_name=sheet_name[14], index=False)     # 产品月_改派香港
+        listT[15].to_excel(excel_writer=writer, sheet_name=sheet_name[15], index=False)     # 产品旬_改派香港
         if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
             del book['Sheet1']
         writer.save()
@@ -4774,6 +4781,14 @@ class QueryUpdate(Settings):
         sql51 = '''SELECT *
                 FROM (SELECT IFNULL(家族, '总计') 家族, IFNULL(地区, '总计') 地区, IFNULL(产品id, '总计') 产品id,  IFNULL(产品名称, '总计') 产品名称, IFNULL(父级分类, '总计') 父级分类,
 						    SUM(总单量) 总单量,
+						SUM(01总量) 01总单量,
+							concat(ROUND(SUM(01签收量) / SUM(01总量) * 100,2),'%') as 01总计签收,
+							concat(ROUND(SUM(01签收量) / SUM(01完成量) * 100,2),'%') as 01完成签收,
+							concat(ROUND(SUM(01完成量) / SUM(01总量) * 100,2),'%') as 01完成占比,						
+						SUM(02总量) 02总单量,
+							concat(ROUND(SUM(02签收量) / SUM(02总量) * 100,2),'%') as 02总计签收,
+							concat(ROUND(SUM(02签收量) / SUM(02完成量) * 100,2),'%') as 02完成签收,
+							concat(ROUND(SUM(02完成量) / SUM(02总量) * 100,2),'%') as 02完成占比,
 						SUM(03总量) 03总单量,
 							concat(ROUND(SUM(03签收量) / SUM(03总量) * 100,2),'%') as 03总计签收,
 							concat(ROUND(SUM(03签收量) / SUM(03完成量) * 100,2),'%') as 03完成签收,
@@ -4814,52 +4829,51 @@ class QueryUpdate(Settings):
 							concat(ROUND(SUM(12签收量) / SUM(12总量) * 100,2),'%') as 12总计签收,
 							concat(ROUND(SUM(12签收量) / SUM(12完成量) * 100,2),'%') as 12完成签收,
 							concat(ROUND(SUM(12完成量) / SUM(12总量) * 100,2),'%') as 12完成占比,					
-						SUM(01总量) 01总单量,
-							concat(ROUND(SUM(01签收量) / SUM(01总量) * 100,2),'%') as 01总计签收,
-							concat(ROUND(SUM(01签收量) / SUM(01完成量) * 100,2),'%') as 01完成签收,
-							concat(ROUND(SUM(01完成量) / SUM(01总量) * 100,2),'%') as 01完成占比,						
-						SUM(02总量) 02总单量,
-							concat(ROUND(SUM(02签收量) / SUM(02总量) * 100,2),'%') as 02总计签收,
-							concat(ROUND(SUM(02签收量) / SUM(02完成量) * 100,2),'%') as 02完成签收,
-							concat(ROUND(SUM(02完成量) / SUM(02总量) * 100,2),'%') as 02完成占比		
+						SUM(13总量) 13总单量,
+							concat(ROUND(SUM(12签收量) / SUM(12总量) * 100,2),'%') as 13总计签收,
+							concat(ROUND(SUM(12签收量) / SUM(12完成量) * 100,2),'%') as 13完成签收,
+							concat(ROUND(SUM(12完成量) / SUM(12总量) * 100,2),'%') as 13完成占比
                     FROM(SELECT 家族,币种 地区, 产品id, 产品名称, 父级分类,
                                 COUNT(cx.`订单编号`) as 总单量,
-                            SUM(IF(年月 = 202103,1,0)) as 03总量,
-                                SUM(IF(年月 = 202103 AND 最终状态 = "已签收",1,0)) as 03签收量,
-                                SUM(IF(年月 = 202103 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 03完成量,					
-                            SUM(IF(年月 = 202104,1,0)) as 04总量,
-                                SUM(IF(年月 = 202104 AND 最终状态 = "已签收",1,0)) as 04签收量,
-                                SUM(IF(年月 = 202104 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 04完成量,					
-                            SUM(IF(年月 = 202105,1,0)) as 05总量,
-                                SUM(IF(年月 = 202105 AND 最终状态 = "已签收",1,0)) as 05签收量,
-                                SUM(IF(年月 = 202105 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 05完成量,					
-                            SUM(IF(年月 = 202106,1,0)) as 06总量,
-                                SUM(IF(年月 = 202106 AND 最终状态 = "已签收",1,0)) as 06签收量,
-                                SUM(IF(年月 = 202106 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 06完成量,						
-                            SUM(IF(年月 = 202107,1,0)) as 07总量,
-                                SUM(IF(年月 = 202107 AND 最终状态 = "已签收",1,0)) as 07签收量,
-                                SUM(IF(年月 = 202107 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 07完成量,						
-                            SUM(IF(年月 = 202108,1,0)) as 08总量,
-                                SUM(IF(年月 = 202108 AND 最终状态 = "已签收",1,0)) as 08签收量,
-                                SUM(IF(年月 = 202108 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 08完成量,					
-                            SUM(IF(年月 = 202109,1,0)) as 09总量,
-                                SUM(IF(年月 = 202109 AND 最终状态 = "已签收",1,0)) as 09签收量,
-                                SUM(IF(年月 = 202109 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 09完成量,					
-                            SUM(IF(年月 = 202110,1,0)) as 10总量,
-                                SUM(IF(年月 = 202110 AND 最终状态 = "已签收",1,0)) as 10签收量,
-                                SUM(IF(年月 = 202110 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 10完成量,					
-                            SUM(IF(年月 = 202111,1,0)) as 11总量,
-                                SUM(IF(年月 = 202111 AND 最终状态 = "已签收",1,0)) as 11签收量,
-                                SUM(IF(年月 = 202111 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 11完成量,						
-                            SUM(IF(年月 = 202112,1,0)) as 12总量,
-                                SUM(IF(年月 = 202112 AND 最终状态 = "已签收",1,0)) as 12签收量,
-                                SUM(IF(年月 = 202112 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 12完成量,						
-                            SUM(IF(年月 = 202201,1,0)) as 01总量,
-                                SUM(IF(年月 = 202201 AND 最终状态 = "已签收",1,0)) as 01签收量,
-                                SUM(IF(年月 = 202201 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 01完成量,
-                            SUM(IF(年月 = 202202,1,0)) as 02总量,
-                                SUM(IF(年月 = 202202 AND 最终状态 = "已签收",1,0)) as 02签收量,
-                                SUM(IF(年月 = 202202 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 02完成量							
+                            SUM(IF(年月 = 202105,1,0)) as 01总量,
+                                SUM(IF(年月 = 202105 AND 最终状态 = "已签收",1,0)) as 01签收量,
+                                SUM(IF(年月 = 202105 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 01完成量,	
+                            SUM(IF(年月 = 202106,1,0)) as 02总量,
+                                SUM(IF(年月 = 202106 AND 最终状态 = "已签收",1,0)) as 02签收量,
+                                SUM(IF(年月 = 202106 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 02完成量,					
+                            SUM(IF(年月 = 202107,1,0)) as 03总量,
+                                SUM(IF(年月 = 202107 AND 最终状态 = "已签收",1,0)) as 03签收量,
+                                SUM(IF(年月 = 202107 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 03完成量,					
+                            SUM(IF(年月 = 202108,1,0)) as 04总量,
+                                SUM(IF(年月 = 202108 AND 最终状态 = "已签收",1,0)) as 04签收量,
+                                SUM(IF(年月 = 202108 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 04完成量,					
+                            SUM(IF(年月 = 202109,1,0)) as 05总量,
+                                SUM(IF(年月 = 202109 AND 最终状态 = "已签收",1,0)) as 05签收量,
+                                SUM(IF(年月 = 202109 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 05完成量,						
+                            SUM(IF(年月 = 202110,1,0)) as 06总量,
+                                SUM(IF(年月 = 202110 AND 最终状态 = "已签收",1,0)) as 06签收量,
+                                SUM(IF(年月 = 202110 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 06完成量,						
+                            SUM(IF(年月 = 202111,1,0)) as 07总量,
+                                SUM(IF(年月 = 202111 AND 最终状态 = "已签收",1,0)) as 07签收量,
+                                SUM(IF(年月 = 202111 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 07完成量,					
+                            SUM(IF(年月 = 202112,1,0)) as 08总量,
+                                SUM(IF(年月 = 202112 AND 最终状态 = "已签收",1,0)) as 08签收量,
+                                SUM(IF(年月 = 202112 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 08完成量,					
+                            SUM(IF(年月 = 202201,1,0)) as 09总量,
+                                SUM(IF(年月 = 202201 AND 最终状态 = "已签收",1,0)) as 09签收量,
+                                SUM(IF(年月 = 202201 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 09完成量,					
+                            SUM(IF(年月 = 202202,1,0)) as 10总量,
+                                SUM(IF(年月 = 202202 AND 最终状态 = "已签收",1,0)) as 10签收量,
+                                SUM(IF(年月 = 202202 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 10完成量,						
+                            SUM(IF(年月 = 202203,1,0)) as 11总量,
+                                SUM(IF(年月 = 202203 AND 最终状态 = "已签收",1,0)) as 11签收量,
+                                SUM(IF(年月 = 202203 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 11完成量,						
+                            SUM(IF(年月 = 202204,1,0)) as 12总量,
+                                SUM(IF(年月 = 202204 AND 最终状态 = "已签收",1,0)) as 12签收量,
+                                SUM(IF(年月 = 202204 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 12完成量,
+                            SUM(IF(年月 = 202205,1,0)) as 13总量,
+                                SUM(IF(年月 = 202205 AND 最终状态 = "已签收",1,0)) as 13签收量,
+                                SUM(IF(年月 = 202205 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 13完成量							
                         FROM gat_zqsb_cache cx
                         where cx.`运单编号` is not null AND cx.团队 NOT IN ({0})
                         GROUP BY cx.家族,cx.币种,cx.产品id
@@ -9434,10 +9448,10 @@ if __name__ == '__main__':
     write = '本期'
     m.readFormHost(team, write, last_time)                            # 更新签收表---港澳台（一）
 
-    m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
+    # m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
     m.qsb_new(team, month_old)                                    # 获取-每日-报表
-    m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收
-    m.phone_report()                                        # 获取电话核实日报表 周报表
+    # m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收
+    # m.phone_report()                                        # 获取电话核实日报表 周报表
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id
     # m.address_repot(team, month_last, month_yesterday)                       #  获取-地区签收率-报表

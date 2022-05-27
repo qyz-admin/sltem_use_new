@@ -1222,7 +1222,7 @@ class Settings_sso():
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        # print(req.headers)
+        print(req.headers)
         gimp = req.headers['Location']
 
         time.sleep(1)
@@ -1331,27 +1331,27 @@ class Settings_sso():
         index_system3 = req.headers['Location']
         # print(index_system3)
         url = index_system3.replace(':443', '')
-        # print(url)
+        print(url)
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req)
         # print(req.headers)
 
-        # time.sleep(1)
-        # print('4.2、加载： ' + 'https://gimp.giikin.com')
-        # url = req.headers['Location']
-        # r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
-        #             'Referer': 'http://gsso.giikin.com/'}
-        # req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        # index = req.headers['Location']
+        time.sleep(1)
+        print('4.2、加载： ' + 'https://gimp.giikin.com')
+        url = req.headers['Location']
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gsso.giikin.com/'}
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        index = req.headers['Location']
         # print(req)
         # print(req.headers)
 
         time.sleep(1)
         print('5、加载： ' + 'https://gimp.giikin.com/portal/index/index.html')
-        url = 'https://gimp.giikin.com' + req.headers['Location']
-        # url = 'https://gimp.giikin.com' + index
+        # url = 'https://gimp.giikin.com' + req.headers['Location']
+        url = 'https://gimp.giikin.com' + index
         # print(url)
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}

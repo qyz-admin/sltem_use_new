@@ -1232,7 +1232,7 @@ class QueryUpdate(Settings):
         print('正在获取 采购异常-压单-丢件-扣件 信息…………')
         sql = '''SELECT *
             FROM (
-                    (SELECT '采购异常' AS 工作,NULL 日期, 单量,客服介入量,单量-发货量 AS 删除单量,concat(ROUND((单量-发货量) / 客服介入量 * 100,2),'%') AS 删除率, 发货量,签收量,在途量,concat(ROUND(签收量 / 单量 * 100,2),'%') AS 签收率
+                    (SELECT '采购异常' AS 工作,NULL 日期, 单量,客服介入量,单量-发货量 AS 删除单量,concat(ROUND((单量-发货量) / 客服介入量 * 100,2),'%') AS 删除率, 发货量,签收量,在途量,concat(ROUND(签收量 / 发货量 * 100,2),'%') AS 签收率
                     FROM (SELECT '采购异常' AS 采购异常,  COUNT(s.`订单编号`) AS 单量, COUNT(s.`订单编号`) AS 客服介入量,
 					            SUM(IF(s.`系统订单状态` IN ('已完成','已退货(销售)','已发货','已退货(物流)'),1,0)) AS 发货量,
 					            SUM(IF(s.`系统物流状态` = '已签收',1,0)) AS 签收量,  SUM(IF(s.`系统订单状态` = '已发货',1,0)) AS 在途量
@@ -1333,7 +1333,7 @@ class QueryUpdate(Settings):
         df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
         listT.append(df3)
 
-        print('正在获取 市场--派送问题件 信息…………')
+        print('正在获取 市场--物流问题件 信息…………')
         sql4 = '''SELECT '港台' AS '市场--派送问题件', NULL 日期, 物流反馈问题件总量, 签收, 	concat(ROUND(签收 / 物流反馈问题件总量 * 100,2),'%') AS 签收率, 客服联系单量,签收量,
 			            concat(ROUND(签收量 / 客服联系单量 * 100,2),'%') AS 客服联系签收率,	核实后再派单量, 核实后再派单签收量,	
 			            concat(ROUND(核实后再派单签收量 / 核实后再派单量 * 100,2),'%') AS 核实后再派单签收率
@@ -1355,6 +1355,38 @@ class QueryUpdate(Settings):
 	            ) ss;'''.format(data_now, 'gat_zqsb')
         df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
         listT.append(df4)
+
+        print('正在获取 市场--派送问题件 信息…………')
+        sql41= '''SELECT '港台' AS '市场--派送问题件', NULL 日期, 
+						派送问题件总量, 签收量, concat(ROUND(签收量 / 派送问题件总量 * 100,2),'%') AS 签收率, 
+						派送问题件联系总量,联系签收量, concat(ROUND(联系签收量 / 派送问题件联系总量 * 100,2),'%') AS 联系签收率, 
+									
+						已联系单量,已联系签收量, concat(ROUND(已联系签收量 / 已联系单量 * 100,2),'%') AS 已联系签收率, 
+						未联系单量,未联系签收量, concat(ROUND(未联系签收量 / 未联系单量 * 100,2),'%') AS 未联系签收率		
+                FROM (SELECT '派送问题件' AS 派送问题件,  
+							COUNT(s.`订单编号`) AS 派送问题件联系总量, 
+							SUM(IF(s.`系统物流状态` = '已签收',1,0)) AS 联系签收量,
+							SUM(IF(s.`备注` NOT like '%*%',1,0)) AS 已联系单量,
+							SUM(IF(s.`备注` like '%*%',1,0)) AS 未联系单量,
+							SUM(IF(s.`备注` NOT like '%*%' AND s.`系统物流状态` = '已签收',1,0)) AS 已联系签收量,
+							SUM(IF(s.`备注` like '%*%' AND s.`系统物流状态` = '已签收',1,0)) AS 未联系签收量
+				    FROM (SELECT lp.*,gt.系统订单状态,gt.系统物流状态
+							FROM (SELECT * 
+										FROM 派送问题件 
+										WHERE id IN (SELECT MAX(id) FROM 派送问题件 w WHERE w.`处理时间`  BETWEEN '2022-03-01'  AND '2022-03-31'
+										GROUP BY 订单编号) 
+										ORDER BY id
+							) lp
+					        LEFT JOIN gat_order_list gt ON lp.`订单编号` = gt.`订单编号`
+				    ) s
+                ) ss
+                LEFT JOIN ( SELECT '派送问题件' AS 派送问题件,  COUNT(gt.`订单编号`) AS 派送问题件总量, SUM(IF(gt.`系统物流状态` = '已签收',1,0)) AS 签收量
+						FROM 派送问题件 w
+						LEFT JOIN gat_order_list gt ON w.`订单编号` = gt.`订单编号`
+						WHERE w.`派送问题首次时间` BETWEEN '2022-03-01'  AND '2022-03-31'
+                )  ss2 ON ss.派送问题件=ss2.派送问题件;'''.format(data_now, 'gat_zqsb')
+        df41 = pd.read_sql_query(sql=sql41, con=self.engine1)
+        listT.append(df41)
 
         print('正在获取 市场--邮件 信息…………')
         df5 = pd.DataFrame([['', '', '', '', '', '']], columns=['市场--邮件', '日期', '月回复量（客服回复的邮件量）', '工单量（当月工单录入总量，不区分售中和售后）', '工单已完成量（已处理完成的工单里）','工单已完成率'])
@@ -1434,7 +1466,8 @@ class QueryUpdate(Settings):
         df1.to_excel(writer2, index=False)                  # 采购
         df2.to_excel(writer2, index=False, startrow=10)     # 客诉
         df3.to_excel(writer2, index=False, startrow=14)     # 拒收
-        df4.to_excel(writer2, index=False, startrow=18)     # 派送问题件
+        df4.to_excel(writer2, index=False, startrow=18)     # 物流问题件
+        df41.to_excel(writer2, index=False, startrow=18)     # 派送问题件
         df5.to_excel(writer2, index=False, startrow=22)     # 邮件
 
         df6.to_excel(writer2, index=False, startrow=26)     # 退换货
