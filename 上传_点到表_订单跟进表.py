@@ -102,6 +102,9 @@ class QueryTwo(Settings, Settings_sso):
                         if '下单时间' not in db.columns:
                             db.insert(0, '下单时间', '')
                             db['下单时间'] = db['核重时间'].copy()
+                        if '核重时间' not in db.columns:
+                            db.insert(0, '核重时间', '')
+                            db['核重时间'] = db['下单时间'].copy()
                         db = db[['下单时间', '订单编号', '运单编号', '核重时间', '物流状态', '末条时间', '末条信息']]
                         db.dropna(axis=0, how='any', inplace=True)  # 空值（缺失值），将空值所在的行/列删除后
                     elif team == 'gat_waybill_list':
@@ -494,8 +497,8 @@ if __name__ == '__main__':
         team = 'gat_waybill_list'
         login_TmpCode = '8f60a2f666d73bb1ac7afedf7d31cb14'
         handle = '手0动'
-        m.readFormHost(team)
-        m.waybill_info(login_TmpCode, handle)
+        # m.readFormHost(team)
+        # m.waybill_info(login_TmpCode, handle)
         m.chuhuo_info('217b05a1c8e8345fb1476c28f3fb91ee', 'fbb2cfe70910362d8dc937190da35507', handle)
         m.waybill_updata()
 

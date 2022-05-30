@@ -234,6 +234,9 @@ class QueryTwo(Settings, Settings_sso):
         ordersDict = []
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
+                print(result)
+                print(result['order_number'])
+
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
                 result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
                 if ';' in result['traceRecord']:
@@ -1295,16 +1298,17 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
     start: datetime = datetime.datetime.now()
-    select = 99
-    if int(select) == 909:
+    select = 909
+    if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '7e00200b074b38be93d83578da27e666'
         m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode,handle)
         start: datetime = datetime.datetime.now()
 
-        if int(select) == 1:
+        if int(select) == 909:
             timeStart, timeEnd = m.readInfo('物流问题件')
-            m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
+            m.waybill_InfoQuery('2022-05-27', '2022-05-29')                     # 查询更新-物流问题件
+            m.waybill_Query('2022-05-27', '2022-05-29')
         elif int(select) == 2:
             timeStart, timeEnd = m.readInfo('物流客诉件')
             m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
@@ -1379,9 +1383,12 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
+    handle = '手0动'
+    login_TmpCode = '7e00200b074b38be93d83578da27e666'
+    m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode, handle)
     # timeStart, timeEnd = m.readInfo('物流问题件')
 
-    # m.waybill_InfoQuery('2022-03-14', '2022-03-14')          # 查询更新-物流问题件
+    m.waybill_InfoQuery('2022-05-27', '2022-05-29')         # 查询更新-物流问题件
 
     # timeStart, timeEnd = m.readInfo('派送问题件')
     # m.waybill_deliveryList(timeStart, timeEnd)         # 查询更新-派送问题件
