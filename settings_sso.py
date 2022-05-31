@@ -1068,7 +1068,7 @@ class Settings_sso():
         # print('******获取登录页面url成功： /oapi.dingtalk.com/connect/oauth2/sns_authorize?')
 
         time.sleep(1)
-        print('2、加载： ' + 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?')
+        # print('2、加载： ' + 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?')
         url = 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode&loginTmpCode=' + loginTmpCode
         url = req.text
         data = {'tmpCode': loginTmpCode,
@@ -1083,7 +1083,7 @@ class Settings_sso():
         # print(req.headers)
 
         time.sleep(1)
-        print('3、加载： ' + 'http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode?')
+        # print('3、加载： ' + 'http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode?')
         url = req.headers['Location']
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
@@ -1091,7 +1091,7 @@ class Settings_sso():
         # print(req)
         # print(req.headers)
 
-        print('4.1、加载： ' + 'https://gsso.giikin.com:443/admin/dingtalk_service/getunionidbytempcode?')
+        # print('4.1、加载： ' + 'https://gsso.giikin.com:443/admin/dingtalk_service/getunionidbytempcode?')
         index_system3 = req.headers['Location']
         # print(index_system3)
         url = index_system3.replace(':443', '')
@@ -1099,8 +1099,8 @@ class Settings_sso():
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        print(req)
-        print(req.headers)
+        # print(req)
+        # print(req.headers)
         url = req.headers['Location']
 
         time.sleep(1)
@@ -1117,7 +1117,7 @@ class Settings_sso():
             index = req.headers['Location']
 
         time.sleep(1)
-        print('5、加载： ' + 'https://gimp.giikin.com/portal/index/index.html')
+        # print('5、加载： ' + 'https://gimp.giikin.com/portal/index/index.html')
         url = 'https://gimp.giikin.com' + index
         # print(url)
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -1127,7 +1127,7 @@ class Settings_sso():
         # print(req.headers)
 
         time.sleep(1)
-        print('6、加载： ' + 'https://gsso.giikin.com/admin/login/index.html')
+        # print('6、加载： ' + 'https://gsso.giikin.com/admin/login/index.html')
         url = req.headers['Location']
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
@@ -1136,7 +1136,7 @@ class Settings_sso():
         # print(req.headers)
 
         time.sleep(1)
-        print('7、加载： ' + 'https://gimp.giikin.com/portal/index/index.html?_ticker')
+        # print('7、加载： ' + 'https://gimp.giikin.com/portal/index/index.html?_ticker')
         url = req.headers['Location']
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}

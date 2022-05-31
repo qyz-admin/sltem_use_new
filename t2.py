@@ -111,9 +111,12 @@ if team == 'gat' and updata == '全部':
     handle = '手0动'
     sso = Query_sso_updata('+86-18538110674', 'qyz35100416', '1343', '32495f91f95b348d8c6298c1492e56b0', handle)
     # sso.readFormHost('gat', '导入')                       # 导入新增的订单 line运营  手动导入
-    sso.orderInfo_append('2022-05-27', '2022-05-29', '')               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
+    # for i in range((end - begin).days):  # 按天循环获取订单状态
+    #     day = begin + datetime.timedelta(days=i)
+    #     day_time = str(day)
+    #     sso.orderInfo_append(day_time, day_time, '')               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
 
-    # sso.orderInfo_append(str(begin), str(end), 179)               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
+    sso.orderInfo_append(str(begin), str(end), 179)               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
     sso.orderInfo(team, updata, begin, end)
     print('更新耗时：', datetime.datetime.now() - start)
 

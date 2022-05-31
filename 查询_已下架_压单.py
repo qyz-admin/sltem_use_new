@@ -448,6 +448,8 @@ class QueryTwoLower(Settings, Settings_sso):
                     else:
                         if '龟山易速配' in result['whid']:
                             result['waill_name'] = '龟山'
+                        if '易速配-桃园仓' in result['whid']:
+                            result['waill_name'] = '易速配桃园'
                         elif '速派八股仓' in result['whid']:
                             result['waill_name'] = '速派'
                         elif '天马新竹仓' in result['whid']:

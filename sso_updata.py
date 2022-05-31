@@ -861,92 +861,96 @@ class Query_sso_updata(Settings):
     def sso__online_auto(self):  # 手动输入token 登录系统保持会话状态
         print(datetime.datetime.now())
         print('正在登录后台系统中......')
-        # print('一、获取-钉钉用户信息......')
-        # url = r'https://login.dingtalk.com/login/login_with_pwd'
-        # data = {'mobile': self.userMobile,
-        #         'pwd': self.password,
-        #         'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
-        #         'pdmToken': '',
-        #         'araAppkey': '1917',
-        #         'araToken': '0#19171646622570440595157649661651738562272219G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
-        #         'araScene': 'login',
-        #         'captchaImgCode': '',
-        #         'captchaSessionId': '',
-        #         'type': 'h5'}
-        # r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
-        #     'Origin': 'https://login.dingtalk.com',
-        #     'Referer': 'https://login.dingtalk.com/'}
-        # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+        print('一、获取-钉钉用户信息......')
+        url = r'https://login.dingtalk.com/login/login_with_pwd'
+        data = {'mobile': self.userMobile,
+                'pwd': self.password,
+                'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
+                'pdmToken': '',
+                'araAppkey': '1917',
+                'araToken': '0#19171629428116275265671469741653892975540685GC87818BBCC3CCDF73DCA3659F13FFA069CD0EA',
+                'araScene': 'login',
+                'captchaImgCode': '',
+                'captchaSessionId': '',
+                'type': 'h5'}
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0',
+            'Origin': 'https://login.dingtalk.com',
+            'Referer': 'https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode'}
+        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+        req = req.json()
         # print(req)
-        # req = req.json()
-        # print(req)
-        # # req_url = req['data']
-        # # loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
-        # if 'data' in req.keys():
-        #     try:
-        #         req_url = req['data']
-        #         loginTmpCode = req_url.split('loginTmpCode=')[1]  # 获取loginTmpCode值
-        #     except Exception as e:
-        #         print('重新启动： 3分钟后', str(Exception) + str(e))
-        #         time.sleep(300)
-        #         self.sso_online_Two()
-        # elif 'message' in req.keys():
-        #     info = req['message']
-        #     win32api.MessageBox(0, "登录失败: " + info, "错误 提醒", win32con.MB_ICONSTOP)
-        #     sys.exit()
-        # else:
-        #     print('请检查失败原因：', str(req))
-        #     win32api.MessageBox(0, "请检查失败原因: 是否触发了验证码； 或者3分钟后再尝试登录！！！", "错误 提醒", win32con.MB_ICONSTOP)
-        #     sys.exit()
-        # print('******已获取loginTmpCode值: ' + str(loginTmpCode))
+        # req_url = req['data']
+        # loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
+        login_TmpCode = '获取不到参数'
+        if 'data' in req.keys():
+            try:
+                req_url = req['data']
+                login_TmpCode = req_url.split('loginTmpCode=')[1]  # 获取loginTmpCode值
+            except Exception as e:
+                print('重新启动： 3分钟后', str(Exception) + str(e))
+                time.sleep(300)
+                self.sso__online_auto()
+        elif 'message' in req.keys():
+            info = req['message']
+            win32api.MessageBox(0, "登录失败: " + info, "错误 提醒", win32con.MB_ICONSTOP)
+            # sys.exit()
+        else:
+            print('请检查失败原因：', str(req))
+            win32api.MessageBox(0, "请检查失败原因: 是否触发了验证码； 或者3分钟后再尝试登录！！！", "错误 提醒", win32con.MB_ICONSTOP)
+            # sys.exit()
 
-        # 模拟打开浏览器 获取token
-        options = webdriver.ChromeOptions()
-        options.add_argument(r"user-data-dir=F:\360\ChromePortable_x64_v770386590\GoogleChromePortable77.0.3865.90(x64)\Data\profile")
-        driver = webdriver.Chrome(r'C:\Program Files\Google\Chrome\Application\chromedriver.exe')
+        if login_TmpCode == '获取不到参数':
+            time.sleep(1)
+            # 模拟打开浏览器 获取token
+            options = webdriver.ChromeOptions()
+            options.add_argument(r"user-data-dir=C:\Program Files\Google\Chrome\Application\profile")
+            driver = webdriver.Chrome(r'C:\Program Files\Google\Chrome\Application\chromedriver.exe')
 
-        driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
-        driver.implicitly_wait(5)
-        js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
-                    data: { mobile: '+86-18538110674',
-                            pwd: 'qyz35100416',
-                            goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
-                            pdmToken: '',
-                            araAppkey: '1917',
-                            araToken: '0#19171646622570440595157649661652144581488416G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
-                            araScene: 'login',
-                            captchaImgCode: '',
-                            captchaSessionId: '',
-                            type: 'h5'
-                        },
-                        type: 'POST',
-                        timeout: '10000',
-                        async:false, 
-                        beforeSend(xhr, settings) {
-                            xhr.setRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
-                        },
-                        success: function(data) {
-                            if (data.success) {
-                                 console.log(data.data);
-                                 console.log("loginTmpCode值是：", data.data.split('loginTmpCode=')[1]);
-                                  document.documentElement.getElementsByClassName("noGoto")[0].textContent = data.data.split('loginTmpCode=')[1];
-                                 arguments[0].value=data.data.split('loginTmpCode=')[1];
-                            } else {
-                                    console.log(data.code);
+            driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
+            # driver.implicitly_wait(5)
+            time.sleep(5)
+            js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
+                        data: { mobile: '+86-18538110674',
+                                pwd: 'qyz35100416',
+                                goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
+                                pdmToken: '',
+                                araAppkey: '1917',
+                                araToken: '0#19171646622570440595157649661652144581488416G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
+                                araScene: 'login',
+                                captchaImgCode: '',
+                                captchaSessionId: '',
+                                type: 'h5'
+                            },
+                            type: 'POST',
+                            timeout: '10000',
+                            async:false,
+                            beforeSend(xhr, settings) {
+                                xhr.setRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
+                            },
+                            success: function(data) {
+                                if (data.success) {
+                                     console.log(data.data);
+                                     console.log("loginTmpCode值是：", data.data.split('loginTmpCode=')[1]);
+                                      document.documentElement.getElementsByClassName("noGoto")[0].textContent = data.data.split('loginTmpCode=')[1];
+                                     arguments[0].value=data.data.split('loginTmpCode=')[1];
+                                } else {
+                                        console.log(data.code);
+                                }
+                            },
+                            error: function(error) {
+                                alert("请检查网络");
                             }
-                        },
-                        error: function(error) {
-                            alert("请检查网络");
-                        }
-                    });
-                    '''
-        element = driver.find_element('id', 'mobile')
-        driver.execute_script(js, element)
-        driver.implicitly_wait(5)
-        login_TmpCode = driver.execute_script('return document.documentElement.getElementsByClassName("noGoto")[0].textContent;')
-        print('loginTmpCode值: ' + login_TmpCode)
-        driver.quit()
+                        });
+                        '''
+            element = driver.find_element('id', 'mobile')
+            driver.execute_script(js, element)
+            # driver.implicitly_wait(5)
+            time.sleep(5)
+            login_TmpCode = driver.execute_script('return document.documentElement.getElementsByClassName("noGoto")[0].textContent;')
+            print('loginTmpCode值: ' + login_TmpCode)
+            driver.quit()
 
+        print('******已获取loginTmpCode值: ' + str(login_TmpCode))
         loginTmpCode = login_TmpCode
         # print('1、加载： ' + 'https://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html')
         url = r'https://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html'
@@ -998,16 +1002,20 @@ class Query_sso_updata(Settings):
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req)
         # print(req.headers)
+        url = req.headers['Location']
 
         time.sleep(1)
-        # print('4.2、加载： ' + 'https://gimp.giikin.com')
-        url = req.headers['Location']
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
-                    'Referer': 'http://gsso.giikin.com/'}
-        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        index = req.headers['Location']
-        # print(req)
-        # print(req.headers)
+        if url != '/portal/index/index.html':
+            print('4.2、加载： ' + 'https://gimp.giikin.com')
+            url = req.headers['Location']
+            r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                        'Referer': 'http://gsso.giikin.com/'}
+            req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+            index = req.headers['Location']
+            print(req)
+            print(req.headers)
+        else:
+            index = req.headers['Location']
 
         time.sleep(1)
         # print('5、加载： ' + 'https://gimp.giikin.com/portal/index/index.html')

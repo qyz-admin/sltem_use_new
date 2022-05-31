@@ -22,7 +22,7 @@ class Settings():
                        'datebase': 'gdqs_jp',  # 数据库名称
                        'charset': 'utf8'  # 数据库编码
                        }
-        self.mysql2 = {'host': 'tidb2.giikin.com',  # 数据库地址--本地神龙客服
+        self.mysql2 = {'host': 'tidb.giikin.cn',  # 数据库地址--本地神龙客服
                        'user': 'tw',  # 数据库账户
                        'port': '39999',
                        'password': '1tSRyqQEfF',  # 数据库密码
