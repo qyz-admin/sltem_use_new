@@ -966,7 +966,7 @@ class Settings_sso():
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
-                'araToken': '0#19171629428116275265671469741653892975540685GC87818BBCC3CCDF73DCA3659F13FFA069CD0EA',
+                'araToken': '0#19171629428116275265671469741653992895872711GC87818BBCC3CCDF73DCA3659F13FFA069CD0EA',
                 'araScene': 'login',
                 'captchaImgCode': '',
                 'captchaSessionId': '',

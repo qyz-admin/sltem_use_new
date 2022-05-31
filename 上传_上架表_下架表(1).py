@@ -101,7 +101,7 @@ class Updata_return_bill(Settings, Settings_sso):
                     team = 'gat_return_bill'
                     tem_data = '协来运'
                     tem_kuwei = '协来运退件库位'
-                    tem_day = 50
+                    tem_day = 60
 
                 elif '吉客印签收表' in dir:
                     team = 'gat_return_bill_over'

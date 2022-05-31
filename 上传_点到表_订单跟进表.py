@@ -497,8 +497,8 @@ if __name__ == '__main__':
         team = 'gat_waybill_list'
         login_TmpCode = '8f60a2f666d73bb1ac7afedf7d31cb14'
         handle = '手0动'
-        # m.readFormHost(team)
-        # m.waybill_info(login_TmpCode, handle)
+        m.readFormHost(team)
+        m.waybill_info(login_TmpCode, handle)
         m.chuhuo_info('217b05a1c8e8345fb1476c28f3fb91ee', 'fbb2cfe70910362d8dc937190da35507', handle)
         m.waybill_updata()
 

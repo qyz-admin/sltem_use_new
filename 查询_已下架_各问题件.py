@@ -235,8 +235,7 @@ class QueryTwo(Settings, Settings_sso):
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
                 # print(result)
-                # print(result['order_number'])
-
+                print(result['order_number'])
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
                 result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
                 if ';' in result['traceRecord']:
@@ -307,7 +306,7 @@ class QueryTwo(Settings, Settings_sso):
             sql = '''REPLACE INTO 物流问题件(处理时间,物流反馈时间,处理人,订单编号,处理结果, 拒收原因, 币种, 记录时间) 
                     SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,最新处理结果 AS 处理结果, 拒收原因, 币种, NOW() 记录时间 
                     FROM customer'''
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
         else:
             print('没有需要获取的信息！！！')
@@ -1298,14 +1297,14 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
     start: datetime = datetime.datetime.now()
-    select = 99
-    if int(select) == 909:
+    select = 9009
+    if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '7e00200b074b38be93d83578da27e666'
         m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode,handle)
         start: datetime = datetime.datetime.now()
 
-        if int(select) == 989:
+        if int(select) == 1:
             timeStart, timeEnd = m.readInfo('物流问题件')
             m.waybill_InfoQuery('2022-05-27', '2022-05-29')                     # 查询更新-物流问题件
             m.waybill_Query('2022-05-27', '2022-05-29')
@@ -1367,7 +1366,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------
     '''
-    if int(select) == 9009:
+    if int(select) == 99:
         my = MysqlControl()
 
         my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
@@ -1383,12 +1382,12 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    # handle = '手0动'
-    # login_TmpCode = '7e00200b074b38be93d83578da27e666'
-    # m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode, handle)
-    # timeStart, timeEnd = m.readInfo('物流问题件')
+    handle = '手0动'
+    login_TmpCode = '7e00200b074b38be93d83578da27e666'
+    m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode, handle)
+    timeStart, timeEnd = m.readInfo('物流问题件')
 
-    # m.waybill_InfoQuery('2022-05-27', '2022-05-29')         # 查询更新-物流问题件
+    m.waybill_InfoQuery('2022-05-27', '2022-05-27')         # 查询更新-物流问题件
 
     # timeStart, timeEnd = m.readInfo('派送问题件')
     # m.waybill_deliveryList(timeStart, timeEnd)         # 查询更新-派送问题件
