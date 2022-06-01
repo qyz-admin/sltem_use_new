@@ -959,7 +959,7 @@ class Settings_sso():
     def sso__online_auto(self):  # 手动输入token 登录系统保持会话状态
         print(datetime.datetime.now())
         print('正在登录后台系统中......')
-        print('一、获取-钉钉用户信息......')
+        # print('一、获取-钉钉用户信息......')
         url = r'https://login.dingtalk.com/login/login_with_pwd'
         data = {'mobile': self.userMobile,
                 'pwd': self.password,
