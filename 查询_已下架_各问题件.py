@@ -1332,8 +1332,8 @@ if __name__ == '__main__':
 
             timeStart, timeEnd = m.readInfo('退换货表')
             for team in [1, 2]:
-                # m.orderReturnList_Query(team, timeStart, timeEnd)       # 查询更新-退换货
-                m.orderReturnList_Query(team, '2021-12-01', '2021-12-01')       # 查询更新-退换货
+                m.orderReturnList_Query(team, timeStart, timeEnd)       # 查询更新-退换货
+                # m.orderReturnList_Query(team, '2021-12-01', '2021-12-01')       # 查询更新-退换货
 
             timeStart, timeEnd = m.readInfo('拒收问题件')
             m.order_js_Query(timeStart, timeEnd)                        # 查询更新-拒收问题件-·123456

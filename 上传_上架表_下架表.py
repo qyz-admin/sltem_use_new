@@ -77,6 +77,7 @@ class Updata_return_bill(Settings, Settings_sso):
                 tem_day = ''
                 tem_kuwei = ''
                 team = ''
+                day_time = ''
                 if '吉客印退仓' in dir or '吉客印退倉' in dir:
                     team = 'gat_return_bill'
                     tem_data = '速派'
@@ -98,6 +99,7 @@ class Updata_return_bill(Settings, Settings_sso):
                     tem_day = 60
 
                 elif 'HSA045-上架表' in dir:
+                    day_time = datetime.datetime.now().strftime('%Y-%m-%d')
                     team = 'gat_return_bill'
                     tem_data = '协来运'
                     tem_kuwei = '协来运退件库位'
@@ -111,7 +113,7 @@ class Updata_return_bill(Settings, Settings_sso):
 
                 excel = win32.gencache.EnsureDispatch('Excel.Application')
                 wb = excel.Workbooks.Open(filePath)
-                file_path = os.path.join(path, "~$ " + dir)
+                file_path = os.path.join(path, "~$ " + day_time + " " + dir)
                 wb.SaveAs(file_path, FileFormat=51)              # FileFormat = 51 is for .xlsx extension
                 wb.Close()                                      # FileFormat = 56 is for .xls extension
                 excel.Application.Quit()

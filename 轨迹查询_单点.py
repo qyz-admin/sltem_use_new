@@ -121,6 +121,7 @@ class QueryTwo(Settings, Settings_sso):
             for ord in orderId:
                 print(ord)
                 data = self._order_online(ord, isReal)
+                # print(data)
                 if data is not None and len(data) > 0:
                     dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
@@ -440,7 +441,7 @@ class QueryTwo(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    m = QueryTwo('+86-18538110674', 'qyz04163510','2501226929713d0ab95d811d0ead9e23')
+    m = QueryTwo('+86-18538110674', 'qyz35100416','2501226929713d0ab95d811d0ead9e23')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     '''

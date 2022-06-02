@@ -46,7 +46,7 @@ else:
     # 更新时间
     data_begin = datetime.date(2022, 4, 1)
     begin = datetime.date(2022, 4, 1)
-    end = datetime.date(2022, 5, 1)
+    end = datetime.date(2022, 6, 1)
     # 导出时间
     month_last = '2022-04-01'
     month_yesterday = '2022-05-31'
@@ -99,7 +99,7 @@ print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
 print('---------------------------------- 数据库更新部分：--------------------------------')
-m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
+# m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
 # m.connectOrder(team, month_last, month_yesterday, month_begin)      # 停用 最近两个月的订单信息导出
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
