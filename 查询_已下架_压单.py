@@ -660,6 +660,47 @@ class QueryTwoLower(Settings, Settings_sso):
             print('****** 没有信息！！！')
         return data
 
+
+    def _upload_take_delivery_no(self, take_delivery_no, transport_type, batch):  # 进入压单检索界面
+        print('+++正在查询订单信息中')
+        url = r'http://gwms-v3.giikin.cn/order/delivery/takedeliveryregister'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'http://gwms-v3.giikin.cn',
+                    'Referer': 'http://gwms-v3.giikin.cn/order/delivery/takeDeliveryRegister?id=8755'}
+        data = {'id': 8755,
+                'take_delivery_no': take_delivery_no,
+                'transport_type': transport_type,
+                'batch': batch,
+                'departed_time': None,
+                'departed_place': None,
+                'arrived_time': None,
+                'arrived_place': None,
+                'product_type': None
+                }
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print(req)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
+        print(req)
+        # max_count = req['count']
+        # if max_count != [] or max_count != 0:
+        #     ordersdict = []
+        #     try:
+        #         for result in req['data']:
+        #             ordersdict.append(result)
+        #     except Exception as e:
+        #         print('转化失败： 重新获取中', str(Exception) + str(e))
+        #     data = pd.json_normalize(ordersdict)
+        #     # print(data)
+        # else:
+        #     data = None
+        #     print('****** 没有信息！！！')
+        # return data
+
 if __name__ == '__main__':
     m = QueryTwoLower('+86-18538110674', 'qyz35100416','84c3a0212a7b3de386b2a20d4a46b0ea','手0动')
     start: datetime = datetime.datetime.now()

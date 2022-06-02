@@ -1219,6 +1219,74 @@ class QueryTwo(Settings, Settings_sso):
         return data
 
 
+    # 更新团队订单明细（新后台的获取  方法一的全部更新）
+    def order_check(self, team, begin, end):  # 进入订单检索界面
+        # print('正在获取需要订单信息......')
+        match1 = {'gat': '港台',
+                  'slsc': '品牌'}
+        for i in range((end - begin).days):             # 按天循环获取订单状态
+            day = begin + datetime.timedelta(days=i)
+            last_month = str(day)
+            print('正在检查 ' + match1[team] + last_month + ' 号订单信息…………')
+            start = datetime.datetime.now()
+            sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` = '{1}';'''.format('gat_order_list', last_month)
+            ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+            if ordersDict.empty:
+                print('无需要更新订单信息！！！')
+                return
+            print(ordersDict['订单编号'][0])
+            orderId = list(ordersDict['订单编号'])
+            dlist = []
+            for ord in orderId:
+                tem_data = self._order_check(ord)
+                if tem_data == 1:
+                    dlist.append(tem_data)
+            if dlist == [] or len(orderId) == 0:
+                print('今日查询无错误订单：', datetime.datetime.now() - start)
+            else:
+                print('今发送错误订单中：.......')
+                print(dlist)
+            print('查询耗时：', datetime.datetime.now() - start)
+    def _order_check(self, ord):  # 进入订单检索界面
+        print('+++正在查询订单信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'page': 1, 'pageSize': 500,
+                'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None,
+                'type': None, 'collId': None, 'isClone': None,
+                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '',
+                'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
+                'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
+                'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None,
+                'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
+                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None}
+        data.update({'orderPrefix': ord,
+                    'shippingNumber': None})
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print(req.text)
+        # print('+++已成功发送请求......')
+        # print('正在处理json数据转化为dataframe…………')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        tem = 0
+        try:
+            max_count = req['data']['count']
+            if max_count > 1:
+                tem = 1
+        except Exception as e:
+            print('更新失败：', str(Exception) + str(e))
+        print('*************************本次获取成功***********************************')
+        return tem
+
+
+
 if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 问题件 状态运行（一）-----------------------------------------

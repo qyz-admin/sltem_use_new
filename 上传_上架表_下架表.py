@@ -97,13 +97,18 @@ class Updata_return_bill(Settings, Settings_sso):
                     tem_data = '易速配'
                     tem_kuwei = '龟山易速配退件库位'
                     tem_day = 60
+                elif '桃園仓' in dir:
+                    team = 'gat_return_bill'
+                    tem_data = '桃园仓'
+                    tem_kuwei = '桃园退件仓'
+                    tem_day = 30
 
                 elif 'HSA045-上架表' in dir:
                     day_time = datetime.datetime.now().strftime('%Y-%m-%d')
                     team = 'gat_return_bill'
                     tem_data = '协来运'
                     tem_kuwei = '协来运退件库位'
-                    tem_day = 60
+                    tem_day = 50
 
                 elif '吉客印签收表' in dir:
                     team = 'gat_return_bill_over'
@@ -149,11 +154,18 @@ class Updata_return_bill(Settings, Settings_sso):
                                 db = db[['物流渠道', '订单编号', '运单编号', '退货单号', '退货上架货架', '上架时间', '仓库名称', '在仓天数', '末条状态']]
 
                         elif tem_data == '易速配':
-
                             if team == 'gat_return_bill':
                                 db.rename(columns={'内部单号': '订单编号', '原单号': '运单编号', '龟山入库单号': '退货单号', '库位': '退货上架货架'}, inplace=True)
                                 db.insert(0, '物流渠道', tem_data)
                                 db.insert(0, '仓库名称', '龟山')
+                                db = db[['物流渠道', '订单编号', '运单编号', '退货单号', '退货上架货架', '上架时间', '仓库名称']]
+                        elif tem_data == '桃园仓':
+                            if team == 'gat_return_bill':
+                                if '订单编号' not in db.columns:
+                                    db.insert(0, '订单编号', tem_data)
+                                db.rename(columns={'订单编号': '订单编号', '原单': '运单编号', '退件单号': '退货单号', '架位': '退货上架货架', '上架日期':'上架时间'}, inplace=True)
+                                db.insert(0, '物流渠道', tem_data)
+                                db.insert(0, '仓库名称', tem_data)
                                 db = db[['物流渠道', '订单编号', '运单编号', '退货单号', '退货上架货架', '上架时间', '仓库名称']]
 
                         elif tem_data == '协来运':
