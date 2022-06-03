@@ -3,7 +3,7 @@ import os
 import datetime
 import time
 from tqdm import tqdm
-from alive_progress import alive_bar
+
 import xlwings
 import xlsxwriter
 import math
@@ -1284,7 +1284,7 @@ class QueryTwo(Settings, Settings_sso):
         for i in range((end - begin).days):             # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
             last_month = str(day)
-            print('正在检查 港台' + last_month + ' 号订单信息…………')
+            print('正在检查 港台 ' + last_month + ' 号订单信息…………')
             start = datetime.datetime.now()
             sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` = '2022-05-23';'''.format('gat_order_list', last_month)
             ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -1294,28 +1294,7 @@ class QueryTwo(Settings, Settings_sso):
             print(ordersDict['订单编号'][0])
             orderId = list(ordersDict['订单编号'])
             dlist = []
-
-            # with alive_bar(len(orderId)) as bar:  # declare your expected total
-            #     for ord in orderId:
-            #         bar()
-            #         tem_data = self._order_check(ord)
-            #         if tem_data == 1:
-            #             dlist.append(ord)
-            # if dlist == [] or len(orderId) == 0:
-            #     print('今日查询无错误订单：', datetime.datetime.now() - start)
-            # else:
-            #     print('已发送错误订单中：.......')
-            #     print(dlist)
-            #     url = "https://oapi.dingtalk.com/robot/send?access_token=bdad3de3c4f5e8cc690a122779a642401de99063967017d82f49663382546f30"  # url为机器人的webhook
-            #     content = dlist                  # 钉钉消息内容，注意test是自定义的关键字，需要在钉钉机器人设置中添加，这样才能接收到消息
-            #     mobile_list = ['18538110674']           # 要@的人的手机号，可以是多个，注意：钉钉机器人设置中需要添加这些人，否则不会接收到消息
-            #     isAtAll = '是'                            # 是否@所有人
-            #     self.send_dingtalk_message(url, content, mobile_list, isAtAll)
-            # print('查询耗时：', datetime.datetime.now() - start)
-
-
-
-            for index, ord in tqdm(enumerate(orderId)):
+            for index, ord in enumerate(tqdm(orderId)):
                 tem_data = self._order_check(ord)
                 if tem_data == 1:
                     dlist.append(ord)
