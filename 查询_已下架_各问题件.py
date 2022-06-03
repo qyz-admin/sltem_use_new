@@ -2,6 +2,8 @@ import pandas as pd
 import os
 import datetime
 import time
+from tqdm import tqdm
+from alive_progress import alive_bar
 import xlwings
 import xlsxwriter
 import math
@@ -1284,7 +1286,7 @@ class QueryTwo(Settings, Settings_sso):
             last_month = str(day)
             print('正在检查 港台' + last_month + ' 号订单信息…………')
             start = datetime.datetime.now()
-            sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` = '2022-05-25';'''.format('gat_order_list', last_month)
+            sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` = '2022-05-23';'''.format('gat_order_list', last_month)
             ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
             if ordersDict.empty:
                 print('无需要更新订单信息！！！')
@@ -1292,18 +1294,44 @@ class QueryTwo(Settings, Settings_sso):
             print(ordersDict['订单编号'][0])
             orderId = list(ordersDict['订单编号'])
             dlist = []
-            for ord in orderId:
+
+            # with alive_bar(len(orderId)) as bar:  # declare your expected total
+            #     for ord in orderId:
+            #         bar()
+            #         tem_data = self._order_check(ord)
+            #         if tem_data == 1:
+            #             dlist.append(ord)
+            # if dlist == [] or len(orderId) == 0:
+            #     print('今日查询无错误订单：', datetime.datetime.now() - start)
+            # else:
+            #     print('已发送错误订单中：.......')
+            #     print(dlist)
+            #     url = "https://oapi.dingtalk.com/robot/send?access_token=bdad3de3c4f5e8cc690a122779a642401de99063967017d82f49663382546f30"  # url为机器人的webhook
+            #     content = dlist                  # 钉钉消息内容，注意test是自定义的关键字，需要在钉钉机器人设置中添加，这样才能接收到消息
+            #     mobile_list = ['18538110674']           # 要@的人的手机号，可以是多个，注意：钉钉机器人设置中需要添加这些人，否则不会接收到消息
+            #     isAtAll = '是'                            # 是否@所有人
+            #     self.send_dingtalk_message(url, content, mobile_list, isAtAll)
+            # print('查询耗时：', datetime.datetime.now() - start)
+
+
+
+            for index, ord in tqdm(enumerate(orderId)):
                 tem_data = self._order_check(ord)
                 if tem_data == 1:
-                    dlist.append(tem_data)
+                    dlist.append(ord)
             if dlist == [] or len(orderId) == 0:
                 print('今日查询无错误订单：', datetime.datetime.now() - start)
             else:
-                print('今发送错误订单中：.......')
+                print('已发送错误订单中：.......')
                 print(dlist)
+                url = "https://oapi.dingtalk.com/robot/send?access_token=bdad3de3c4f5e8cc690a122779a642401de99063967017d82f49663382546f30"  # url为机器人的webhook
+                content = dlist                  # 钉钉消息内容，注意test是自定义的关键字，需要在钉钉机器人设置中添加，这样才能接收到消息
+                mobile_list = ['18538110674']           # 要@的人的手机号，可以是多个，注意：钉钉机器人设置中需要添加这些人，否则不会接收到消息
+                isAtAll = '是'                            # 是否@所有人
+                self.send_dingtalk_message(url, content, mobile_list, isAtAll)
             print('查询耗时：', datetime.datetime.now() - start)
     def _order_check(self, ord):  # 进入订单检索界面
-        print('+++正在查询订单信息中')
+        # print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
@@ -1337,12 +1365,13 @@ class QueryTwo(Settings, Settings_sso):
                 tem = 1
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
-        print('*************************本次获取成功***********************************')
+        # print('*************************本次获取成功***********************************')
         return tem
 
 
 
 if __name__ == '__main__':
+    start: datetime = datetime.datetime.now()
     '''
     # -----------------------------------------------自动获取 问题件 状态运行（一）-----------------------------------------
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
@@ -1364,7 +1393,6 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    start: datetime = datetime.datetime.now()
     select = 9009
     if int(select) == 99:
         handle = '手0动'
@@ -1454,9 +1482,10 @@ if __name__ == '__main__':
     login_TmpCode = '7e00200b074b38be93d83578da27e666'
     m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode, handle)
 
-    month_yesterday = '2022-05-24'
-    month_begin = '2022-05-25'
-    m.order_check(month_yesterday,month_begin)
+
+    begin = datetime.date(2022, 5, 23)
+    end = datetime.date(2022, 5, 24)
+    m.order_check(begin, end)
 
 
     # timeStart, timeEnd = m.readInfo('物流问题件')

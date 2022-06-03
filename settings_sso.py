@@ -9,6 +9,7 @@ from settings import Settings
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 from selenium import webdriver
+import requests
 
 class Settings_sso():
     def __init__(self):
@@ -815,6 +816,44 @@ class Settings_sso():
         print('*' * 100)
 
         # 查询订单更新 以订单编号 （单点系统）
+
+    # 发送钉钉消息
+    def send_dingtalk_message(self, url, content, mobile_list, isAtAll):
+        headers = {'Content-Type': 'application/json', "Charset": "UTF-8"}
+        if isAtAll == '是':
+            data = {"msgtype": "text",
+                    "text": {  # 要发送的内容【支持markdown】【！注意：content内容要包含机器人自定义关键字，不然消息不会发送出去，这个案例中是test字段】
+                        "content": content
+                    },
+                    "at": {
+                        # "atMobiles": mobile_list, @所有人写True并且将上面atMobiles注释掉
+                        # 是否@所有人
+                        "isAtAll": True
+                    }
+                    }
+        else:
+            data = {
+                "msgtype": "text",
+                "text": {
+                    # 要发送的内容【支持markdown】【！注意：content内容要包含机器人自定义关键字，不然消息不会发送出去，这个案例中是test字段】
+                    "content": content
+                },
+                "at": {
+                    # 要@的人
+                    "atMobiles": mobile_list,
+                    # 是否@所有人
+                    "isAtAll": False  # @全体成员（在此可设置@特定某人）
+                }
+            }
+
+        # 4、对请求的数据进行json封装
+        sendData = json.dumps(data)  # 将字典类型数据转化为json格式
+        sendData = sendData.encode("utf-8")  # python3的Request要求data为byte类型
+
+        r = requests.post(url, headers=headers, data=json.dumps(data))
+        req = json.loads(r.text)  # json类型数据转换为dict字典
+        print(req['errmsg'])
+        return req['errmsg']
 
     # 自动输入token
     def sso_online_cang_auto(self):  # 登录系统保持会话状态
