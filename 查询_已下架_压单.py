@@ -33,7 +33,7 @@ class QueryTwoLower(Settings, Settings_sso):
         self.userMobile = userMobile
         self.password = password
         # self.sso_online_cang()
-
+        self.bulid_file()
         if handle == '手动':
             self.sso_online_cang_handle(login_TmpCode)
         else:
@@ -706,6 +706,62 @@ class QueryTwoLower(Settings, Settings_sso):
             print('****** 没有信息！！！')
         return data
 
+    def bulid_file(self):
+        print('正在生成每日新文件夹......')
+        time_path: datetime = datetime.datetime.now()
+        mkpath = "F:\\神龙签收率\\" + time_path.strftime('%m.%d')
+        isExists = os.path.exists(mkpath)
+        if not isExists:
+            os.makedirs(mkpath)
+            os.makedirs(mkpath + "\\产品签收率")
+            os.makedirs(mkpath + "\\产品签收率\\直发&改派")
+            os.makedirs(mkpath + "\\导运单号&提货时间")
+            os.makedirs(mkpath + "\\导状态")
+            os.makedirs(mkpath + "\\签收率")
+            os.makedirs(mkpath + "\\物流表")
+            print('创建成功')
+            file_path = mkpath + '\\导运单号&提货时间\\{} 龟山 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path2 = mkpath + '\\导运单号&提货时间\\{} 立邦 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path3 = mkpath + '\\导运单号&提货时间\\{} 天马 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path4 = mkpath + '\\导运单号&提货时间\\{} 速派 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path5 = mkpath + '\\导运单号&提货时间\\{} 协来运普货 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path50 = mkpath + '\\导运单号&提货时间\\{} 协来运特货 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            df = pd.DataFrame([['', '']], columns=['订单编号', '物流单号'])
+            df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel(file_path2, sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel(file_path3, sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel(file_path4, sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel(file_path5, sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel(file_path50, sheet_name='查询', index=False, engine='xlsxwriter')
+
+            file_path31 = mkpath + '\\导运单号&提货时间\\{} 天马 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path32 = mkpath + '\\导运单号&提货时间\\{} 协来运 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path33 = mkpath + '\\导运单号&提货时间\\{} 立邦 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path34 = mkpath + '\\导运单号&提货时间\\{} 速派 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path35 = mkpath + '\\导运单号&提货时间\\{} 龟山 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            df2 = pd.DataFrame([['', '', '']], columns=['订单编号', '旧运单号', '新运单号'])
+            df2.to_excel(file_path31, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path32, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path33, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path34, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path35, sheet_name='查询', index=False, engine='xlsxwriter')
+
+            file_path91 = mkpath + '\\导运单号&提货时间\\{} 导入提货时间 龟山.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path92 = mkpath + '\\导运单号&提货时间\\{} 导入提货时间 天马.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path93 = mkpath + '\\导运单号&提货时间\\{} 导入提货时间 速派.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path94 = mkpath + '\\导运单号&提货时间\\{} 导入提货时间 协来运.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path95 = mkpath + '\\导运单号&提货时间\\{} 导入提货时间 立邦.xlsx'.format(time_path.strftime('%m.%d'))
+            df2 = pd.DataFrame([['', '', '']], columns=['订单号', '物流单号', '提货时间'])
+            df2.to_excel(file_path91, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path92, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path93, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path94, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path95, sheet_name='查询', index=False, engine='xlsxwriter')
+            print('创建文件')
+        else:
+            print(mkpath + ' 目录已存在')
+        print('*' * 50)
+
     def get_take_delivery_no(self):  # 进入 头程物流跟踪 界面
         print('+++正在查询头程物流信息中')
         timeStart = (datetime.datetime.now() - datetime.timedelta(days=15)).strftime('%Y-%m-%d')
@@ -779,7 +835,7 @@ class QueryTwoLower(Settings, Settings_sso):
         print('单次更新耗时：', datetime.datetime.now() - start)
 
     def _upload_take_delivery_no(self, ord_id, id, take_delivery_no, batch):  # 进入压单检索界面
-        print('+++正在查询订单信息中')
+        print('+++正在更新中')
         url = r'http://gwms-v3.giikin.cn/order/delivery/takedeliveryregister'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'http://gwms-v3.giikin.cn',
@@ -819,63 +875,7 @@ if __name__ == '__main__':
     m = QueryTwoLower('+86-18538110674', 'qyz35100416','84c3a0212a7b3de386b2a20d4a46b0ea','手0动')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
-    '''
-    # -----------------------------------------------正在生成每日新文件夹-----------------------------------------
-    '''
-    print('正在生成明日新文件夹......')
-    time_path: datetime = datetime.datetime.now() + datetime.timedelta(days=1)
-    mkpath = "F:\\神龙签收率\\" + time_path.strftime('%m.%d')
-    isExists = os.path.exists(mkpath)
-    if not isExists:
-        os.makedirs(mkpath)
-        os.makedirs(mkpath + "\\产品签收率")
-        os.makedirs(mkpath + "\\产品签收率\\直发&改派")
-        os.makedirs(mkpath + "\\导运单号&提货时间")
-        os.makedirs(mkpath + "\\导状态")
-        os.makedirs(mkpath + "\\签收率")
-        os.makedirs(mkpath + "\\物流表")
-        print('创建成功')
-        file_path = mkpath + '\\导运单号&提货时间\\{} 龟山 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path2 = mkpath + '\\导运单号&提货时间\\{} 立邦 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path3 = mkpath + '\\导运单号&提货时间\\{} 天马 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path4 = mkpath + '\\导运单号&提货时间\\{} 速派 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path5 = mkpath + '\\导运单号&提货时间\\{} 协来运普货 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path50 = mkpath + '\\导运单号&提货时间\\{} 协来运特货 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        df = pd.DataFrame([['', '']], columns=['订单编号', '物流单号'])
-        df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
-        df.to_excel(file_path2, sheet_name='查询', index=False, engine='xlsxwriter')
-        df.to_excel(file_path3, sheet_name='查询', index=False, engine='xlsxwriter')
-        df.to_excel(file_path4, sheet_name='查询', index=False, engine='xlsxwriter')
-        df.to_excel(file_path5, sheet_name='查询', index=False, engine='xlsxwriter')
-        df.to_excel(file_path50, sheet_name='查询', index=False, engine='xlsxwriter')
 
-        file_path31 = mkpath + '\\导运单号&提货时间\\{} 天马 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path32 = mkpath + '\\导运单号&提货时间\\{} 协来运 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path33 = mkpath + '\\导运单号&提货时间\\{} 立邦 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path34 = mkpath + '\\导运单号&提货时间\\{} 速派 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path35 = mkpath + '\\导运单号&提货时间\\{} 龟山 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
-        df2 = pd.DataFrame([['', '', '']], columns=['订单编号', '旧运单号', '新运单号'])
-        df2.to_excel(file_path31, sheet_name='查询', index=False, engine='xlsxwriter')
-        df2.to_excel(file_path32, sheet_name='查询', index=False, engine='xlsxwriter')
-        df2.to_excel(file_path33, sheet_name='查询', index=False, engine='xlsxwriter')
-        df2.to_excel(file_path34, sheet_name='查询', index=False, engine='xlsxwriter')
-        df2.to_excel(file_path35, sheet_name='查询', index=False, engine='xlsxwriter')
-
-        file_path91 = mkpath + '\\导运单号&提货时间\\{} 导入提货时间 龟山.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path92 = mkpath + '\\导运单号&提货时间\\{} 导入提货时间 天马.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path93 = mkpath + '\\导运单号&提货时间\\{} 导入提货时间 速派.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path94 = mkpath + '\\导运单号&提货时间\\{} 导入提货时间 协来运.xlsx'.format(time_path.strftime('%m.%d'))
-        file_path95 = mkpath + '\\导运单号&提货时间\\{} 导入提货时间 立邦.xlsx'.format(time_path.strftime('%m.%d'))
-        df2 = pd.DataFrame([['', '', '']], columns=['订单号', '物流单号', '提货时间'])
-        df2.to_excel(file_path91, sheet_name='查询', index=False, engine='xlsxwriter')
-        df2.to_excel(file_path92, sheet_name='查询', index=False, engine='xlsxwriter')
-        df2.to_excel(file_path93, sheet_name='查询', index=False, engine='xlsxwriter')
-        df2.to_excel(file_path94, sheet_name='查询', index=False, engine='xlsxwriter')
-        df2.to_excel(file_path95, sheet_name='查询', index=False, engine='xlsxwriter')
-        print('创建文件')
-    else:
-        print(mkpath + ' 目录已存在')
-    print('*' * 50)
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
