@@ -1291,7 +1291,7 @@ class QueryTwo(Settings, Settings_sso):
             if ordersDict.empty:
                 print('无需要更新订单信息！！！')
                 return
-            print(ordersDict['订单编号'][0])
+            # print(ordersDict['订单编号'][0])
             orderId = list(ordersDict['订单编号'])
             dlist = []
             for index, ord in enumerate(tqdm(orderId)):
@@ -1302,7 +1302,7 @@ class QueryTwo(Settings, Settings_sso):
                 print('今日查询无错误订单：', datetime.datetime.now() - start)
             else:
                 print('已发送错误订单中：.......')
-                print(dlist)
+                dlist = ','.join(dlist)
                 url = "https://oapi.dingtalk.com/robot/send?access_token=bdad3de3c4f5e8cc690a122779a642401de99063967017d82f49663382546f30"  # url为机器人的webhook
                 content = dlist                  # 钉钉消息内容，注意test是自定义的关键字，需要在钉钉机器人设置中添加，这样才能接收到消息
                 mobile_list = ['18538110674']           # 要@的人的手机号，可以是多个，注意：钉钉机器人设置中需要添加这些人，否则不会接收到消息
