@@ -1229,7 +1229,7 @@ class QueryTwo(Settings, Settings_sso):
             last_month = str(day)
             print('正在检查 ' + match1[team] + last_month + ' 号订单信息…………')
             start = datetime.datetime.now()
-            sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` = '{1}';'''.format('gat_order_list', last_month)
+            sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` = '2022-05-25';'''.format('gat_order_list', last_month)
             ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
             if ordersDict.empty:
                 print('无需要更新订单信息！！！')
@@ -1365,7 +1365,7 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
     start: datetime = datetime.datetime.now()
-    select = 99
+    select = 9009
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '7e00200b074b38be93d83578da27e666'
@@ -1450,9 +1450,15 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    # handle = '手0动'
-    # login_TmpCode = '7e00200b074b38be93d83578da27e666'
-    # m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode, handle)
+    handle = '手0动'
+    login_TmpCode = '7e00200b074b38be93d83578da27e666'
+    m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode, handle)
+
+    month_yesterday = '2022-05-24'
+    month_begin = '2022-05-25'
+    m.order_check('gat', month_yesterday,'')
+
+
     # timeStart, timeEnd = m.readInfo('物流问题件')
     #
     # m.waybill_InfoQuery('2022-05-27', '2022-05-27')         # 查询更新-物流问题件

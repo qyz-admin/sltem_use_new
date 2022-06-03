@@ -33,10 +33,12 @@ class QueryTwoLower(Settings, Settings_sso):
         self.userMobile = userMobile
         self.password = password
         # self.sso_online_cang()
+
         if handle == '手动':
             self.sso_online_cang_handle(login_TmpCode)
         else:
             self.sso_online_cang_auto()
+
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -186,18 +188,26 @@ class QueryTwoLower(Settings, Settings_sso):
         # print(req.headers)
         print('++++++已成功登录++++++')
 
-    def readFile(self):
-        path = r'F:\神龙签收率\(未发货) 直发-仓库-压单\每日压单核实汇总'
+    def readFile(self,select):
+        path = ''
+        if select == 1:
+            path = r'F:\神龙签收率\(未发货) 直发-仓库-压单\每日压单核实汇总'
+        elif select == 2:
+            path = r'D:\Users\Administrator\Desktop\需要用到的文件\数据库'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
             filePath = os.path.join(path, dir)
             if dir[:2] != '~$':
                 print(filePath)
-                rq = (dir.split('压单')[0]).strip()
-                rq = datetime.datetime.strptime(rq, '%Y.%m.%d')
-                rq = rq.strftime('%Y.%m.%d')
-                self._readFile(filePath, rq)
+                rq = ''
+                if select == 1:
+                    rq = (dir.split('压单')[0]).strip()
+                    rq = datetime.datetime.strptime(rq, '%Y.%m.%d')
+                    rq = rq.strftime('%Y.%m.%d')
+                    self._readFile(filePath, rq)
+                elif select == 2:
+                    self._readFile_select(filePath, rq)
                 excel = win32.gencache.EnsureDispatch('Excel.Application')
                 wb = excel.Workbooks.Open(filePath)
                 file_path = os.path.join(path, "~$ " + dir)
@@ -234,6 +244,42 @@ class QueryTwoLower(Settings, Settings_sso):
                             FROM customer;'''
                     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                     print('++++成功导入：' + sht.name + '--->>>到压单表')
+                else:
+                    print('----------数据为空导入失败：' + sht.name)
+            wb.close()
+        app.quit()
+
+    # 工作表的订单信息
+    def _readFile_select(self, filePath, rq):
+        fileType = os.path.splitext(filePath)[1]
+        app = xlwings.App(visible=False, add_book=False)
+        app.display_alerts = False
+        if 'xls' in fileType:
+            wb = app.books.open(filePath, update_links=False, read_only=True)
+            for sht in wb.sheets:
+                try:
+                    db = None
+                    db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
+                    # print(db.columns)
+                except Exception as e:
+                    print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
+                if db is not None and len(db) > 0:
+                    print('++++正在导入更新：' + sht.name + '表； 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                    if '提货物流' not in db.columns:
+                        db.insert(0, '提货物流', '立邦国际')
+                    db = db[['提货物流', '出貨日期', '件數', '主號','航班號','航班情况','清關情況','全清時間', '出貨日期']]
+                    # db.rename(columns={'备注（压单核实是否需要）': '处理结果'}, inplace=True)
+                    # db.dropna(axis=0, subset=['处理结果'], how='any', inplace=True)
+                    db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+                    sql = '''update gat_take_delivery a, customer b 
+                            set a.`主號` = IF(b.`主號` = '' or  b.`主號` is NULL, a.`主號`, b.`主號`),
+                                a.`航班號` = IF(b.`航班號` = '' or  b.`航班號` is NULL, a.`航班號`, b.`航班號`)
+                            where a.`提货日期`= b.`出貨日期` and a.`提货物流`= b.`提货物流`;'''
+                    # sql = '''REPLACE INTO 压单表_已核实(订单编号,处理时间,处理结果,处理人, 记录时间)
+                    #         SELECT 订单编号,处理时间,处理结果,IF(处理人 = '' OR 处理人 IS NULL,'-',处理人) 处理人, NOW() 记录时间
+                    #         FROM customer;'''     出貨日期	件數	重量	主號	航班號	'航班情况',	'清關情況',	'全清時間',
+                    pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                    print('++++成功更新：' + sht.name + '--->>>到头程物流表')
                 else:
                     print('----------数据为空导入失败：' + sht.name)
             wb.close()
@@ -660,23 +706,20 @@ class QueryTwoLower(Settings, Settings_sso):
             print('****** 没有信息！！！')
         return data
 
-
-    def _upload_take_delivery_no(self, take_delivery_no, transport_type, batch):  # 进入压单检索界面
-        print('+++正在查询订单信息中')
-        url = r'http://gwms-v3.giikin.cn/order/delivery/takedeliveryregister'
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
-                    'origin': 'http://gwms-v3.giikin.cn',
-                    'Referer': 'http://gwms-v3.giikin.cn/order/delivery/takeDeliveryRegister?id=8755'}
-        data = {'id': 8755,
-                'take_delivery_no': take_delivery_no,
-                'transport_type': transport_type,
-                'batch': batch,
-                'departed_time': None,
-                'departed_place': None,
-                'arrived_time': None,
-                'arrived_place': None,
-                'product_type': None
-                }
+    def get_take_delivery_no(self):  # 进入 头程物流跟踪 界面
+        print('+++正在查询头程物流信息中')
+        timeStart = (datetime.datetime.now() - datetime.timedelta(days=15)).strftime('%Y-%m-%d')
+        timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
+        url = r'http://gwms-v3.giikin.cn/order/delivery/firstLegTrace'
+        r_header = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+            'origin': 'http://gwms-v3.giikin.cn',
+            'Referer': 'http://gwms-v3.giikin.cn/order/delivery/takeDeliveryRegister?id=8755'}
+        data = {'page': '1',
+                'limit': 100,
+                'startDate': timeStart + ' 00:00:00',
+                'endDate': timeEnd + ' 23:59:59',
+                'selectStr': '1=1 and a.country= "TW"'}
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
@@ -684,22 +727,93 @@ class QueryTwoLower(Settings, Settings_sso):
         req = self.session.post(url=url, headers=r_header, data=data)
         print(req)
         print('+++已成功发送请求......')
-        req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
+        req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
+        # print(req)
+        max_count = req['count']
+        if max_count != [] or max_count != 0:
+            ordersdict = []
+            try:
+                for result in req['data']:
+                    ordersdict.append(result)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            data = pd.json_normalize(ordersdict)
+            # print(data)
+            df = data[['id', 'take_delivery_no', 'take_delivery_date', 'take_delivery_company', 'take_delivery_company_id', 'transport_mode', 'product_type', 'transport_type',
+                       'batch', 'barcode', 'country', 'boxCount', 'analy', 'deliverytime', 'send_first_logistics_comment', 'uptime']]
+            df.columns = ['id', '提货单号', '提货时间', '提货物流', '提货物流id', '运输方式', '货物类型', '运输公司',
+                          '运输班次', '箱号', '线路', '箱数', '统计', '交货时间', '报关资料发送结果', '更新时间']
+
+            print('共有 ' + str(len(df)) + '条 正在写入......')
+            df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            # df.to_excel('G:\\输出文件\\{0}-查询{1}.xlsx'.format(match[team], rq), sheet_name='查询', index=False,engine='xlsxwriter')
+            sql = '''REPLACE INTO gat_take_delivery(id,提货单号,提货时间,提货日期,提货物流,提货物流id,运输方式,货物类型,运输公司,运输班次,箱号,线路,箱数,统计,交货时间,报关资料发送结果,更新时间, 主號,航班號,记录时间)
+                     SELECT id,提货单号,提货时间,DATE_FORMAT(提货时间,'%Y-%m-%d') 提货日期,提货物流,提货物流id,运输方式,货物类型,IF(运输公司 = '',NULL,运输公司) 运输公司,IF(运输班次 = '',NULL,运输班次) 运输班次,箱号,线路,箱数,统计,
+                            IF(交货时间 = '',NULL,交货时间) 交货时间,报关资料发送结果,更新时间,NULL 主號,NULL 航班號,NOW() 记录时间
+                    FROM customer;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('写入成功......')
+        else:
+            df = None
+            print('****** 没有信息！！！')
+        return df
+
+
+    def _get_take_delivery_no(self):  # 进入订单检索界面
+        timeStart = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y-%m-%d')
+        start = datetime.datetime.now()
+        print('正在更新 头程提货单号 信息…………')
+        sql = '''SELECT id, 提货单号,主號, 航班號, 提货日期  
+                FROM {0} g 
+                WHERE g.运输公司 IS NULL AND g.`主號` IS NOT NULL AND g.`提货日期` >= '{1}';'''.format('gat_take_delivery', timeStart)
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        if df.empty:
+            print('无需要更新订单信息！！！')
+            return
+        for row in df.itertuples():
+            ord_id = getattr(row, '提货单号')
+            id = getattr(row, 'id')
+            take_delivery_no = getattr(row, '主號')
+            batch = getattr(row, '航班號')
+            self._upload_take_delivery_no(ord_id, id, take_delivery_no, batch)
+        print('单次更新耗时：', datetime.datetime.now() - start)
+
+    def _upload_take_delivery_no(self, ord_id, id, take_delivery_no, batch):  # 进入压单检索界面
+        print('+++正在查询订单信息中')
+        url = r'http://gwms-v3.giikin.cn/order/delivery/takedeliveryregister'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'http://gwms-v3.giikin.cn',
+                    'Referer': 'http://gwms-v3.giikin.cn/order/delivery/takeDeliveryRegister?id=8755'}
+        transport_type = batch[:2]
+        print('提货单号：' + ord_id, 'id：' + str(id), ';主號：' + take_delivery_no, '；航班號：'+transport_type, '；航班信息：'+batch)
+        data = {'id': id,
+                'take_delivery_no': take_delivery_no,
+                'transport_type': transport_type,
+                'batch': batch,
+                'departed_time': '',
+                'departed_place': '',
+                'arrived_time': '',
+                'arrived_place': '',
+                'product_type': ''
+                }
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
         print(req)
-        # max_count = req['count']
-        # if max_count != [] or max_count != 0:
-        #     ordersdict = []
-        #     try:
-        #         for result in req['data']:
-        #             ordersdict.append(result)
-        #     except Exception as e:
-        #         print('转化失败： 重新获取中', str(Exception) + str(e))
-        #     data = pd.json_normalize(ordersdict)
-        #     # print(data)
-        # else:
-        #     data = None
-        #     print('****** 没有信息！！！')
-        # return data
+        # print(req.text)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
+        # print(req)
+        # print(req['code'])
+        # print(req['comment'])
+        val = req['comment']
+        if val == 'success':
+            print('头程物流 更新成功！！！')
+        else:
+            print('头程物流 更新失败！！！')
+
 
 if __name__ == '__main__':
     m = QueryTwoLower('+86-18538110674', 'qyz35100416','84c3a0212a7b3de386b2a20d4a46b0ea','手0动')
@@ -765,9 +879,19 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
+    select = 2
+    if select == 1:
+        m.readFile(select)            # 上传每日压单核实结果
+        m.order_spec()       # 压单反馈  （备注（压单核实是否需要））
 
-    m.readFile()            # 上传每日压单核实结果
-    m.order_spec()       # 压单反馈  （备注（压单核实是否需要））
+    elif select == 2:
+        m.get_take_delivery_no()
+
+        m.readFile(select)
+        m._get_take_delivery_no()
+
+
+        # m. _upload_take_delivery_no(8637, '297-82680091', 'CI', 'CI6844')
 
 
     # m.get_billno_res()      # 改派无运单号
