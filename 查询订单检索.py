@@ -906,6 +906,96 @@ class QueryOrder(Settings, Settings_sso):
                          订单量 DESC;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
 
+        sql ='''SELECT s1.*
+              FROM (
+                    SELECT 币种,删除原因,COUNT(订单编号) AS 订单量
+                    FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',删除原因) 删单原因
+                                            FROM `cache` c
+                                            WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台')
+                                ) w
+                    GROUP BY 币种,删单原因
+              )  s1     
+                    WHERE 删除原因 IS NOT NULL AND 删除原因 <> ""
+                    GROUP BY 币种,删除原因
+              ORDER BY 订单量 desc
+              LIMIT 5;'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+
+        sql ='''SELECT *,concat(ROUND(SUM(IF(删除原因 IS NULL OR 删除原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
+                FROM (
+                      SELECT s1.*,总订单量,总删单量
+                      FROM (
+                            SELECT 币种,运营团队,删除原因,COUNT(订单编号) AS 订单量
+                            FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',删除原因) 删单原因
+                                  FROM `cache` c
+                            ) w
+                            GROUP BY 币种,运营团队,删单原因
+                      ) s1
+                      LEFT JOIN
+                      (
+                            SELECT 币种,运营团队,COUNT(订单编号) AS 总订单量,
+                                  SUM(IF(订单状态 = '已删除',1,0)) AS 总删单量
+                            FROM `cache` w
+                            GROUP BY 币种,运营团队
+                      ) s2 ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
+                ) s
+                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台')
+                GROUP BY 币种,运营团队,删除原因
+                ORDER BY FIELD(币种,'台币','港币','合计'),
+                         FIELD(运营团队,'神龙家族-港澳台','火凤凰-港澳台','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
+                         订单量 DESC;'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+
+        sql ='''SELECT *,concat(ROUND(SUM(IF(删除原因 IS NULL OR 删除原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
+                FROM (
+                      SELECT s1.*,总订单量,总删单量
+                      FROM (
+                            SELECT 币种,运营团队,删除原因,COUNT(订单编号) AS 订单量
+                            FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',删除原因) 删单原因
+                                  FROM `cache` c
+                            ) w
+                            GROUP BY 币种,运营团队,删单原因
+                      ) s1
+                      LEFT JOIN
+                      (
+                            SELECT 币种,运营团队,COUNT(订单编号) AS 总订单量,
+                                  SUM(IF(订单状态 = '已删除',1,0)) AS 总删单量
+                            FROM `cache` w
+                            GROUP BY 币种,运营团队
+                      ) s2 ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
+                ) s
+                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台')
+                GROUP BY 币种,运营团队,删除原因
+                ORDER BY FIELD(币种,'台币','港币','合计'),
+                         FIELD(运营团队,'神龙家族-港澳台','火凤凰-港澳台','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
+                         订单量 DESC;'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+
+        sql ='''SELECT *,concat(ROUND(SUM(IF(删除原因 IS NULL OR 删除原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
+                FROM (
+                      SELECT s1.*,总订单量,总删单量
+                      FROM (
+                            SELECT 币种,运营团队,删除原因,COUNT(订单编号) AS 订单量
+                            FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',删除原因) 删单原因
+                                  FROM `cache` c
+                            ) w
+                            GROUP BY 币种,运营团队,删单原因
+                      ) s1
+                      LEFT JOIN
+                      (
+                            SELECT 币种,运营团队,COUNT(订单编号) AS 总订单量,
+                                  SUM(IF(订单状态 = '已删除',1,0)) AS 总删单量
+                            FROM `cache` w
+                            GROUP BY 币种,运营团队
+                      ) s2 ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
+                ) s
+                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台')
+                GROUP BY 币种,运营团队,删除原因
+                ORDER BY FIELD(币种,'台币','港币','合计'),
+                         FIELD(运营团队,'神龙家族-港澳台','火凤凰-港澳台','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
+                         订单量 DESC;'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+
 
         print('正在写入excel…………')
 
