@@ -25,7 +25,7 @@ from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
 from 查询_已下架_压单 import QueryTwoLower
-
+from 查询订单检索 import QueryOrder
 
 # -*- coding:utf-8 -*-
 class QueryTwo(Settings, Settings_sso):
@@ -1286,7 +1286,7 @@ class QueryTwo(Settings, Settings_sso):
             last_month = str(day)
             print('正在检查 港台 ' + last_month + ' 号订单信息…………')
             start = datetime.datetime.now()
-            sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` = '2022-05-23';'''.format('gat_order_list', last_month)
+            sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` = '{1}';'''.format('gat_order_list', last_month)
             ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
             if ordersDict.empty:
                 print('无需要更新订单信息！！！')
@@ -1448,11 +1448,14 @@ if __name__ == '__main__':
         my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
 
     '''
-    # -----------------------------------------------自动获取 上架表保存 状态运行（四）-----------------------------------------
+    # -----------------------------------------------自动获取 昨日头程直发渠道的订单明细 状态运行（四）-----------------------------------------
     '''
-    # if int(select) == 99:
-    #     m.my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
-    #     m.my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
+    if int(select) == 99:
+        js = QueryOrder('+86-18538110674', 'qyz35100416','')
+        time_yesterday = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+        time_now = datetime.datetime.now().strftime('%Y-%m-%d')
+        js.order_TimeQueryT(time_yesterday,time_now, '',  '检查头程直发渠道|删单原因')
+
 
     '''
     # -----------------------------------------------测试部分-----------------------------------------

@@ -675,7 +675,7 @@ class QueryOrder(Settings, Settings_sso):
             print('查询已导出+++')
 
     # 二、时间-查询更新（新后台的获取 全部）
-    def order_TimeQueryT(self, timeStart, timeEnd, areaId):  # 进入订单检索界面
+    def order_TimeQueryT(self, timeStart, timeEnd, areaId, select):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
@@ -724,7 +724,7 @@ class QueryOrder(Settings, Settings_sso):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         max_count = req['data']['count']
         print(max_count)
-        if max_count > 500:
+        if max_count > 0:
             in_count = math.ceil(max_count/500)
             dlist = []
             n = 1
@@ -735,11 +735,24 @@ class QueryOrder(Settings, Settings_sso):
                 dlist.append(data)
             print('正在写入......')
             dp = df.append(dlist, ignore_index=True)
-            dp.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+            db = ''
+            if select.split('|')[0] == '检查头程直发渠道':
+                db1 = dp[(df['币种'].str.contains('台币'))]
+                db2 = db1[(db1['订单类型'].str.contains('直发下架|未下架未改派'))]
+                db = db2[(db2['物流渠道'].str.contains('台湾-铱熙无敌-新竹特货|台湾-铱熙无敌-新竹普货|台湾-立邦普货头程-易速配尾程'))]
+                wb_name = '检查头程直发渠道'
+            elif select.split('|')[1] == '删单原因':
+                db = dp[(dp['订单状态'].str.contains('已删除'))]
+                wb_name = '删单原因'
+            else:
+                wb_name ='时间查询'
+
+            db.to_excel('G:\\输出文件\\订单检索-{0}{1}.xlsx'.format(wb_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
             print('查询已导出+++')
         else:
-            df.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
-            print('查询已导出+++')
+            print('无信息+++')
+
+
 
     def _timeQuery(self, timeStart, timeEnd, n, areaId):  # 进入订单检索界面
         # print('......正在查询信息中......')
