@@ -821,7 +821,7 @@ class QueryTwoLower(Settings, Settings_sso):
         print('正在更新 头程提货单号 信息…………')
         sql = '''SELECT id, 提货单号,主號, 航班號, 提货日期  
                 FROM {0} g 
-                WHERE g.运输公司 IS NULL AND g.`主號` IS NOT NULL AND g.`提货日期` >= '{1}';'''.format('gat_take_delivery', timeStart)
+                WHERE g.运输公司 IS NULL AND g.`航班號` IS NOT NULL AND g.`提货日期` >= '{1}';'''.format('gat_take_delivery', timeStart)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         if df.empty:
             print('无需要更新订单信息！！！')
@@ -888,6 +888,7 @@ if __name__ == '__main__':
         m.get_take_delivery_no()
 
         m.readFile(select)
+
         m._get_take_delivery_no()
 
 

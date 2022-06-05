@@ -742,7 +742,8 @@ class QueryOrder(Settings, Settings_sso):
                 db = db2[(db2['物流渠道'].str.contains('台湾-铱熙无敌-新竹特货|台湾-铱熙无敌-新竹普货|台湾-立邦普货头程-易速配尾程'))]
                 wb_name = '检查头程直发渠道'
             elif select.split('|')[1] == '删单原因':
-                db = dp[(dp['订单状态'].str.contains('已删除'))]
+                db1 = dp[(dp['订单状态'].str.contains('已删除'))]
+                db = db1[(db1['运营团队'].str.contains('神龙家族-港澳台|火凤凰-港澳台|火凤凰-港台(繁体)'))]
                 wb_name = '删单原因'
             else:
                 wb_name ='时间查询'
