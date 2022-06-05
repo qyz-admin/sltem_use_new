@@ -1372,7 +1372,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 9009
+    select = 9889
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '7e00200b074b38be93d83578da27e666'
@@ -1450,9 +1450,9 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 昨日头程直发渠道的订单明细 状态运行（四）-----------------------------------------
     '''
-    if int(select) == 99:
+    if int(select) == 9889:
         js = QueryOrder('+86-18538110674', 'qyz35100416','')
-        time_yesterday = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+        time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         time_now = datetime.datetime.now().strftime('%Y-%m-%d')
         js.order_TimeQueryT(time_yesterday,time_now, '',  '检查头程直发渠道|删单原因')
 
@@ -1460,14 +1460,14 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    handle = '手0动'
-    login_TmpCode = '7e00200b074b38be93d83578da27e666'
-    m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode, handle)
-
-
-    begin = datetime.date(2022, 5, 23)
-    end = datetime.date(2022, 5, 24)
-    m.order_check(begin, end)
+    # handle = '手0动'
+    # login_TmpCode = '7e00200b074b38be93d83578da27e666'
+    # m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode, handle)
+    #
+    #
+    # begin = datetime.date(2022, 5, 23)
+    # end = datetime.date(2022, 5, 24)
+    # m.order_check(begin, end)
 
 
     # timeStart, timeEnd = m.readInfo('物流问题件')

@@ -676,7 +676,7 @@ class QueryOrder(Settings, Settings_sso):
 
     # 二、时间-查询更新（新后台的获取 全部）
     def order_TimeQueryT(self, timeStart, timeEnd, areaId, select):  # 进入订单检索界面
-        print('+++正在查询订单信息中')
+        print('+++正在查询 ' + timeStart + ' 到 ' + timeEnd + ' 号订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'origin': 'https: // gimp.giikin.com',
@@ -726,29 +726,38 @@ class QueryOrder(Settings, Settings_sso):
         print(max_count)
         if max_count > 0:
             in_count = math.ceil(max_count/500)
+            df = pd.DataFrame([])
             dlist = []
             n = 1
             while n < in_count:  # 这里用到了一个while循环，穿越过来的
                 data = self._timeQuery(timeStart, timeEnd, n, areaId)
-                print('查询第 ' + str(n) + ' 页中，剩余查询次数' + str(in_count - n))
+                print('查询第 ' + str(n+1) + ' 页中，剩余查询次数' + str(in_count - n-1))
                 n = n + 1
                 dlist.append(data)
             print('正在写入......')
             dp = df.append(dlist, ignore_index=True)
-            db = ''
-            if select.split('|')[0] == '检查头程直发渠道':
-                db1 = dp[(df['币种'].str.contains('台币'))]
-                db2 = db1[(db1['订单类型'].str.contains('直发下架|未下架未改派'))]
-                db = db2[(db2['物流渠道'].str.contains('台湾-铱熙无敌-新竹特货|台湾-铱熙无敌-新竹普货|台湾-立邦普货头程-易速配尾程'))]
-                wb_name = '检查头程直发渠道'
-            elif select.split('|')[1] == '删单原因':
-                db1 = dp[(dp['订单状态'].str.contains('已删除'))]
-                db = db1[(db1['运营团队'].str.contains('神龙家族-港澳台|火凤凰-港澳台|火凤凰-港台(繁体)'))]
-                wb_name = '删单原因'
+            if select != '':
+                if select.split('|')[0] == '检查头程直发渠道':
+                    db1 = dp[(dp['币种'].str.contains('台币'))]
+                    db2 = db1[(db1['订单类型'].str.contains('直发下架|未下架未改派'))]
+                    db = db2[(db2['物流渠道'].str.contains('台湾-铱熙无敌-新竹特货|台湾-铱熙无敌-新竹普货|台湾-立邦普货头程-易速配尾程'))]
+                    print(db)
+                    wb_name = '检查头程直发渠道'
+                    db.to_excel('G:\\输出文件\\订单检索-{0}{1}.xlsx'.format(wb_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+                if select.split('|')[1] == '删单原因':
+                    db1 = dp[(dp['订单状态'].str.contains('已删除'))]
+                    db2 = db1[(db1['运营团队'].str.contains('神龙家族-港澳台|火凤凰-港澳台|火凤凰-港台(繁体)'))]
+                    wb_name = '删单原因'
+
+                    print('正在导入临时表中......')
+                    db2 = db2[['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '收货人', '联系电话', '拉黑率','配送地址', '应付金额', '数量',
+                               '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型', '订单类型', '物流状态',  '重量',
+                               '删除原因', '问题原因', '下单人', '备注', 'IP', '体积', '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
+                               '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间']]
+                    db2.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
             else:
                 wb_name ='时间查询'
-
-            db.to_excel('G:\\输出文件\\订单检索-{0}{1}.xlsx'.format(wb_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+                dp.to_excel('G:\\输出文件\\订单检索-{0}{1}.xlsx'.format(wb_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
             print('查询已导出+++')
         else:
             print('无信息+++')
@@ -864,6 +873,8 @@ class QueryOrder(Settings, Settings_sso):
             print('------查询为空')
         print('******本批次查询成功')
         return df
+
+
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
