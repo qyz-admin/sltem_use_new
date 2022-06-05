@@ -729,32 +729,36 @@ class QueryOrder(Settings, Settings_sso):
             df = pd.DataFrame([])
             dlist = []
             n = 1
-            while n < in_count:  # 这里用到了一个while循环，穿越过来的
+            while n <= in_count:  # 这里用到了一个while循环，穿越过来的
+                print('查询第 ' + str(n) + ' 页中，剩余查询次数' + str(in_count - n))
                 data = self._timeQuery(timeStart, timeEnd, n, areaId)
-                print('查询第 ' + str(n+1) + ' 页中，剩余查询次数' + str(in_count - n-1))
-                n = n + 1
                 dlist.append(data)
+                n = n + 1
+
             print('正在写入......')
             dp = df.append(dlist, ignore_index=True)
+            dp.to_excel('G:\\输出文件\\订单检索-{0}{1}.xlsx'.format(99, rq), sheet_name='查询', index=False,
+                        engine='xlsxwriter')
             if select != '':
                 if select.split('|')[0] == '检查头程直发渠道':
                     db1 = dp[(dp['币种'].str.contains('台币'))]
                     db2 = db1[(db1['订单类型'].str.contains('直发下架|未下架未改派'))]
-                    db = db2[(db2['物流渠道'].str.contains('台湾-铱熙无敌-新竹特货|台湾-铱熙无敌-新竹普货|台湾-立邦普货头程-易速配尾程'))]
-                    print(db)
+                    db3 = db2[(db2['订单状态'].str.contains('已转采购|截单中(面单已打印,等待仓库审核)|待审核|待发货|问题订单|问题订单审核|截单'))]
+                    db4 = db3[(db3['物流渠道'].str.contains('台湾-铱熙无敌-新竹特货|台湾-铱熙无敌-新竹普货|台湾-立邦普货头程-易速配尾程| '))]
+                    # print(db)
                     wb_name = '检查头程直发渠道'
-                    db.to_excel('G:\\输出文件\\订单检索-{0}{1}.xlsx'.format(wb_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+                    db4.to_excel('G:\\输出文件\\订单检索-{0}{1}.xlsx'.format(wb_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
                 if select.split('|')[1] == '删单原因':
-                    db1 = dp[(dp['订单状态'].str.contains('已删除'))]
-                    db2 = db1[(db1['运营团队'].str.contains('神龙家族-港澳台|火凤凰-港澳台|火凤凰-港台(繁体)'))]
+                    # db1 = dp[(dp['订单状态'].str.contains('已删除'))]
+                    db0 = dp[(dp['运营团队'].str.contains('神龙家族-港澳台|火凤凰-港澳台|火凤凰-港台(繁体)'))]
                     wb_name = '删单原因'
 
                     print('正在导入临时表中......')
-                    db2 = db2[['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '收货人', '联系电话', '拉黑率','配送地址', '应付金额', '数量',
+                    db0 = db0[['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '收货人', '联系电话', '拉黑率','配送地址', '应付金额', '数量',
                                '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型', '订单类型', '物流状态',  '重量',
-                               '删除原因', '问题原因', '下单人', '备注', 'IP', '体积', '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
-                               '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间']]
-                    db2.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+                               '删除原因', '问题原因', '下单人', '备注', 'IP', '体积', '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库',
+                               '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '更新时间']]
+                    db0.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
             else:
                 wb_name ='时间查询'
                 dp.to_excel('G:\\输出文件\\订单检索-{0}{1}.xlsx'.format(wb_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
@@ -875,6 +879,37 @@ class QueryOrder(Settings, Settings_sso):
         return df
 
 
+    def del_order(self):
+        print('+++正在分析 昨日 删单原因中')
+        sql ='''SELECT *,concat(ROUND(SUM(IF(删除原因 IS NULL OR 删除原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
+                FROM (
+                      SELECT s1.*,总订单量,总删单量
+                      FROM (
+                            SELECT 币种,运营团队,删除原因,COUNT(订单编号) AS 订单量
+                            FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',删除原因) 删单原因
+                                  FROM `cache` c
+                            ) w
+                            GROUP BY 币种,运营团队,删单原因
+                      ) s1
+                      LEFT JOIN
+                      (
+                            SELECT 币种,运营团队,COUNT(订单编号) AS 总订单量,
+                                  SUM(IF(订单状态 = '已删除',1,0)) AS 总删单量
+                            FROM `cache` w
+                            GROUP BY 币种,运营团队
+                      ) s2 ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
+                ) s
+                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台')
+                GROUP BY 币种,运营团队,删除原因
+                ORDER BY FIELD(币种,'台币','港币','合计'),
+                         FIELD(运营团队,'神龙家族-港澳台','火凤凰-港澳台','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
+                         订单量 DESC;'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+
+
+        print('正在写入excel…………')
+
+        print()
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")

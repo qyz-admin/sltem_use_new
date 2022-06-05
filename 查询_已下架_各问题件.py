@@ -1453,7 +1453,7 @@ if __name__ == '__main__':
     if int(select) == 9889:
         js = QueryOrder('+86-18538110674', 'qyz35100416','')
         time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        time_now = datetime.datetime.now().strftime('%Y-%m-%d')
+        time_now = time_yesterday
         js.order_TimeQueryT(time_yesterday,time_now, '',  '检查头程直发渠道|删单原因')
 
 
