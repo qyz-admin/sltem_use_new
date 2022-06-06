@@ -45,15 +45,15 @@ if team in ('ga0t', 'slsc', 'sl_r9b'):
 else:
     # 更新时间
     data_begin = datetime.date(2022, 4, 1)
-    begin = datetime.date(2022, 4, 1)
-    end = datetime.date(2022, 6, 1)
+    begin = datetime.date(2022, 5, 1)
+    end = datetime.date(2022, 6, 6)
     # 导出时间
     month_last = '2022-04-01'
-    month_yesterday = '2022-05-31'
+    month_yesterday = '2022-06-05'
     month_begin = '2021-03-01'
 print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
-print('****** 导出起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
+print('****** 导出      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
 
 # 库的引用
 path = match[team]
@@ -109,15 +109,15 @@ print('获取-更新 耗时：', datetime.datetime.now() - start)
 if team == 'gat' and updata == '全部':
     print('---------------------------------- 单点更新部分：--------------------------------')
     handle = '手0动'
-    sso = Query_sso_updata('+86-18538110674', 'qyz35100416', '1343', '32495f91f95b348d8c6298c1492e56b0', handle)
+    # sso = Query_sso_updata('+86-18538110674', 'qyz35100416', '1343', '32495f91f95b348d8c6298c1492e56b0', handle)
     # sso.readFormHost('gat', '导入')                       # 导入新增的订单 line运营  手动导入
     # for i in range((end - begin).days):  # 按天循环获取订单状态
     #     day = begin + datetime.timedelta(days=i)
     #     day_time = str(day)
     #     sso.orderInfo_append(day_time, day_time, '')               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
 
-    sso.orderInfo_append(str(begin), str(end), 179)               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
-    sso.orderInfo(team, updata, begin, end)
+    # sso.orderInfo_append(str(begin), str(end), 179)               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
+    # sso.orderInfo(team, updata, begin, end)
     print('更新耗时：', datetime.datetime.now() - start)
 
     print('---------------------------------- 导出部分：--------------------------------')

@@ -4780,11 +4780,7 @@ class QueryUpdate(Settings):
         print('正在获取---10、同产品各月的对比…………')
         sql51 = '''SELECT *
                 FROM (SELECT IFNULL(家族, '总计') 家族, IFNULL(地区, '总计') 地区, IFNULL(产品id, '总计') 产品id,  IFNULL(产品名称, '总计') 产品名称, IFNULL(父级分类, '总计') 父级分类,
-						    SUM(总单量) 总单量,
-						SUM(01总量) 01总单量,
-							concat(ROUND(SUM(01签收量) / SUM(01总量) * 100,2),'%') as 01总计签收,
-							concat(ROUND(SUM(01签收量) / SUM(01完成量) * 100,2),'%') as 01完成签收,
-							concat(ROUND(SUM(01完成量) / SUM(01总量) * 100,2),'%') as 01完成占比,						
+						    SUM(总单量) 总单量,					
 						SUM(02总量) 02总单量,
 							concat(ROUND(SUM(02签收量) / SUM(02总量) * 100,2),'%') as 02总计签收,
 							concat(ROUND(SUM(02签收量) / SUM(02完成量) * 100,2),'%') as 02完成签收,
@@ -4832,12 +4828,13 @@ class QueryUpdate(Settings):
 						SUM(13总量) 13总单量,
 							concat(ROUND(SUM(12签收量) / SUM(12总量) * 100,2),'%') as 13总计签收,
 							concat(ROUND(SUM(12签收量) / SUM(12完成量) * 100,2),'%') as 13完成签收,
-							concat(ROUND(SUM(12完成量) / SUM(12总量) * 100,2),'%') as 13完成占比
+							concat(ROUND(SUM(12完成量) / SUM(12总量) * 100,2),'%') as 13完成占比,
+						SUM(14总量) 14总单量,
+							concat(ROUND(SUM(14签收量) / SUM(14总量) * 100,2),'%') as 14总计签收,
+							concat(ROUND(SUM(14签收量) / SUM(14完成量) * 100,2),'%') as 14完成签收,
+							concat(ROUND(SUM(14完成量) / SUM(14总量) * 100,2),'%') as 14完成占比
                     FROM(SELECT 家族,币种 地区, 产品id, 产品名称, 父级分类,
                                 COUNT(cx.`订单编号`) as 总单量,
-                            SUM(IF(年月 = 202105,1,0)) as 01总量,
-                                SUM(IF(年月 = 202105 AND 最终状态 = "已签收",1,0)) as 01签收量,
-                                SUM(IF(年月 = 202105 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 01完成量,	
                             SUM(IF(年月 = 202106,1,0)) as 02总量,
                                 SUM(IF(年月 = 202106 AND 最终状态 = "已签收",1,0)) as 02签收量,
                                 SUM(IF(年月 = 202106 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 02完成量,					
@@ -4873,7 +4870,10 @@ class QueryUpdate(Settings):
                                 SUM(IF(年月 = 202204 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 12完成量,
                             SUM(IF(年月 = 202205,1,0)) as 13总量,
                                 SUM(IF(年月 = 202205 AND 最终状态 = "已签收",1,0)) as 13签收量,
-                                SUM(IF(年月 = 202205 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 13完成量							
+                                SUM(IF(年月 = 202205 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 13完成量,
+                            SUM(IF(年月 = 202206,1,0)) as 14总量,
+                                SUM(IF(年月 = 202206 AND 最终状态 = "已签收",1,0)) as 14签收量,
+                                SUM(IF(年月 = 202206 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 14完成量					
                         FROM gat_zqsb_cache cx
                         where cx.`运单编号` is not null AND cx.团队 NOT IN ({0})
                         GROUP BY cx.家族,cx.币种,cx.产品id
@@ -9434,7 +9434,7 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    if team == 'ga0t':
+    if team == 'gat':
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
@@ -9448,7 +9448,7 @@ if __name__ == '__main__':
     write = '本期'
     m.readFormHost(team, write, last_time)                            # 更新签收表---港澳台（一）
 
-    m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
+    # m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
     m.qsb_new(team, month_old)                                    # 获取-每日-报表
     m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收
     m.phone_report()                                        # 获取电话核实日报表 周报表

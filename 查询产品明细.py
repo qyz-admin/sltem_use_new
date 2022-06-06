@@ -345,11 +345,14 @@ class QueryTwoT(Settings, Settings_sso):
             print('转化失败： 重新获取中', str(Exception) + str(e))
             self.orderInfoQuery(ord)
         data = pd.json_normalize(ordersDict)
-        data['name'] = data['name'].str.strip()
-        data['cate_id'] = data['cate_id'].str.strip()
-        data['second_cate_id'] = data['second_cate_id'].str.strip()
-        data['third_cate_id'] = data['third_cate_id'].str.strip()
-        data = data[['id', 'name', 'cate_id', 'second_cate_id', 'third_cate_id']]
+        try:
+            data['name'] = data['name'].str.strip()
+            data['cate_id'] = data['cate_id'].str.strip()
+            data['second_cate_id'] = data['second_cate_id'].str.strip()
+            data['third_cate_id'] = data['third_cate_id'].str.strip()
+            data = data[['id', 'name', 'cate_id', 'second_cate_id', 'third_cate_id']]
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         return data

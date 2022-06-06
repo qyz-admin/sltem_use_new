@@ -764,7 +764,7 @@ class QueryTwoLower(Settings, Settings_sso):
 
     def get_take_delivery_no(self):  # 进入 头程物流跟踪 界面
         print('+++正在查询头程物流信息中')
-        timeStart = (datetime.datetime.now() - datetime.timedelta(days=15)).strftime('%Y-%m-%d')
+        timeStart = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
         timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
         url = r'http://gwms-v3.giikin.cn/order/delivery/firstLegTrace'
         r_header = {
@@ -815,7 +815,7 @@ class QueryTwoLower(Settings, Settings_sso):
         return df
 
 
-    def _get_take_delivery_no(self):  # 进入订单检索界面
+    def _get_take_delivery_no(self):  # 进入头程检索界面
         timeStart = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y-%m-%d')
         start = datetime.datetime.now()
         print('正在更新 头程提货单号 信息…………')
@@ -834,7 +834,7 @@ class QueryTwoLower(Settings, Settings_sso):
             self._upload_take_delivery_no(ord_id, id, take_delivery_no, batch)
         print('单次更新耗时：', datetime.datetime.now() - start)
 
-    def _upload_take_delivery_no(self, ord_id, id, take_delivery_no, batch):  # 进入压单检索界面
+    def _upload_take_delivery_no(self, ord_id, id, take_delivery_no, batch):  # 进入头程检索界面
         print('+++正在更新中')
         url = r'http://gwms-v3.giikin.cn/order/delivery/takedeliveryregister'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -879,18 +879,20 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
-    select = 2
+    select = 1
     if select == 1:
         m.readFile(select)            # 上传每日压单核实结果
         m.order_spec()       # 压单反馈  （备注（压单核实是否需要））
 
     elif select == 2:
-        m.get_take_delivery_no()
-
         m.readFile(select)
-
         m._get_take_delivery_no()
 
+
+    elif select == 3:
+        m.get_take_delivery_no()
+        m.readFile(select)
+        m._get_take_delivery_no()
 
         # m. _upload_take_delivery_no(8637, '297-82680091', 'CI', 'CI6844')
 
