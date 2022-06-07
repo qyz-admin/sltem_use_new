@@ -816,7 +816,7 @@ class QueryTwoLower(Settings, Settings_sso):
 
 
     def _get_take_delivery_no(self):  # 进入头程检索界面
-        timeStart = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y-%m-%d')
+        timeStart = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
         start = datetime.datetime.now()
         print('正在更新 头程提货单号 信息…………')
         sql = '''SELECT id, 提货单号,主號, 航班號, 提货日期  
@@ -857,7 +857,7 @@ class QueryTwoLower(Settings, Settings_sso):
                    'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
-        print(req)
+        # print(req)
         # print(req.text)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
@@ -879,7 +879,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
-    select = 1
+    select = 2
     if select == 1:
         m.readFile(select)            # 上传每日压单核实结果
         m.order_spec()       # 压单反馈  （备注（压单核实是否需要））

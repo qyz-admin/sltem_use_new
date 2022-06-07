@@ -24,7 +24,7 @@ from settings_sso import Settings_sso
 from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
-from 查询_已下架_压单 import QueryTwoLower
+from 查询_已下架_压单_头程导入提单号 import QueryTwoLower
 from 查询订单检索 import QueryOrder
 
 # -*- coding:utf-8 -*-
@@ -1372,8 +1372,8 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 9889
-    if int(select) == 9009:
+    select = 99
+    if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '7e00200b074b38be93d83578da27e666'
         m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode,handle)
@@ -1395,31 +1395,32 @@ if __name__ == '__main__':
             timeStart, timeEnd = m.readInfo('派送问题件')
             m.waybill_deliveryList(timeStart, timeEnd)                        # 查询更新-派送问题件
 
-        elif int(select) == 9009:
+        elif int(select) == 99:
             timeStart, timeEnd = m.readInfo('物流问题件')
             m.waybill_InfoQuery('2021-12-01', '2021-12-01')             # 查询更新-物流问题件
-            # m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
-            m.waybill_InfoQuery('2022-05-20', '2022-06-05')                     # 查询更新-物流问题件
+            m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
+            # m.waybill_InfoQuery('2022-05-20', '2022-06-05')                     # 查询更新-物流问题件
 
-            # timeStart, timeEnd = m.readInfo('物流客诉件')
-            # m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
-            m.waybill_Query('2022-05-20', '2022-06-05')                      # 查询更新-物流客诉件
+            timeStart, timeEnd = m.readInfo('物流客诉件')
+            m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
+            # m.waybill_Query('2022-05-20', '2022-06-05')                      # 查询更新-物流客诉件
 
-            # timeStart, timeEnd = m.readInfo('退换货表')
+            timeStart, timeEnd = m.readInfo('退换货表')
             for team in [1, 2]:
-                # m.orderReturnList_Query(team, timeStart, timeEnd)       # 查询更新-退换货
-                m.orderReturnList_Query(team, '2022-05-20', '2022-06-05')       # 查询更新-退换货
+                m.orderReturnList_Query(team, timeStart, timeEnd)       # 查询更新-退换货
+                # m.orderReturnList_Query(team, '2022-05-20', '2022-06-05')       # 查询更新-退换货
 
-            # timeStart, timeEnd = m.readInfo('拒收问题件')
-            # m.order_js_Query(timeStart, timeEnd)                        # 查询更新-拒收问题件-·123456
-            m.order_js_Query('2022-05-20', '2022-06-05')                      # 查询更新-拒收问题件-·123456
+            timeStart, timeEnd = m.readInfo('拒收问题件')
+            m.order_js_Query(timeStart, timeEnd)                        # 查询更新-拒收问题件-·123456
+            # m.order_js_Query('2022-05-20', '2022-06-05')                      # 查询更新-拒收问题件-·123456
 
-            # timeStart, timeEnd = m.readInfo('派送问题件')
-            # m.waybill_deliveryList(timeStart, timeEnd)                        # 查询更新-派送问题件
-            m.waybill_deliveryList('2022-05-20', '2022-06-05')                       # 查询更新-派送问题件
+            timeStart, timeEnd = m.readInfo('派送问题件')
+            m.waybill_deliveryList(timeStart, timeEnd)                        # 查询更新-派送问题件、
+            # m.waybill_deliveryList('2022-05-20', '2022-06-05')                       # 查询更新-派送问题件
 
-            # timeStart, timeEnd = m.readInfo('采购异常')
-            # m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
+            timeStart, timeEnd = m.readInfo('采购异常')
+            m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
+
             # m.ssale_Query('2022-04-28', datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
             # m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
             # m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
@@ -1434,7 +1435,6 @@ if __name__ == '__main__':
         lw = QueryTwoLower('+86-18538110674', 'qyz35100416', login_TmpCode,handle)
         start: datetime = datetime.datetime.now()
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 自动时 输入的时间无效；切为不自动时，有效
-
         lw.get_take_delivery_no()                             # 进入 头程物流跟踪 界面； 获取最近10天的信息
 
         # lw.gp_order()                                         # 改派未发货查询
@@ -1452,7 +1452,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 昨日头程直发渠道的订单明细 状态运行（四）-----------------------------------------
     '''
-    if int(select) == 98089:
+    if int(select) == 333:
         js = QueryOrder('+86-18538110674', 'qyz35100416','')
         time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         time_now = time_yesterday
