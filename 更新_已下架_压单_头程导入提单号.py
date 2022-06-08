@@ -708,7 +708,7 @@ class QueryTwoLower(Settings, Settings_sso):
 
     def bulid_file(self):
         print('正在生成每日新文件夹......')
-        time_path: datetime = datetime.datetime.now()
+        time_path: datetime = datetime.datetime.now() + datetime.timedelta(days=1)
         mkpath = "F:\\神龙签收率\\" + time_path.strftime('%m.%d')
         isExists = os.path.exists(mkpath)
         if not isExists:
@@ -873,6 +873,7 @@ class QueryTwoLower(Settings, Settings_sso):
 
 if __name__ == '__main__':
     m = QueryTwoLower('+86-18538110674', 'qyz35100416','84c3a0212a7b3de386b2a20d4a46b0ea','手0动')
+    # m.bulid_file()
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
 

@@ -24,7 +24,7 @@ from settings_sso import Settings_sso
 from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
-from 查询_已下架_压单_头程导入提单号 import QueryTwoLower
+from 更新_已下架_压单_头程导入提单号 import QueryTwoLower
 from 查询订单检索 import QueryOrder
 
 # -*- coding:utf-8 -*-
@@ -238,7 +238,7 @@ class QueryTwo(Settings, Settings_sso):
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
                 # print(result)
-                print(result['order_number'])
+                # print(result['order_number'])
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
                 result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
                 if ';' in result['traceRecord']:
@@ -1453,18 +1453,18 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 昨日头程直发渠道的订单明细 状态运行（四）-----------------------------------------
     '''
     if int(select) == 333:
-        js = QueryOrder('+86-18538110674', 'qyz35100416','')
+        js = QueryOrder('+86-18538110674', 'qyz35100416', '')
         time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         time_now = time_yesterday
-        js.order_TimeQueryT(time_yesterday,time_now, '',  '检查头程直发渠道|删单原因')
+        js.order_TimeQueryT(time_yesterday,time_now, '',  '检查头程直发渠道|删单原0因')
 
 
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    handle = '手0动'
-    login_TmpCode = '7e00200b074b38be93d83578da27e666'
-    m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode, handle)
+    # handle = '手0动'
+    # login_TmpCode = '7e00200b074b38be93d83578da27e666'
+    # m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode, handle)
     #
     #
     # begin = datetime.date(2022, 5, 23)
@@ -1474,7 +1474,7 @@ if __name__ == '__main__':
 
     # timeStart, timeEnd = m.readInfo('物流问题件')
     #
-    m.waybill_InfoQuery('2022-05-31', '2022-06-05')         # 查询更新-物流问题件
+    # m.waybill_InfoQuery('2022-05-31', '2022-06-05')         # 查询更新-物流问题件
 
     # timeStart, timeEnd = m.readInfo('派送问题件')
     # m.waybill_deliveryList(timeStart, timeEnd)         # 查询更新-派送问题件

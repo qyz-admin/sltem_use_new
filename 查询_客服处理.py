@@ -763,7 +763,7 @@ class QueryUpdate(Settings):
 
         print('正在获取 第二部分 信息…………')
         print('正在获取 总体单量 信息…………')
-        sql5 = '''SELECT s1.`年月`,s1.`币种`,s1.`团队`,
+        sql5 = '''SELECT s3.`年月`,s3.`币种`,s3.`所属团队`,
                         IF(s1.`0%单量` = 0,NULL,s1.`0%单量`) '0%单量',
                         IF(s1.`<10%单量` = 0,NULL,s1.`<10%单量`) '<10%单量',
                         IF(s1.`<20%单量` = 0,NULL,s1.`<20%单量`) '<20%单量',
@@ -783,7 +783,12 @@ class QueryUpdate(Settings):
                         IF(s2.`不全款单量` = 0,NULL,s2.`不全款单量`) '不全款单量',
                         IF(s2.`退货单量` = 0,NULL,s2.`退货单量`) '换货单量',
                         s1.`换货单量` + s2.退货单量 as 退换补单量,工单单量
-                FROM (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'总体' 团队,
+                FROM (SELECT DATE_FORMAT(提交时间,'%Y%m') as 年月,币种,'总体' 所属团队,COUNT(订单编号) 工单单量
+                        FROM 工单收集表
+                        GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种
+                ) s3
+				LEFT JOIN
+				    (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'总体' 团队,
                             SUM(IF(`占比` = '0%',1,0)) AS '0%单量',
                             SUM(IF(`占比` = '<10%',1,0)) AS '<10%单量',
                             SUM(IF(`占比` = '<20%',1,0)) AS '<20%单量',
@@ -803,8 +808,8 @@ class QueryUpdate(Settings):
                                 FROM 换货表 th WHERE th.`币种` IN ('台币','港币')
                             ) th
                         GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种
-                    ) s1
-                JOIN
+                ) s1 ON s1.年月 = s3.年月 AND s1.币种 = s3.币种 AND s1.团队 = s3.所属团队				
+                LEFT JOIN		
                     (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'总体' 团队,
                         SUM(IF(`占比` = '0%',1,0)) AS '0%单量',
                         SUM(IF(`占比` = '<10%',1,0)) AS '<10%单量',
@@ -825,16 +830,11 @@ class QueryUpdate(Settings):
                             FROM 退货表 th WHERE th.`币种` IN ('台币','港币')
                         ) th
                     GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种
-                    ) s2 ON s1.年月 = s2.年月 AND s1.币种 = s2.币种 AND s1.团队 = s2.团队
-                JOIN
-                    (SELECT DATE_FORMAT(提交时间,'%Y%m') as 年月,币种,'总体' 所属团队,COUNT(订单编号) 工单单量
-                        FROM 工单收集表
-                        GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种
-                    ) s3 ON s1.年月 = s3.年月 AND s1.币种 = s3.币种 AND s1.团队 = s3.所属团队;'''
+                ) s2 ON s2.年月 = s3.年月 AND s2.币种 = s3.币种 AND s2.团队 = s3.所属团队;'''
         df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
         listT.append(df5)
         print('正在获取 总体克隆金额 信息…………')
-        sql6 = '''SELECT s1.`年月`,s1.`币种`,s1.`团队`,
+        sql6 = '''SELECT s3.`年月`,s3.`币种`,s3.`所属团队`,
                         IF(s1.`0%单量` = 0,NULL,s1.`0%单量`) '0%单量',
                         IF(s1.`<10%单量` = 0,NULL,s1.`<10%单量`) '<10%单量',
                         IF(s1.`<20%单量` = 0,NULL,s1.`<20%单量`) '<20%单量',
@@ -855,7 +855,12 @@ class QueryUpdate(Settings):
                         IF(s2.`退货单量` = 0,NULL,s2.`退货单量`) '换货单量',
                         s1.`换货单量` + s2.退货单量 as 退换补单量, 
                         s1.`换货单量` + s2.退货单量 + 挽回金额 as 工单单量
-                FROM (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'总体' 团队,
+                FROM ( SELECT DATE_FORMAT(提交时间,'%Y%m') as 年月,币种,'总体' 所属团队, SUM(订单金额) 挽回金额
+                        FROM 工单收集表
+                        GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种
+                ) s3
+				LEFT JOIN	
+					(SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'总体' 团队,
                             SUM(IF(`占比` = '0%',克隆后金额,0)) AS '0%单量',
                             SUM(IF(`占比` = '<10%',克隆后金额,0)) AS '<10%单量',
                             SUM(IF(`占比` = '<20%',克隆后金额,0)) AS '<20%单量',
@@ -875,19 +880,19 @@ class QueryUpdate(Settings):
                                 FROM 换货表 th WHERE th.`币种` IN ('台币','港币')
                             ) th
                         GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种
-                ) s1
-                JOIN
-                (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'总体' 团队,
-                        SUM(IF(`占比` = '0%',退款金额,0)) AS '0%单量',
-                        SUM(IF(`占比` = '<10%',退款金额,0)) AS '<10%单量',
-                        SUM(IF(`占比` = '<20%',退款金额,0)) AS '<20%单量',
-                        SUM(IF(`占比` = '<30%',退款金额,0)) AS '<30%单量',
-                        SUM(IF(`占比` = '<40%',退款金额,0)) AS '<40%单量',
-                        SUM(IF(`占比` = '<50%',退款金额,0)) AS '<50%单量',
-                        SUM(IF(`占比` = '>=50%',退款金额,0)) AS '>=50%单量',
-                        SUM(IF(`占比` != '0%',退款金额,0)) AS '不全款单量',
-                        SUM(退款金额) 退货单量
-                FROM ( SELECT *,IF(退款金额/金额 = 0 OR 退款金额/金额 IS null,'0%',
+                ) s1 ON s1.年月 = s3.年月 AND s1.币种 = s3.币种 AND s1.团队 = s3.所属团队
+                LEFT JOIN
+                    (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'总体' 团队,
+                            SUM(IF(`占比` = '0%',退款金额,0)) AS '0%单量',
+                            SUM(IF(`占比` = '<10%',退款金额,0)) AS '<10%单量',
+                            SUM(IF(`占比` = '<20%',退款金额,0)) AS '<20%单量',
+                            SUM(IF(`占比` = '<30%',退款金额,0)) AS '<30%单量',
+                            SUM(IF(`占比` = '<40%',退款金额,0)) AS '<40%单量',
+                            SUM(IF(`占比` = '<50%',退款金额,0)) AS '<50%单量',
+                            SUM(IF(`占比` = '>=50%',退款金额,0)) AS '>=50%单量',
+                            SUM(IF(`占比` != '0%',退款金额,0)) AS '不全款单量',
+                            SUM(退款金额) 退货单量
+                    FROM ( SELECT *,IF(退款金额/金额 = 0 OR 退款金额/金额 IS null,'0%',
                                 IF(退款金额/金额 > 0 AND 退款金额/金额 <= 0.1,'<10%',
                                 IF(退款金额/金额 > 0.1 AND 退款金额/金额 <= 0.2,'<20%',
                                 IF(退款金额/金额 > 0.2 AND 退款金额/金额 <= 0.3,'<30%',
@@ -896,17 +901,12 @@ class QueryUpdate(Settings):
                                 IF(退款金额/金额 > 0.5,'>=50%',退款金额/金额))))))) as 占比
                         FROM 退货表 th WHERE th.`币种` IN ('台币','港币')
                     ) th
-                GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种
-                ) s2 ON s1.年月 = s2.年月 AND s1.币种 = s2.币种 AND s1.团队 = s2.团队
-                JOIN
-                ( SELECT DATE_FORMAT(提交时间,'%Y%m') as 年月,币种,'总体' 所属团队, SUM(订单金额) 挽回金额
-                    FROM 工单收集表
-                    GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种
-                ) s3 ON s1.年月 = s3.年月 AND s1.币种 = s3.币种 AND s1.团队 = s3.所属团队;'''
+                    GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种
+                ) s2 ON s2.年月 = s3.年月 AND s2.币种 = s3.币种 AND s2.团队 = s3.所属团队;'''
         df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
         listT.append(df6)
         print('正在获取 总体金额 信息…………')
-        sql7 = '''SELECT s1.`年月`,s1.`币种`,s1.`团队`,
+        sql7 = '''SELECT s3.`年月`,s3.`币种`,s3.`所属团队`,
                         IF(s1.`0%单量` = 0,NULL,s1.`0%单量`) '0%单量',
                         IF(s1.`<10%单量` = 0,NULL,s1.`<10%单量`) '<10%单量',
                         IF(s1.`<20%单量` = 0,NULL,s1.`<20%单量`) '<20%单量',
@@ -927,7 +927,12 @@ class QueryUpdate(Settings):
                         IF(s2.`退货单量` = 0,NULL,s2.`退货单量`) '换货单量',
                         s1.`换货单量` + s2.退货单量 as 退换补单量,
                         工单单量
-                FROM (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'总体' 团队,
+                FROM ( SELECT DATE_FORMAT(提交时间,'%Y%m') as 年月,币种,'总体' 所属团队,SUM(订单金额) 工单单量
+                    FROM 工单收集表
+                    GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种
+                ) s3
+								LEFT JOIN
+								(SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'总体' 团队,
                             SUM(IF(`占比` = '0%',金额,0)) AS '0%单量',
                             SUM(IF(`占比` = '<10%',金额,0)) AS '<10%单量',
                             SUM(IF(`占比` = '<20%',金额,0)) AS '<20%单量',
@@ -947,8 +952,8 @@ class QueryUpdate(Settings):
                                 FROM 换货表 th WHERE th.`币种` IN ('台币','港币')
                             ) th
                         GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种
-                ) s1
-                JOIN
+                ) s1 ON s1.年月 = s3.年月 AND s1.币种 = s3.币种 AND s1.团队 = s3.所属团队
+                LEFT JOIN
                 (SELECT DATE_FORMAT(导入时间,'%Y%m') as 年月,币种,'总体' 团队,
                         SUM(IF(`占比` = '0%',金额,0)) AS '0%单量',
                         SUM(IF(`占比` = '<10%',金额,0)) AS '<10%单量',
@@ -969,12 +974,7 @@ class QueryUpdate(Settings):
                         FROM 退货表 th WHERE th.`币种` IN ('台币','港币')
                     ) th
                 GROUP BY DATE_FORMAT(导入时间,'%Y%m'),币种
-                ) s2 ON s1.年月 = s2.年月 AND s1.币种 = s2.币种 AND s1.团队 = s2.团队
-                JOIN
-                ( SELECT DATE_FORMAT(提交时间,'%Y%m') as 年月,币种,'总体' 所属团队,SUM(订单金额) 工单单量
-                    FROM 工单收集表
-                    GROUP BY DATE_FORMAT(提交时间,'%Y%m'),币种
-                ) s3 ON s1.年月 = s3.年月 AND s1.币种 = s3.币种 AND s1.团队 = s3.所属团队;'''
+                ) s2 ON s2.年月 = s3.年月 AND s2.币种 = s3.币种 AND s2.团队 = s3.所属团队;'''
         df7 = pd.read_sql_query(sql=sql7, con=self.engine1)
         listT.append(df7)
 

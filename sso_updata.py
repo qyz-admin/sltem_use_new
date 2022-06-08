@@ -1202,7 +1202,11 @@ class Query_sso_updata(Settings):
             				        h.规格中文,
             				        h.省洲 省洲,
             				        IF(h.审单类型 like '%自动审单%','是','否') 审单类型,
+            				        h.审单类型 审单类型明细,
             				        h.拉黑率,
+            				        h.订单配送总量,
+            				        h.签收量,
+            				        h.拒收量,
             				        h.删除原因,
             				        null 删除时间,
             				        h.问题原因,
@@ -1513,7 +1517,11 @@ class Query_sso_updata(Settings):
                                 a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`),
                                 a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
                                 a.`审单类型`= IF(b.`审单类型` = '', NULL, IF(b.`审单类型` like '%自动审单%','是','否')),
+                                a.`审单类型明细`= IF(b.`审单类型` = '', NULL, b.`审单类型`),
                                 a.`拉黑率`= IF(b.`拉黑率` = '', '0.00%', b.`拉黑率`),
+                                a.`订单配送总量`= IF(b.`订单配送总量` = '', NULL, b.`订单配送总量`),
+                                a.`签收量`= IF(b.`签收量` = '', NULL, b.`签收量`),
+                                a.`拒收量`= IF(b.`拒收量` = '', NULL, b.`拒收量`),
                                 a.`删除原因`= IF(b.`删除原因` = '', NULL,  b.`删除原因`),
                                 a.`删除时间`= IF(b.`删除时间` = '', NULL,  b.`删除时间`),
                                 a.`问题原因`= IF(b.`问题原因` = '', NULL,  b.`问题原因`),
@@ -1629,7 +1637,7 @@ class Query_sso_updata(Settings):
         count = 0
         try:
             for result in req['data']['list']:
-                # print(result)
+                # print(result['orderNumber'])
                 # print(result['specs'])
                 # 添加新的字典键-值对，为下面的重新赋值用
                 # 添加新的字典键-值对，为下面的重新赋值用
@@ -1651,6 +1659,9 @@ class Query_sso_updata(Settings):
                     result['spec'] = ''
                     result['chooser'] = ''
                 result['auto_VerifyTip'] = ''
+                result['order_count'] = ''
+                result['order_qs'] = ''
+                result['order_js'] = ''
                 if result['autoVerifyTip'] == "":
                     result['auto_VerifyTip'] = '0.00%'
                 else:
@@ -1658,12 +1669,25 @@ class Query_sso_updata(Settings):
                         result['auto_VerifyTip'] = '0.00%'
                     else:
                         if '拉黑率问题' not in result['autoVerifyTip']:
-                            t2 = result['autoVerifyTip'].split(',拉黑率')[1]
-                            result['auto_VerifyTip'] = t2.split('%;')[0] + '%'
-                        else:
+                            t2 = result['autoVerifyTip'].split('拉黑率')[1]
+                            for tt2 in t2:
+                                if '%' in tt2:
+                                    result['auto_VerifyTip'] = t2.split('%')[0] + '%'
+                            # t2 = result['autoVerifyTip'].split(',拉黑率')[1]
+                            # result['auto_VerifyTip'] = t2.split('%;')[0] + '%'  ：26,：0,
+                        elif '拉黑率问题' in result['autoVerifyTip']:
                             t2 = result['autoVerifyTip'].split('拒收订单量：')[1]
-                            t2 = t2.split('%;')[0]
+                            t2 = t2.split('%')[0]
                             result['auto_VerifyTip'] = t2.split('拉黑率')[1] + '%'
+                    if '订单配送总量：' in result['autoVerifyTip']:
+                        t4 = result['autoVerifyTip'].split('订单配送总量：')[1]
+                        result['order_count'] = t4.split(',')[0]
+                    if '送达订单量：' in result['autoVerifyTip']:
+                        t4 = result['autoVerifyTip'].split('送达订单量：')[1]
+                        result['order_qs'] = t4.split(',')[0]
+                    if '拒收订单量：' in result['autoVerifyTip']:
+                        t4 = result['autoVerifyTip'].split('拒收订单量：')[1]
+                        result['order_js'] = t4.split(',')[0]
                 quest = ''
                 for re in result['questionReason']:
                     quest = quest + ';' + re
@@ -1692,7 +1716,8 @@ class Query_sso_updata(Settings):
             df = data[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber', 'saleId', 'saleProduct', 'productId',
                        'spec', 'quantity', 'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime',
                        'finishTime', 'stateTime', 'logisticsUpdateTime', 'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType',
-                       'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks', 'auto_VerifyTip']]
+                       'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks', 'auto_VerifyTip',
+                       'order_count', 'order_qs', 'order_js']]
             print(df)
             # print('正在更新临时表中......')
             df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
@@ -1725,6 +1750,9 @@ class Query_sso_updata(Settings):
             				    h.`spec` 规格中文,
             				    h.`autoVerify` 审单类型,
             				    h.`auto_VerifyTip` 拉黑率,
+            				    h.`order_count` 订单配送总量,
+            				    h.`order_qs` 签收量,
+            				    h.`order_js` 拒收量,
             				    h.`delReason` 删除原因,
             				    h.`delTime` 删除时间,
             				    h.`questionReason` 问题原因,
@@ -1764,7 +1792,11 @@ class Query_sso_updata(Settings):
                                 a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`),
                                 a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
                                 a.`审单类型`= IF(b.`审单类型` = '', NULL, IF(b.`审单类型` like '%自动审单%','是','否')),
+                                a.`审单类型明细`= IF(b.`审单类型` = '', NULL, b.`审单类型`),
                                 a.`拉黑率`= IF(b.`拉黑率` = '', '0.00%', b.`拉黑率`),
+                                a.`订单配送总量`= IF(b.`订单配送总量` = '', NULL, b.`订单配送总量`),
+                                a.`签收量`= IF(b.`签收量` = '', NULL, b.`签收量`),
+                                a.`拒收量`= IF(b.`拒收量` = '', NULL, b.`拒收量`),
                                 a.`删除原因`= IF(b.`删除原因` = '', NULL,  b.`删除原因`),
                                 a.`删除时间`= IF(b.`删除时间` = '', NULL,  b.`删除时间`),
                                 a.`问题原因`= IF(b.`问题原因` = '', NULL,  b.`问题原因`),

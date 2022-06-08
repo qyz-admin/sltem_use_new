@@ -9448,7 +9448,7 @@ if __name__ == '__main__':
     write = '本期'
     m.readFormHost(team, write, last_time)                            # 更新签收表---港澳台（一）
 
-    m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
+    # m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
     m.qsb_new(team, month_old)                                    # 获取-每日-报表
     m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收
     m.phone_report()                                        # 获取电话核实日报表 周报表

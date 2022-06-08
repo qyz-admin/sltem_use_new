@@ -589,6 +589,7 @@ class QueryOrder(Settings, Settings_sso):
         ordersdict = []
         try:
             for result in req['data']['list']:
+                # print(result)
                 if result['specs'] != '':
                     result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
                     result['saleName'] = 0
@@ -664,7 +665,7 @@ class QueryOrder(Settings, Settings_sso):
             while n < in_count:  # 这里用到了一个while循环，穿越过来的
                 print('剩余查询次数' + str(in_count - n))
                 n = n + 1
-                data = self._timeQuery(timeStart, timeEnd, n)
+                data = self._timeQuery(timeStart, timeEnd, n, areaId)
                 dlist.append(data)
             print('正在写入......')
             dp = df.append(dlist, ignore_index=True)
@@ -1020,13 +1021,13 @@ if __name__ == '__main__':
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
         searchType = '订单号'
-        pople_Query = '客服查询'
+        pople_Query = '订单检索'                # 客服查询；订单检索
         m.readFormHost(team, searchType,pople_Query)        # 导入；，更新--->>数据更新切换
     elif int(select) == 2:
         print("2-->>> 正在按时间查询+++")
-        timeStart = '2022-03-28'
-        timeEnd = '2022-03-29'
-        areaId = '179'
+        timeStart = '2022-03-01'
+        timeEnd = '2022-03-01'
+        areaId = ''
         m.order_TimeQuery(timeStart, timeEnd, areaId)
 
     print('查询耗时：', datetime.datetime.now() - start)

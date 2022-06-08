@@ -990,7 +990,7 @@ class Settings_sso():
                     'Referer': gimp}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req.headers)
-        print('++++++已成功登录++++++' + str(req))
+        print('++++++已成功登录++++++++++++ ' + str(req))
         print(datetime.datetime.now())
         print('*' * 100)
 
@@ -1193,7 +1193,7 @@ class Settings_sso():
         # print(req)
         # print(req.headers)
 
-        print('++++++已成功登录++++++' + str(req))
+        print('++++++已成功登录++++++++++ ' + str(req))
         print(datetime.datetime.now())
         print('*' * 100)
 
