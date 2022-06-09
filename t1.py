@@ -108,6 +108,23 @@ for dir in dirs:
 print('导入耗时：', datetime.datetime.now() - start)
 
 
+# ---获取 改派未发货 execl文件---
+mkpath = r"F:\神龙签收率\(未发货) 改派-物流"
+dirs_gp = os.listdir(path=mkpath)
+wb = ''
+for dir in dirs_gp:
+    filePath = os.path.join(mkpath, dir)
+    if (datetime.datetime.now()).strftime('%Y.%m.%d') in filePath:
+        wb = '改派未发货 已导出'
+if wb == '改派未发货 已导出':
+    print(wb)
+else:
+    print('正在获取 改派未发货 中')
+    sso = Query_sso_updata('+86-18538110674', 'qyz35100416', '1343', '32495f91f95b348d8c6298c1492e56b0', '手0动')
+    sso.gp_order()
+
+print('*' * 50)
+
 # TODO---数据库分段读取---
 # m.creatMyOrderSl(team)  # 最近五天的全部订单信息
 #

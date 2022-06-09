@@ -2111,7 +2111,8 @@ class Query_sso_updata(Settings):
                                     FROM d1_host h 
                                     LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
                                     LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
-                                    LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`; '''.format('gat')
+                                    LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`
+                                    WHERE h.下单时间 < TIMESTAMP(CURDATE()); '''.format('gat')
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         columns = list(df.columns)
         columns = ', '.join(columns)
@@ -2202,6 +2203,92 @@ class Query_sso_updata(Settings):
         print('......本批次查询成功......')
         print(df)
         return df
+
+
+    # 改派-查询未发货的订单
+    def gp_order(self):
+        print('正在获取 改派未发货…………')
+        today = datetime.date.today().strftime('%Y.%m.%d')
+        sql = '''SELECT xj.订单编号, xj.下单时间, xj.新运单号, xj.查件单号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, b.物流状态, b.状态时间, NULL 系统订单状态, NULL 系统物流状态
+                FROM ( SELECT *
+                       FROM 已下架表 x
+                       WHERE x.记录时间 >= TIMESTAMP ( CURDATE( ) ) AND x.币种 = '台币'
+                ) xj
+                LEFT JOIN gat_wl_data b ON xj.`查件单号` = b.`运单编号`;'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        df = df.loc[df["币种"] == "台币"]
+        df.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+
+        print('正在查询 改派未发货…………')
+        sql = '''SELECT 订单编号 FROM {0};'''.format('cache')
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        if ordersDict.empty:
+            print('无需要更新订单信息！！！')
+            # sys.exit()
+            return
+        orderId = list(ordersDict['订单编号'])
+        max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
+        n = 0
+        df = pd.DataFrame([])  # 创建空的dataframe数据框
+        dlist = []
+        while n < max_count:        # 这里用到了一个while循环，穿越过来的
+            ord = ','.join(orderId[n:n + 500])
+            n = n + 500
+            data =self._gp_order(ord)
+            if data is not None and len(data) > 0:
+                dlist.append(data)
+        dp = df.append(dlist, ignore_index=True)
+        dp.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
+
+        print('正在更新 改派未发货......')
+        sql = '''update `cache` a, `cache_cp` b
+                        set a.`系统订单状态`= b.`orderStatus`,
+                            a.`系统物流状态`= b.`logisticsStatus`
+                where a.`订单编号`=b.`orderNumber`;'''.format('cache')
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
+        print('正在导出 改派未发货…………')
+        sql = '''SELECT * FROM cache;'''.format('team')
+        dt = pd.read_sql_query(sql=sql, con=self.engine1)
+        file_path = 'F:\\神龙签收率\\(未发货) 改派-物流\\{} 改派未发货.xlsx'.format(today)
+        dt.to_excel(file_path, sheet_name='台湾', index=False, engine='xlsxwriter')
+        print('----已写入excel ')
+    # 改派-查询未发货的订单（新后台的获取）
+    def _gp_order(self, ord):  # 进入订单检索界面
+        print('+++正在查询 信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'page': 1, 'pageSize': 500, 'orderPrefix': ord, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'shippingNumber': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None,'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '','warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None,
+                'orderStatus': None, 'tuan': None,  'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
+                'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None,
+                'estimateWeightEnd': None, 'order': None, 'sortField': None, 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        ordersdict = []
+        try:
+            for result in req['data']['list']:
+                # print(result)
+                ordersdict.append(result)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        data = pd.json_normalize(ordersdict)
+        df = data[['orderNumber', 'orderStatus', 'wayBillNumber', 'logisticsName', 'logisticsStatus', 'warehouse', 'update_time']]
+        # print('++++++本批次查询成功+++++++')
+        print('*' * 50)
+        # print(df)
+        return df
+
+
 
 if __name__ == '__main__':
     m = Query_sso_updata('+86-18538110674', 'qyz35100416', 1343,'')

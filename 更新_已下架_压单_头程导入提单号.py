@@ -33,7 +33,7 @@ class QueryTwoLower(Settings, Settings_sso):
         self.userMobile = userMobile
         self.password = password
         # self.sso_online_cang()
-        self.bulid_file()
+        # self.bulid_file()
         if handle == '手动':
             self.sso_online_cang_handle(login_TmpCode)
         else:
@@ -461,14 +461,15 @@ class QueryTwoLower(Settings, Settings_sso):
                     print('+++正在查询仓库： ' + tem + '；库存类型:组合库存 信息')
                     self._order_lower_info(match2[tem], 2, timeStart, timeEnd, tem, '组合库存')
         print('查询耗时：', datetime.datetime.now() - start)
-    def _order_lower_info(self, tem, tem_type, timeStart, timeEnd, tem_name, type_name):  # 进入已下架界面
+    # 进入已下架界面
+    def _order_lower_info(self, tem, tem_type, timeStart, timeEnd, tem_name, type_name):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         # print('+++正在查询信息中')
         url = r'http://gwms-v3.giikin.cn/order/order/shelves'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'http://gwms-v3.giikin.cn',
                     'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
-        data = {'page': 1, 'limit': 500, 'startDate': timeStart + ' 08:30:00', 'endDate':  timeEnd + ' 23:59:59', 'selectStr': '1=1 and ob.whid = ' + str(tem) + ' and ob.stock_type = ' + str(tem_type)}
+        data = {'page': 1, 'limit': 500, 'startDate': timeStart + ' 09:00:00', 'endDate':  timeEnd + ' 23:59:59', 'selectStr': '1=1 and ob.whid = ' + str(tem) + ' and ob.stock_type = ' + str(tem_type)}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
         # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -517,13 +518,14 @@ class QueryTwoLower(Settings, Settings_sso):
             except Exception as e:
                 print('转化失败： 重新获取中', str(Exception) + str(e))
             data = pd.json_normalize(ordersDict)
-            data = data[['order_number', 'addtime', 'billno', 'old_billno', 'goods_id', 'product_name', 'intime', 'whid', 'waill_name', 'currency_id', 'area_id', 'product_spec', 'quantity', 'ship_name', 'ship_address', 'ship_phone', 'amount', 'count_time']]
-            data.columns = ['订单编号', '下单时间', '新运单号', '原运单号', '产品id', '商品名称', '下架时间', '仓库', '物流渠道', '币种', '团队', '商品规格', '购买数量', '收货人', '收货地址', '联系电话', '订单金额', '统计时间']
+            data = data[['order_number', 'addtime', 'billno', 'old_billno', 'goods_id', 'product_name', 'intime', 'whid', 'waill_name', 'currency_id', 'area_id', 'product_spec', 'quantity', 'ship_name', 'ship_address', 'ship_phone', 'amount', 'userId', 'in_sqs', 'count_time']]
+            data.columns = ['订单编号', '下单时间', '新运单号', '原运单号', '产品id', '商品名称', '下架时间', '仓库', '物流渠道', '币种', '团队', '商品规格', '购买数量', '收货人', '收货地址', '联系电话', '订单金额', '下架人', '获取单号结果', '统计时间']
             print(data)
             print('>>>' + tem_name + '-' + type_name + ' <<< 查询完结！！！')
             data.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO 已下架表(订单编号,下单时间,新运单号,原运单号, 产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种, 团队,商品规格, 购买数量, 收货人, 收货地址, 联系电话,订单金额,统计时间,记录时间)
-                    SELECT 订单编号,下单时间,新运单号,原运单号, 产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种, 团队, 商品规格, 购买数量, 收货人, 收货地址, 联系电话, 订单金额,统计时间,NOW() 记录时间
+            sql = '''REPLACE INTO 已下架表(订单编号,下单时间,新运单号,查件单号,原运单号, 退货单号,产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种, 团队,商品规格, 购买数量, 收货人, 收货地址, 联系电话,订单金额,下架人,获取单号结果,统计时间,记录时间)
+                    SELECT 订单编号,下单时间,新运单号, IF(仓库 LIKE "%天马%" AND LENGTH(新运单号) = 20, CONCAT(861, RIGHT(新运单号, 8)), IF((仓库 LIKE "%速派%" or 仓库 LIKE "%易速配%") AND 新运单号 LIKE "A%", RIGHT(新运单号, LENGTH(新运单号) - 1), UPPER(新运单号))) 查件单号,
+                           原运单号,NULL 退货单号, 产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种, 团队, 商品规格, 购买数量, 收货人, 收货地址, 联系电话, 订单金额,下架人,获取单号结果,统计时间,NOW() 记录时间
                     FROM customer'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -548,50 +550,87 @@ class QueryTwoLower(Settings, Settings_sso):
             return None
         print('*' * 50)
 
-    # 改派-查询未发货的订单
-    def gp_order(self):
-        print('正在查询改派未发货订单…………')
-        today = datetime.date.today().strftime('%m.%d')
-        listT = []  # 查询sql的结果 存放池
+    # 进入组合库存查询界面
+    def gp_order_stockcompose(self):
+        print('正在获取 改派未发货…………')
+        today = datetime.date.today().strftime('%Y.%m.%d')
         sql = '''SELECT *
-                                FROM ( SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
-                                        FROM (SELECT *
-                			                FROM 已下架表  x
-                			                WHERE x.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) AND x.币种 = '台币'
-                                        )  xj
-                                        LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
-                                        LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
-                                        WHERE 最终状态 = '未发货' or 最终状态 IS NULL
-                                ) ss
-                                WHERE 是否改派 = '改派' AND (系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单')) OR 是否改派 IS NULL
-                                ORDER BY FIELD(物流渠道,'龟山','龟山备货','天马顺丰','天马新竹','速派','立邦');'''
-        sql = '''SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
-        				FROM (SELECT * FROM 已下架表  x WHERE x.记录时间 >=  TIMESTAMP(CURDATE()) AND x.币种 = '台币')  xj
-                        LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
-                        LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
-                        WHERE 最终状态 NOT IN ("已签收","拒收","已退货","理赔","自发头程丢件","在途") or 最终状态 IS NULL;'''
+                 FROM 已下架表 x
+                 WHERE x.记录时间 >= TIMESTAMP ( CURDATE( ) );'''
+
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df = df.loc[df["币种"] == "台币"]
-        listT.append(df)
+        df.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
 
-        print('正在写入excel…………')
+        print('正在查询 改派未发货…………')
+        sql = '''SELECT 订单编号 FROM {0};'''.format('cache')
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        if ordersDict.empty:
+            print('无需要更新订单信息！！！')
+            # sys.exit()
+            return
+        orderId = list(ordersDict['订单编号'])
+        max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
+        n = 0
+        df = pd.DataFrame([])  # 创建空的dataframe数据框
+        dlist = []
+        while n < max_count:        # 这里用到了一个while循环，穿越过来的
+            ord = ','.join(orderId[n:n + 500])
+            n = n + 500
+            data =self._gp_order_stockcompose(ord)
+            if data is not None and len(data) > 0:
+                dlist.append(data)
+        dp = df.append(dlist, ignore_index=True)
+        dp.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
+
+        print('正在更新 改派未发货......')
+        sql = '''update `cache` a, `cache_cp` b
+                        set a.`系统订单状态`= b.`orderStatus`,
+                            a.`系统物流状态`= b.`logisticsStatus`
+                where a.`订单编号`=b.`orderNumber`;'''.format('cache')
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
+        print('正在导出 改派未发货…………')
+        sql = '''SELECT * FROM cache;'''.format('team')
+        dt = pd.read_sql_query(sql=sql, con=self.engine1)
         file_path = 'F:\\神龙签收率\\(未发货) 改派-物流\\{} 改派未发货.xlsx'.format(today)
-        if os.path.exists(file_path):  # 判断是否有需要的表格
-            print("正在清除重复文件......")
-            os.remove(file_path)
-        sheet_name = ['台湾']
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        for i in range(len(listT)):
-            listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        dt.to_excel(file_path, sheet_name='台湾', index=False, engine='xlsxwriter')
         print('----已写入excel ')
+    # 进入组合库存查询界面（新后台的获取）
+    def _gp_order_stockcompose(self, ord):  # 进入订单检索界面
+        print('+++正在查询 信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'page': 1, 'pageSize': 500, 'orderPrefix': ord, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'shippingNumber': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None,'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '','warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None,
+                'orderStatus': None, 'tuan': None,  'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
+                'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None,
+                'estimateWeightEnd': None, 'order': None, 'sortField': None, 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        ordersdict = []
+        try:
+            for result in req['data']['list']:
+                # print(result)
+                ordersdict.append(result)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        data = pd.json_normalize(ordersdict)
+        df = data[['orderNumber', 'orderStatus', 'wayBillNumber', 'logisticsName', 'logisticsStatus', 'warehouse', 'update_time']]
+        # print('++++++本批次查询成功+++++++')
+        print('*' * 50)
+        # print(df)
+        return df
+
 
     # 查询改派无运单好（仓储的获取）
     def get_billno_res(self):  # 进入仓储界面
@@ -673,7 +712,8 @@ class QueryTwoLower(Settings, Settings_sso):
             print('****** 没有新增的改派订单！！！')
             return None
         print('*' * 50)
-    def _get_billno_res(self, timeStart, timeEnd, n):  # 进入压单检索界面
+    # 进入仓储检索界面
+    def _get_billno_res(self, timeStart, timeEnd, n):
         print('+++正在查询订单信息中')
         url = r'http://gwms-v3.giikin.cn/order/order/secondsendbillnonone'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -706,6 +746,7 @@ class QueryTwoLower(Settings, Settings_sso):
             print('****** 没有信息！！！')
         return data
 
+    # 创建每日文件
     def bulid_file(self):
         print('正在生成每日新文件夹......')
         time_path: datetime = datetime.datetime.now() + datetime.timedelta(days=1)
@@ -762,7 +803,8 @@ class QueryTwoLower(Settings, Settings_sso):
             print(mkpath + ' 目录已存在')
         print('*' * 50)
 
-    def get_take_delivery_no(self):  # 进入 头程物流跟踪 界面
+    # 进入 头程物流跟踪 界面
+    def get_take_delivery_no(self):
         print('+++正在查询头程物流信息中')
         timeStart = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
         timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
@@ -813,9 +855,8 @@ class QueryTwoLower(Settings, Settings_sso):
             df = None
             print('****** 没有信息！！！')
         return df
-
-
-    def _get_take_delivery_no(self):  # 进入头程检索界面
+    # 进入 头程检索界面
+    def _get_take_delivery_no(self):
         timeStart = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
         start = datetime.datetime.now()
         print('正在更新 头程提货单号 信息…………')
@@ -833,8 +874,8 @@ class QueryTwoLower(Settings, Settings_sso):
             batch = getattr(row, '航班號')
             self._upload_take_delivery_no(ord_id, id, take_delivery_no, batch)
         print('单次更新耗时：', datetime.datetime.now() - start)
-
-    def _upload_take_delivery_no(self, ord_id, id, take_delivery_no, batch):  # 进入头程检索界面
+    # 进入 头程检索界面
+    def _upload_take_delivery_no(self, ord_id, id, take_delivery_no, batch):
         print('+++正在更新中')
         url = r'http://gwms-v3.giikin.cn/order/delivery/takedeliveryregister'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -880,7 +921,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
-    select = 2
+    select = 1
     if select == 1:
         m.readFile(select)            # 上传每日压单核实结果
         m.order_spec()       # 压单反馈  （备注（压单核实是否需要））

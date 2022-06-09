@@ -475,7 +475,8 @@ class QueryUpdate(Settings):
         print('正在获取查询 在途-未上线 数据…………')
         rq = datetime.datetime.now().strftime('%Y.%m.%d')
         month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
-        sql = '''SELECT 日期,团队,币种,订单编号,运单编号,是否改派,物流方式, 系统订单状态,系统物流状态,物流状态,签收表物流状态,
+        sql = '''SELECT 日期,团队,币种,订单编号,IF(物流方式 LIKE "%天马%" AND LENGTH(运单编号) = 20, CONCAT(861, RIGHT(运单编号, 8)), IF((物流方式 LIKE "%速派%" or 物流方式 LIKE "%易速配%") AND 运单编号 LIKE "A%", RIGHT(运单编号, LENGTH(运单编号) - 1), UPPER(运单编号))) 运单编号,
+        是否改派,物流方式, 系统订单状态,系统物流状态,物流状态,签收表物流状态,
                         最终状态,下单时间,审核时间,仓储扫描时间,出货时间,上线时间,状态时间,完结状态时间,在途未上线
                 FROM ( SELECT *, IF(最终状态 = '在途',
 						    IF(币种 = '香港',IF((出货时间 IS NULL AND 仓储扫描时间 <= DATE_SUB(CURDATE(), INTERVAL 2 DAY)) OR
@@ -569,7 +570,7 @@ if __name__ == '__main__':
     # upload = '查询-订单号'
     # m.trans_way_cost(team)  # 同产品下的规格运费查询
     '''
-    select = 4
+    select = 2
     if int(select) == 1:
             upload = '查询-运单号'
             m.readFormHost(upload)

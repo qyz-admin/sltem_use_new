@@ -315,32 +315,32 @@ class QueryUpdate(Settings):
             shutil.copyfile(old_path, new_path)     # copy到指定位置
             print('----已写入excel; 并复制到指定文件夹中')
 
-        print('*******正在查询改派未发货订单…………')
-        sql = '''SELECT *
-                                FROM ( SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
-                                        FROM (SELECT *
-                			                FROM 已下架表  x
-                			                WHERE x.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) AND x.币种 = '台币'
-                                        )  xj
-                                        LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
-                                        LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
-                                        WHERE 最终状态 = '未发货' or 最终状态 IS NULL
-                                ) ss
-                                WHERE 是否改派 = '改派' AND (系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单')) OR 是否改派 IS NULL
-                                ORDER BY FIELD(物流渠道,'龟山','龟山备货','天马顺丰','天马新竹','速派','立邦');'''
-        sql = '''SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
-        				FROM (SELECT * FROM 已下架表  x WHERE x.记录时间 >=  TIMESTAMP(CURDATE()) AND x.币种 = '台币')  xj
-                        LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
-                        LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
-                        WHERE 最终状态 NOT IN ("已签收","拒收","已退货","理赔","自发头程丢件","在途") or 最终状态 IS NULL;'''
-        sql= '''SELECT xj.订单编号,xj.下单时间,gz.运单编号,xj.产品id,xj.商品名称,xj.下架时间,xj.仓库,xj.物流渠道,xj.币种,xj.统计时间,xj.记录时间,gz.最终状态,gz.系统订单状态,gz.是否改派 
-                FROM ( SELECT * FROM 已下架表 x WHERE x.记录时间 >= TIMESTAMP ( CURDATE( ) ) AND x.币种 = '台币' 
-	            ) xj
-	            LEFT JOIN d1_gat gz ON xj.订单编号 = gz.订单编号
-                WHERE 最终状态 NOT IN ( "已签收", "拒收", "已退货", "理赔", "自发头程丢件", "在途" ) OR 最终状态 IS NULL;'''
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        df = df.loc[df["币种"] == "台币"]
-        df.to_excel('F:\\神龙签收率\\(未发货) 改派-物流\\{} 改派未发货2.xlsx'.format(today), sheet_name='台湾', index=False)
+        # print('*******正在查询改派未发货订单…………')
+        # sql = '''SELECT *
+        #                         FROM ( SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
+        #                                 FROM (SELECT *
+        #         			                FROM 已下架表  x
+        #         			                WHERE x.下单时间 >= TIMESTAMP(DATE_ADD(curdate()-day(curdate())+1,interval -2 month)) AND x.币种 = '台币'
+        #                                 )  xj
+        #                                 LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
+        #                                 LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
+        #                                 WHERE 最终状态 = '未发货' or 最终状态 IS NULL
+        #                         ) ss
+        #                         WHERE 是否改派 = '改派' AND (系统订单状态 NOT IN ('已删除', '问题订单', '待发货', '截单')) OR 是否改派 IS NULL
+        #                         ORDER BY FIELD(物流渠道,'龟山','龟山备货','天马顺丰','天马新竹','速派','立邦');'''
+        # sql = '''SELECT xj.订单编号, xj.下单时间, gs.运单编号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, gz.最终状态 ,gs.系统订单状态 , gs.是否改派
+        # 				FROM (SELECT * FROM 已下架表  x WHERE x.记录时间 >=  TIMESTAMP(CURDATE()) AND x.币种 = '台币')  xj
+        #                 LEFT JOIN gat_zqsb gz ON xj.订单编号= gz.订单编号
+        #                 LEFT JOIN gat_order_list gs ON xj.订单编号= gs.订单编号
+        #                 WHERE 最终状态 NOT IN ("已签收","拒收","已退货","理赔","自发头程丢件","在途") or 最终状态 IS NULL;'''
+        # sql= '''SELECT xj.订单编号,xj.下单时间,gz.运单编号,xj.产品id,xj.商品名称,xj.下架时间,xj.仓库,xj.物流渠道,xj.币种,xj.统计时间,xj.记录时间,gz.最终状态,gz.系统订单状态,gz.是否改派
+        #         FROM ( SELECT * FROM 已下架表 x WHERE x.记录时间 >= TIMESTAMP ( CURDATE( ) ) AND x.币种 = '台币'
+	    #         ) xj
+	    #         LEFT JOIN d1_gat gz ON xj.订单编号 = gz.订单编号
+        #         WHERE 最终状态 NOT IN ( "已签收", "拒收", "已退货", "理赔", "自发头程丢件", "在途" ) OR 最终状态 IS NULL;'''
+        # df = pd.read_sql_query(sql=sql, con=self.engine1)
+        # df = df.loc[df["币种"] == "台币"]
+        # df.to_excel('F:\\神龙签收率\\(未发货) 改派-物流\\{} 改派未发货2.xlsx'.format(today), sheet_name='台湾', index=False)
 
         print('正在写入' + match[team] + ' 全部签收表中…………')
         sql = 'REPLACE INTO {0}_zqsb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)
@@ -9448,7 +9448,7 @@ if __name__ == '__main__':
     write = '本期'
     m.readFormHost(team, write, last_time)                            # 更新签收表---港澳台（一）
 
-    # m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
+    m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
     m.qsb_new(team, month_old)                                    # 获取-每日-报表
     m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收
     m.phone_report()                                        # 获取电话核实日报表 周报表

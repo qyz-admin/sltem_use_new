@@ -1434,10 +1434,13 @@ if __name__ == '__main__':
         handle = '手0动'
         lw = QueryTwoLower('+86-18538110674', 'qyz35100416', login_TmpCode,handle)
         start: datetime = datetime.datetime.now()
-        lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 自动时 输入的时间无效；切为不自动时，有效
-        lw.get_take_delivery_no()                             # 进入 头程物流跟踪 界面； 获取最近10天的信息
 
-        # lw.gp_order()                                         # 改派未发货查询
+        lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 已下架       更新； 自动时 输入的时间无效；切为不自动时，有效
+        lw.get_take_delivery_no()                             # 头程物流跟踪 更新； 获取最近10天的信息
+
+        lw.readFile(1)                                        # 上传每日压单核实结果
+        lw.order_spec()                                       # 压单         更新；压单反馈  （备注（压单核实是否需要））
+
         print('查询耗时：', datetime.datetime.now() - start)
 
     '''
@@ -1456,7 +1459,8 @@ if __name__ == '__main__':
         js = QueryOrder('+86-18538110674', 'qyz35100416', '')
         time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         time_now = time_yesterday
-        js.order_TimeQueryT(time_yesterday,time_now, '',  '检查头程直发渠道|删单原0因')
+
+        js.order_TimeQueryT(time_yesterday,time_now, '',  '检查头程直发渠道|删单原0因')   # 检查头程直发渠道|删单原0因
 
 
     '''
