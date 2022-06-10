@@ -2209,12 +2209,13 @@ class Query_sso_updata(Settings):
     def gp_order(self):
         print('正在获取 改派未发货…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
-        sql = '''SELECT xj.订单编号, xj.下单时间, xj.新运单号, xj.查件单号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, b.物流状态, b.状态时间, NULL 系统订单状态, NULL 系统物流状态
+        sql = '''SELECT xj.订单编号, xj.下单时间, xj.新运单号 运单编号, xj.查件单号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, b.物流状态, c.标准物流状态,b.状态时间, NULL 系统订单状态, NULL 系统物流状态
                 FROM ( SELECT *
                        FROM 已下架表 x
                        WHERE x.记录时间 >= TIMESTAMP ( CURDATE( ) ) AND x.币种 = '台币'
                 ) xj
-                LEFT JOIN gat_wl_data b ON xj.`查件单号` = b.`运单编号`;'''
+                LEFT JOIN gat_wl_data b ON xj.`查件单号` = b.`运单编号`
+                LEFT JOIN gat_logisitis_match c ON b.物流状态 = c.签收表物流状态;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df = df.loc[df["币种"] == "台币"]
         df.to_sql('cache', con=self.engine1, index=False, if_exists='replace')

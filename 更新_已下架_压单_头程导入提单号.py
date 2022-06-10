@@ -34,10 +34,10 @@ class QueryTwoLower(Settings, Settings_sso):
         self.password = password
         # self.sso_online_cang()
         # self.bulid_file()
-        if handle == '手动':
-            self.sso_online_cang_handle(login_TmpCode)
-        else:
-            self.sso_online_cang_auto()
+        # if handle == '手动':
+        #     self.sso_online_cang_handle(login_TmpCode)
+        # else:
+        #     self.sso_online_cang_auto()
 
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -71,129 +71,13 @@ class QueryTwoLower(Settings, Settings_sso):
                                                                                     self.mysql2['host'],
                                                                                     self.mysql2['port'],
                                                                                     self.mysql2['datebase']))
-    #  登录后台中
-    def _online(self):  # 登录系统保持会话状态
-        print('正在登录后台系统中......')
-        # print('第一阶段获取-钉钉用户信息......')
-        url = r'https://login.dingtalk.com/login/login_with_pwd'
-        data = {'mobile': self.userMobile,
-                'pwd': self.password,
-                'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
-                'pdmToken': '',
-                'araAppkey': '1917',
-                'araToken': '0#19171628645731266586976965831628645747396525G1E2B0816DEBF96BC4199761B6A1F3C0FCD91FB',
-                'araScene': 'login',
-                'captchaImgCode': '',
-                'captchaSessionId': '',
-                'type': 'h5'}
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-                    'Origin': 'https://login.dingtalk.com',
-                    'Referer': 'https://login.dingtalk.com/'}
-        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
-        req = req.json()
-        # print(req)
-        req_url = req['data']
-        loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
-        # print(loginTmpCode)
-        # print('+++已获取loginTmpCode值+++')
-
-        time.sleep(1)
-        # print('第二阶段请求-登录页面......')
-        url = r'http://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html'
-        data = {'tmpCode': loginTmpCode,
-                'system': 1,
-                'url': '',
-                'ticker': '',
-                'companyId': 1}
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-                    'Origin': 'https://login.dingtalk.com',
-                    'Referer': 'http://gsso.giikin.com/admin/login/logout.html'}
-        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
-        # print(req.text)
-        # print('+++请求登录页面url成功+++')
-
-        time.sleep(1)
-        # print('第三阶段请求-dingtalk服务器......')
-        # print('（一）加载dingtalk_service跳转页面......')
-        url = req.text
-        data = {'tmpCode': loginTmpCode,
-                'system': 1,
-                'url': '',
-                'ticker': '',
-                'companyId': 1}
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-                    'Referer': 'http://gsso.giikin.com/'}
-        req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False)
-        # print(req.headers)
-        gimp = req.headers['Location']
-        # print('+++已获取跳转页面+++')
-        time.sleep(1)
-        # print('（二）请求dingtalk_service的cookie值......')
-        url = gimp
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-                    'Referer': 'http://gsso.giikin.com/'}
-        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        # print(req)
-        # print('+++已获取cookie值+++')
-
-        time.sleep(1)
-        # print('第四阶段页面-重定向跳转中......')
-        # print('（一）加载chooselogin.html页面......')
-        url = r'http://gsso.giikin.com/admin/login_by_dingtalk/chooselogin.html'
-        data = {'user_id': 1343}
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-                    'Referer': gimp,
-                    'Origin': 'http://gsso.giikin.com'}
-        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
-        # print(req.headers)
-        index = req.headers['Location']
-        # print('+++已获取gimp.giikin.com页面')
-        time.sleep(1)
-        # print('（二）加载gimp.giikin.com页面......')
-        url = index
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-                    'Referer': index}
-        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        # print(req.headers)
-        index2 = req.headers['Location']
-        # print('+++已获取index.html页面')
-
-        time.sleep(1)
-        # print('（三）加载index.html页面......')
-        url = 'http://gimp.giikin.com/' + index2
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-                    'Referer': 'http://gsso.giikin.com/'}
-        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        # print(req.headers)
-        index_system = req.headers['Location']
-        # print('+++已获取index.html?_system=18正式页面')
-
-        time.sleep(1)
-        # print('第五阶段正式页面-重定向跳转中......')
-        # print('（一）加载index.html?_system页面......')
-        url = index_system
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-                    'Referer': 'http://gsso.giikin.com/'}
-        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        # print(req.headers)
-        index_system2 = req.headers['Location']
-        # print('+++已获取index.html?_ticker=页面......')
-        time.sleep(1)
-        # print('（二）加载index.html?_ticker=页面......')
-        url = index_system2
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-                    'Referer': 'http://gsso.giikin.com/'}
-        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        # print(req)
-        # print(req.headers)
-        print('++++++已成功登录++++++')
-
     def readFile(self,select):
+        start: datetime = datetime.datetime.now()
         path = ''
         if select == 1:
             path = r'F:\神龙签收率\(未发货) 直发-仓库-压单\每日压单核实汇总'
         elif select == 2:
-            path = r'D:\Users\Administrator\Desktop\需要用到的文件\数据库'
+            path = r'D:\Users\Administrator\Desktop\需要用到的文件\B导入头程提货单号'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -207,7 +91,11 @@ class QueryTwoLower(Settings, Settings_sso):
                     rq = rq.strftime('%Y.%m.%d')
                     self._readFile(filePath, rq)
                 elif select == 2:
-                    self._readFile_select(filePath, rq)
+                    if '海运' in filePath:
+                        tem = '超峰国际'
+                    else:
+                        tem = '立邦国际'
+                    self._readFile_select(filePath, rq, tem)
                 excel = win32.gencache.EnsureDispatch('Excel.Application')
                 wb = excel.Workbooks.Open(filePath)
                 file_path = os.path.join(path, "~$ " + dir)
@@ -250,38 +138,59 @@ class QueryTwoLower(Settings, Settings_sso):
         app.quit()
 
     # 工作表的订单信息
-    def _readFile_select(self, filePath, rq):
+    def _readFile_select(self, filePath, rq , tem):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
         app.display_alerts = False
         if 'xls' in fileType:
             wb = app.books.open(filePath, update_links=False, read_only=True)
             for sht in wb.sheets:
-                try:
-                    db = None
-                    db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
-                    # print(db.columns)
-                except Exception as e:
-                    print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
-                if db is not None and len(db) > 0:
-                    print('++++正在导入更新：' + sht.name + '表； 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
-                    if '提货物流' not in db.columns:
-                        db.insert(0, '提货物流', '立邦国际')
-                    db = db[['提货物流', '出貨日期', '件數', '主號','航班號','航班情况','清關情況','全清時間', '出貨日期']]
-                    # db.rename(columns={'备注（压单核实是否需要）': '处理结果'}, inplace=True)
-                    # db.dropna(axis=0, subset=['处理结果'], how='any', inplace=True)
-                    db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-                    sql = '''update gat_take_delivery a, customer b 
-                            set a.`主號` = IF(b.`主號` = '' or  b.`主號` is NULL, a.`主號`, b.`主號`),
-                                a.`航班號` = IF(b.`航班號` = '' or  b.`航班號` is NULL, a.`航班號`, b.`航班號`)
-                            where a.`提货日期`= b.`出貨日期` and a.`提货物流`= b.`提货物流`;'''
-                    # sql = '''REPLACE INTO 压单表_已核实(订单编号,处理时间,处理结果,处理人, 记录时间)
-                    #         SELECT 订单编号,处理时间,处理结果,IF(处理人 = '' OR 处理人 IS NULL,'-',处理人) 处理人, NOW() 记录时间
-                    #         FROM customer;'''     出貨日期	件數	重量	主號	航班號	'航班情况',	'清關情況',	'全清時間',
-                    pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-                    print('++++成功更新：' + sht.name + '--->>>到头程物流表')
+                if sht.api.Visible == -1:
+                    try:
+                        db = None
+                        db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
+                        # if tem == '立邦国际':
+                        #     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
+                        # elif tem == '超峰国际':
+                        #     db = sht.used_range.options(pd.DataFrame, header=2, numbers=int, index=False).value
+                        # db.dropna(subset=["提单号"], axis=0, inplace=True)           # 滤除指定列中含有缺失的行
+                        print(db.columns)
+                        print(db)
+                    except Exception as e:
+                        print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
+                    if db is not None and len(db) > 0:
+                        print('++++正在导入更新：' + sht.name + '表； 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                        if tem == '立邦国际':
+                            if '提货物流' not in db.columns:
+                                db.insert(0, '提货物流', tem)
+                            db = db[['提货物流', '出貨日期', '件數', '主號', '航班號', '航班情况', '清關情況', '全清時間', '出貨日期']]
+                            db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+                            sql = '''update gat_take_delivery a, customer b 
+                                    set a.`主號` = IF(b.`主號` = '' or  b.`主號` is NULL, a.`主號`, b.`主號`),
+                                        a.`航班號` = IF(b.`航班號` = '' or  b.`航班號` is NULL, a.`航班號`, b.`航班號`)
+                                    where a.`提货日期`= b.`出貨日期` and a.`提货物流`= b.`提货物流`;'''
+                            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                        elif tem == '超峰国际':
+                            if '提货物流' not in db.columns:
+                                db.insert(0, '提货物流', tem)
+                            db = db[['提货物流', '出货时间', '提单号', '开船时间', '到达时间']]
+                            # db.rename(columns={'备注（压单核实是否需要）': '处理结果'}, inplace=True)  提单号	开船时间	到达时间
+                            # db.dropna(axis=0, subset=['处理结果'], how='any', inplace=True)
+                            db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+                            sql = '''update gat_take_delivery a, customer b 
+                                    set a.`主號` = IF(b.`提单号` = '' or  b.`提单号` is NULL, a.`主號`, b.`提单号`),
+                                        a.`出货时间` = IF(b.`开船时间` = '' or  b.`开船时间` is NULL, a.`出货时间`, b.`开船时间`),
+                                        a.`交货时间` = IF(b.`到达时间` = '' or  b.`到达时间` is NULL, a.`交货时间`, b.`到达时间`)
+                                    where a.`提货日期`= b.`出货时间` and a.`提货物流`= b.`提货物流`;'''
+                            # sql = '''REPLACE INTO 压单表_已核实(订单编号,处理时间,处理结果,处理人, 记录时间)
+                            #         SELECT 订单编号,处理时间,处理结果,IF(处理人 = '' OR 处理人 IS NULL,'-',处理人) 处理人, NOW() 记录时间
+                            #         FROM customer;'''     出貨日期	件數	重量	主號	航班號	'航班情况',	'清關情況',	'全清時間',
+                            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                        print('++++成功更新：' + sht.name + '--->>>到头程物流表')
+                    else:
+                        print('----------数据为空导入失败：' + sht.name)
                 else:
-                    print('----------数据为空导入失败：' + sht.name)
+                    print('----不用导入：' + sht.name)
             wb.close()
         app.quit()
 
@@ -845,9 +754,9 @@ class QueryTwoLower(Settings, Settings_sso):
             print('共有 ' + str(len(df)) + '条 正在写入......')
             df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             # df.to_excel('G:\\输出文件\\{0}-查询{1}.xlsx'.format(match[team], rq), sheet_name='查询', index=False,engine='xlsxwriter')
-            sql = '''REPLACE INTO gat_take_delivery(id,提货单号,提货时间,提货日期,提货物流,提货物流id,运输方式,货物类型,运输公司,运输班次,箱号,线路,箱数,统计,交货时间,报关资料发送结果,更新时间, 主號,航班號,记录时间)
+            sql = '''REPLACE INTO gat_take_delivery(id,提货单号,提货时间,提货日期,提货物流,提货物流id,运输方式,货物类型,运输公司,运输班次,箱号,线路,箱数,统计,出货时间, 交货时间,报关资料发送结果,更新时间, 主號,航班號,记录时间)
                      SELECT id,提货单号,提货时间,DATE_FORMAT(提货时间,'%Y-%m-%d') 提货日期,提货物流,提货物流id,运输方式,货物类型,IF(运输公司 = '',NULL,运输公司) 运输公司,IF(运输班次 = '',NULL,运输班次) 运输班次,箱号,线路,箱数,统计,
-                            IF(交货时间 = '',NULL,交货时间) 交货时间,报关资料发送结果,更新时间,NULL 主號,NULL 航班號,NOW() 记录时间
+                            出货时间, IF(交货时间 = '',NULL,交货时间) 交货时间,报关资料发送结果,更新时间,NULL 主號,NULL 航班號,NOW() 记录时间
                     FROM customer;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -859,10 +768,10 @@ class QueryTwoLower(Settings, Settings_sso):
     def _get_take_delivery_no(self):
         timeStart = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
         start = datetime.datetime.now()
-        print('正在更新 头程提货单号 信息…………')
+        print('正在更新 头程提货单号 (立邦国际)信息…………')
         sql = '''SELECT id, 提货单号,主號, 航班號, 提货日期  
                 FROM {0} g 
-                WHERE g.运输公司 IS NULL AND g.`航班號` IS NOT NULL AND g.`提货日期` >= '{1}';'''.format('gat_take_delivery', timeStart)
+                WHERE g.运输公司 IS NULL AND g.`航班號` IS NOT NULL AND g.`提货日期` >= '{1}' AND g.提货物流 = '立邦国际';'''.format('gat_take_delivery', timeStart)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         if df.empty:
             print('无需要更新订单信息！！！')
@@ -921,14 +830,14 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
-    select = 1
+    select = 2
     if select == 1:
         m.readFile(select)            # 上传每日压单核实结果
         m.order_spec()       # 压单反馈  （备注（压单核实是否需要））
 
     elif select == 2:
         m.readFile(select)
-        m._get_take_delivery_no()
+        # m._get_take_delivery_no()
 
 
     elif select == 3:

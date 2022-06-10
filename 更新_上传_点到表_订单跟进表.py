@@ -65,7 +65,7 @@ class QueryTwo(Settings, Settings_sso):
                                                                                     self.mysql2['datebase']))
     def readFormHost(self, team):
         start = datetime.datetime.now()
-        path = r'D:\Users\Administrator\Desktop\需要用到的文件\数据库'
+        path = r'D:\Users\Administrator\Desktop\需要用到的文件\B订单跟进表'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:

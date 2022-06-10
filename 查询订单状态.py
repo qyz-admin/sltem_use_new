@@ -570,7 +570,7 @@ if __name__ == '__main__':
     # upload = '查询-订单号'
     # m.trans_way_cost(team)  # 同产品下的规格运费查询
     '''
-    select = 2
+    select = 4
     if int(select) == 1:
             upload = '查询-运单号'
             m.readFormHost(upload)
@@ -586,14 +586,15 @@ if __name__ == '__main__':
         m.readFormHost('查询运费')
         m.trans_way_cost_new(team)  # 同产品下的规格运费查询
 
+
     elif int(select) == 4:
-        # m.readFormHost('查询运费')
-        # m.trans_way_cost_new(team)  # 同产品下的规格运费查询
-        
-        upload = '查询-运单号'    # 获取在途未上线 催促的
-        team = 'gat'
-        login_TmpCode = '535a53d574d134e9868c9c4a7f9758ba'
-        m.onrount_online(team, login_TmpCode)
+        m.readFormHost('查询运费')
+        m.trans_way_cost_new(team)  # 同产品下的规格运费查询
+        if week.isoweekday() == 2 or week.isoweekday() == 4:
+            upload = '查询-运单号'    # 获取在途未上线 催促的
+            team = 'gat'
+            login_TmpCode = '535a53d574d134e9868c9c4a7f9758ba'
+            m.onrount_online(team, login_TmpCode)
 
         
 
