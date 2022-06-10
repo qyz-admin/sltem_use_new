@@ -34,10 +34,11 @@ class QueryTwoLower(Settings, Settings_sso):
         self.password = password
         # self.sso_online_cang()
         # self.bulid_file()
-        # if handle == '手动':
-        #     self.sso_online_cang_handle(login_TmpCode)
-        # else:
-        #     self.sso_online_cang_auto()
+
+        if handle == '手动':
+            self.sso_online_cang_handle(login_TmpCode)
+        else:
+            self.sso_online_cang_auto()
 
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -153,7 +154,8 @@ class QueryTwoLower(Settings, Settings_sso):
                         #     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                         # elif tem == '超峰国际':
                         #     db = sht.used_range.options(pd.DataFrame, header=2, numbers=int, index=False).value
-                        # db.dropna(subset=["提单号"], axis=0, inplace=True)           # 滤除指定列中含有缺失的行
+                        if tem == '超峰国际':
+                            db.dropna(subset=["提单号"], axis=0, inplace=True)           # 滤除指定列中含有缺失的行
                         print(db.columns)
                         print(db)
                     except Exception as e:
@@ -174,17 +176,12 @@ class QueryTwoLower(Settings, Settings_sso):
                             if '提货物流' not in db.columns:
                                 db.insert(0, '提货物流', tem)
                             db = db[['提货物流', '出货时间', '提单号', '开船时间', '到达时间']]
-                            # db.rename(columns={'备注（压单核实是否需要）': '处理结果'}, inplace=True)  提单号	开船时间	到达时间
-                            # db.dropna(axis=0, subset=['处理结果'], how='any', inplace=True)
                             db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
                             sql = '''update gat_take_delivery a, customer b 
                                     set a.`主號` = IF(b.`提单号` = '' or  b.`提单号` is NULL, a.`主號`, b.`提单号`),
-                                        a.`出货时间` = IF(b.`开船时间` = '' or  b.`开船时间` is NULL, a.`出货时间`, b.`开船时间`),
-                                        a.`交货时间` = IF(b.`到达时间` = '' or  b.`到达时间` is NULL, a.`交货时间`, b.`到达时间`)
+                                        a.`出货时间` = IF(b.`开船时间` is NULL, a.`出货时间`, b.`开船时间`),
+                                        a.`交货时间` = IF(b.`到达时间` is NULL, a.`交货时间`, b.`到达时间`)
                                     where a.`提货日期`= b.`出货时间` and a.`提货物流`= b.`提货物流`;'''
-                            # sql = '''REPLACE INTO 压单表_已核实(订单编号,处理时间,处理结果,处理人, 记录时间)
-                            #         SELECT 订单编号,处理时间,处理结果,IF(处理人 = '' OR 处理人 IS NULL,'-',处理人) 处理人, NOW() 记录时间
-                            #         FROM customer;'''     出貨日期	件數	重量	主號	航班號	'航班情况',	'清關情況',	'全清時間',
                             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                         print('++++成功更新：' + sht.name + '--->>>到头程物流表')
                     else:
@@ -756,7 +753,7 @@ class QueryTwoLower(Settings, Settings_sso):
             # df.to_excel('G:\\输出文件\\{0}-查询{1}.xlsx'.format(match[team], rq), sheet_name='查询', index=False,engine='xlsxwriter')
             sql = '''REPLACE INTO gat_take_delivery(id,提货单号,提货时间,提货日期,提货物流,提货物流id,运输方式,货物类型,运输公司,运输班次,箱号,线路,箱数,统计,出货时间, 交货时间,报关资料发送结果,更新时间, 主號,航班號,记录时间)
                      SELECT id,提货单号,提货时间,DATE_FORMAT(提货时间,'%Y-%m-%d') 提货日期,提货物流,提货物流id,运输方式,货物类型,IF(运输公司 = '',NULL,运输公司) 运输公司,IF(运输班次 = '',NULL,运输班次) 运输班次,箱号,线路,箱数,统计,
-                            出货时间, IF(交货时间 = '',NULL,交货时间) 交货时间,报关资料发送结果,更新时间,NULL 主號,NULL 航班號,NOW() 记录时间
+                            NULL 出货时间, IF(交货时间 = '',NULL,交货时间) 交货时间,报关资料发送结果,更新时间,NULL 主號,NULL 航班號,NOW() 记录时间
                     FROM customer;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -775,33 +772,68 @@ class QueryTwoLower(Settings, Settings_sso):
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         if df.empty:
             print('无需要更新订单信息！！！')
-            return
-        for row in df.itertuples():
-            ord_id = getattr(row, '提货单号')
-            id = getattr(row, 'id')
-            take_delivery_no = getattr(row, '主號')
-            batch = getattr(row, '航班號')
-            self._upload_take_delivery_no(ord_id, id, take_delivery_no, batch)
+        else:
+            for row in df.itertuples():
+                tem = '立邦国际'
+                ord_id = getattr(row, '提货单号')
+                id = getattr(row, 'id')
+                take_delivery_no = getattr(row, '主號')
+                batch = getattr(row, '航班號')
+                departed_time = ''
+                arrived_time = ''
+                self._upload_take_delivery_no(ord_id, id, take_delivery_no, batch, tem, departed_time, arrived_time)
+
+        print('正在更新 头程提货单号 (超峰国际)信息…………')
+        sql = '''SELECT id, 提货单号,主號, 出货时间, 交货时间
+                FROM {0} g 
+                WHERE g.运输公司 IS NULL AND g.`主號` IS NOT NULL AND g.`提货日期` >= '{1}' AND g.提货物流 = '超峰国际';'''.format('gat_take_delivery', timeStart)
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        if df.empty:
+            print('无需要更新订单信息！！！')
+        else:
+            for row in df.itertuples():
+                tem = '超峰国际'
+                ord_id = getattr(row, '提货单号')
+                id = getattr(row, 'id')
+                take_delivery_no = getattr(row, '主號')
+                batch = ''
+                departed_time = ''
+                arrived_time = ''
+                self._upload_take_delivery_no(ord_id, id, take_delivery_no, batch, tem, departed_time, arrived_time)
         print('单次更新耗时：', datetime.datetime.now() - start)
     # 进入 头程检索界面
-    def _upload_take_delivery_no(self, ord_id, id, take_delivery_no, batch):
+    def _upload_take_delivery_no(self, ord_id, id, take_delivery_no, batch, tem, departed_time, arrived_time):
         print('+++正在更新中')
         url = r'http://gwms-v3.giikin.cn/order/delivery/takedeliveryregister'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'http://gwms-v3.giikin.cn',
                     'Referer': 'http://gwms-v3.giikin.cn/order/delivery/takeDeliveryRegister?id=8755'}
-        transport_type = batch[:2]
-        print('提货单号：' + ord_id, 'id：' + str(id), ';主號：' + take_delivery_no, '；航班號：'+transport_type, '；航班信息：'+batch)
-        data = {'id': id,
-                'take_delivery_no': take_delivery_no,
-                'transport_type': transport_type,
-                'batch': batch,
-                'departed_time': '',
-                'departed_place': '',
-                'arrived_time': '',
-                'arrived_place': '',
-                'product_type': ''
-                }
+        data = ''
+        if tem == '立邦国际':
+            transport_type = batch[:2]
+            print('提货单号：' + ord_id, 'id：' + str(id), ';主號：' + take_delivery_no, '；航班號：'+transport_type, '；航班信息：'+batch)
+            data = {'id': id,
+                    'take_delivery_no': take_delivery_no,
+                    'transport_type': transport_type,
+                    'batch': batch,
+                    'departed_time': '',
+                    'departed_place': '',
+                    'arrived_time': '',
+                    'arrived_place': '',
+                    'product_type': ''
+                    }
+        elif tem == '超峰国际':
+            print('提货单号：' + ord_id, 'id：' + str(id), ';主號：' + take_delivery_no, '；开船时间：' + departed_time, '；到达时间：' + arrived_time)
+            data = {'id': id,
+                    'take_delivery_no': take_delivery_no,
+                    'transport_type': '',
+                    'batch': '',
+                    'departed_time': departed_time,
+                    'departed_place': '',
+                    'arrived_time': arrived_time,
+                    'arrived_place': '',
+                    'product_type': ''
+                    }
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
@@ -837,13 +869,13 @@ if __name__ == '__main__':
 
     elif select == 2:
         m.readFile(select)
-        # m._get_take_delivery_no()
+        m._get_take_delivery_no()
 
 
     elif select == 3:
         m.get_take_delivery_no()
-        m.readFile(select)
-        m._get_take_delivery_no()
+        # m.readFile(select)
+        # m._get_take_delivery_no()
 
         # m. _upload_take_delivery_no(8637, '297-82680091', 'CI', 'CI6844')
 
