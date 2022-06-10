@@ -87,7 +87,7 @@ class Updata_return_bill(Settings, Settings_sso):
                     team = 'gat_return_bill_over'
                     tem_data = '速派'
 
-                elif '吉客印上架总表' in dir:
+                elif '吉客印上架总表' in dir or '吉客印台湾退件上架' in dir:
                     tem_data = '天马'
                     tem_kuwei = '天马仓退件库位'
                     tem_day = 45
@@ -241,6 +241,14 @@ class Updata_return_bill(Settings, Settings_sso):
                                 db.insert(0, '末条状态', '')
                                 db['退货单号'] = db['运单编号'].copy()
                                 db = db[['物流渠道', '订单编号', '运单编号', '退货单号', '退货上架货架', '上架时间', '仓库名称', '在仓天数', '末条状态']]
+                            else:
+                                team = 'gat_return_bill'
+                                db.rename(columns={'内部单号': '订单编号', '转单号码': '运单编号', '上架日期': '上架时间', '所属仓库': '仓库名称'}, inplace=True)
+                                db.insert(0, '物流渠道', tem_data)
+                                db.insert(0, '退货单号', '')
+                                db.insert(0, '退货上架货架', '')
+                                db['退货单号'] = db['运单编号'].copy()
+                                db = db[['物流渠道', '订单编号', '运单编号', '退货单号', '退货上架货架', '上架时间', '仓库名称']]
 
                         elif tem_data == '立邦':
                             if '（上、下架登记表）' in sht.name:
@@ -384,6 +392,57 @@ class Updata_return_bill(Settings, Settings_sso):
             print('无异常 上架数据......')
 
 
+    # 天马上架
+    def tianma_upload_return(self):
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('++++正在获取： ')
+        orderId = ['7621196726','1568566226','7621210940','7620899580','7620878941']
+        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+        if max_count > 0:
+            df = pd.DataFrame([])
+            dlist = []
+            for ord in orderId:
+                print(ord)
+                data = self._tianma_upload_return(ord, 'timeEnd', 'n')
+                dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+            print(dp)
+    def _tianma_upload_return(self, waybill, timeEnd, n):  # 进入压单检索界面
+        print('+++正在查询订单信息中')
+        url = r'http://gwms-v3.giikin.cn/order/refund/sale'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'http://gwms-v3.giikin.cn',
+                    'Referer': 'http://gwms-v3.giikin.cn/order/refund/sale'}
+        data = {'number': waybill,
+                'type': 2,
+                'whid': 204,
+                'plcode': 'A01-01-01',
+                'free_time': '2022-07-21'}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print(req)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
+        print(req)
+        # data = req['failMsg']
+        data = pd.json_normalize(req)
+        # max_count = req['count']
+        # if max_count != [] or max_count != 0:
+        #     ordersdict = []
+        #     try:
+        #         for result in req['data']:
+        #             ordersdict.append(result)
+        #     except Exception as e:
+        #         print('转化失败： 重新获取中', str(Exception) + str(e))
+        #     data = pd.json_normalize(ordersdict)
+        #     # print(data)
+        # else:
+        #     data = None
+        #     print('****** 没有信息！！！')
+        return data
 
 if __name__ == '__main__':
     m = Updata_return_bill('+86-18538110674', 'qyz35100416')

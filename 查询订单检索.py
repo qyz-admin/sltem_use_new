@@ -735,11 +735,9 @@ class QueryOrder(Settings, Settings_sso):
                 data = self._timeQuery(timeStart, timeEnd, n, areaId)
                 dlist.append(data)
                 n = n + 1
-
             print('正在写入......')
             dp = df.append(dlist, ignore_index=True)
-            dp.to_excel('G:\\输出文件\\订单检索-{0}{1}.xlsx'.format(99, rq), sheet_name='查询', index=False,
-                        engine='xlsxwriter')
+            dp.to_excel('G:\\输出文件\\订单检索-{0}{1}.xlsx'.format(99, rq), sheet_name='查询', index=False, engine='xlsxwriter')
             if select != '':
                 if select.split('|')[0] == '检查头程直发渠道':
                     db1 = dp[(dp['币种'].str.contains('台币'))]
@@ -758,17 +756,21 @@ class QueryOrder(Settings, Settings_sso):
                     db0 = db0[['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '收货人', '联系电话', '拉黑率','配送地址', '应付金额', '数量',
                                '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型', '订单类型', '物流状态',  '重量',
                                '删除原因', '问题原因', '下单人', '备注', 'IP', '体积', '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库',
-                               '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '更新时间']]
+                               '拒收原因', '物流更新时间', '状态时间', '更新时间']]
+                    db0.insert(0, '操作人', '')
                     db0.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+                    # 更新删除订单的原因
+                    self.del_reson()
+                    sql = '''SELECT * FROM {0};'''.format('cache')
+                    db00 = pd.read_sql_query(sql=sql, con=self.engine1)
+                    db00.to_excel('G:\\输出文件\\神龙-火凤凰 昨日删单明细{1}.xlsx'.format(wb_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')
             else:
                 wb_name ='时间查询'
                 dp.to_excel('G:\\输出文件\\订单检索-{0}{1}.xlsx'.format(wb_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
             print('查询已导出+++')
         else:
             print('无信息+++')
-
-
-
+    # 订单检索 时间查询的公用函数
     def _timeQuery(self, timeStart, timeEnd, n, areaId):  # 进入订单检索界面
         # print('......正在查询信息中......')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
@@ -879,7 +881,91 @@ class QueryOrder(Settings, Settings_sso):
         print('******本批次查询成功')
         return df
 
+    # 更新删除订单的原因
+    def del_reson(self):
+        print('正在更新 订单删除 信息……………………………………………………………………………………………………………………………………………………………………………………')
+        start = datetime.datetime.now()
+        sql = '''SELECT 订单编号 FROM {0} s WHERE s.`订单状态` = '已删除';'''.format('cache')
+        db = pd.read_sql_query(sql=sql, con=self.engine1)
+        if db.empty:
+            print('无需要更新订单信息！！！')
+            return
+        print(db['订单编号'][0])
+        orderId = list(db['订单编号'])
+        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+        if max_count > 500:
+            ord = ', '.join(orderId[0:500])
+            df = self._del_reson(ord, '')
+            dlist = []
+            n = 0
+            while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
+                n = n + 500
+                ord = ','.join(orderId[n:n + 500])
+                data = self._del_reson(ord, '')
+                dlist.append(data)
+            print('正在写入......')
+            dp = df.append(dlist, ignore_index=True)
+        else:
+            ord = ','.join(orderId[0:max_count])
+            dp = self._del_reson(ord, '')
+        if dp is None or len(dp) == 0:
+            print('查询为空，不需更新+++')
+        else:
+            # print(dp)
+            dp.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
+            print('正在更新删除原因中......')
+            sql = '''update cache a, cache_cp b set a.`操作人`= IF(b.`操作人` = '' or a.`操作人` = '', NULL, b.`操作人`) where a.`订单编号`=b.`订单编号`;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        print('查询耗时：', datetime.datetime.now() - start)
+    # 更新删除订单的原因 -函数调用
+    def _del_reson(self, ord, areaId):  # 进入订单检索界面
+        # print('......正在查询信息中......')
+        url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRemoveOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/deletedOrder'}
+        if areaId == 179:
+            data = {'page': 1, 'pageSize': 500, 'orderPrefix': ord, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
+                    'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                    'emailStatus': None, 'befrom': None, 'areaId': areaId, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None,
+                    'questionId': None, 'reassignmentType': None, 'delUserId': None, 'delReasonIds': None,'delTimeStart':None, 'delTimeEnd': None}
+        else:
+            data = {'page': 1, 'pageSize': 500, 'orderPrefix': ord, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
+                    'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                    'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None,
+                    'questionId': None, 'reassignmentType': None, 'delUserId': None, 'delReasonIds': None,'delTimeStart':None, 'delTimeEnd': None}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print('......已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        ordersdict = []
+        try:
+            for result in req['data']['list']:
+                ordersdict.append(result)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        data = pd.json_normalize(ordersdict)
+        df = None
+        try:
+            # df = data[['orderNumber', 'currency', 'area', 'orderStatus', 'addTime', 'username', 'verifyTime',
+            #            'dpeStyle', 'reassignmentTypeName', 'logisticsStatus', 'delReason', 'questionReason',
+            #            'transferTime', 'deliveryTime', 'hasLowPrice', 'remark', 'ip', 'autoVerify', 'warehouse']]
+            # df.columns = ['订单编号', '币种', '运营团队', '订单状态', '下单时间', '操作人', '审核时间',
+            #               '货物类型', '订单类型', '物流状态', '删除原因', '问题原因',
+            #               '转采购时间', '发货时间', '是否低价', '备注', 'IP', '审单类型', '发货仓库']
+            df = data[['orderNumber', 'username']]
+            df.columns = ['订单编号', '操作人']
+        except Exception as e:
+            print('------查询为空')
+        print('******本批次查询成功')
+        return df
 
+
+    # 删除订单的  分析导出
     def del_order(self):
         print('+++正在分析 昨日 删单原因中')
         sql ='''SELECT *,concat(ROUND(SUM(IF(删除原因 IS NULL OR 删除原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
@@ -1015,6 +1101,7 @@ if __name__ == '__main__':
     # m.readFormHost(team, searchType)        # 导入；，更新--->>数据更新切换
     # 2、按时间查询状态
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
+    # m.del_reson()
 
     select = 1                                  # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
