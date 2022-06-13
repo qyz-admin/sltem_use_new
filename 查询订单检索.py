@@ -968,12 +968,19 @@ class QueryOrder(Settings, Settings_sso):
     # 删除订单的  分析导出
     def del_order(self):
         print('+++正在分析 昨日 删单原因中')
-        sql ='''SELECT *,concat(ROUND(SUM(IF(删除原因 IS NULL OR 删除原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
+        listT = []  # 查询sql的结果 存放池
+        print('正在获取 删单明细…………')
+        sql ='''SELECT * FROM `cache` c  WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台');'''
+        df0 = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df0)
+
+        print('正在获取 删单明细 信息…………')
+        sql ='''SELECT *,concat(ROUND(SUM(IF(删单原因 IS NULL OR 删单原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
                 FROM (
                       SELECT s1.*,总订单量,总删单量
                       FROM (
-                            SELECT 币种,运营团队,删除原因,COUNT(订单编号) AS 订单量
-                            FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',删除原因) 删单原因
+                            SELECT 币种,运营团队,删单原因,COUNT(订单编号) AS 订单量
+                            FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
                                   FROM `cache` c
                             ) w
                             GROUP BY 币种,运营团队,删单原因
@@ -987,16 +994,70 @@ class QueryOrder(Settings, Settings_sso):
                       ) s2 ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
                 ) s
                 WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台')
-                GROUP BY 币种,运营团队,删除原因
+                GROUP BY 币种,运营团队,删单原因
                 ORDER BY FIELD(币种,'台币','港币','合计'),
                          FIELD(运营团队,'神龙家族-港澳台','火凤凰-港澳台','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
                          订单量 DESC;'''
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        sql ='''SELECT 币种,运营团队,删单原因2 AS '删单原因(单)',订单量2 AS '删单量(单)',删单率
+FROM (
+SELECT 币种,运营团队,
+      删单原因,
+--       IF(删单原因 IS NULL ,CONCAT('总订单量：',总订单量,'单; 总删单量：',总删单量,'单;'),删单原因) AS 删单原因2,
+      IF(删单原因 IS NULL ,CONCAT('总订单量：',总订单量),删单原因) AS 删单原因2,
+      IF(删单原因 IS NULL ,CONCAT('总删单量：',总删单量),订单量) AS 订单量2,
+      订单量,总订单量,总删单量,
+      concat(ROUND(SUM(IF(删单原因 IS NULL OR 删单原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
+                FROM (
+                      SELECT s1.*,总订单量,总删单量
+                      FROM (
+                            SELECT 币种,运营团队,删单原因,COUNT(订单编号) AS 订单量
+                            FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
+                                  FROM `cache` c
+                            ) w
+                            GROUP BY 币种,运营团队,删单原因
+                      ) s1
+                      LEFT JOIN
+                      (
+                            SELECT 币种,运营团队,COUNT(订单编号) AS 总订单量,
+                                  SUM(IF(订单状态 = '已删除',1,0)) AS 总删单量
+                            FROM `cache` w
+                            GROUP BY 币种,运营团队
+                      ) s2 ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
+                ) s
+                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台')
+                GROUP BY 币种,运营团队,删单原因
+--                 WITH rollup
+                ORDER BY FIELD(币种,'台币','港币','合计'),
+                         FIELD(运营团队,'神龙家族-港澳台','火凤凰-港澳台','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
+                         订单量 DESC
+) ss;'''
+        df1 = pd.read_sql_query(sql=sql, con=self.engine1)
+        print(df1)
 
+        # ax = df1.plot()
+        # fig = ax.get_figure()
+        # fig.savefig(r"H:\桌面\需要用到的文件\文件夹\out2.jpeg")
+
+        # plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']  # 显示中文字体
+        # fig = plt.figure(figsize=(3, 4), dpi=1400)  # dpi表示清晰度
+        # ax = fig.add_subplot(111, frame_on=False)
+        # ax.xaxis.set_visible(False)  # hide the x axis
+        # ax.yaxis.set_visible(False)  # hide the y axis
+        # table(ax, df1, loc='center')  # 将df换成需要保存的dataframe即可
+        # plt.savefig(r"H:\桌面\需要用到的文件\文件夹\out.jpeg")
+
+        # im = Image.fromarray(df1)
+        # im.save(r"H:\桌面\需要用到的文件\文件夹\out.jpeg")
+
+        listT.append(df1)
+
+        print('正在获取 删单原因汇总 信息…………')
         sql ='''SELECT s1.*
               FROM (
-                    SELECT 币种,删除原因,COUNT(订单编号) AS 订单量
-                    FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',删除原因) 删单原因
+                    SELECT 币种,删除原因,COUNT(订单编号) AS 订单量,
+                    		SUM(IF(拉黑率 > 80 ,1,0)) AS 拉黑率80以上,
+							SUM(IF(拉黑率 < 80 ,1,0)) AS 拉黑率80以下
+                    FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
                                             FROM `cache` c
                                             WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台')
                                 ) w
@@ -1006,87 +1067,128 @@ class QueryOrder(Settings, Settings_sso):
                     GROUP BY 币种,删除原因
               ORDER BY 订单量 desc
               LIMIT 5;'''
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        df2 = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df2)
 
-        sql ='''SELECT *,concat(ROUND(SUM(IF(删除原因 IS NULL OR 删除原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
-                FROM (
-                      SELECT s1.*,总订单量,总删单量
-                      FROM (
-                            SELECT 币种,运营团队,删除原因,COUNT(订单编号) AS 订单量
-                            FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',删除原因) 删单原因
-                                  FROM `cache` c
+        print('正在获取 删单原因明细（恶意订单-电话） 信息…………')
+        sql ='''SELECT 币种,删单原因,联系电话,COUNT(订单编号) AS 订单量
+                FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
+                      FROM `cache` c
+                      WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND 删除原因 LIKE '%恶意%'
+                    ) w
+                GROUP BY 币种,`联系电话`
+				ORDER BY 订单量 desc;'''
+        df30 = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df30)
+        print('正在获取 删单原因明细（恶意订单-ip） 信息…………')
+        sql = '''SELECT 币种,删单原因,IP,COUNT(订单编号) AS 订单量
+                        FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
+                              FROM `cache` c
+                              WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND 删除原因 LIKE '%恶意%'
                             ) w
-                            GROUP BY 币种,运营团队,删单原因
-                      ) s1
-                      LEFT JOIN
-                      (
-                            SELECT 币种,运营团队,COUNT(订单编号) AS 总订单量,
-                                  SUM(IF(订单状态 = '已删除',1,0)) AS 总删单量
-                            FROM `cache` w
-                            GROUP BY 币种,运营团队
-                      ) s2 ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
-                ) s
-                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台')
-                GROUP BY 币种,运营团队,删除原因
-                ORDER BY FIELD(币种,'台币','港币','合计'),
-                         FIELD(运营团队,'神龙家族-港澳台','火凤凰-港澳台','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
-                         订单量 DESC;'''
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
+                        GROUP BY 币种,`IP`
+        				ORDER BY 订单量 desc;'''
+        df31 = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df31)
 
-        sql ='''SELECT *,concat(ROUND(SUM(IF(删除原因 IS NULL OR 删除原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
-                FROM (
-                      SELECT s1.*,总订单量,总删单量
-                      FROM (
-                            SELECT 币种,运营团队,删除原因,COUNT(订单编号) AS 订单量
-                            FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',删除原因) 删单原因
-                                  FROM `cache` c
+        print('正在获取 删单原因明细（拉黑率-电话） 信息…………')
+        sql = '''SELECT 币种,删单原因,联系电话,COUNT(订单编号) AS 订单量
+                        FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
+                              FROM `cache` c
+                              WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND 删除原因 LIKE '%拉黑率%'
                             ) w
-                            GROUP BY 币种,运营团队,删单原因
-                      ) s1
-                      LEFT JOIN
-                      (
-                            SELECT 币种,运营团队,COUNT(订单编号) AS 总订单量,
-                                  SUM(IF(订单状态 = '已删除',1,0)) AS 总删单量
-                            FROM `cache` w
-                            GROUP BY 币种,运营团队
-                      ) s2 ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
-                ) s
-                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台')
-                GROUP BY 币种,运营团队,删除原因
-                ORDER BY FIELD(币种,'台币','港币','合计'),
-                         FIELD(运营团队,'神龙家族-港澳台','火凤凰-港澳台','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
-                         订单量 DESC;'''
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
+                        GROUP BY 币种,`联系电话`
+        				ORDER BY 订单量 desc;'''
+        df40 = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df40)
+        print('正在获取 删单原因明细（拉黑率-ip） 信息…………')
+        sql = '''SELECT 币种,删单原因,IP,COUNT(订单编号) AS 订单量
+                                FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
+                                      FROM `cache` c
+                                      WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND 删除原因 LIKE '%拉黑率%'
+                                    ) w
+                                GROUP BY 币种,`IP`
+                				ORDER BY 订单量 desc;'''
+        df41 = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df41)
 
-        sql ='''SELECT *,concat(ROUND(SUM(IF(删除原因 IS NULL OR 删除原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
-                FROM (
-                      SELECT s1.*,总订单量,总删单量
-                      FROM (
-                            SELECT 币种,运营团队,删除原因,COUNT(订单编号) AS 订单量
-                            FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',删除原因) 删单原因
-                                  FROM `cache` c
+        print('正在获取 删单原因明细（系统删除-删单原因） 信息…………')
+        sql = '''SELECT 币种,删单原因,COUNT(订单编号) AS 订单量
+                FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
+                     FROM `cache` c
+                     WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND `删除人` IS NULL
+                ) w
+                GROUP BY 币种,`删单原因`
+				ORDER BY 订单量 desc;'''
+        df50 = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df50)
+        print('正在获取 删单原因明细（系统删除-ip） 信息…………')
+        sql = '''SELECT 币种,删单原因,IP,COUNT(订单编号) AS 订单量
+                FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
+                     FROM `cache` c
+                     WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND `删除人` IS NULL
+                ) w
+                GROUP BY 币种,`IP`
+                ORDER BY 订单量 desc;'''
+        df51 = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df51)
+        print('正在获取 删单原因明细（系统删除-电话） 信息…………')
+        sql = '''SELECT 币种,删单原因,联系电话,COUNT(订单编号) AS 订单量
+                FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
+                     FROM `cache` c
+                     WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND `删除人` IS NULL
+                ) w
+                GROUP BY 币种,`联系电话`
+                ORDER BY 订单量 desc;'''
+        df52 = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df52)
+
+        print('正在获取 删单原因明细（重复订单-电话） 信息…………')
+        sql = '''SELECT 币种,删单原因,联系电话,COUNT(订单编号) AS 订单量
+                        FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
+                              FROM `cache` c
+                              WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND 删除原因 LIKE '%恶意%'
                             ) w
-                            GROUP BY 币种,运营团队,删单原因
-                      ) s1
-                      LEFT JOIN
-                      (
-                            SELECT 币种,运营团队,COUNT(订单编号) AS 总订单量,
-                                  SUM(IF(订单状态 = '已删除',1,0)) AS 总删单量
-                            FROM `cache` w
-                            GROUP BY 币种,运营团队
-                      ) s2 ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
-                ) s
-                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台')
-                GROUP BY 币种,运营团队,删除原因
-                ORDER BY FIELD(币种,'台币','港币','合计'),
-                         FIELD(运营团队,'神龙家族-港澳台','火凤凰-港澳台','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
-                         订单量 DESC;'''
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-
+                        GROUP BY 币种,`联系电话`
+        				ORDER BY 订单量 desc;'''
+        df60 = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df60)
+        print('正在获取 删单原因明细（重复订单-ip） 信息…………')
+        sql = '''SELECT 币种,删单原因,IP,COUNT(订单编号) AS 订单量
+                                FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
+                                      FROM `cache` c
+                                      WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND 删除原因 LIKE '%恶意%'
+                                    ) w
+                                GROUP BY 币种,`IP`
+                				ORDER BY 订单量 desc;'''
+        df61 = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df61)
 
         print('正在写入excel…………')
+        today = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        file_path = 'H:\\桌面\\需要用到的文件\\输出文件\\工作数量 {}.xlsx'.format(today)
 
+        writer2 = pd.ExcelWriter(file_path, engine='openpyxl')
+        df1.to_excel(writer2, index=False)                  # 删单
+        df2.to_excel(writer2, index=False, startrow=20)     # 删单原因汇总
+
+        df30.to_excel(writer2, index=False, startcol=9)     # 恶意订单-电话
+        df31.to_excel(writer2, index=False, startcol=14)    # 恶意订单-ip
+
+        df40.to_excel(writer2, index=False, startcol=19)     # 拉黑率-电话
+        df41.to_excel(writer2, index=False, startcol=24)     # 拉黑率-ip
+
+        df50.to_excel(writer2, index=False, startcol=29)     # 系统删除-删单原因
+        df51.to_excel(writer2, index=False, startcol=34)     # 系统删除-ip
+        df52.to_excel(writer2, index=False, startcol=39)     # 系统删除-电话
+
+        df60.to_excel(writer2, index=False, startcol=44)     # 重复订单-电话）
+        df61.to_excel(writer2, index=False, startcol=49)     # 重复订单-ip
+
+        writer2.save()
+        writer2.close()
         print()
+
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")

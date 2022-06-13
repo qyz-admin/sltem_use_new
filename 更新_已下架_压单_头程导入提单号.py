@@ -139,7 +139,7 @@ class QueryTwoLower(Settings, Settings_sso):
         app.quit()
 
     # 工作表的订单信息
-    def _readFile_select(self, filePath, rq , tem):
+    def _readFile_select_stop(self, filePath, rq , tem):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
         app.display_alerts = False
@@ -190,6 +190,94 @@ class QueryTwoLower(Settings, Settings_sso):
                     print('----不用导入：' + sht.name)
             wb.close()
         app.quit()
+    # 工作表的订单信息
+    def _readFile_select(self, filePath, rq , tem):
+        fileType = os.path.splitext(filePath)[1]
+        app = xlwings.App(visible=False, add_book=False)
+        app.display_alerts = False
+        if 'xls' in fileType:
+            wb = app.books.open(filePath, update_links=False, read_only=True)
+            for sht in wb.sheets:
+                if sht.api.Visible == -1:
+                    try:
+                        db = None
+                        # db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
+                        if tem == '立邦国际':
+                            db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
+                        elif tem == '超峰国际':
+                            db = sht.used_range.options(pd.DataFrame, header=2, numbers=int, index=False).value
+                            db.columns = db.columns.droplevel(0)  # 直接将指定的层级索引drop掉
+                            # db = pd.read_excel(filePath, sheet_name=sht.name)
+                            db.dropna(subset=["提单号"], axis=0, inplace=True)           # 滤除指定列中含有缺失的行
+                        print(db.columns)
+                        print(db)
+                    except Exception as e:
+                        print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
+                    if db is not None and len(db) > 0:
+                        print('++++正在导入更新：' + sht.name + '表； 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                        if tem == '立邦国际':
+                            if '提货物流' not in db.columns:
+                                db.insert(0, '提货物流', tem)
+                            db = db[['提货物流', '出貨日期', '件數', '主號', '航班號', '航班情况', '清關情況', '全清時間', '出貨日期']]
+                            db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+                            sql = '''update gat_take_delivery a, customer b 
+                                    set a.`主號` = IF(b.`主號` = '' or  b.`主號` is NULL, a.`主號`, b.`主號`),
+                                        a.`航班號` = IF(b.`航班號` = '' or  b.`航班號` is NULL, a.`航班號`, b.`航班號`)
+                                    where a.`提货日期`= b.`出貨日期` and a.`提货物流`= b.`提货物流`;'''
+                            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                        elif tem == '超峰国际':
+                            if '提货物流' not in db.columns:
+                                db.insert(0, '提货物流', tem)
+                            db = db[['提货物流', '出货时间', '提单号', '开船时间', '到达时间']]
+                            db['开船时间'] = db['开船时间'].apply(lambda x: self.fun_time(x))       # 时间函数
+                            db['到达时间'] = db['到达时间'].apply(lambda x: self.fun_time(x))
+                            # db['开船时间'] = db['开船时间'].apply(lambda x: datetime.datetime.now().strftime("%Y/") + x.split("晚上")[0] + " 23:59:59" if "晚上" in x else 0)
+                            # db['开船时间'] = db['开船时间'].apply(lambda x: (datetime.datetime.strptime(x, '%Y/%m/%d %H:%M:%S')).strftime("%Y-%m-%d %H:%M:%S"))
+                            # db['到达时间'] = db['到达时间'].apply(lambda x: datetime.datetime.now().strftime("%Y/") + x.split("早上")[0] + " 03:00:00" if "早上" in x else 0)
+                            # db['到达时间'] = db['到达时间'].apply(lambda x: (datetime.datetime.strptime(x, '%Y/%m/%d %H:%M:%S')).strftime("%Y-%m-%d %H:%M:%S"))
+                            db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+                            sql = '''update gat_take_delivery a, customer b 
+                                    set a.`主號` = IF(b.`提单号` = '' or  b.`提单号` is NULL, a.`主號`, b.`提单号`),
+                                        a.`出货时间` = IF(b.`开船时间` is NULL, a.`出货时间`, b.`开船时间`),
+                                        a.`交货时间` = IF(b.`到达时间` is NULL, a.`交货时间`, b.`到达时间`)
+                                    where a.`提货日期`= b.`出货时间` and a.`提货物流`= b.`提货物流`;'''
+                            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                        print('++++成功更新：' + sht.name + '--->>>到头程物流表')
+                    else:
+                        print('----------数据为空导入失败：' + sht.name)
+                else:
+                    print('----不用导入：' + sht.name)
+            wb.close()
+        app.quit()
+    def fun_time(self, val):    # 时间函数
+        val_time = ''
+        if "晚上" in val and "12点" in val:
+            val_time = datetime.datetime.now().strftime("%Y/") + val.split("晚上")[0] + " 23:59:59"
+            # 将字符串转化为datetime
+            val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
+            # 将datetime转化为字符串
+            val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
+        if "晚上" in val:
+            val_time = datetime.datetime.now().strftime("%Y/") + val.split("晚上")[0] + " 23:59:59"
+            # 将字符串转化为datetime
+            val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
+            # 将datetime转化为字符串
+            val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
+        elif "早上" in val and "3点" in val:
+            val_time = datetime.datetime.now().strftime("%Y/") + val.split("早上")[0] + " 03:00:00"
+            # 将字符串转化为datetime
+            val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
+            # 将datetime转化为字符串
+            val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
+        elif "早上" in val and "8点" in val:
+            val_time = datetime.datetime.now().strftime("%Y/") + val.split("早上")[0] + " 08:00:00"
+            # 将字符串转化为datetime
+            val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
+            # 将datetime转化为字符串
+            val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
+        return val_time
+
+
 
     # 查询压单（仓储的获取）
     def order_spec(self):  # 进入压单检索界面
@@ -455,6 +543,120 @@ class QueryTwoLower(Settings, Settings_sso):
             print('****** 没有新增的改派订单！！！')
             return None
         print('*' * 50)
+
+    # 进入组合库存界面-补充已下架的退货单号
+    def stockcompose_upload(self):
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('++++正在获取： ......')
+        orderId = ['7464121545', '7464077390;7464096603', '7464078451;7464090023', '7464084622']
+        # orderId = ['7464077390;7464096603']
+        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+        if max_count > 0:
+            df = pd.DataFrame([])
+            dlist = []
+            for ord in orderId:
+                print(ord)
+                if ";" in ord:
+                    ordersdict = []
+                    res = {}
+                    billno = ''
+                    refund_number = ''
+                    for od in ord.split(';'):
+                        print(od)
+                        bill, refund = self._stockcompose_upload(od)
+                        billno = billno + ';' + bill
+                        refund_number = refund_number + ';' + refund
+                        print(billno)
+                        print(refund_number)
+                    res['原运单号'] = billno[1:]
+                    res['退货单号'] = refund_number[1:]
+                    print(res)
+                    ordersdict.append(res)
+                    data = pd.json_normalize(ordersdict)
+                    print(data)
+                else:
+                    data = self._stockcompose_upload_two(ord)
+                dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+            print(dp)
+            dp.to_excel('H:\\桌面\\需要用到的文件\输出文件\\运单轨  迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+    def _stockcompose_upload(self, waybill):  # 进入压单检索界面
+        print('+++正在查询订单信息中')
+        url = r'http://gwms-v3.giikin.cn/stock/stockcompose/index'
+        r_header = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+            'origin': 'http://gwms-v3.giikin.cn',
+            'Referer': 'http://gwms-v3.giikin.cn/order/refund/sale'}
+        data = {'page': 1,
+                'limit': 20,
+                'selectStr': "1=1 and scb.billno= '" + waybill + "'",
+                'relateNumber': None}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print(req)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
+        print(req)
+        max_count = req['count']
+        billno = ''
+        refund_number = ''
+        if max_count != [] or max_count != 0:
+            for result in req['data']:
+                billno = result['billno']
+                refund_number = result['refund_number']
+
+        # data = req['failMsg']
+        # data = pd.json_normalize(req)
+        # print(data)
+        # max_count = req['count']
+        # if max_count != [] or max_count != 0:
+        #     ordersdict = []
+        #     try:
+        #         for result in req['data']:
+        #             ordersdict.append(result)
+        #     except Exception as e:
+        #         print('转化失败： 重新获取中', str(Exception) + str(e))
+        #     data = pd.json_normalize(ordersdict)
+        #     # print(data)
+        # else:
+        #     data = None
+        #     print('****** 没有信息！！！')
+        return billno, refund_number
+    def _stockcompose_upload_two(self, waybill):  # 进入压单检索界面
+        print('+++正在查询订单信息中')
+        url = r'http://gwms-v3.giikin.cn/stock/stockcompose/index'
+        r_header = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+            'origin': 'http://gwms-v3.giikin.cn',
+            'Referer': 'http://gwms-v3.giikin.cn/order/refund/sale'}
+        data = {'page': 1,
+                'limit': 20,
+                'selectStr': "1=1 and scb.billno= '" + waybill + "'",
+                'relateNumber': None}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print(req)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
+        print(req)
+        max_count = req['count']
+        data = None
+        if max_count != [] or max_count != 0:
+            ordersdict = []
+            for result in req['data']:
+                ordersdict.append(result)
+            data = pd.json_normalize(ordersdict)
+            data = data[['billno', 'refund_number']]
+            data.columns = ['原运单号', '退货单号']
+        return data
+
+
 
     # 进入组合库存查询界面
     def gp_order_stockcompose(self):
@@ -862,14 +1064,14 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
-    select = 2
+    select = 1
     if select == 1:
         m.readFile(select)            # 上传每日压单核实结果
-        m.order_spec()       # 压单反馈  （备注（压单核实是否需要））
+        m.order_spec()                # 压单反馈  （备注（压单核实是否需要））
 
     elif select == 2:
-        m.readFile(select)
-        m._get_take_delivery_no()
+        m.readFile(select)             # 读取头程时效表
+        m._get_take_delivery_no()      # 头程导入提货单号
 
 
     elif select == 3:

@@ -282,6 +282,7 @@ class Updata_return_bill(Settings, Settings_sso):
             wb.close()
         app.quit()
 
+    # 上下架 导出
     def _export_data(self, shtname, team, tem_data, tem_day, tem_kuwei):
         time_path: datetime = datetime.datetime.now()
         mkpath = "F:\\神龙签收率\\A导入上架表\\" + time_path.strftime('%m.%d')
@@ -391,40 +392,82 @@ class Updata_return_bill(Settings, Settings_sso):
         else:
             print('无异常 上架数据......')
 
-
-    # 天马上架
-    def tianma_upload_return(self):
+   # 天马上架
+    def tianma_upload_return(self,handle,login_TmpCode):
+        if handle == '手0动':
+            self.sso_online_cang_handle(login_TmpCode)
+        else:
+            self.sso_online_cang_auto()
+        start = datetime.datetime.now()
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        print('++++正在获取： ')
-        orderId = ['7621196726','1568566226','7621210940','7620899580','7620878941']
-        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
-        if max_count > 0:
-            df = pd.DataFrame([])
-            dlist = []
-            for ord in orderId:
-                print(ord)
-                data = self._tianma_upload_return(ord, 'timeEnd', 'n')
-                dlist.append(data)
-            dp = df.append(dlist, ignore_index=True)
-            print(dp)
-    def _tianma_upload_return(self, waybill, timeEnd, n):  # 进入压单检索界面
-        print('+++正在查询订单信息中')
+        free_time = (datetime.datetime.now() + datetime.timedelta(days=45)).strftime('%Y-%m-%d')
+        df = pd.DataFrame([])   # 查询DataFrame的结果 存放池
+        dlist = []              # 查询dlist的结果 存放池
+        print(free_time)
+        print('正在获取： 顺丰仓上架......')
+        sql = '''SELECT 运单编号 FROM customer c  WHERE c.订单编号 NOT LIKE 'XM%' and c.仓库名称 = '顺丰仓';'''.format('customer')
+        db = pd.read_sql_query(sql=sql, con=self.engine1)
+        # print(db)
+        if db.empty:
+            print('无需要更新订单信息！！！')
+        else:
+            print(db['运单编号'][0])
+            orderId = list(db['运单编号'])
+            # orderId = ['7621196726','1568566226','7621210940','7620899580','7620878941']
+            max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+            if max_count > 0:
+                type = 2                # 单号类型
+                whid = 204               # 退回仓库
+                plcode = 'A01-01-01'    # 退回库位
+                free_time = free_time          # 免仓期
+                for ord in orderId:
+                    # print(ord)
+                    data = self._tianma_upload_return(ord, type, whid, plcode, free_time)
+                    dlist.append(data)
+                # dp1 = df.append(dlist, ignore_index=True)
+                # print(dp1)
+        print('正在获取： 新竹仓上架......')
+        sql = '''SELECT 运单编号 FROM customer c  WHERE c.订单编号 NOT LIKE 'XM%' and c.仓库名称 = '新竹仓';'''.format('customer')
+        db = pd.read_sql_query(sql=sql, con=self.engine1)
+        print(db)
+        if db.empty:
+            print('无需要更新订单信息！！！')
+        else:
+            print(db['运单编号'][0])
+            orderId = list(db['运单编号'])
+            # orderId = ['7621196726','1568566226','7621210940','7620899580','7620878941']
+            max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+            if max_count > 0:
+                # df = pd.DataFrame([])
+                # dlist = []
+                type = 2                # 单号类型
+                whid = 102              # 退回仓库
+                plcode = 'A01-01-01'    # 退回库位
+                free_time = free_time          # 免仓期
+                for ord in orderId:
+                    print(ord)
+                    data = self._tianma_upload_return(ord, type, whid, plcode, free_time)
+                    dlist.append(data)
+        dp = df.append(dlist, ignore_index=True)
+        print(dp)
+    def _tianma_upload_return(self, waybill, type, whid, plcode, free_time):  # 进入压单检索界面
+        print('导入上架中......')
         url = r'http://gwms-v3.giikin.cn/order/refund/sale'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'http://gwms-v3.giikin.cn',
                     'Referer': 'http://gwms-v3.giikin.cn/order/refund/sale'}
         data = {'number': waybill,
-                'type': 2,
-                'whid': 204,
-                'plcode': 'A01-01-01',
-                'free_time': '2022-07-21'}
+                'type': type,
+                'whid': whid,
+                'plcode': plcode,
+                'free_time': free_time}
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
-        print(req)
-        print('+++已成功发送请求......')
+        # print(req)
+        # print('+++已成功发送请求......')
         req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
         print(req)
         # data = req['failMsg']
@@ -443,6 +486,7 @@ class Updata_return_bill(Settings, Settings_sso):
         #     data = None
         #     print('****** 没有信息！！！')
         return data
+
 
 if __name__ == '__main__':
     m = Updata_return_bill('+86-18538110674', 'qyz35100416')

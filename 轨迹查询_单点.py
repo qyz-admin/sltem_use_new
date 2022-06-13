@@ -452,7 +452,7 @@ if __name__ == '__main__':
     isReal = 1
     select = 1
     if int(select) == 1:
-        print("1-->>> 正在按订单查询+++")
+        print("1-->>> 正在按运单号查询+++")
         m.readFormHost(isReal)       # 导入；，更新--->>数据更新切换
     elif int(select) == 2:
         print("2-->>> 正在按时间查询+++")

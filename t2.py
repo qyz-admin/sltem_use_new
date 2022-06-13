@@ -26,7 +26,7 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
 '''
 # 初始化时间设置
 updata = '全部'           #  后台获取全部（两月）、部分更新（近五天）
-if team in ('ga0t', 'slsc', 'sl_r9b'):
+if team in ('gat', 'slsc', 'sl_r9b'):
     # 更新时间
     yy = int((datetime.datetime.now() - relativedelta(months=1)).strftime('%Y'))
     mm = int((datetime.datetime.now() - relativedelta(months=1)).strftime('%m'))
@@ -119,12 +119,12 @@ if team == 'gat' and updata == '全部':
     #     day_time = str(day)
     #     sso.orderInfo_append(day_time, day_time, '')               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
 
-    # sso.orderInfo_append(str(begin), str(end), 179)               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
+    sso.orderInfo_append(str(begin), str(end), 179)               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
     sso.orderInfo(team, updata, begin, end)
     print('更新耗时：', datetime.datetime.now() - start)
 
     print('---------------------------------- 导出部分：--------------------------------')
-    # qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
+    qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
     print('输出耗时：', datetime.datetime.now() - start)
 
 elif team != 'gat' and updata == '全1部':
