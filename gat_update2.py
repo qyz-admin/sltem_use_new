@@ -221,7 +221,7 @@ class QueryUpdate(Settings):
             sql = '''SELECT 订单编号,商品id,dp.`product_id`, dp.`name` product_name, dp.third_cate_id, dc.`ppname` cate, dc.`pname` second_cate, dc.`name` third_cate
                     FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
                             FROM gat_order_list sl
-                            WHERE sl.`日期`> '2021-12-01' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+                            WHERE sl.`日期`>= '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
                          ) s
                     LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
                     LEFT JOIN (SELECT * FROM dim_cate GROUP BY pid ) dc ON  dc.pid = dp.second_cate_id;'''.format(team,month_begin)
@@ -242,7 +242,7 @@ class QueryUpdate(Settings):
         sql = '''SELECT 订单编号,商品id,dp.product_id, dp.`name` product_name, dp.third_cate_id
                 FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
                         FROM {0}_order_list sl
-                        WHERE sl.`日期`> '{1}' AND (sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+                        WHERE sl.`日期`>= '{1}' AND (sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
                     ) s
                 LEFT JOIN dim_product_gat dp ON dp.product_id = s.`产品id`;'''.format(team, month_begin)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -261,7 +261,7 @@ class QueryUpdate(Settings):
         print('正在综合检查 父级分类、产品id 为空的信息---')
         sql = '''SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
                 FROM gat_order_list sl
-                WHERE sl.`日期`> '2021-12-01'
+                WHERE sl.`日期`>= '{1}'
                     AND (sl.`父级分类` IS NULL or sl.`父级分类`= '' OR sl.`产品名称` IS NULL or sl.`产品名称`= '')
                     AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'));'''.format(team, month_begin)
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)

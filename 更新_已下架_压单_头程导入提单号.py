@@ -90,13 +90,13 @@ class QueryTwoLower(Settings, Settings_sso):
                     rq = (dir.split('压单')[0]).strip()
                     rq = datetime.datetime.strptime(rq, '%Y.%m.%d')
                     rq = rq.strftime('%Y.%m.%d')
-                    self._readFile(filePath, rq)
+                    self._readFile(filePath, rq)                            # 工作表的   压单   信息
                 elif select == 2:
                     if '海运' in filePath:
                         tem = '超峰国际'
                     else:
                         tem = '立邦国际'
-                    self._readFile_select(filePath, rq, tem)
+                    self._readFile_select(filePath, rq, tem)                # 工作表的   头程物流  信息
                 excel = win32.gencache.EnsureDispatch('Excel.Application')
                 wb = excel.Workbooks.Open(filePath)
                 file_path = os.path.join(path, "~$ " + dir)
@@ -105,7 +105,7 @@ class QueryTwoLower(Settings, Settings_sso):
                 excel.Application.Quit()
                 os.remove(filePath)
         print('处理耗时：', datetime.datetime.now() - start)
-    # 工作表的订单信息
+    # 工作表的   压单   信息
     def _readFile(self, filePath, rq):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
@@ -138,59 +138,7 @@ class QueryTwoLower(Settings, Settings_sso):
             wb.close()
         app.quit()
 
-    # 工作表的订单信息
-    def _readFile_select_stop(self, filePath, rq , tem):
-        fileType = os.path.splitext(filePath)[1]
-        app = xlwings.App(visible=False, add_book=False)
-        app.display_alerts = False
-        if 'xls' in fileType:
-            wb = app.books.open(filePath, update_links=False, read_only=True)
-            for sht in wb.sheets:
-                if sht.api.Visible == -1:
-                    try:
-                        db = None
-                        db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
-                        # if tem == '立邦国际':
-                        #     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
-                        # elif tem == '超峰国际':
-                        #     db = sht.used_range.options(pd.DataFrame, header=2, numbers=int, index=False).value
-                        if tem == '超峰国际':
-                            db.dropna(subset=["提单号"], axis=0, inplace=True)           # 滤除指定列中含有缺失的行
-                        print(db.columns)
-                        print(db)
-                    except Exception as e:
-                        print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
-                    if db is not None and len(db) > 0:
-                        print('++++正在导入更新：' + sht.name + '表； 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
-                        if tem == '立邦国际':
-                            if '提货物流' not in db.columns:
-                                db.insert(0, '提货物流', tem)
-                            db = db[['提货物流', '出貨日期', '件數', '主號', '航班號', '航班情况', '清關情況', '全清時間', '出貨日期']]
-                            db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-                            sql = '''update gat_take_delivery a, customer b 
-                                    set a.`主號` = IF(b.`主號` = '' or  b.`主號` is NULL, a.`主號`, b.`主號`),
-                                        a.`航班號` = IF(b.`航班號` = '' or  b.`航班號` is NULL, a.`航班號`, b.`航班號`)
-                                    where a.`提货日期`= b.`出貨日期` and a.`提货物流`= b.`提货物流`;'''
-                            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-                        elif tem == '超峰国际':
-                            if '提货物流' not in db.columns:
-                                db.insert(0, '提货物流', tem)
-                            db = db[['提货物流', '出货时间', '提单号', '开船时间', '到达时间']]
-                            db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-                            sql = '''update gat_take_delivery a, customer b 
-                                    set a.`主號` = IF(b.`提单号` = '' or  b.`提单号` is NULL, a.`主號`, b.`提单号`),
-                                        a.`出货时间` = IF(b.`开船时间` is NULL, a.`出货时间`, b.`开船时间`),
-                                        a.`交货时间` = IF(b.`到达时间` is NULL, a.`交货时间`, b.`到达时间`)
-                                    where a.`提货日期`= b.`出货时间` and a.`提货物流`= b.`提货物流`;'''
-                            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-                        print('++++成功更新：' + sht.name + '--->>>到头程物流表')
-                    else:
-                        print('----------数据为空导入失败：' + sht.name)
-                else:
-                    print('----不用导入：' + sht.name)
-            wb.close()
-        app.quit()
-    # 工作表的订单信息
+    # 工作表的   头程物流  信息
     def _readFile_select(self, filePath, rq , tem):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
@@ -229,12 +177,12 @@ class QueryTwoLower(Settings, Settings_sso):
                             if '提货物流' not in db.columns:
                                 db.insert(0, '提货物流', tem)
                             db = db[['提货物流', '出货时间', '提单号', '开船时间', '到达时间']]
-                            db['开船时间'] = db['开船时间'].apply(lambda x: self.fun_time(x))       # 时间函数
-                            db['到达时间'] = db['到达时间'].apply(lambda x: self.fun_time(x))
-                            # db['开船时间'] = db['开船时间'].apply(lambda x: datetime.datetime.now().strftime("%Y/") + x.split("晚上")[0] + " 23:59:59" if "晚上" in x else 0)
-                            # db['开船时间'] = db['开船时间'].apply(lambda x: (datetime.datetime.strptime(x, '%Y/%m/%d %H:%M:%S')).strftime("%Y-%m-%d %H:%M:%S"))
-                            # db['到达时间'] = db['到达时间'].apply(lambda x: datetime.datetime.now().strftime("%Y/") + x.split("早上")[0] + " 03:00:00" if "早上" in x else 0)
-                            # db['到达时间'] = db['到达时间'].apply(lambda x: (datetime.datetime.strptime(x, '%Y/%m/%d %H:%M:%S')).strftime("%Y-%m-%d %H:%M:%S"))
+                            db['开船时间'] = db['开船时间'].apply(lambda x: self._fun_time(x))       # 时间函数
+                            db['到达时间'] = db['到达时间'].apply(lambda x: self._fun_time(x))
+                            #   db['开船时间'] = db['开船时间'].apply(lambda x: datetime.datetime.now().strftime("%Y/") + x.split("晚上")[0] + " 23:59:59" if "晚上" in x else 0)
+                            #   db['开船时间'] = db['开船时间'].apply(lambda x: (datetime.datetime.strptime(x, '%Y/%m/%d %H:%M:%S')).strftime("%Y-%m-%d %H:%M:%S"))
+                            #   db['到达时间'] = db['到达时间'].apply(lambda x: datetime.datetime.now().strftime("%Y/") + x.split("早上")[0] + " 03:00:00" if "早上" in x else 0)
+                            #   db['到达时间'] = db['到达时间'].apply(lambda x: (datetime.datetime.strptime(x, '%Y/%m/%d %H:%M:%S')).strftime("%Y-%m-%d %H:%M:%S"))
                             db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
                             sql = '''update gat_take_delivery a, customer b 
                                     set a.`主號` = IF(b.`提单号` = '' or  b.`提单号` is NULL, a.`主號`, b.`提单号`),
@@ -249,7 +197,7 @@ class QueryTwoLower(Settings, Settings_sso):
                     print('----不用导入：' + sht.name)
             wb.close()
         app.quit()
-    def fun_time(self, val):    # 时间函数
+    def _fun_time(self, val):    # 时间函数
         val_time = ''
         if "晚上" in val and "12点" in val:
             val_time = datetime.datetime.now().strftime("%Y/") + val.split("晚上")[0] + " 23:59:59"
@@ -279,8 +227,8 @@ class QueryTwoLower(Settings, Settings_sso):
 
 
 
-    # 查询压单（仓储的获取）
-    def order_spec(self):  # 进入压单检索界面
+    # 进入 压单反馈 界面 （仓储的获取）
+    def order_spec(self):  # 进入   压单反馈  界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         timeStart = ((datetime.datetime.now() + datetime.timedelta(days=1)) - relativedelta(months=2)).strftime('%Y-%m-%d')
         timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
@@ -396,7 +344,7 @@ class QueryTwoLower(Settings, Settings_sso):
         return data
 
 
-    # 进入已下架界面
+    # 进入 已下架 界面  （仓储的获取）（一）
     def order_lower(self, timeStart, timeEnd, auto_time):  # 进入已下架界面
         start: datetime = datetime.datetime.now()
         team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓', '协来运', '协来运（废弃）','易速配-桃园仓']
@@ -455,7 +403,7 @@ class QueryTwoLower(Settings, Settings_sso):
                     print('+++正在查询仓库： ' + tem + '；库存类型:组合库存 信息')
                     self._order_lower_info(match2[tem], 2, timeStart, timeEnd, tem, '组合库存')
         print('查询耗时：', datetime.datetime.now() - start)
-    # 进入已下架界面
+    # 进入 已下架 界面
     def _order_lower_info(self, tem, tem_type, timeStart, timeEnd, tem_name, type_name):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         # print('+++正在查询信息中')
@@ -544,7 +492,7 @@ class QueryTwoLower(Settings, Settings_sso):
             return None
         print('*' * 50)
 
-    # 进入组合库存界面-补充已下架的退货单号
+    # 进入 组合库存界面  补充已下架的退货单号  （仓储的获取）（二）
     def stockcompose_upload(self):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('++++正在获取： ......')
@@ -740,7 +688,7 @@ class QueryTwoLower(Settings, Settings_sso):
         return df
 
 
-    # 查询改派无运单好（仓储的获取）
+    # 查询改派无运单好（仓储的获取）  停用
     def get_billno_res(self):  # 进入仓储界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         timeStart = ((datetime.datetime.now() + datetime.timedelta(days=1)) - relativedelta(months=2)).strftime('%Y-%m-%d')
@@ -820,7 +768,7 @@ class QueryTwoLower(Settings, Settings_sso):
             print('****** 没有新增的改派订单！！！')
             return None
         print('*' * 50)
-    # 进入仓储检索界面
+    # 进入仓储检索界面                停用
     def _get_billno_res(self, timeStart, timeEnd, n):
         print('+++正在查询订单信息中')
         url = r'http://gwms-v3.giikin.cn/order/order/secondsendbillnonone'
@@ -853,6 +801,7 @@ class QueryTwoLower(Settings, Settings_sso):
             data = None
             print('****** 没有信息！！！')
         return data
+
 
     # 创建每日文件
     def bulid_file(self):
@@ -911,7 +860,8 @@ class QueryTwoLower(Settings, Settings_sso):
             print(mkpath + ' 目录已存在')
         print('*' * 50)
 
-    # 进入 头程物流跟踪 界面
+
+    # 进入 头程物流跟踪 界面 （仓储的获取）
     def get_take_delivery_no(self):
         print('+++正在查询头程物流信息中')
         timeStart = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
@@ -999,13 +949,13 @@ class QueryTwoLower(Settings, Settings_sso):
                 id = getattr(row, 'id')
                 take_delivery_no = getattr(row, '主號')
                 batch = ''
-                departed_time = ''
-                arrived_time = ''
+                departed_time = getattr(row, '出货时间')
+                arrived_time = getattr(row, '交货时间')
                 self._upload_take_delivery_no(ord_id, id, take_delivery_no, batch, tem, departed_time, arrived_time)
         print('单次更新耗时：', datetime.datetime.now() - start)
-    # 进入 头程检索界面
+    # 更新 头程提货单号
     def _upload_take_delivery_no(self, ord_id, id, take_delivery_no, batch, tem, departed_time, arrived_time):
-        print('+++正在更新中')
+        print('正在更新中')
         url = r'http://gwms-v3.giikin.cn/order/delivery/takedeliveryregister'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'http://gwms-v3.giikin.cn',
@@ -1025,7 +975,7 @@ class QueryTwoLower(Settings, Settings_sso):
                     'product_type': ''
                     }
         elif tem == '超峰国际':
-            print('提货单号：' + ord_id, 'id：' + str(id), ';主號：' + take_delivery_no, '；开船时间：' + departed_time, '；到达时间：' + arrived_time)
+            print('提货单号：' + ord_id, 'id：' + str(id), ';主號：' + take_delivery_no, '；开船时间：' + str(departed_time), '；到达时间：' + str(arrived_time))
             data = {'id': id,
                     'take_delivery_no': take_delivery_no,
                     'transport_type': '',
@@ -1064,7 +1014,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
-    select = 1
+    select = 2
     if select == 1:
         m.readFile(select)            # 上传每日压单核实结果
         m.order_spec()                # 压单反馈  （备注（压单核实是否需要））

@@ -312,7 +312,7 @@ class QueryTwoT(Settings, Settings_sso):
                         a.`父级分类`= IF(b.`cate_id` = '', a.`父级分类`, b.`cate_id`),
                     a.`二级分类`= IF(b.`second_cate_id` = '', a.`二级分类`, b.`second_cate_id`),
                     a.`三级分类`= IF(b.`third_cate_id` = '', a.`三级分类`, b.`third_cate_id`)
-                  where a.`产品id`= b.`id`;'''
+                  where a.日期>= '{0}' AND a.`产品id`= b.`id`;'''.format(month_begin)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('共有 ' + str(len(dp)) + '条 成功更新+++++++')
 

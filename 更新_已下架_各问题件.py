@@ -25,7 +25,7 @@ from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
 from 更新_已下架_压单_头程导入提单号 import QueryTwoLower
-from 查询订单检索 import QueryOrder
+from 查询_订单检索 import QueryOrder
 
 # -*- coding:utf-8 -*-
 class QueryTwo(Settings, Settings_sso):
@@ -1460,7 +1460,7 @@ if __name__ == '__main__':
         time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         time_now = time_yesterday
 
-        js.order_TimeQueryT(time_yesterday,time_now, '',  '检查头程直发渠道|删单原因')   # 检查头程直发渠道|删单原0因
+        js.order_TimeQueryT(time_yesterday,time_now, '',  '检查头程直发渠道|删单0原因')   # 检查头程直发渠道|删单原0因
 
 
     '''
