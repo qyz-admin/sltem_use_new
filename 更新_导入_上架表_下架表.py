@@ -243,7 +243,7 @@ class Updata_return_bill(Settings, Settings_sso):
                                 db = db[['物流渠道', '订单编号', '运单编号', '退货单号', '退货上架货架', '上架时间', '仓库名称', '在仓天数', '末条状态']]
                             else:
                                 team = 'gat_return_bill'
-                                db.rename(columns={'内部单号': '订单编号', '转单号码': '运单编号', '上架日期': '上架时间', '所属仓库': '仓库名称'}, inplace=True)
+                                db.rename(columns={'订单号': '订单编号', '承运单号': '运单编号', '上架日期': '上架时间', '所属仓': '仓库名称'}, inplace=True)
                                 db.insert(0, '物流渠道', tem_data)
                                 db.insert(0, '退货单号', '')
                                 db.insert(0, '退货上架货架', '')
@@ -308,17 +308,15 @@ class Updata_return_bill(Settings, Settings_sso):
             if tem_data == '协来9运':
                 sql = '''SELECT c.运单编号, 退货单号,date_format(LAST_DAY(DATE_SUB(上架时间,INTERVAL -2 MONTH)), '%Y-%m-02') as 免仓期 
                         FROM customer c
-                        WHERE c.订单编号 NOT LIKE 'XM%'
-                        # LEFT JOIN  gat_order_list g ON c.订单编号 =g.订单编号
-                        # WHERE g.订单编号 IS NOT NULL
-                        ;'''.format(team, tem_day)
+                        WHERE c.订单编号 NOT LIKE 'XM%';'''.format(team, tem_day)
+            elif tem_data == '天马':
+                sql = '''SELECT c.运单编号, 退货单号,date_format(LAST_DAY(DATE_SUB(上架时间,INTERVAL -2 MONTH)), '%Y-%m-02') as 免仓期,仓库名称
+                        FROM customer c
+                        WHERE c.订单编号 NOT LIKE 'XM%';'''.format(team, tem_day)
             else:
                 sql = '''SELECT c.运单编号, 退货单号,date_format(DATE_SUB(CURDATE(), INTERVAL -{1} DAY), '%Y-%m-%d') as 免仓期 
                         FROM customer c
-                        WHERE c.订单编号 NOT LIKE 'XM%'
-                        # LEFT JOIN  gat_order_list g ON c.订单编号 =g.订单编号
-                        # WHERE g.订单编号 IS NOT NULL
-                        ;'''.format(team, tem_day)
+                        WHERE c.订单编号 NOT LIKE 'XM%';'''.format(team, tem_day)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             # df['免仓期'] = df['免仓期'].apply(lambda x: x.strftime('%Y-%m-%d'))
             if tem_data == '天马':
@@ -394,7 +392,7 @@ class Updata_return_bill(Settings, Settings_sso):
 
    # 天马上架
     def tianma_upload_return(self,handle,login_TmpCode):
-        if handle == '手0动':
+        if handle == '手动':
             self.sso_online_cang_handle(login_TmpCode)
         else:
             self.sso_online_cang_auto()
@@ -411,15 +409,15 @@ class Updata_return_bill(Settings, Settings_sso):
         if db.empty:
             print('无需要更新订单信息！！！')
         else:
-            print(db['运单编号'][0])
+            # print(db['运单编号'][0])
             orderId = list(db['运单编号'])
             # orderId = ['7621196726','1568566226','7621210940','7620899580','7620878941']
             max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
             if max_count > 0:
-                type = 2                # 单号类型
-                whid = 204               # 退回仓库
-                plcode = 'A01-01-01'    # 退回库位
-                free_time = free_time          # 免仓期
+                type = 2                        # 单号类型
+                whid = 204                      # 退回仓库
+                plcode = 'A01-01-01'            # 退回库位
+                free_time = free_time           # 免仓期
                 for ord in orderId:
                     # print(ord)
                     data = self._tianma_upload_return(ord, type, whid, plcode, free_time)
@@ -429,11 +427,11 @@ class Updata_return_bill(Settings, Settings_sso):
         print('正在获取： 新竹仓上架......')
         sql = '''SELECT 运单编号 FROM customer c  WHERE c.订单编号 NOT LIKE 'XM%' and c.仓库名称 = '新竹仓';'''.format('customer')
         db = pd.read_sql_query(sql=sql, con=self.engine1)
-        print(db)
+        # print(db)
         if db.empty:
             print('无需要更新订单信息！！！')
         else:
-            print(db['运单编号'][0])
+            # print(db['运单编号'][0])
             orderId = list(db['运单编号'])
             # orderId = ['7621196726','1568566226','7621210940','7620899580','7620878941']
             max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
@@ -450,13 +448,14 @@ class Updata_return_bill(Settings, Settings_sso):
                     dlist.append(data)
         dp = df.append(dlist, ignore_index=True)
         print(dp)
-    def _tianma_upload_return(self, waybill, type, whid, plcode, free_time):  # 进入压单检索界面
+        dp.to_excel('F:\\神龙签收率\\A导入上架表\\天马上架_导入结果\\天马上架_导入结果 {0} .xlsx'.format(datetime.datetime.now().strftime('%m.%d')), sheet_name='查询', index=False, engine='xlsxwriter')
+    def _tianma_upload_return(self, ord, type, whid, plcode, free_time):  # 进入压单检索界面
         print('导入上架中......')
         url = r'http://gwms-v3.giikin.cn/order/refund/sale'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'http://gwms-v3.giikin.cn',
                     'Referer': 'http://gwms-v3.giikin.cn/order/refund/sale'}
-        data = {'number': waybill,
+        data = {'number': ord,
                 'type': type,
                 'whid': whid,
                 'plcode': plcode,
@@ -496,10 +495,15 @@ if __name__ == '__main__':
     # 1、 点到表上传 team = 'gat_logisitis_googs'；2、上架表上传；；3、订单跟进上传 team = 'gat_waybill_list'--->>数据更新切换
     '''
 
-    select = 1
+    select = 2
     if int(select) == 1:
         m.readFormHost()
-    elif int(select) == 1:
+
+    elif int(select) == 2:
+        m.readFormHost()
+        m.tianma_upload_return('手0动','login_TmpCode')       # 天马上架
+
+    elif int(select) == 3:
         m.check_data()
         m.readFormHost()
 

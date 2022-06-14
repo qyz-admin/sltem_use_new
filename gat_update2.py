@@ -18,7 +18,7 @@ from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, \
     Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
-from 查询产品明细 import QueryTwoT
+from 查询_产品明细 import QueryTwoT
 
 from mysqlControl import MysqlControl
 # -*- coding:utf-8 -*-
@@ -189,47 +189,27 @@ class QueryUpdate(Settings):
 
 
     #  导出需要更新的签收表---港澳台(二)
-    def EportOrder(self, team, month_last, month_yesterday, month_begin):
+    def EportOrder(self, team, month_last, month_yesterday, month_begin, check):
         match = {'gat': '港台',
                  'slsc': '品牌'}
         emailAdd = {'gat': 'giikinliujun@163.com',
                     'slsc': 'sunyaru@giikin.com'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-        print('正在第一次检查父级分类为空的信息---')
-        sql = '''SELECT 订单编号,商品id,dp.`product_id`, dp.`name` product_name, dp.third_cate_id, dc.`ppname` cate, dc.`pname` second_cate, dc.`name` third_cate
-                FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-                        FROM {0}_order_list sl
-                        WHERE sl.`日期`> '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
-                     ) s
-                LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
-                LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''.format(team, month_begin)
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        if df.empty:
-            print('  第一次检查没有为空的………… ')
-        else:
-            print('正在更新父级分类的详情…………')
-            df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
-            sql = '''update {0}_order_list a, tem_product_id b
-                        set a.`父级分类`= IF(b.`cate` = '', a.`父级分类`, b.`cate`),
-                            a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
-                            a.`三级分类`= IF(b.`third_cate` = '', a.`三级分类`, b.`third_cate`)
-                    where a.`订单编号`= b.`订单编号`;'''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-            print('更新完成+++')
-
-            print('正在第二次检查父级分类为空的信息---')
+        if check == '是':
+            print('正在第一次检查父级分类为空的信息---')
             sql = '''SELECT 订单编号,商品id,dp.`product_id`, dp.`name` product_name, dp.third_cate_id, dc.`ppname` cate, dc.`pname` second_cate, dc.`name` third_cate
                     FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-                            FROM gat_order_list sl
-                            WHERE sl.`日期`>= '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+                            FROM {0}_order_list sl
+                            WHERE sl.`日期`> '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
                          ) s
                     LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
-                    LEFT JOIN (SELECT * FROM dim_cate GROUP BY pid ) dc ON  dc.pid = dp.second_cate_id;'''.format(team,month_begin)
+                    LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''.format(team, month_begin)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             if df.empty:
-                print('  第二次检查没有为空的………… ')
+                print('  第一次检查没有为空的………… ')
             else:
                 print('正在更新父级分类的详情…………')
+                df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
                 sql = '''update {0}_order_list a, tem_product_id b
                             set a.`父级分类`= IF(b.`cate` = '', a.`父级分类`, b.`cate`),
                                 a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
@@ -238,46 +218,71 @@ class QueryUpdate(Settings):
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                 print('更新完成+++')
 
-        print('正在第一次检查产品id为空的信息---')
-        sql = '''SELECT 订单编号,商品id,dp.product_id, dp.`name` product_name, dp.third_cate_id
-                FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-                        FROM {0}_order_list sl
-                        WHERE sl.`日期`>= '{1}' AND (sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
-                    ) s
-                LEFT JOIN dim_product_gat dp ON dp.product_id = s.`产品id`;'''.format(team, month_begin)
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        if df.empty:
-            print('  第一次检查没有为空的………… ')
-        else:
-            print('正在更新产品详情…………')
-            df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
-            sql = '''update {0}_order_list a, tem_product_id b
-                        set a.`产品id`= IF(b.`product_id` = '',a.`产品id`, b.`product_id`),
-                            a.`产品名称`= IF(b.`product_name` = '',a.`产品名称`, b.`product_name`)
-                where a.`订单编号`= b.`订单编号`;'''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-            print('更新完成+++')
+                print('正在第二次检查父级分类为空的信息---')
+                sql = '''SELECT 订单编号,商品id,dp.`product_id`, dp.`name` product_name, dp.third_cate_id, dc.`ppname` cate, dc.`pname` second_cate, dc.`name` third_cate
+                        FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
+                                FROM gat_order_list sl
+                                WHERE sl.`日期`>= '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+                             ) s
+                        LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
+                        LEFT JOIN (SELECT * FROM dim_cate GROUP BY pid ) dc ON  dc.pid = dp.second_cate_id;'''.format(team,month_begin)
+                df = pd.read_sql_query(sql=sql, con=self.engine1)
+                if df.empty:
+                    print('  第二次检查没有为空的………… ')
+                else:
+                    print('正在更新父级分类的详情…………')
+                    sql = '''update {0}_order_list a, tem_product_id b
+                                set a.`父级分类`= IF(b.`cate` = '', a.`父级分类`, b.`cate`),
+                                    a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
+                                    a.`三级分类`= IF(b.`third_cate` = '', a.`三级分类`, b.`third_cate`)
+                            where a.`订单编号`= b.`订单编号`;'''.format(team)
+                    pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                    print('更新完成+++')
 
-        print('正在综合检查 父级分类、产品id 为空的信息---')
-        sql = '''SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-                FROM gat_order_list sl
-                WHERE sl.`日期`>= '{1}'
-                    AND (sl.`父级分类` IS NULL or sl.`父级分类`= '' OR sl.`产品名称` IS NULL or sl.`产品名称`= '')
-                    AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'));'''.format(team, month_begin)
-        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
-        if ordersDict.empty:
-            print(' ****** 没有要补充的信息; ****** ')
-        else:
-            print('！！！ 请再次补充缺少的数据中！！！')
-            lw = QueryTwoT('+86-18538110674', 'qyz35100416')
-            lw.productInfo(team)
+            print('正在第一次检查产品id为空的信息---')
+            sql = '''SELECT 订单编号,商品id,dp.product_id, dp.`name` product_name, dp.third_cate_id
+                    FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
+                            FROM {0}_order_list sl
+                            WHERE sl.`日期`>= '{1}' AND (sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+                        ) s
+                    LEFT JOIN dim_product_gat dp ON dp.product_id = s.`产品id`;'''.format(team, month_begin)
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            if df.empty:
+                print('  第一次检查没有为空的………… ')
+            else:
+                print('正在更新产品详情…………')
+                df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
+                sql = '''update {0}_order_list a, tem_product_id b
+                            set a.`产品id`= IF(b.`product_id` = '',a.`产品id`, b.`product_id`),
+                                a.`产品名称`= IF(b.`product_name` = '',a.`产品名称`, b.`product_name`)
+                    where a.`订单编号`= b.`订单编号`;'''.format(team)
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                print('更新完成+++')
+
+            print('正在综合检查 父级分类、产品id 为空的信息---')
+            sql = '''SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
+                    FROM gat_order_list sl
+                    WHERE sl.`日期`>= '{1}'
+                        AND (sl.`父级分类` IS NULL or sl.`父级分类`= '' OR sl.`产品名称` IS NULL or sl.`产品名称`= '')
+                        AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'));'''.format(team, month_begin)
+            ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+            if ordersDict.empty:
+                print(' ****** 没有要补充的信息; ****** ')
+            else:
+                print('！！！ 请再次补充缺少的数据中！！！')
+                lw = QueryTwoT('+86-18538110674', 'qyz35100416')
+                lw.productInfo(team)
 
         if team in ('gat'):
-            sql = '''DELETE FROM gat_zqsb
-                    WHERE gat_zqsb.`订单编号` IN (SELECT 订单编号 FROM gat_order_list 
-                                                WHERE gat_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'));'''
+            del_time = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y%m')
+            sql = '''DELETE FROM gat_zqsb gt
+                    WHERE gt.年月 >= {0}
+                      and gt.`订单编号` IN (SELECT 订单编号 
+                                            FROM gat_order_list gs
+                                            WHERE gs.年月 >= {0}
+                                              and gs.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'));'''.format(del_time)
             print('正在清除港澳台-总表的可能删除了的订单…………')
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('正在获取---' + match[team] + '---更新数据内容…………')
             sql = '''SELECT 年月, 旬, 日期, 团队, 币种, null 区域, 订单来源, a.订单编号, 电话号码, a.运单编号,
                             IF(出货时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), a.仓储扫描时间, 出货时间) 出货时间,
@@ -4121,11 +4126,12 @@ class QueryUpdate(Settings):
         # else:
         #     month_last = '2021-08-01'
         #     month_now = '2021-09-30'
-        sql = '''DELETE FROM gat_zqsb
-                WHERE gat_zqsb.`订单编号` IN (SELECT 订单编号
-            								FROM gat_order_list 
-            								WHERE gat_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-            								);'''
+        sql = '''DELETE FROM gat_zqsb gt
+                    WHERE gt.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m') 
+                      and gt.`订单编号` IN (SELECT 订单编号 
+                                            FROM gat_order_list gs
+                                            WHERE gs.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m') 
+                                              and gs.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'));;'''
         print('正在清除总表的可能删除了的订单…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
@@ -9449,9 +9455,9 @@ if __name__ == '__main__':
     m.readFormHost(team, write, last_time)                            # 更新签收表---港澳台（一）
 
     m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
-    m.qsb_new(team, month_old)                                    # 获取-每日-报表
-    m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收
-    m.phone_report()                                        # 获取电话核实日报表 周报表
+    # m.qsb_new(team, month_old)                                    # 获取-每日-报表
+    # m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收
+    # m.phone_report()                                        # 获取电话核实日报表 周报表
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id
     # m.address_repot(team, month_last, month_yesterday)                       #  获取-地区签收率-报表

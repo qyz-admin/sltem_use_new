@@ -156,10 +156,16 @@ class SltemMonitoring(Settings):
             sql = '''SELECT LEFT(年月,4) AS 年, 年月, 旬, 日期, 团队, 币种, 订单来源, 订单编号, 出货时间, 状态时间, 上线时间, 最终状态, 是否改派,物流方式,产品id,
                             父级分类,二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格RMB
                     FROM {0}_zqsb a 
+                    WHERE a.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m') AND a.年月 <= DATE_FORMAT(curdate(),'%Y%m')
                     ORDER BY a.`下单时间`;'''.format(match[team])
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('----写入中......')
         df.to_sql('qsb_缓存_month', con=self.engine1, index=False, if_exists='replace', chunksize=20000)
+        columns = list(df.columns)
+        columns = ','.join(columns)
+        sql = 'REPLACE INTO {0}({1}) SELECT * FROM qsb_缓存_month; '.format('qsb_缓存_month_cp', columns)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=20000)
+
         print('写入缓存耗时：', datetime.datetime.now() - start)
 
     # 获取每月正常使用的时间（二）
