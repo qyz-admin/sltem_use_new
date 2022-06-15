@@ -271,7 +271,7 @@ class QueryUpdate(Settings):
             else:
                 print('！！！ 请再次补充缺少的数据中！！！')
                 lw = QueryTwoT('+86-18538110674', 'qyz35100416')
-                lw.productInfo(team)
+                lw.productInfo('gat_order_list', ordersDict)
 
         if team in ('gat'):
             del_time = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y%m')
@@ -282,7 +282,7 @@ class QueryUpdate(Settings):
                                             WHERE gs.年月 >= {0}
                                               and gs.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'));'''.format(del_time)
             print('正在清除港澳台-总表的可能删除了的订单…………')
-            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('正在获取---' + match[team] + '---更新数据内容…………')
             sql = '''SELECT 年月, 旬, 日期, 团队, 币种, null 区域, 订单来源, a.订单编号, 电话号码, a.运单编号,
                             IF(出货时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), a.仓储扫描时间, 出货时间) 出货时间,
@@ -4126,13 +4126,14 @@ class QueryUpdate(Settings):
         # else:
         #     month_last = '2021-08-01'
         #     month_now = '2021-09-30'
+        del_time = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y%m')
         sql = '''DELETE FROM gat_zqsb gt
-                    WHERE gt.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m') 
-                      and gt.`订单编号` IN (SELECT 订单编号 
-                                            FROM gat_order_list gs
-                                            WHERE gs.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m') 
-                                              and gs.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'));;'''
-        print('正在清除总表的可能删除了的订单…………')
+                WHERE gt.年月 >= {0}
+                  and gt.`订单编号` IN (SELECT 订单编号 
+                                        FROM gat_order_list gs
+                                        WHERE gs.年月 >= {0}
+                                          and gs.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'));'''.format(del_time)
+        print('正在清除港澳台-总表的可能删除了的订单…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
         sql = '''DELETE FROM gat_zqsb gz 
@@ -6461,306 +6462,308 @@ class QueryUpdate(Settings):
         print('----已写入excel ')
 
     # 获取电话核实日报表 周报表
-    def phone_report(self):
+    def phone_report(self, handle):
         today = datetime.date.today().strftime('%Y.%m.%d')
         match = {'gat': '港台'}
-        listT = []  # 查询sql的结果 存放池
-        print('正在获取 日报表 数据内容…………')
-        sql = '''SELECT 日期31天, ss.*, ss1.*, ss2.*, ss3.*, ss4.*
-FROM date
-LEFT JOIN
-		(SELECT 日期 AS 系统问题,
-					COUNT(订单编号) AS 问题订单,
-					SUM(IF(g.`系统订单状态` NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 正常出货,
-					SUM(IF(g.`系统订单状态` = '已删除',1,0)) AS 删除订单,
-					SUM(IF(g.`系统物流状态` = '已签收',1,0)) AS 实际签收
-		FROM gat_order_list g
-		WHERE (g.日期 BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AND 
-					(g.`问题时间` BETWEEN TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY)) AND TIMESTAMP(CURDATE())) 
-					AND g.`问题原因` IS NOT NULL AND g.币种 = '台湾'
-		GROUP BY DATE(日期) 
-		ORDER BY DATE(日期)
-) ss ON  date.`日期31天` = EXTRACT(day FROM ss.`系统问题`)
+        week: datetime = datetime.datetime.now()
+        if week.isoweekday() == 1 or week.isoweekday() == '手动':
+            listT = []  # 查询sql的结果 存放池
+            print('正在获取 日报表 数据内容…………')
+            sql = '''SELECT 日期31天, ss.*, ss1.*, ss2.*, ss3.*, ss4.*
+    FROM date
+    LEFT JOIN
+            (SELECT 日期 AS 系统问题,
+                        COUNT(订单编号) AS 问题订单,
+                        SUM(IF(g.`系统订单状态` NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 正常出货,
+                        SUM(IF(g.`系统订单状态` = '已删除',1,0)) AS 删除订单,
+                        SUM(IF(g.`系统物流状态` = '已签收',1,0)) AS 实际签收
+            FROM gat_order_list g
+            WHERE (g.日期 BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AND 
+                        (g.`问题时间` BETWEEN TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY)) AND TIMESTAMP(CURDATE())) 
+                        AND g.`问题原因` IS NOT NULL AND g.币种 = '台湾'
+            GROUP BY DATE(日期) 
+            ORDER BY DATE(日期)
+    ) ss ON  date.`日期31天` = EXTRACT(day FROM ss.`系统问题`)
+    
+    LEFT JOIN 
+    
+    (	SELECT ww.* ,物流问题总量, 约派送, 核实拒收, 再派签收, 未接听, 无效号码
+        FROM (SELECT 处理时间 AS 物流问题, COUNT(订单编号) AS 物流问题联系量
+                    FROM 物流问题件 cg
+                    WHERE cg.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND cg.币种 = '台币'
+                    GROUP BY 处理时间
+                    ORDER BY 处理时间
+        ) ww
+        LEFT JOIN 
+        (SELECT 处理时间 AS 物流问题,
+                        COUNT(订单编号) AS 物流问题总量,
+                        SUM(IF(ks.`处理结果` LIKE '%送货%' or ks.`处理结果` LIKE '%配送%' or ks.`处理结果` LIKE '%自取%',1,0)) AS 约派送,
+                        SUM(IF(ks.`处理结果` LIKE '%拒收%' ,1,0)) AS 核实拒收,
+                        SUM(IF((ks.`处理结果` LIKE '%送货%' or ks.`处理结果` LIKE '%配送%') AND ks.`系统物流状态` LIKE '已签收%',1,0)) AS 再派签收,
+                        SUM(IF(ks.`处理结果` LIKE '%无人接听%',1,0)) AS 未接听,
+                        SUM(IF(ks.`处理结果` LIKE '%无效号码%',1,0)) AS 无效号码
+            FROM (SELECT wt.*, g.`系统订单状态`, g.`系统物流状态`, g.`完结状态`
+                        FROM (SELECT * 
+                                    FROM 物流问题件 
+                                    WHERE id IN (SELECT MAX(id) FROM 物流问题件 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号) 
+                                    ORDER BY id
+                        ) wt 
+                        LEFT JOIN gat_order_list g ON  wt.`订单编号` = g.`订单编号`
+                        WHERE wt.币种 = '台币'
+            ) ks
+            GROUP BY ks.处理时间
+            ORDER BY 处理时间
+        ) ww2  ON ww.`物流问题` = ww2.`物流问题`
+    ) ss1 ON  date.`日期31天` = EXTRACT(day FROM ss1.`物流问题`)
+    
+    LEFT JOIN
+    
+    ( SELECT cc.* ,客诉总量, 挽回单数, 未确认, 退款单数, 实际退款单数, 实际挽回单数
+        FROM (SELECT 处理时间 AS 物流客诉, COUNT(订单编号) AS 物流客诉联系量
+                    FROM 物流客诉件 cg
+                    WHERE cg.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) and cg.币种 = '台币'
+                    GROUP BY 处理时间
+                    ORDER BY 处理时间
+        ) cc 
+    LEFT JOIN
+        (SELECT 处理时间 AS 物流客诉,
+                        COUNT(订单编号) AS 客诉总量,
+                        SUM(IF(ks.`处理方案` LIKE '%不退款%' or ks.`处理方案` LIKE '%赠品%' or ks.`处理方案` LIKE '%补发%' or ks.`处理方案` LIKE '%换货%',1,0)) AS 挽回单数,
+                        SUM(IF(ks.`处理结果` LIKE '%转语音%' or ks.`处理结果` LIKE '%空号%' or ks.`处理结果` LIKE '%挂断电话%' or ks.`处理结果` LIKE '%无人接听%',1,0)) AS 未确认,
+                        SUM(IF(ks.`处理方案` LIKE '%退款%' AND ks.`处理方案` NOT LIKE '%不%',1,0)) AS 退款单数,
+                                
+                        SUM(IF(ks.`完结状态` = '退款',1,0)) AS 实际退款单数,
+                        SUM(IF(ks.`完结状态` = '收款',1,0)) AS 实际挽回单数
+            FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`完结状态`
+                        FROM (SELECT * 
+                                    FROM 物流客诉件 
+                                    WHERE id IN (SELECT MAX(id) FROM 物流客诉件 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号) 
+                                    ORDER BY id
+                            ) cg
+                        LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
+                        WHERE cg.币种 = '台币'
+            ) ks
+    
+            GROUP BY ks.处理时间
+            ORDER BY 处理时间
+        ) cc2  ON cc.`物流客诉` = cc2.`物流客诉`
+    ) ss2 ON  date.`日期31天` = EXTRACT(day FROM ss2.`物流客诉`)
+    
+    LEFT JOIN
+    
+    (SELECT gg.* ,异常单量, 正常发货, 取消订单
+        FROM (SELECT cg.处理时间 AS 采购异常, COUNT(cg.订单编号) AS 采购异常联系量
+                    FROM 采购异常 cg
+                    LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
+                    WHERE cg.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND g.是否改派 = '直发'
+                    GROUP BY cg.处理时间
+                    ORDER BY cg.处理时间
+        ) gg 
+        LEFT JOIN
+        (SELECT DATE(s.处理时间) AS 采购异常,
+                        COUNT(订单编号) AS 异常单量,
+                        SUM(IF(s.`系统订单状态` NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货') AND s.处理结果 <> '跟进',1,0)) AS 正常发货,
+                        SUM(IF(s.`系统订单状态` = '已删除',1,0)) AS 取消订单,
+                        SUM(IF(s.处理结果 = '跟进',1,0)) AS 跟进,
+                        
+                        SUM(IF(s.`反馈内容` NOT like '%取消%',1,0)) AS 正常发货22,
+                        SUM(IF(s.`反馈内容` like '%取消%',1,0)) AS 取消订单22
+            FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`, g.`是否改派`
+                        FROM (SELECT * 
+                                    FROM 采购异常 
+                                    WHERE id IN (SELECT MAX(id) FROM 采购异常 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号) 
+                                    ORDER BY id
+                            ) cg
+                        LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
+                        WHERE  g.是否改派 = '直发'
+            ) s
+            GROUP BY DATE(s.处理时间) 
+            ORDER BY DATE(s.处理时间) 
+        ) gg2 ON gg.`采购异常` = gg2.`采购异常`
+    ) ss3 ON  date.`日期31天` = EXTRACT(day FROM ss3.`采购异常`)
+    LEFT JOIN
+    (SELECT DATE(s.处理时间) AS 拒收问题件,
+                        COUNT(订单编号) AS '联系量（有结果）',
+                        SUM(IF(s.`再次克隆下单` IS NOT NULL,1,0)) AS 挽单量
+            FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`
+                        FROM (SELECT * 
+                                    FROM 拒收问题件 
+                                  WHERE id IN (SELECT MAX(id) FROM 拒收问题件 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号)	
+                                    ORDER BY id
+                            ) cg
+                        LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
+                        WHERE g.币种 = '台湾' 
+            ) s
+            WHERE  s.核实原因 <> '未联系上客户'
+            GROUP BY DATE(s.处理时间) 
+            ORDER BY DATE(s.处理时间) 
+        ) ss4 ON  date.`日期31天` = EXTRACT(day FROM ss4.`拒收问题件`)
+    GROUP BY 日期31天
+    ORDER BY 日期31天;'''.format()     # 港台查询函数导出
+            df0 = pd.read_sql_query(sql=sql, con=self.engine1)
+            listT.append(df0)
+            print('正在获取 周报表 数据内容…………')
+            sql = '''SELECT 日期31天, ss.正常出货, ss.删除订单, ss.实际签收, 
+                            ss1.约派送, ss1.核实拒收, ss1.再派签收, 
+                            ss2.挽回单数, ss2.未确认, ss2.退款单数, ss2.实际挽回单数, 
+                            ss3.正常发货, ss3.取消订单,
+                            ss4.`联系量（有结果）`,ss4.挽单量
+                    FROM date
+                    LEFT JOIN
+                        (SELECT 日期 AS 系统问题,
+                                COUNT(订单编号) AS 问题订单,
+                                SUM(IF(g.`系统订单状态` NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 正常出货,
+                                SUM(IF(g.`系统订单状态` = '已删除',1,0)) AS 删除订单,
+                                SUM(IF(g.`系统物流状态` = '已签收',1,0)) AS 实际签收
+                        FROM gat_order_list g
+                        WHERE (g.日期  BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0)) AND 
+                            (g.`问题时间` BETWEEN TIMESTAMP(subdate(curdate(),date_format(curdate(),'%w')+6)) AND TIMESTAMP(subdate(curdate(),date_format(curdate(),'%w')-1))) 
+                            AND g.`问题原因` IS NOT NULL AND g.币种 = '台湾'
+                        GROUP BY DATE(日期) 
+                        ORDER BY DATE(日期)
+                    ) ss ON  date.`日期31天` = EXTRACT(day FROM ss.`系统问题`)
+                    LEFT JOIN 
+                        (SELECT ww.* ,物流问题总量, 约派送, 核实拒收, 再派签收, 未接听, 无效号码
+                            FROM (SELECT 处理时间 AS 物流问题, COUNT(订单编号) AS 物流问题联系量
+                                    FROM 物流问题件 cg
+                                    WHERE cg.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) AND cg.币种 = '台币'
+                                    GROUP BY 处理时间
+                                    ORDER BY 处理时间
+                            ) ww
+                        LEFT JOIN 
+                        (SELECT 处理时间 AS 物流问题,
+                                COUNT(订单编号) AS 物流问题总量,
+                                SUM(IF(ks.`处理结果` LIKE '%送货%' or ks.`处理结果` LIKE '%配送%' or ks.`处理结果` LIKE '%自取%',1,0)) AS 约派送,
+                                SUM(IF(ks.`处理结果` LIKE '%拒收%' OR ks.`处理结果` LIKE '%无人接听%' OR ks.`处理结果` LIKE '%无效号码%',1,0)) AS 核实拒收,
+                                SUM(IF((ks.`处理结果` LIKE '%送货%' or ks.`处理结果` LIKE '%配送%') AND ks.`系统物流状态` LIKE '已签收%',1,0)) AS 再派签收,
+                                SUM(IF(ks.`处理结果` LIKE '%无人接听%',1,0)) AS 未接听,
+                                SUM(IF(ks.`处理结果` LIKE '%无效号码%',1,0)) AS 无效号码
+                        FROM (SELECT wt.*, g.`系统订单状态`, g.`系统物流状态`, g.`完结状态`
+                                FROM (SELECT * 
+                                        FROM 物流问题件 
+                                        WHERE id IN (SELECT MAX(id) FROM 物流问题件 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) GROUP BY 订单编号) 
+                                        ORDER BY id
+                                ) wt 
+                            LEFT JOIN gat_order_list g ON  wt.`订单编号` = g.`订单编号`
+                            WHERE wt.币种 = '台币'
+                        ) ks
+                        GROUP BY ks.处理时间
+                        ORDER BY 处理时间
+                        ) ww2  ON ww.`物流问题` = ww2.`物流问题`
+                    ) ss1 ON  date.`日期31天` = EXTRACT(day FROM ss1.`物流问题`)
+    LEFT JOIN
+    ( SELECT cc.* ,客诉总量, 挽回单数, 未确认, 退款单数, 实际退款单数, 实际挽回单数
+        FROM (SELECT 处理时间 AS 物流客诉, COUNT(订单编号) AS 物流客诉联系量
+                    FROM 物流客诉件 cg
+                    WHERE cg.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) and cg.币种 = '台币'
+                    GROUP BY 处理时间
+                    ORDER BY 处理时间
+        ) cc 
+    LEFT JOIN
+        (SELECT 处理时间 AS 物流客诉,
+                        COUNT(订单编号) AS 客诉总量,
+                        SUM(IF(ks.`处理方案` LIKE '%不退款%' or ks.`处理方案` LIKE '%赠品%' or ks.`处理方案` LIKE '%补发%' or ks.`处理方案` LIKE '%换货%',1,0)) AS 挽回单数,
+                        SUM(IF(ks.`处理结果` LIKE '%转语音%' or ks.`处理结果` LIKE '%空号%' or ks.`处理结果` LIKE '%挂断电话%' or ks.`处理结果` LIKE '%无人接听%',1,0)) AS 未确认,
+                        SUM(IF(ks.`处理方案` LIKE '%退款%' AND ks.`处理方案` NOT LIKE '%不%',1,0)) AS 退款单数,
+                                
+                        SUM(IF(ks.`完结状态` = '退款',1,0)) AS 实际退款单数,
+                        SUM(IF(ks.`完结状态` = '收款',1,0)) AS 实际挽回单数
+            FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`完结状态`
+                        FROM (SELECT * 
+                                    FROM 物流客诉件 
+                                    WHERE id IN (SELECT MAX(id) FROM 物流客诉件 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) GROUP BY 订单编号) 
+                                    ORDER BY id
+                            ) cg
+                            LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
+                            WHERE cg.币种 = '台币'
+            ) ks
+            GROUP BY ks.处理时间
+            ORDER BY 处理时间
+        ) cc2  ON cc.`物流客诉` = cc2.`物流客诉`
+    ) ss2 ON  date.`日期31天` = EXTRACT(day FROM ss2.`物流客诉`)
+    LEFT JOIN
+    (SELECT gg.* ,异常单量, 正常发货, 取消订单
+        FROM (SELECT 处理时间 AS 采购异常, COUNT(cg.订单编号) AS 采购异常联系量
+                    FROM 采购异常 cg
+                    LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
+                    WHERE cg.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) AND g.是否改派 = '直发'
+                    GROUP BY 处理时间
+                    ORDER BY 处理时间
+        ) gg 
+        LEFT JOIN
+        (SELECT DATE(s.处理时间) AS 采购异常,
+                        COUNT(订单编号) AS 异常单量,
+                        SUM(IF(s.`系统订单状态` NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货') AND s.处理结果 <> '跟进',1,0)) AS 正常发货,
+                        SUM(IF(s.`系统订单状态` = '已删除',1,0)) AS 取消订单,
+                        SUM(IF(s.处理结果 = '跟进',1,0)) AS 跟进,
+                        
+                        SUM(IF(s.`反馈内容` NOT like '%取消%',1,0)) AS 正常发货22,
+                        SUM(IF(s.`反馈内容` like '%取消%',1,0)) AS 取消订单22
+            FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`
+                        FROM (SELECT * 
+                                    FROM 采购异常 
+                                    WHERE id IN (SELECT MAX(id) FROM 采购异常 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) GROUP BY 订单编号) 
+                                    ORDER BY id
+                            ) cg
+                        LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
+                        WHERE g.是否改派 = '直发'
+            ) s
+            GROUP BY DATE(s.处理时间) 
+            ORDER BY DATE(s.处理时间) 
+        ) gg2 ON gg.`采购异常` = gg2.`采购异常`
+    ) ss3 ON  date.`日期31天` = EXTRACT(day FROM ss3.`采购异常`)
+    LEFT JOIN
+    (SELECT DATE(s.处理时间) AS 拒收问题件,
+                        COUNT(订单编号) AS '联系量（有结果）',
+                        SUM(IF(s.`再次克隆下单` IS NOT NULL,1,0)) AS 挽单量
+            FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`
+                        FROM (SELECT * 
+                                    FROM 拒收问题件 
+                                    WHERE id IN (SELECT MAX(id) FROM 拒收问题件 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) GROUP BY 订单编号) 
+                                    ORDER BY id
+                            ) cg
+                        LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
+                        WHERE g.币种 = '台湾' 
+            ) s
+            WHERE  s.核实原因 <> '未联系上客户'
+            GROUP BY DATE(s.处理时间) 
+            ORDER BY DATE(s.处理时间) 
+        ) ss4 ON  date.`日期31天` = EXTRACT(day FROM ss4.`拒收问题件`)
+    WHERE ss.系统问题 IS NOT NULL
+    GROUP BY 日期31天
+    ORDER BY 系统问题;'''.format()  # 港台查询函数导出
+            df1 = pd.read_sql_query(sql=sql, con=self.engine1)
+            listT.append(df1)
 
-LEFT JOIN 
-
-(	SELECT ww.* ,物流问题总量, 约派送, 核实拒收, 再派签收, 未接听, 无效号码
-	FROM (SELECT 处理时间 AS 物流问题, COUNT(订单编号) AS 物流问题联系量
-				FROM 物流问题件 cg
-				WHERE cg.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND cg.币种 = '台币'
-				GROUP BY 处理时间
-				ORDER BY 处理时间
-	) ww
-	LEFT JOIN 
-	(SELECT 处理时间 AS 物流问题,
-					COUNT(订单编号) AS 物流问题总量,
-					SUM(IF(ks.`处理结果` LIKE '%送货%' or ks.`处理结果` LIKE '%配送%' or ks.`处理结果` LIKE '%自取%',1,0)) AS 约派送,
-					SUM(IF(ks.`处理结果` LIKE '%拒收%' ,1,0)) AS 核实拒收,
-					SUM(IF((ks.`处理结果` LIKE '%送货%' or ks.`处理结果` LIKE '%配送%') AND ks.`系统物流状态` LIKE '已签收%',1,0)) AS 再派签收,
-					SUM(IF(ks.`处理结果` LIKE '%无人接听%',1,0)) AS 未接听,
-					SUM(IF(ks.`处理结果` LIKE '%无效号码%',1,0)) AS 无效号码
-		FROM (SELECT wt.*, g.`系统订单状态`, g.`系统物流状态`, g.`完结状态`
-					FROM (SELECT * 
-								FROM 物流问题件 
-								WHERE id IN (SELECT MAX(id) FROM 物流问题件 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号) 
-								ORDER BY id
-					) wt 
-					LEFT JOIN gat_order_list g ON  wt.`订单编号` = g.`订单编号`
-					WHERE wt.币种 = '台币'
-		) ks
-		GROUP BY ks.处理时间
-		ORDER BY 处理时间
-	) ww2  ON ww.`物流问题` = ww2.`物流问题`
-) ss1 ON  date.`日期31天` = EXTRACT(day FROM ss1.`物流问题`)
-
-LEFT JOIN
-
-( SELECT cc.* ,客诉总量, 挽回单数, 未确认, 退款单数, 实际退款单数, 实际挽回单数
-	FROM (SELECT 处理时间 AS 物流客诉, COUNT(订单编号) AS 物流客诉联系量
-				FROM 物流客诉件 cg
-				WHERE cg.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) and cg.币种 = '台币'
-				GROUP BY 处理时间
-				ORDER BY 处理时间
-	) cc 
-LEFT JOIN
-	(SELECT 处理时间 AS 物流客诉,
-					COUNT(订单编号) AS 客诉总量,
-					SUM(IF(ks.`处理方案` LIKE '%不退款%' or ks.`处理方案` LIKE '%赠品%' or ks.`处理方案` LIKE '%补发%' or ks.`处理方案` LIKE '%换货%',1,0)) AS 挽回单数,
-					SUM(IF(ks.`处理结果` LIKE '%转语音%' or ks.`处理结果` LIKE '%空号%' or ks.`处理结果` LIKE '%挂断电话%' or ks.`处理结果` LIKE '%无人接听%',1,0)) AS 未确认,
-					SUM(IF(ks.`处理方案` LIKE '%退款%' AND ks.`处理方案` NOT LIKE '%不%',1,0)) AS 退款单数,
-							
-					SUM(IF(ks.`完结状态` = '退款',1,0)) AS 实际退款单数,
-					SUM(IF(ks.`完结状态` = '收款',1,0)) AS 实际挽回单数
-		FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`完结状态`
-					FROM (SELECT * 
-								FROM 物流客诉件 
-								WHERE id IN (SELECT MAX(id) FROM 物流客诉件 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号) 
-								ORDER BY id
-						) cg
-					LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
-					WHERE cg.币种 = '台币'
-		) ks
-
-		GROUP BY ks.处理时间
-		ORDER BY 处理时间
-	) cc2  ON cc.`物流客诉` = cc2.`物流客诉`
-) ss2 ON  date.`日期31天` = EXTRACT(day FROM ss2.`物流客诉`)
-
-LEFT JOIN
-
-(SELECT gg.* ,异常单量, 正常发货, 取消订单
-	FROM (SELECT cg.处理时间 AS 采购异常, COUNT(cg.订单编号) AS 采购异常联系量
-				FROM 采购异常 cg
-				LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
-				WHERE cg.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND g.是否改派 = '直发'
-				GROUP BY cg.处理时间
-				ORDER BY cg.处理时间
-	) gg 
-	LEFT JOIN
-	(SELECT DATE(s.处理时间) AS 采购异常,
-					COUNT(订单编号) AS 异常单量,
-					SUM(IF(s.`系统订单状态` NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货') AND s.处理结果 <> '跟进',1,0)) AS 正常发货,
-					SUM(IF(s.`系统订单状态` = '已删除',1,0)) AS 取消订单,
-					SUM(IF(s.处理结果 = '跟进',1,0)) AS 跟进,
-					
-					SUM(IF(s.`反馈内容` NOT like '%取消%',1,0)) AS 正常发货22,
-					SUM(IF(s.`反馈内容` like '%取消%',1,0)) AS 取消订单22
-		FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`, g.`是否改派`
-					FROM (SELECT * 
-								FROM 采购异常 
-								WHERE id IN (SELECT MAX(id) FROM 采购异常 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号) 
-								ORDER BY id
-						) cg
-					LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
-					WHERE  g.是否改派 = '直发'
-		) s
-		GROUP BY DATE(s.处理时间) 
-		ORDER BY DATE(s.处理时间) 
-	) gg2 ON gg.`采购异常` = gg2.`采购异常`
-) ss3 ON  date.`日期31天` = EXTRACT(day FROM ss3.`采购异常`)
-LEFT JOIN
-(SELECT DATE(s.处理时间) AS 拒收问题件,
-					COUNT(订单编号) AS '联系量（有结果）',
-					SUM(IF(s.`再次克隆下单` IS NOT NULL,1,0)) AS 挽单量
-		FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`
-					FROM (SELECT * 
-								FROM 拒收问题件 
-							  WHERE id IN (SELECT MAX(id) FROM 拒收问题件 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号)	
-								ORDER BY id
-						) cg
-					LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
-					WHERE g.币种 = '台湾' 
-		) s
-		WHERE  s.核实原因 <> '未联系上客户'
-		GROUP BY DATE(s.处理时间) 
-		ORDER BY DATE(s.处理时间) 
-	) ss4 ON  date.`日期31天` = EXTRACT(day FROM ss4.`拒收问题件`)
-GROUP BY 日期31天
-ORDER BY 日期31天;'''.format()     # 港台查询函数导出
-        df0 = pd.read_sql_query(sql=sql, con=self.engine1)
-        listT.append(df0)
-        print('正在获取 周报表 数据内容…………')
-        sql = '''SELECT 日期31天, ss.正常出货, ss.删除订单, ss.实际签收, 
-				        ss1.约派送, ss1.核实拒收, ss1.再派签收, 
-				        ss2.挽回单数, ss2.未确认, ss2.退款单数, ss2.实际挽回单数, 
-				        ss3.正常发货, ss3.取消订单,
-						ss4.`联系量（有结果）`,ss4.挽单量
-                FROM date
-                LEFT JOIN
-		            (SELECT 日期 AS 系统问题,
-					        COUNT(订单编号) AS 问题订单,
-					        SUM(IF(g.`系统订单状态` NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 正常出货,
-					        SUM(IF(g.`系统订单状态` = '已删除',1,0)) AS 删除订单,
-					        SUM(IF(g.`系统物流状态` = '已签收',1,0)) AS 实际签收
-		            FROM gat_order_list g
-		            WHERE (g.日期  BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0)) AND 
-					    (g.`问题时间` BETWEEN TIMESTAMP(subdate(curdate(),date_format(curdate(),'%w')+6)) AND TIMESTAMP(subdate(curdate(),date_format(curdate(),'%w')-1))) 
-					    AND g.`问题原因` IS NOT NULL AND g.币种 = '台湾'
-		            GROUP BY DATE(日期) 
-		            ORDER BY DATE(日期)
-                ) ss ON  date.`日期31天` = EXTRACT(day FROM ss.`系统问题`)
-                LEFT JOIN 
-                    (SELECT ww.* ,物流问题总量, 约派送, 核实拒收, 再派签收, 未接听, 无效号码
-	                    FROM (SELECT 处理时间 AS 物流问题, COUNT(订单编号) AS 物流问题联系量
-				                FROM 物流问题件 cg
-				                WHERE cg.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) AND cg.币种 = '台币'
-				                GROUP BY 处理时间
-				                ORDER BY 处理时间
-	                    ) ww
-	                LEFT JOIN 
-	                (SELECT 处理时间 AS 物流问题,
-					        COUNT(订单编号) AS 物流问题总量,
-					        SUM(IF(ks.`处理结果` LIKE '%送货%' or ks.`处理结果` LIKE '%配送%' or ks.`处理结果` LIKE '%自取%',1,0)) AS 约派送,
-					        SUM(IF(ks.`处理结果` LIKE '%拒收%' OR ks.`处理结果` LIKE '%无人接听%' OR ks.`处理结果` LIKE '%无效号码%',1,0)) AS 核实拒收,
-					        SUM(IF((ks.`处理结果` LIKE '%送货%' or ks.`处理结果` LIKE '%配送%') AND ks.`系统物流状态` LIKE '已签收%',1,0)) AS 再派签收,
-					        SUM(IF(ks.`处理结果` LIKE '%无人接听%',1,0)) AS 未接听,
-					        SUM(IF(ks.`处理结果` LIKE '%无效号码%',1,0)) AS 无效号码
-		            FROM (SELECT wt.*, g.`系统订单状态`, g.`系统物流状态`, g.`完结状态`
-					        FROM (SELECT * 
-								    FROM 物流问题件 
-								    WHERE id IN (SELECT MAX(id) FROM 物流问题件 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) GROUP BY 订单编号) 
-								    ORDER BY id
-					        ) wt 
-					    LEFT JOIN gat_order_list g ON  wt.`订单编号` = g.`订单编号`
-					    WHERE wt.币种 = '台币'
-		            ) ks
-		            GROUP BY ks.处理时间
-		            ORDER BY 处理时间
-	                ) ww2  ON ww.`物流问题` = ww2.`物流问题`
-                ) ss1 ON  date.`日期31天` = EXTRACT(day FROM ss1.`物流问题`)
-LEFT JOIN
-( SELECT cc.* ,客诉总量, 挽回单数, 未确认, 退款单数, 实际退款单数, 实际挽回单数
-	FROM (SELECT 处理时间 AS 物流客诉, COUNT(订单编号) AS 物流客诉联系量
-				FROM 物流客诉件 cg
-				WHERE cg.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) and cg.币种 = '台币'
-				GROUP BY 处理时间
-				ORDER BY 处理时间
-	) cc 
-LEFT JOIN
-	(SELECT 处理时间 AS 物流客诉,
-					COUNT(订单编号) AS 客诉总量,
-					SUM(IF(ks.`处理方案` LIKE '%不退款%' or ks.`处理方案` LIKE '%赠品%' or ks.`处理方案` LIKE '%补发%' or ks.`处理方案` LIKE '%换货%',1,0)) AS 挽回单数,
-					SUM(IF(ks.`处理结果` LIKE '%转语音%' or ks.`处理结果` LIKE '%空号%' or ks.`处理结果` LIKE '%挂断电话%' or ks.`处理结果` LIKE '%无人接听%',1,0)) AS 未确认,
-					SUM(IF(ks.`处理方案` LIKE '%退款%' AND ks.`处理方案` NOT LIKE '%不%',1,0)) AS 退款单数,
-							
-					SUM(IF(ks.`完结状态` = '退款',1,0)) AS 实际退款单数,
-					SUM(IF(ks.`完结状态` = '收款',1,0)) AS 实际挽回单数
-		FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`完结状态`
-					FROM (SELECT * 
-								FROM 物流客诉件 
-								WHERE id IN (SELECT MAX(id) FROM 物流客诉件 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) GROUP BY 订单编号) 
-								ORDER BY id
-						) cg
-						LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
-						WHERE cg.币种 = '台币'
-		) ks
-		GROUP BY ks.处理时间
-		ORDER BY 处理时间
-	) cc2  ON cc.`物流客诉` = cc2.`物流客诉`
-) ss2 ON  date.`日期31天` = EXTRACT(day FROM ss2.`物流客诉`)
-LEFT JOIN
-(SELECT gg.* ,异常单量, 正常发货, 取消订单
-	FROM (SELECT 处理时间 AS 采购异常, COUNT(cg.订单编号) AS 采购异常联系量
-				FROM 采购异常 cg
-				LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
-				WHERE cg.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) AND g.是否改派 = '直发'
-				GROUP BY 处理时间
-				ORDER BY 处理时间
-	) gg 
-	LEFT JOIN
-	(SELECT DATE(s.处理时间) AS 采购异常,
-					COUNT(订单编号) AS 异常单量,
-					SUM(IF(s.`系统订单状态` NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货') AND s.处理结果 <> '跟进',1,0)) AS 正常发货,
-					SUM(IF(s.`系统订单状态` = '已删除',1,0)) AS 取消订单,
-					SUM(IF(s.处理结果 = '跟进',1,0)) AS 跟进,
-					
-					SUM(IF(s.`反馈内容` NOT like '%取消%',1,0)) AS 正常发货22,
-					SUM(IF(s.`反馈内容` like '%取消%',1,0)) AS 取消订单22
-		FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`
-					FROM (SELECT * 
-								FROM 采购异常 
-								WHERE id IN (SELECT MAX(id) FROM 采购异常 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) GROUP BY 订单编号) 
-								ORDER BY id
-						) cg
-					LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
-					WHERE g.是否改派 = '直发'
-		) s
-		GROUP BY DATE(s.处理时间) 
-		ORDER BY DATE(s.处理时间) 
-	) gg2 ON gg.`采购异常` = gg2.`采购异常`
-) ss3 ON  date.`日期31天` = EXTRACT(day FROM ss3.`采购异常`)
-LEFT JOIN
-(SELECT DATE(s.处理时间) AS 拒收问题件,
-					COUNT(订单编号) AS '联系量（有结果）',
-					SUM(IF(s.`再次克隆下单` IS NOT NULL,1,0)) AS 挽单量
-		FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`
-					FROM (SELECT * 
-								FROM 拒收问题件 
-								WHERE id IN (SELECT MAX(id) FROM 拒收问题件 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) GROUP BY 订单编号) 
-								ORDER BY id
-						) cg
-					LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
-					WHERE g.币种 = '台湾' 
-		) s
-		WHERE  s.核实原因 <> '未联系上客户'
-		GROUP BY DATE(s.处理时间) 
-		ORDER BY DATE(s.处理时间) 
-	) ss4 ON  date.`日期31天` = EXTRACT(day FROM ss4.`拒收问题件`)
-WHERE ss.系统问题 IS NOT NULL
-GROUP BY 日期31天
-ORDER BY 系统问题;'''.format()  # 港台查询函数导出
-        df1 = pd.read_sql_query(sql=sql, con=self.engine1)
-        listT.append(df1)
-
-        print('正在写入excel…………')
-        today = datetime.date.today().strftime('%Y.%m.%d')
-        file_path = 'G:\\输出文件\\{} 电话核实 日报表_周报表.xlsx'.format(today)
-        sheet_name = ['日报表', '周报表']
-        df0 = pd.DataFrame([])                                          # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)                            # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')           # 初始化写入对象
-        book = load_workbook(file_path)                                 # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book                                              # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        for i in range(len(listT)):
-            listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-        if 'Sheet1' in book.sheetnames:                                 # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
-        try:
-            print('正在运行 日报表、周报表 宏…………')
-            app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-            app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
-            wbsht1 = app.books.open(file_path)
-            wbsht.macro('电话核实日报表_周报表')()
-            wbsht1.save()
-            wbsht1.close()
-            wbsht.close()
-            app.quit()
-        except Exception as e:
-            print('运行失败：', str(Exception) + str(e))
-        print('----已写入excel ')
+            print('正在写入excel…………')
+            today = datetime.date.today().strftime('%Y.%m.%d')
+            file_path = 'G:\\输出文件\\{} 电话核实 日报表_周报表.xlsx'.format(today)
+            sheet_name = ['日报表', '周报表']
+            df0 = pd.DataFrame([])                                          # 创建空的dataframe数据框
+            df0.to_excel(file_path, index=False)                            # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            writer = pd.ExcelWriter(file_path, engine='openpyxl')           # 初始化写入对象
+            book = load_workbook(file_path)                                 # 可以向不同的sheet写入数据（对现有工作表的追加）
+            writer.book = book                                              # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            for i in range(len(listT)):
+                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+            if 'Sheet1' in book.sheetnames:                                 # 删除新建文档时的第一个工作表
+                del book['Sheet1']
+            writer.save()
+            writer.close()
+            try:
+                print('正在运行 日报表、周报表 宏…………')
+                app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
+                app.display_alerts = False
+                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+                wbsht1 = app.books.open(file_path)
+                wbsht.macro('电话核实日报表_周报表')()
+                wbsht1.save()
+                wbsht1.close()
+                wbsht.close()
+                app.quit()
+            except Exception as e:
+                print('运行失败：', str(Exception) + str(e))
+            print('----已写入excel ')
 
 
     def slrb_new(self, team, month_last, month_yesterday):  # 报表各团队近两个月的物流数据
@@ -9455,9 +9458,9 @@ if __name__ == '__main__':
     m.readFormHost(team, write, last_time)                            # 更新签收表---港澳台（一）
 
     m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
-    # m.qsb_new(team, month_old)                                    # 获取-每日-报表
-    # m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收
-    # m.phone_report()                                        # 获取电话核实日报表 周报表
+    m.qsb_new(team, month_old)                                    # 获取-每日-报表
+    m.EportOrderBook(team, month_last, month_yesterday)       # 导出-总的-签收
+    m.phone_report('handle')                                        # 获取电话核实日报表 周报表 handle=手动 自定义时间
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id
     # m.address_repot(team, month_last, month_yesterday)                       #  获取-地区签收率-报表

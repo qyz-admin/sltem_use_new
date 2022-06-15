@@ -20,6 +20,7 @@ from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, \
     Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
 from selenium import webdriver
+from 查询_产品明细 import QueryTwoT
 
 # -*- coding:utf-8 -*-
 class Query_sso_updata(Settings):
@@ -2117,6 +2118,19 @@ class Query_sso_updata(Settings):
         columns = list(df.columns)
         columns = ', '.join(columns)
         df.to_sql('d1_host_cp', con=self.engine1, index=False, if_exists='replace')
+
+        print('正在综合检查 父级分类、产品id 为空的信息---')
+        sql = '''SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
+                FROM {0} sl
+                WHERE (sl.`父级分类` IS NULL or sl.`父级分类`= '' OR sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'));'''.format('d1_host_cp')
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        if ordersDict.empty:
+            print(' ****** 没有要补充的信息; ****** ')
+        else:
+            print('！！！ 请再次补充缺少的数据中！！！')
+            lw = QueryTwoT('+86-18538110674', 'qyz35100416')
+            lw.productInfo('d1_host_cp', ordersDict)
+
         print('正在导入 总表中......')
         sql = '''REPLACE INTO {0}_order_list({1}, 记录时间) SELECT *, CURDATE() 记录时间 FROM d1_host_cp; '''.format('gat', columns)
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)

@@ -281,16 +281,16 @@ class QueryTwoT(Settings, Settings_sso):
 
 
 
-    # 后台补充产品信息
-    def productInfo(self, team):  # 进入查询界面，
+    # 后台  补充  产品信息
+    def productInfo(self, team, ordersDict):  # 进入查询界面，
         print('正在获取需要更新的产品id信息')
         start = datetime.datetime.now()
         month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
-        sql = '''SELECT DISTINCT 产品id  FROM {0}_order_list sl 
+        sql = '''SELECT DISTINCT 产品id  FROM {0} sl 
           WHERE sl.`日期`>= '{1}' 
             AND (sl.`产品名称` IS NULL or sl.`父级分类` IS NULL)
             AND (sl.`系统订单状态` NOT IN ('已删除','问题订单','支付失败','未支付'));'''.format(team, month_begin)
-        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        # ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
         if ordersDict.empty:
             print('无需要更新的产品id信息！！！')
             return
@@ -307,12 +307,13 @@ class QueryTwoT(Settings, Settings_sso):
                 dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
             dp.to_sql('tem_product', con=self.engine1, index=False, if_exists='replace')
-            sql = '''update gat_order_list a, tem_product b
+            print('更新中......')
+            sql = '''update {1} a, tem_product b
                     set a.`产品名称`= IF(b.`name` = '', a.`产品名称`, b.`name`),
                         a.`父级分类`= IF(b.`cate_id` = '', a.`父级分类`, b.`cate_id`),
                     a.`二级分类`= IF(b.`second_cate_id` = '', a.`二级分类`, b.`second_cate_id`),
                     a.`三级分类`= IF(b.`third_cate_id` = '', a.`三级分类`, b.`third_cate_id`)
-                  where a.日期>= '{0}' AND a.`产品id`= b.`id`;'''.format(month_begin)
+                  where a.日期>= '{0}' AND a.`产品id`= b.`id`;'''.format(month_begin, team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('共有 ' + str(len(dp)) + '条 成功更新+++++++')
 
@@ -329,7 +330,7 @@ class QueryTwoT(Settings, Settings_sso):
                    'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
-        print('+++已成功发送请求......')
+        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersDict = []
         try:
@@ -353,7 +354,7 @@ class QueryTwoT(Settings, Settings_sso):
             data = data[['id', 'name', 'cate_id', 'second_cate_id', 'third_cate_id']]
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
-        print('++++++本批次查询成功+++++++')
+        # print('++++++本次查询成功+++++++')
         print('*' * 50)
         return data
 

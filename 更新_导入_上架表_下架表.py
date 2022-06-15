@@ -218,6 +218,7 @@ class Updata_return_bill(Settings, Settings_sso):
                                 db.insert(0, '物流渠道', tem_data)
                                 db.insert(0, '仓库名称', '协来运')
                                 db = db[['物流渠道', '订单编号', '运单编号', '退货单号', '退货上架货架', '上架时间', '仓库名称']]
+                                db.dropna(subset=["订单编号"], axis=0, inplace=True)  # 滤除指定列中含有缺失的行
                             else:
                                 db = None
 
@@ -501,9 +502,12 @@ if __name__ == '__main__':
 
     elif int(select) == 2:
         m.readFormHost()
-        m.tianma_upload_return('手0动','login_TmpCode')       # 天马上架
 
     elif int(select) == 3:
+        m.readFormHost()
+        m.tianma_upload_return('手0动','login_TmpCode')       # 天马上架
+
+    elif int(select) == 4:
         m.check_data()
         m.readFormHost()
 

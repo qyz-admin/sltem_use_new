@@ -99,9 +99,9 @@ print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
 print('---------------------------------- 数据库更新部分：--------------------------------')
-m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
+# m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
 
-# qu.EportOrder(team, month_last, month_yesterday, month_begin, '不是')     # 最近两个月的更新信息导出
+# qu.EportOrder(team, month_last, month_yesterday, month_begin, '是')     # 最近两个月的更新信息导出
 # m.connectOrder(team, month_last, month_yesterday, month_begin)      # 停用 最近两个月的订单信息导出
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
@@ -110,8 +110,7 @@ print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
 if team == 'gat' and updata == '全部':
     print('---------------------------------- 单点更新部分：--------------------------------')
-    handle = '手0动'
-    sso = Query_sso_updata('+86-18538110674', 'qyz35100416', '1343', '32495f91f95b348d8c6298c1492e56b0', handle)
+    sso = Query_sso_updata('+86-18538110674', 'qyz35100416', '1343', '32495f91f95b348d8c6298c1492e56b0', '手0动')
 
     # sso.readFormHost('gat', '导入')                       # 导入新增的订单 line运营  手动导入
     # for i in range((end - begin).days):  # 按天循环获取订单状态
@@ -120,12 +119,12 @@ if team == 'gat' and updata == '全部':
     #     sso.orderInfo_append(day_time, day_time, '')               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
 
     sso.orderInfo_append(str(begin), str(end), 179)               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
-    sso.orderInfo(team, updata, begin, end)
+    # sso.orderInfo(team, updata, begin, end)
     print('更新耗时：', datetime.datetime.now() - start)
 
     print('---------------------------------- 导出部分：--------------------------------')
     check = '是'
-    qu.EportOrder(team, month_last, month_yesterday, month_begin, check)     # 最近两个月的更新信息导出
+    # qu.EportOrder(team, month_last, month_yesterday, month_begin, check)     # 最近两个月的更新信息导出
     print('输出耗时：', datetime.datetime.now() - start)
 
 elif team != 'gat' and updata == '全1部':
