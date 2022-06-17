@@ -2115,12 +2115,12 @@ class Query_sso_updata(Settings):
                                     LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`
                                     WHERE h.下单时间 < TIMESTAMP(CURDATE()); '''.format('gat')
         df = pd.read_sql_query(sql=sql, con=self.engine1)
+        df.to_sql('d1_host_cp', con=self.engine1, index=False, if_exists='replace')
         columns = list(df.columns)
         columns = ', '.join(columns)
-        df.to_sql('d1_host_cp', con=self.engine1, index=False, if_exists='replace')
 
         print('正在综合检查 父级分类、产品id 为空的信息---')
-        sql = '''SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
+        sql = '''SELECT 日期,订单编号,商品id,产品id
                 FROM {0} sl
                 WHERE (sl.`父级分类` IS NULL or sl.`父级分类`= '' OR sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'));'''.format('d1_host_cp')
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -2134,8 +2134,9 @@ class Query_sso_updata(Settings):
         print('正在导入 总表中......')
         sql = '''REPLACE INTO {0}_order_list({1}, 记录时间) SELECT *, CURDATE() 记录时间 FROM d1_host_cp; '''.format('gat', columns)
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        print('正在写入Execl......')
-        dp.to_excel('G:\\输出文件\\订单检索-时间查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+        # print('正在写入Execl......')
+        # print('正在写入Execl......')
+        # dp.to_excel('G:\\输出文件\\订单检索-时间查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         print('查询已导出+++')
     def _orderInfo_append(self, timeStart, timeEnd, n, areaId):  # 进入订单检索界面
         # print('......正在查询信息中......')

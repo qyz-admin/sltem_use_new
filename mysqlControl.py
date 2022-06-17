@@ -92,7 +92,7 @@ class MysqlControl(Settings):
 											WHERE gat_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
 											);'''
         print('正在清除港澳台-总表的可能删除了的订单…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         sql = '''DELETE FROM slsc_zqsb
                         WHERE slsc_zqsb.`订单编号` IN (SELECT 订单编号
         											FROM slsc_order_list 

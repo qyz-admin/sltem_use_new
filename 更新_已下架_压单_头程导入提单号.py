@@ -472,8 +472,10 @@ class QueryTwoLower(Settings, Settings_sso):
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
             data.to_excel('G:\\输出文件\\已下架 {0} {1}-{2}.xlsx'.format(tem_name, type_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            # self.stockcompose_upload()
+            # print('补充退货单号成功......')
 
-            print('获取每日新增龟山备货表......')
+            print('获取每日新增 龟山备货 表......')
             rq = datetime.datetime.now().strftime('%m.%d')
             sql = '''SELECT CURDATE() '序號(無用途)',NULL '訂單號長度限制: 20碼請勿使用中文）', 收货人 AS '收件人姓名(必填)長度限制: 20碼', 收货地址 AS '收件人地址(必填)中文限制: 50字', 
                             联系电话 AS '收件人電話長度限制: 15碼',商品名称 AS '託運備註中文限制: 50字', NULL '(商品別編號)勿填', 购买数量 AS '商品數量(必填)(限數字)', NULL '才積重量限數字', 
@@ -487,6 +489,7 @@ class QueryTwoLower(Settings, Settings_sso):
                 print('获取成功......')
             else:
                 print('****** 今日无新增龟山备货数据！！！')
+
         else:
             print('****** 没有新增的改派订单！！！')
             return None
@@ -496,38 +499,68 @@ class QueryTwoLower(Settings, Settings_sso):
     def stockcompose_upload(self):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('++++正在获取： ......')
-        orderId = ['7464121545', '7464077390;7464096603', '7464078451;7464090023', '7464084622']
-        # orderId = ['7464077390;7464096603']
-        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+        sql = '''SELECT * FROM 已下架表 x WHERE x.记录时间 >= TIMESTAMP (CURDATE()) AND x.`原运单号` IS NOT NULL AND x.`仓库` = '易速配-桃园仓';'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        orderId = list(df['原运单号'])
+        max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
         if max_count > 0:
             df = pd.DataFrame([])
             dlist = []
             for ord in orderId:
-                print(ord)
+                # print(ord)
                 if ";" in ord:
                     ordersdict = []
                     res = {}
                     billno = ''
                     refund_number = ''
                     for od in ord.split(';'):
-                        print(od)
                         bill, refund = self._stockcompose_upload(od)
                         billno = billno + ';' + bill
                         refund_number = refund_number + ';' + refund
-                        print(billno)
-                        print(refund_number)
+                        # print(billno)
+                        # print(refund_number)
                     res['原运单号'] = billno[1:]
                     res['退货单号'] = refund_number[1:]
-                    print(res)
+                    # print(res)
                     ordersdict.append(res)
                     data = pd.json_normalize(ordersdict)
-                    print(data)
+                    # print(data)
                 else:
                     data = self._stockcompose_upload_two(ord)
                 dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
             print(dp)
-            dp.to_excel('H:\\桌面\\需要用到的文件\输出文件\\运单轨  迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_sql('customer_cp', con=self.engine1, index=False, if_exists='replace')
+            sql = '''update `已下架表` a, `customer_cp` b
+                        set a.`退货单号`= IF(b.`退货单号` = '' OR b.`退货单号` IS NULL,NULL, b.`退货单号`)
+                    WHERE a.记录时间 >= TIMESTAMP (CURDATE()) AND a.`原运单号` = b.`原运单号`;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            dp.to_excel('G:\输出文件\\查询已下架 退货单号 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+
+            print('获取每日新增 桃园仓重出 表......')
+            rq = datetime.datetime.now().strftime('%m.%d')
+            sql = '''SELECT NULL AS 客代,原运单号 AS 原單號, 退货单号 AS 退單號, 订单编号, 收货人 AS 收件人, 联系电话 AS 收件人電話, 收货地址 AS 收件人地址, 商品名称 AS 品名, 购买数量 AS 件數, 订单金额 AS 台幣代收款, 团队
+                     FROM 已下架表 yx
+                     WHERE yx.记录时间 >= TIMESTAMP(CURDATE()) AND yx.仓库 = '易速配-桃园仓' AND (yx.`新运单号` IS NULL OR yx.`新运单号` = '');'''
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            if df is not None and len(df) > 0:
+                file_path = 'G:\\输出文件\\{0} 桃园仓重出 {1}单.xlsx'.format(rq, str(len(df)))
+                df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
+                print('正在运行宏…………')
+                app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
+                app.display_alerts = False
+                wbsht = app.books.open('D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm')
+                wbsht1 = app.books.open(file_path)
+                wbsht.macro('A解析')()
+                wbsht1.save()
+                wbsht1.close()
+                wbsht.close()
+                app.quit()
+                app.quit()
+                print('获取成功......')
+            else:
+                print('****** 今日无新增 桃园仓重出 数据！！！')
+
     def _stockcompose_upload(self, waybill):  # 进入压单检索界面
         print('+++正在查询订单信息中')
         url = r'http://gwms-v3.giikin.cn/stock/stockcompose/index'
@@ -544,10 +577,11 @@ class QueryTwoLower(Settings, Settings_sso):
                    'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
-        print(req)
-        print('+++已成功发送请求......')
+        # print(req)
+        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
-        print(req)
+        # print(req)
+        print(req['comment'])
         max_count = req['count']
         billno = ''
         refund_number = ''
@@ -589,10 +623,11 @@ class QueryTwoLower(Settings, Settings_sso):
                    'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
-        print(req)
-        print('+++已成功发送请求......')
+        # print(req)
+        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
-        print(req)
+        # print(req)
+        print(req['comment'])
         max_count = req['count']
         data = None
         if max_count != [] or max_count != 0:
@@ -606,7 +641,7 @@ class QueryTwoLower(Settings, Settings_sso):
 
 
 
-    # 进入组合库存查询界面
+    # 进入组合库存查询界面 ？？？？
     def gp_order_stockcompose(self):
         print('正在获取 改派未发货…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
@@ -652,7 +687,7 @@ class QueryTwoLower(Settings, Settings_sso):
         file_path = 'F:\\神龙签收率\\(未发货) 改派-物流\\{} 改派未发货.xlsx'.format(today)
         dt.to_excel(file_path, sheet_name='台湾', index=False, engine='xlsxwriter')
         print('----已写入excel ')
-    # 进入组合库存查询界面（新后台的获取）
+    # 进入组合库存查询界面（新后台的获取） ？？？？
     def _gp_order_stockcompose(self, ord):  # 进入订单检索界面
         print('+++正在查询 信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
@@ -1023,9 +1058,12 @@ if __name__ == '__main__':
         m.readFile(select)             # 读取头程时效表
         m._get_take_delivery_no()      # 头程导入提货单号
 
-
     elif select == 3:
-        m.get_take_delivery_no()
+        m.stockcompose_upload()
+
+    elif select == 4:
+        pass
+        # m.get_take_delivery_no()
         # m.readFile(select)
         # m._get_take_delivery_no()
 

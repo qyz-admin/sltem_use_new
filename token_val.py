@@ -1,5 +1,6 @@
 import time
 from selenium import webdriver
+import win32com.client as win32
 
 # option = webdriver.ChromeOptions()
 # option.binary_location=r'F:\360\ChromePortable_x64_v770386590\GoogleChromePortable77.0.3865.90(x64)\GoogleChromePortable.exe'
@@ -68,4 +69,26 @@ print(page_height)
 # driver.quit()
 
 print(page_height)
+
+
+def fun(self, val):
+    # 实际上测试excel时也可以直接这样做  提用wps使用
+    application = win32.Dispatch('Excel.Application')
+
+    # Path指的是本地表格文件的路径，比如:
+    Path = r"H:\桌面\需要用到的文件\slgat_签收计算(ver5.24)(20).xlsm"
+    # 通过Win32的方式并不限制xls和xlsx（因为操作是wps在做）
+    workbook = application.Workbooks.Open(Path)
+
+    # Sheet指的就是表名（注意不是文件名）
+    worksheet = workbook.Worksheets('Sheet1')
+    worksheet.Cells(1, 1).Value = 'Hello World'
+    worksheet.Name = 'MySheet'
+    # Path是指要将文件保存到哪一个位置
+    worksheet.SaveAs(Path)
+
+    # 注意，此处退出的是文件，而不是WPS程序
+    # 相当于在WPS中关闭了文件
+    # 如果操作完表格不关闭文件，极有可能会造成文件无法打开
+    workbook.Close()
 

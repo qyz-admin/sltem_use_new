@@ -1372,7 +1372,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 99
+    select = 909
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '7e00200b074b38be93d83578da27e666'
@@ -1436,6 +1436,7 @@ if __name__ == '__main__':
         start: datetime = datetime.datetime.now()
 
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 已下架       更新； 自动时 输入的时间无效；切为不自动时，有效
+        # lw.stockcompose_upload()                              # 获取 桃园仓重出
         lw.get_take_delivery_no()                             # 头程物流跟踪 更新； 获取最近10天的信息
 
         lw.readFile(1)                                        # 上传每日压单核实结果
@@ -1446,7 +1447,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------
     '''
-    if int(select) == 99:
+    if int(select) == 909:
         my = MysqlControl()
 
         my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
@@ -1455,7 +1456,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 昨日头程直发渠道的订单明细 状态运行（四）-----------------------------------------
     '''
-    if int(select) == 99:
+    if int(select) == 909:
         js = QueryOrder('+86-18538110674', 'qyz35100416', '')
         time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         time_now = time_yesterday

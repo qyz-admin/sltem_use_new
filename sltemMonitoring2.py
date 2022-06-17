@@ -736,8 +736,7 @@ class SltemMonitoring(Settings):
                         with rollup
 												) sl_rb;;'''.format('qsb_缓存_month_cp', currency, match[team])
         listT.append(sqltime4)
-
-
+        show_name.append(' 月(各月)时效…………')
 
         # 月时效（天）---改派 查询
         sqltime7 = '''SELECT 币种,年月,物流方式,父级分类,旬,
@@ -776,7 +775,7 @@ class SltemMonitoring(Settings):
                                     GROUP BY 年月,物流方式,旬
                                 with rollup ) sl;'''.format(family, now_month, now_month_new, last_month, last_month_new, currency, match[team])
         listT.append(sqltime7)
-        show_name.append(' 月（天）时效…………')
+        show_name.append(' 月（改派天）时效…………')
         # 月时效（旬）---改派 查询
         sqltime71 = '''SELECT 币种,年月,旬,物流方式,父级分类,
                                         总订单量 总单量, 
@@ -812,7 +811,7 @@ class SltemMonitoring(Settings):
                                     GROUP BY 年月,旬,物流方式,父级分类
                                     with rollup ) sl;'''.format(family, now_month, now_month_new, last_month, last_month_new, currency, match[team])
         listT.append(sqltime71)
-        show_name.append(' 月（旬）时效…………')
+        show_name.append(' 月（改派旬）时效…………')
         # 月时效(各月)---改派 查询
         sqltime72 = '''SELECT sl_rb.`币种`,sl_rb.`年月`,sl_rb.`物流方式`,sl_rb.`父级分类`,sl_rb.`旬`,
                                         sl_rb.`总单量`,
@@ -937,9 +936,8 @@ class SltemMonitoring(Settings):
                                 with rollup
         												) sl_rb;;'''.format('qsb_缓存_month_cp', currency, match[team])
         listT.append(sqltime72)
+        show_name.append(' 月(改派各月)时效…………')
 
-
-        show_name.append(' 月(各月)时效…………')
         listTValue = []  # 查询sql的结果 存放池
         for i, sql in enumerate(listT):
             print('正在获取 ' + team + show_name[i])
@@ -1077,8 +1075,8 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2022.05.16'
-    now_month = '2022.06.15'
+    last_month = '2022.05.17'
+    now_month = '2022.06.17'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传

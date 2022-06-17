@@ -81,25 +81,28 @@ class QueryTwo(Settings, Settings_sso):
         if 'xls' in fileType:
             wb = app.books.open(filePath, update_links=False, read_only=True)
             for sht in wb.sheets:
-                try:
-                    db = None
-                    # print(sht.name)
-                    # db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False, dtype=str).value
-                    # db = pd.read_excel(filePath, sheet_name=sht.name, header=1, names=int, index_col=False, dtype=str)
-                    db = pd.read_excel(filePath, sheet_name=sht.name)
-                    db = db[['运单编号']]
-                    db['运单编号'] = db['运单编号'].astype(str)
-                    db.dropna(axis=0, how='any', inplace=True)                  # 空值（缺失值），将空值所在的行/列删除后
-                except Exception as e:
-                    print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
-                if db is not None and len(db) > 0:
-                    # print(db)
-                    rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-                    print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
-                    # 将获取到的运单号 查询轨迹
-                    self.SearchGoods(db)
+                if sht.api.Visible == -1:
+                    try:
+                        db = None
+                        # print(sht.name)
+                        # db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False, dtype=str).value
+                        # db = pd.read_excel(filePath, sheet_name=sht.name, header=1, names=int, index_col=False, dtype=str)
+                        db = pd.read_excel(filePath, sheet_name=sht.name)
+                        db = db[['运单编号']]
+                        db['运单编号'] = db['运单编号'].astype(str)
+                        db.dropna(axis=0, how='any', inplace=True)                  # 空值（缺失值），将空值所在的行/列删除后
+                    except Exception as e:
+                        print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
+                    if db is not None and len(db) > 0:
+                        # print(db)
+                        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+                        print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                        # 将获取到的运单号 查询轨迹
+                        self.SearchGoods(db)
+                    else:
+                        print('----------数据为空,查询失败：' + sht.name)
                 else:
-                    print('----------数据为空,查询失败：' + sht.name)
+                    print('----不需查询：' + sht.name)
             wb.close()
         app.quit()
 
