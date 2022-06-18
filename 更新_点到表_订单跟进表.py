@@ -490,8 +490,8 @@ if __name__ == '__main__':
         team = 'gat_waybill_list'
         handle = '手动'
         m.readFormHost(team)
-        m.waybill_info('login_TmpCode',handle)
-        m.chuhuo_info('login_TmpCode','login_TmpCode2',handle)
+        m.waybill_info('login_TmpCode', handle)
+        m.chuhuo_info('login_TmpCode', 'login_TmpCode2', handle)
 
     elif int(select) == 5:
         team = 'gat_waybill_list'

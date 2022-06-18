@@ -133,6 +133,7 @@ class QueryTwo(Settings, Settings_sso):
             dp = None
         print(dp)
         dp = dp[['orderNumber', 'wayBillNumber', 'track_date', '出货上线时间', 'track_info', 'track_status']]
+        dp.columns = ['订单编号', '运单号', '物流轨迹时间', '出货上线时间', '物流轨迹', '轨迹代码']
         dp.to_excel('G:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         print('查询已导出+++')
         print('*' * 50)
