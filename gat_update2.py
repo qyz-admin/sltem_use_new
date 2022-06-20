@@ -6715,7 +6715,16 @@ class QueryUpdate(Settings):
     LEFT JOIN
     (SELECT DATE(s.处理时间) AS 拒收问题件,
                         COUNT(订单编号) AS '联系量（有结果）',
-                        SUM(IF(s.`再次克隆下单` IS NOT NULL,1,0)) AS 挽单量
+                        SUM(IF(s.`再次克隆下单` IS NOT NULL,1,0)) AS 挽单量,
+                        
+                        SUM(IF(处理人='张陈平',1,0)) AS '张陈平-联系量（有结果）',
+                        SUM(IF(处理人='张陈平' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS '张陈平-挽单量',
+                        
+                        SUM(IF(处理人='蔡利英',1,0)) AS '蔡利英-联系量（有结果）',
+                        SUM(IF(处理人='蔡利英' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS '蔡利英-挽单量',
+                        
+                        SUM(IF(处理人='杨嘉仪',1,0)) AS '杨嘉仪-联系量（有结果）',
+                        SUM(IF(处理人='杨嘉仪' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS '杨嘉仪-挽单量'
             FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`
                         FROM (SELECT * 
                                     FROM 拒收问题件 

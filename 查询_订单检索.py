@@ -34,7 +34,7 @@ class QueryOrder(Settings, Settings_sso):
         # self.sso_online_Two()
         # self._online_Two()
 
-        # self.sso__online_auto()
+        self.sso__online_auto()
 
         # self.sso__online_handle(login_TmpCode)
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
@@ -974,7 +974,7 @@ class QueryOrder(Settings, Settings_sso):
             #               '货物类型', '订单类型', '物流状态', '删除原因', '问题原因',
             #               '转采购时间', '发货时间', '是否低价', '备注', 'IP', '审单类型', '发货仓库']
             df = data[['orderNumber', 'username']]
-            df.columns = ['订单编号', '操作人']
+            df.columns = ['订单编号', '删除人']
         except Exception as e:
             print('------查询为空')
         print('******本批次查询成功')
@@ -2021,7 +2021,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 3                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'

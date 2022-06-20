@@ -199,7 +199,7 @@ class QueryTwoLower(Settings, Settings_sso):
         app.quit()
     def _fun_time(self, val):    # 时间函数
         val_time = ''
-        if "晚上" in val and "12点" in val:
+        if "晚上" in val and ("12点" in val or "12點" in val):
             val_time = datetime.datetime.now().strftime("%Y/") + val.split("晚上")[0] + " 23:59:59"
             # 将字符串转化为datetime
             val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
@@ -211,14 +211,55 @@ class QueryTwoLower(Settings, Settings_sso):
             val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
             # 将datetime转化为字符串
             val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
+
         elif "早上" in val and "3点" in val:
             val_time = datetime.datetime.now().strftime("%Y/") + val.split("早上")[0] + " 03:00:00"
             # 将字符串转化为datetime
             val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
             # 将datetime转化为字符串
             val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
-        elif "早上" in val and "8点" in val:
+
+        elif "早上" in val and ("8点" in val or "8點" in val):
             val_time = datetime.datetime.now().strftime("%Y/") + val.split("早上")[0] + " 08:00:00"
+            # 将字符串转化为datetime
+            val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
+            # 将datetime转化为字符串
+            val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
+        elif "早上" in val and ("11点半" in val or "11點半" in val):
+            val_time = datetime.datetime.now().strftime("%Y/") + val.split("早上")[0] + " 11:30:00"
+            # 将字符串转化为datetime
+            val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
+            # 将datetime转化为字符串
+            val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
+        elif "早上" in val and ("12点" in val or "12點" in val):
+            val_time = datetime.datetime.now().strftime("%Y/") + val.split("早上")[0] + " 12:00:00"
+            # 将字符串转化为datetime
+            val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
+            # 将datetime转化为字符串
+            val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
+
+
+        elif "上午" in val and "3点" in val:
+            val_time = datetime.datetime.now().strftime("%Y/") + val.split("上午")[0] + " 03:00:00"
+            # 将字符串转化为datetime
+            val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
+            # 将datetime转化为字符串
+            val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
+
+        elif "上午" in val and ("8点" in val or "8點" in val):
+            val_time = datetime.datetime.now().strftime("%Y/") + val.split("上午")[0] + " 08:00:00"
+            # 将字符串转化为datetime
+            val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
+            # 将datetime转化为字符串
+            val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
+        elif "上午" in val and ("11点半" in val or "11點半" in val):
+            val_time = datetime.datetime.now().strftime("%Y/") + val.split("上午")[0] + " 11:30:00"
+            # 将字符串转化为datetime
+            val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
+            # 将datetime转化为字符串
+            val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
+        elif "上午" in val and ("12点" in val or "12點" in val):
+            val_time = datetime.datetime.now().strftime("%Y/") + val.split("上午")[0] + " 12:00:00"
             # 将字符串转化为datetime
             val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
             # 将datetime转化为字符串
