@@ -475,7 +475,7 @@ class QueryUpdate(Settings):
         print('正在获取查询 在途-未上线 数据…………')
         rq = datetime.datetime.now().strftime('%Y.%m.%d')
         month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
-        sql = '''SELECT 日期,团队,币种,订单编号,IF(物流方式 LIKE "%天马%" AND LENGTH(运单编号) = 20, CONCAT(861, RIGHT(运单编号, 8)), IF((物流方式 LIKE "%速派%" or 物流方式 LIKE "%易速配%") AND 运单编号 LIKE "A%", RIGHT(运单编号, LENGTH(运单编号) - 1), UPPER(运单编号))) 运单编号,
+        sql = '''SELECT 日期,团队,币种,订单编号,IF(物流方式 LIKE "%天马%" AND LENGTH(运单编号) = 20, CONCAT(861, RIGHT(运单编号, 8)), IF((物流方式 LIKE "%速派%" or 物流方式 LIKE "%易速配%" or 物流方式 LIKE "%龟山%") AND 运单编号 LIKE "A%", RIGHT(运单编号, LENGTH(运单编号) - 1), UPPER(运单编号))) 运单编号,
         是否改派,物流方式, 系统订单状态,系统物流状态,物流状态,签收表物流状态,
                         最终状态,下单时间,审核时间,仓储扫描时间,出货时间,上线时间,状态时间,完结状态时间,在途未上线
                 FROM ( SELECT *, IF(最终状态 = '在途',
@@ -510,7 +510,7 @@ class QueryUpdate(Settings):
         print('更新完成…………')
 
         print('正在获取写入excel内容…………')
-        sql = '''SELECT 订单编号,运单编号,  是否改派,发货时间,物流方式,最终状态
+        sql = '''SELECT 订单编号,运单编号, 是否改派,发货时间,物流方式,最终状态
                 FROM (  SELECT c.订单编号,c.运单编号,c.系统订单状态, c.系统物流状态, c.是否改派, g.标准物流状态,g.签收表物流状态, c.仓储扫描时间 AS 发货时间, 物流方式, b.出货时间 AS 新出货时间,
 							IF(ISNULL(系统物流状态), IF(ISNULL(g.标准物流状态) OR g.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , 
 													IF(物流方式 like '%天马%' and g.签收表物流状态 = '在途','未上线', g.标准物流状态)
@@ -522,7 +522,7 @@ class QueryUpdate(Settings):
                 WHERE 最终状态 NOT IN ('拒收','已签收');'''.format()
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入excel…………')
-        file_pathT = 'G:\\输出文件\\{0}-在途未上线总表.xlsx'.format(rq)
+        file_pathT = 'G:\\输出文件\\{0} 在途未上线-总表.xlsx'.format(rq)
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_pathT, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象

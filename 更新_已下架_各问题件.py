@@ -1278,7 +1278,9 @@ class QueryTwo(Settings, Settings_sso):
             print(mkpath + ' 目录已存在')
         print('*' * 50)
 
-    # 更新团队订单明细（新后台的获取  方法一的全部更新）
+
+    # 停用
+    # 检查昨日订单是否有重复的 （单点的获取）
     def order_check(self, begin, end): # 进入订单检索界面
         # print('正在获取需要订单信息......')
         for i in range((end - begin).days):             # 按天循环获取订单状态
@@ -1348,7 +1350,6 @@ class QueryTwo(Settings, Settings_sso):
         return tem
 
 
-
 if __name__ == '__main__':
     start: datetime = datetime.datetime.now()
     '''
@@ -1372,7 +1373,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 99
+    select = 909
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '7e00200b074b38be93d83578da27e666'
@@ -1425,9 +1426,25 @@ if __name__ == '__main__':
             # m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
             # m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
         print('查询耗时：', datetime.datetime.now() - start)
+    '''
+    # -----------------------------------------------自动获取 昨日头程直发渠道的订单明细 状态运行（二）-----------------------------------------
+    '''
+    if int(select) == 99:
+        js = QueryOrder('+86-18538110674', 'qyz35100416', '')
+        time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        time_now = time_yesterday
+        js.order_TimeQueryT(time_yesterday,time_now, '',  '检查头程直发渠道|删单原因')   # 检查头程直发渠道|删单原0因
 
     '''
-    # -----------------------------------------------自动获取 已下架 状态运行（二）-----------------------------------------
+    # -----------------------------------------------自动获取 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------
+    '''
+    if int(select) == 99:
+        my = MysqlControl()
+        my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
+        my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
+
+    '''
+    # -----------------------------------------------自动获取 已下架 状态运行（四）-----------------------------------------
     '''
     if int(select) == 99:
         login_TmpCode = '53ffd428c388386fb04a9cb951211ba3'
@@ -1443,25 +1460,6 @@ if __name__ == '__main__':
         lw.order_spec()                                       # 压单         更新；压单反馈  （备注（压单核实是否需要））
 
         print('查询耗时：', datetime.datetime.now() - start)
-
-    '''
-    # -----------------------------------------------自动获取 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------
-    '''
-    if int(select) == 99:
-        my = MysqlControl()
-
-        my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
-        my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
-
-    '''
-    # -----------------------------------------------自动获取 昨日头程直发渠道的订单明细 状态运行（四）-----------------------------------------
-    '''
-    if int(select) == 99:
-        js = QueryOrder('+86-18538110674', 'qyz35100416', '')
-        time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        time_now = time_yesterday
-
-        js.order_TimeQueryT(time_yesterday,time_now, '',  '检查头程直发渠道|删单原因')   # 检查头程直发渠道|删单原0因
 
 
     '''

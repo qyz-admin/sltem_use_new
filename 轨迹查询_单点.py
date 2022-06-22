@@ -90,12 +90,18 @@ class QueryTwo(Settings, Settings_sso):
                         tem = ''
                         db = None
                         db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
-                        columns_value = list(db.columns)                             # 获取数据的标题名，转为列表
-                        for column_val in columns_value:
-                            if '运单编号' == column_val:
-                                tem = column_val
-                            elif '运单号' == column_val:
-                                tem = column_val
+                        # columns_value = list(db.columns)                             # 获取数据的标题名，转为列表
+                        # for column_val in columns_value:
+                        #     if '运单编号' == column_val:
+                        #         tem = column_val
+                        #     elif '运单号' == column_val:
+                        #         tem = column_val
+                        if '运单编号' in db.columns:
+                            tem = '运单编号'
+                        elif '查件单号' in db.columns:
+                            tem = '查件单号'
+                        elif '运单号' in db.columns:
+                            tem = '运单号'
                         db = db[[tem]]
                         db.dropna(axis=0, how='any', inplace=True)                  # 空值（缺失值），将空值所在的行/列删除后
                     except Exception as e:
@@ -128,12 +134,12 @@ class QueryTwo(Settings, Settings_sso):
                 if data is not None and len(data) > 0:
                     dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
-            dp.dropna(axis=0, how='any', inplace=True)
+            # dp.dropna(axis=0, how='any', inplace=True)
         else:
             dp = None
         print(dp)
-        dp = dp[['orderNumber', 'wayBillNumber', 'track_date', '出货上线时间', 'track_info', 'track_status']]
-        dp.columns = ['订单编号', '运单号', '物流轨迹时间', '出货上线时间', '物流轨迹', '轨迹代码']
+        dp = dp[['orderNumber', 'wayBillNumber', 'track_date', '出货时间', '上线时间', '保管时间', '完成时间', 'track_info', 'track_status']]
+        dp.columns = ['订单编号', '运单号', '物流轨迹时间', '出货时间', '上线时间', '保管时间', '完成时间', '物流轨迹', '轨迹代码']
         dp.to_excel('G:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         print('查询已导出+++')
         print('*' * 50)
@@ -204,15 +210,39 @@ class QueryTwo(Settings, Settings_sso):
                 else:
                     for result in req['data']['list']:
                         for res in result['list']:
-                            res['出货上线时间'] = ''
+                            res['出货时间'] = ''
+                            res['上线时间'] = ''
+                            res['完成时间'] = ''
+                            res['保管时间'] = ''
                             res['orderNumber'] = result['order_number']
                             res['wayBillNumber'] = result['track_no']
                             if '.' in res['track_date']:
                                 res['track_date'] = res['track_date'].split('.')[0]
                             else:
                                 res['track_date'] = res['track_date']
-                            if '已核重-集运仓发货' in res['track_info'] or '顺丰速运 已收取快件' in res['track_info'] or '貨件整理中' in res['track_info'] or '二次出貨貼標' in res['track_info']:
-                                res['出货上线时间'] = res['track_date']
+
+                            if '二次出貨' in res['track_info'] or '二次出貨貼標' in res['track_info'] or '出貨理貨中' in res['track_info'] or '首發出貨貼標' in res['track_info'] or '已发货' in res['track_info']:
+                                res['出货时间'] = res['track_date']
+                            elif '已核重,集运仓' in res['track_info'] or '已核重-集运仓' in res['track_info']:
+                                res['出货时间'] = res['track_date']
+
+                            if '貨件已抵達 土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達 桃園營業所 ，貨件整理中' in res['track_info'] or '貨件已抵達土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達桃園營業所 ，貨件整理中' in res['track_info']:
+                                res['上线时间'] = res['track_date']
+                            elif '貨件已抵達 大園營業所 ，貨件整理中' in res['track_info'] or '貨件已抵達 大園營業所，貨件整理中' in res['track_info']:
+                                res['上线时间'] = res['track_date']
+                            elif '營業所發出，前往配送站途中' in res['track_info']:
+                                res['上线时间'] = res['track_date']
+                            elif '營業所，分貨中' in res['track_info']:
+                                res['上线时间'] = res['track_date']
+
+                            if ('送達客戶不在' in res['track_info'] or '貨件拒收' in res['track_info'] or '與客戶另約時間' in res['track_info'] or '收貨人' in res['track_info']) and '保管中' in res['track_info'] or '營業所送至' in res['track_info'] or '集配站送至' in res['track_info']:
+                                res['保管时间'] = res['track_date']
+                            elif ('貨件由' in res['track_info'] and '保管中' in res['track_info']) or '收件地址為公司行號，本日休假' in res['track_info'] or (('收貨人' in res['track_info'] or '該地址' in res['track_info']) and '營業所處理中' in res['track_info']):
+                                res['保管时间'] = res['track_date']
+
+                            if '送達。貨物件數共' in res['track_info'] or '貨件已退回，退貨號碼' in res['track_info']:
+                                res['完成时间'] = res['track_date']
+
                             # print(res)track_info
                             ordersDict.append(res)
             except Exception as e:
@@ -253,16 +283,49 @@ class QueryTwo(Settings, Settings_sso):
                 else:
                     for result in req['data']['list']:
                         for res in result['list']:
-                            res['出货上线时间'] = ''
+                            # res['出货上线时间'] = ''
+                            # res['orderNumber'] = result['order_number']
+                            # res['wayBillNumber'] = result['track_no']
+                            # if '.' in res['track_date']:
+                            #     res['track_date'] = res['track_date'].split('.')[0]
+                            # else:
+                            #     res['track_date'] = res['track_date']
+                            # if '已核重-集运仓发货' in res['track_info'] or '顺丰速运 已收取快件' in res['track_info'] or '貨件整理中' in res['track_info'] or '二次出貨貼標' in res['track_info']:
+                            #     res['出货上线时间'] = res['track_date']
+
+                            res['出货时间'] = ''
+                            res['上线时间'] = ''
+                            res['完成时间'] = ''
+                            res['保管时间'] = ''
                             res['orderNumber'] = result['order_number']
                             res['wayBillNumber'] = result['track_no']
                             if '.' in res['track_date']:
                                 res['track_date'] = res['track_date'].split('.')[0]
                             else:
                                 res['track_date'] = res['track_date']
-                            if '已核重-集运仓发货' in res['track_info'] or '顺丰速运 已收取快件' in res['track_info'] or '貨件整理中' in res['track_info'] or '二次出貨貼標' in res['track_info']:
-                                res['出货上线时间'] = res['track_date']
-                            # print(res)track_info
+
+                            if '二次出貨' in res['track_info'] or '二次出貨貼標' in res['track_info'] or '出貨理貨中' in res['track_info'] or '首發出貨貼標' in res['track_info'] or '已发货' in res['track_info']:
+                                res['出货时间'] = res['track_date']
+                            elif '已核重,集运仓' in res['track_info'] or '已核重-集运仓' in res['track_info']:
+                                res['出货时间'] = res['track_date']
+
+                            if '貨件已抵達 土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達 桃園營業所 ，貨件整理中' in res['track_info'] or '貨件已抵達土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達桃園營業所 ，貨件整理中' in res['track_info']:
+                                res['上线时间'] = res['track_date']
+                            elif '貨件已抵達 大園營業所 ，貨件整理中' in res['track_info'] or '貨件已抵達 大園營業所，貨件整理中' in res['track_info']:
+                                res['上线时间'] = res['track_date']
+                            elif '營業所發出，前往配送站途中' in res['track_info']:
+                                res['上线时间'] = res['track_date']
+                            elif '營業所，分貨中' in res['track_info']:
+                                res['上线时间'] = res['track_date']
+
+                            if ('送達客戶不在' in res['track_info'] or '貨件拒收' in res['track_info'] or '與客戶另約時間' in res['track_info'] or '收貨人' in res['track_info']) and '保管中' in res['track_info'] or '營業所送至' in res['track_info'] or '集配站送至' in res['track_info']:
+                                res['保管时间'] = res['track_date']
+                            elif ('貨件由' in res['track_info'] and '保管中' in res['track_info']) or '收件地址為公司行號，本日休假' in res['track_info'] or (('收貨人' in res['track_info'] or '該地址' in res['track_info']) and '營業所處理中' in res['track_info']):
+                                res['保管时间'] = res['track_date']
+
+                            if '送達。貨物件數共' in res['track_info'] or '貨件已退回，退貨號碼' in res['track_info']:
+                                res['完成时间'] = res['track_date']
+
                             ordersDict.append(res)
             except Exception as e:
                 print('转化失败： 重新获取中', str(Exception) + str(e))
@@ -370,7 +433,7 @@ class QueryTwo(Settings, Settings_sso):
                                     val[str(j) +'派'] = res['track_date']
                                     # print('j:' + str(j))
 
-                        elif '貨件已抵達土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達桃園營業所，貨件整理中' in res['track_info']:      # 新竹
+                        elif '貨件已抵達土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達桃園營業所，貨件整理中' in res['track_info'] or '集荷' in res['track_info']:      # 新竹 貨件已抵達桃園營業所，貨件整理中
                             val['上线时间'] = res['track_date']
                             for res in result['list']:
                                 # print(33)

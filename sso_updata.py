@@ -2259,7 +2259,8 @@ class Query_sso_updata(Settings):
         print('正在更新 改派未发货......')
         sql = '''update `cache` a, `cache_cp` b
                         set a.`系统订单状态`= b.`orderStatus`,
-                            a.`系统物流状态`= b.`logisticsStatus`
+                            a.`系统物流状态`= b.`logisticsStatus`,
+                            a.`运单编号`= b.`wayBillNumber`
                 where a.`订单编号`=b.`orderNumber`;'''.format('cache')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 

@@ -50,17 +50,6 @@ class QueryTwo(Settings, Settings_sso):
                                                                                     self.mysql3['port'],
                                                                                     self.mysql3['datebase']))
         self.e = EmailControl()
-    def reSetEngine(self):
-        self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
-                                                                                    self.mysql1['password'],
-                                                                                    self.mysql1['host'],
-                                                                                    self.mysql1['port'],
-                                                                                    self.mysql1['datebase']))
-        self.engine2 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql2['user'],
-                                                                                    self.mysql2['password'],
-                                                                                    self.mysql2['host'],
-                                                                                    self.mysql2['port'],
-                                                                                    self.mysql2['datebase']))
     # 获取签收表内容
     def readFormHost(self):
         start = datetime.datetime.now()
@@ -254,13 +243,46 @@ class QueryTwo(Settings, Settings_sso):
         # data.to_excel('G:\\输出文件\\新竹快递 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         return data
 
+
+    def TW_SearchGoods(self):
+        url = "https://emap.pcsc.com.tw/EMapSDK.aspx"
+        #2、构建一下请求头部
+        r_header = {"Content-Type": "application/x-www-form-urlencoded",
+                    "Charset": "UTF-8",
+                    'Host': 'emap.pcsc.com.tw',
+                    'Origin': 'https://emap.pcsc.com.tw',
+                    'Referer': 'https://emap.pcsc.com.tw/emap.aspx',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36'
+                    }
+        #3、构建请求数据
+        data = {'commandid': 'Search0007',
+                'x1': 116894531,
+                'y1': 22055096,
+                'x2': 124837646,
+                'y2': 26588527
+                }
+        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+        print(req)
+        print("*" * 50)
+        print(req.text)
+        soup = BeautifulSoup(req.text, 'lxml')      # 创建 beautifulsoup 对象
+
+        print("*" * 50)
+        print(soup)
+        no = soup.input.get('value')
+        chk = soup.input.next_sibling.get('value')
+        # print(no)
+
+        # return data
+
 if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
     '''
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     '''
-    m.readFormHost()
+    # m.readFormHost()
+    m.TW_SearchGoods()
 
     # m._SearchGoods('7532082106')
 
