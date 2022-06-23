@@ -1093,7 +1093,6 @@ class QueryOrder(Settings, Settings_sso):
                         a.`删除原因` = IF(a.`删除原因` LIKE ';%', RIGHT(a.`删除原因`,CHAR_LENGTH(a.`删除原因`)-1), a.`删除原因`);'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('查询耗时：', datetime.datetime.now() - start)
-    # 更新删除订单的原因 -函数调用
     def _del_people(self, ord, areaId):  # 进入订单检索界面
         # print('......正在查询信息中......')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRemoveOrderList'
@@ -1138,10 +1137,13 @@ class QueryOrder(Settings, Settings_sso):
         except Exception as e:
             print('------查询为空')
         print('******本批次查询成功')
-        return df
+        return df # 更新删除订单的原因 -函数调用
 
     # 删除订单的  分析导出
     def del_order_day(self):
+        sql ='''UPDATE day_delete_cache d SET d.`删单明细` = IF(d.`删单明细` LIKE '0%', RIGHT(d.`删单明细`,LENGTH(d.`删单明细`)-1),d.`删单明细`);'''
+        pd.read_sql_query(sql=sql, con=self.engine1)
+
         print('正在分析 昨日 删单原因中')
         sql ='''SELECT *,concat(ROUND(SUM(IF(删单原因 IS NULL OR 删单原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
                 FROM (SELECT s1.*,总订单量,总删单量, 系统删单量
@@ -1233,9 +1235,14 @@ class QueryOrder(Settings, Settings_sso):
                         ORDER BY 订单量 desc
                         LIMIT 5
                     ) 
-                ) s;;'''
+                ) s;'''
         df2 = pd.read_sql_query(sql=sql, con=self.engine1)
         # print(df2)
+        df2.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
+        print('正在记录 拉黑率信息......')
+        sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 记录日期, 更新时间) SELECT 币种, 删单原因, 拉黑率订单, 订单量, CURDATE() 记录日期, NOW() 更新时间 FROM sheet1 s WHERE s.拉黑率订单 IS NOT NULL;'''.format('day_delete_cache')
+        pd.read_sql_query(sql=sql, con=self.engine1)
+
         sl_Black ,sl_Black_iphone , sl_Black_ip = '','',''
         k = 0
         k2 = 0
@@ -1312,9 +1319,14 @@ class QueryOrder(Settings, Settings_sso):
                         ORDER BY 订单量 desc
                         LIMIT 5
                     ) 
-                ) s;;'''
+                ) s;'''
         df3 = pd.read_sql_query(sql=sql, con=self.engine1)
         # print(df3)
+        df3.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
+        print('正在记录 恶意删除信息......')
+        sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 记录日期, 更新时间) SELECT 币种, 删单原因, 恶意删除, 订单量, CURDATE() 记录日期, NOW() 更新时间 FROM cache_cp s WHERE s.恶意删除 IS NOT NULL;'''.format('day_delete_cache')
+        pd.read_sql_query(sql=sql, con=self.engine1)
+
         st_ey, st_ey_iphone, st_ey_ip = '','',''
         k = 0
         k2 = 0
@@ -1413,6 +1425,15 @@ class QueryOrder(Settings, Settings_sso):
                         ) s1;'''
         df5 = pd.read_sql_query(sql=sql, con=self.engine1)
         # print(df5)
+        df5.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
+        print('正在记录 系统删除信息......')
+        sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 记录日期, 更新时间) 
+                SELECT 币种,'系统删除'  删单类型, 系统删除, 订单量, CURDATE() 记录日期, NOW() 更新时间
+				FROM cache_cp s 
+				WHERE s.系统删除 LIKE '%.%' OR s.系统删除 LIKE '%9%' OR s.系统删除 LIKE '%8%' OR s.系统删除 LIKE '%7%' OR s.系统删除 LIKE '%6%' OR s.系统删除 LIKE '%5%' 
+				   OR s.系统删除 LIKE '%4%' OR s.系统删除 LIKE '%3%' OR s.系统删除 LIKE '%2%' OR s.系统删除 LIKE '%1%' OR s.系统删除 LIKE '%0%';'''.format('day_delete_cache')
+        pd.read_sql_query(sql=sql, con=self.engine1)
+
         st_del, st_del_iphone, st_del_ip = '', '', ''
         k = 0
         k2 = 0
@@ -1498,38 +1519,12 @@ class QueryOrder(Settings, Settings_sso):
                         "isAtAll": False  # @全体成员（在此可设置@特定某人）
                 }
         }
-
         # 4、对请求的数据进行json封装
         sendData = json.dumps(data)  # 将字典类型数据转化为json格式
         sendData = sendData.encode("utf-8")  # python3的Request要求data为byte类型
-
         r = requests.post(url, headers=headers, data=json.dumps(data))
         req = json.loads(r.text)  # json类型数据转换为dict字典
         print(req['errmsg'])
-
-        # return req['errmsg']
-        # ax = df1.plot()
-        # fig = ax.get_figure()
-        # fig.savefig(r"H:\桌面\需要用到的文件\文件夹\out2.jpeg")
-
-        # plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']  # 显示中文字体
-        # fig = plt.figure(figsize=(3, 4), dpi=1400)  # dpi表示清晰度
-        # ax = fig.add_subplot(111, frame_on=False)
-        # ax.xaxis.set_visible(False)  # hide the x axis
-        # ax.yaxis.set_visible(False)  # hide the y axis
-        # table(ax, df1, loc='center')  # 将df换成需要保存的dataframe即可
-        # plt.savefig(r"H:\桌面\需要用到的文件\文件夹\out.jpeg")
-
-        # im = Image.fromarray(df1)
-        # im.save(r"H:\桌面\需要用到的文件\文件夹\out.jpeg")
-        # listT.append(df1)
-
-        # print('正在获取 删单原因汇总 信息…………')
-        # sql ='''SELECT s1.*
-        #       FROM (
-        #             SELECT 币种,删除原因,COUNT(订单编号) AS 订单量,
-        #             		SUM(IF(拉黑率 > 80 ,1,0)) AS 拉黑率80以上,
-
 
 
     # 删除订单的  分析导出 测试
@@ -2180,7 +2175,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 3                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
@@ -2199,8 +2194,8 @@ if __name__ == '__main__':
         team = 'gat'
         searchType = '电话'
         pople_Query = '电话检索'                # 电话查询；订单检索
-        timeStart = '2022-06-21 00:00:00'
-        timeEnd = '2022-06-23 00:00:00'
+        timeStart = '2022-05-01 00:00:00'
+        timeEnd = '2022-05-31 23:59:59'
         m.readFormHost(team, searchType, pople_Query, timeStart, timeEnd)
 
     elif int(select) == 9:

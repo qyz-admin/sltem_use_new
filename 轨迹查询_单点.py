@@ -226,7 +226,7 @@ class QueryTwo(Settings, Settings_sso):
                             elif '已核重,集运仓' in res['track_info'] or '已核重-集运仓' in res['track_info']:
                                 res['出货时间'] = res['track_date']
 
-                            if '貨件已抵達 土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達 桃園營業所 ，貨件整理中' in res['track_info'] or '貨件已抵達土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達桃園營業所 ，貨件整理中' in res['track_info']:
+                            if '貨件已抵達 土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達 桃園營業所 ，貨件整理中' in res['track_info'] or '貨件已抵達土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達桃園營業所 ，貨件整理中' in res['track_info'] or '顺丰速运 已收取快件' in res['track_info']:
                                 res['上线时间'] = res['track_date']
                             elif '貨件已抵達 大園營業所 ，貨件整理中' in res['track_info'] or '貨件已抵達 大園營業所，貨件整理中' in res['track_info']:
                                 res['上线时间'] = res['track_date']
@@ -309,7 +309,7 @@ class QueryTwo(Settings, Settings_sso):
                             elif '已核重,集运仓' in res['track_info'] or '已核重-集运仓' in res['track_info']:
                                 res['出货时间'] = res['track_date']
 
-                            if '貨件已抵達 土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達 桃園營業所 ，貨件整理中' in res['track_info'] or '貨件已抵達土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達桃園營業所 ，貨件整理中' in res['track_info']:
+                            if '貨件已抵達 土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達 桃園營業所 ，貨件整理中' in res['track_info'] or '貨件已抵達土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達桃園營業所 ，貨件整理中' in res['track_info'] or '顺丰速运 已收取快件' in res['track_info']:
                                 res['上线时间'] = res['track_date']
                             elif '貨件已抵達 大園營業所 ，貨件整理中' in res['track_info'] or '貨件已抵達 大園營業所，貨件整理中' in res['track_info']:
                                 res['上线时间'] = res['track_date']

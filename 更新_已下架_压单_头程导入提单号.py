@@ -539,7 +539,7 @@ class QueryTwoLower(Settings, Settings_sso):
     # 进入 组合库存界面  补充已下架的退货单号  （仓储的获取）（二）
     def stockcompose_upload(self):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        print('++++正在获取： ......')
+        print('++++正在获取 退货单号： ......')
         sql = '''SELECT * FROM 已下架表 x WHERE x.记录时间 >= TIMESTAMP (CURDATE()) AND x.`原运单号` IS NOT NULL AND x.`仓库` = '易速配-桃园仓';'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         orderId = list(df['原运单号'])
@@ -558,14 +558,43 @@ class QueryTwoLower(Settings, Settings_sso):
                         bill, refund = self._stockcompose_upload(od)
                         billno = billno + ';' + bill
                         refund_number = refund_number + ';' + refund
-                        # print(billno)
-                        # print(refund_number)
                     res['原运单号'] = billno[1:]
                     res['退货单号'] = refund_number[1:]
-                    # print(res)
                     ordersdict.append(res)
                     data = pd.json_normalize(ordersdict)
-                    # print(data)
+                else:
+                    data = self._stockcompose_upload_two(ord)
+                dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+            print(dp)
+            dp.to_sql('customer_cp', con=self.engine1, index=False, if_exists='replace')
+            sql = '''update `已下架表` a, `customer_cp` b
+                        set a.`退货单号`= IF(b.`退货单号` = '' OR b.`退货单号` IS NULL,NULL, b.`退货单号`)
+                    WHERE a.记录时间 >= TIMESTAMP (CURDATE()) AND a.`原运单号` = b.`原运单号`;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            dp.to_excel('G:\输出文件\\查询已下架 退货单号 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+
+        print('++++正在获取 收货人信息： ......')
+        orderId = list(df['订单编号'])
+        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+        if max_count > 0:
+            df = pd.DataFrame([])
+            dlist = []
+            for ord in orderId:
+                # print(ord)
+                if ";" in ord:
+                    ordersdict = []
+                    res = {}
+                    billno = ''
+                    refund_number = ''
+                    for od in ord.split(';'):
+                        bill, refund = self._stockcompose_upload(od)
+                        billno = billno + ';' + bill
+                        refund_number = refund_number + ';' + refund
+                    res['原运单号'] = billno[1:]
+                    res['退货单号'] = refund_number[1:]
+                    ordersdict.append(res)
+                    data = pd.json_normalize(ordersdict)
                 else:
                     data = self._stockcompose_upload_two(ord)
                 dlist.append(data)
@@ -601,8 +630,7 @@ class QueryTwoLower(Settings, Settings_sso):
                 print('获取成功......')
             else:
                 print('****** 今日无新增 桃园仓重出 数据！！！')
-
-    def _stockcompose_upload(self, waybill):  # 进入压单检索界面
+    def _stockcompose_upload(self, waybill):                            # 进入压单检索界面
         print('+++正在查询订单信息中')
         url = r'http://gwms-v3.giikin.cn/stock/stockcompose/index'
         r_header = {
@@ -647,7 +675,7 @@ class QueryTwoLower(Settings, Settings_sso):
         # else:
         #     data = None
         #     print('****** 没有信息！！！')
-        return billno, refund_number
+        return billno, refund_number            # 进入订单检索界面  获取收货人信息
     def _stockcompose_upload_two(self, waybill):  # 进入压单检索界面
         print('+++正在查询订单信息中')
         url = r'http://gwms-v3.giikin.cn/stock/stockcompose/index'
@@ -679,7 +707,45 @@ class QueryTwoLower(Settings, Settings_sso):
             data = data[['billno', 'refund_number']]
             data.columns = ['原运单号', '退货单号']
         return data
-
+    def _stockcompose_upload_three(self, ord):          # 进入订单检索界面  获取收货人信息
+        # print('......正在查询信息中......')
+        url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRemoveOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/deletedOrder'}
+        data = {'page': 1, 'pageSize': 500, 'orderPrefix': ord, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
+                'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None,
+                'questionId': None, 'reassignmentType': None, 'delUserId': None, 'delReasonIds': None,'delTimeStart':None, 'delTimeEnd': None}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print('......已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        ordersdict = []
+        try:
+            for result in req['data']['list']:
+                ordersdict.append(result)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        data = pd.json_normalize(ordersdict)
+        df = None
+        try:
+            # df = data[['orderNumber', 'currency', 'area', 'orderStatus', 'addTime', 'username', 'verifyTime',
+            #            'dpeStyle', 'reassignmentTypeName', 'logisticsStatus', 'delReason', 'questionReason',
+            #            'transferTime', 'deliveryTime', 'hasLowPrice', 'remark', 'ip', 'autoVerify', 'warehouse']]
+            # df.columns = ['订单编号', '币种', '运营团队', '订单状态', '下单时间', '操作人', '审核时间',
+            #               '货物类型', '订单类型', '物流状态', '删除原因', '问题原因',
+            #               '转采购时间', '发货时间', '是否低价', '备注', 'IP', '审单类型', '发货仓库']
+            df = data[['orderNumber', 'username']]
+            df.columns = ['订单编号', '删除人']
+        except Exception as e:
+            print('------查询为空')
+        print('******本批次查询成功')
+        return df
 
 
     # 进入组合库存查询界面 ？？？？
