@@ -1142,7 +1142,7 @@ class QueryOrder(Settings, Settings_sso):
     # 删除订单的  分析导出
     def del_order_day(self):
         sql ='''UPDATE day_delete_cache d SET d.`删单明细` = IF(d.`删单明细` LIKE '0%', RIGHT(d.`删单明细`,LENGTH(d.`删单明细`)-1),d.`删单明细`);'''
-        pd.read_sql_query(sql=sql, con=self.engine1)
+        pd.read_sql_query(sql=sql, con=self.engine1,chunksize=10000)
 
         print('正在分析 昨日 删单原因中')
         sql ='''SELECT *,concat(ROUND(SUM(IF(删单原因 IS NULL OR 删单原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
@@ -1240,8 +1240,8 @@ class QueryOrder(Settings, Settings_sso):
         # print(df2)
         df2.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
         print('正在记录 拉黑率信息......')
-        sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 记录日期, 更新时间) SELECT 币种, 删单原因, 拉黑率订单, 订单量, CURDATE() 记录日期, NOW() 更新时间 FROM sheet1 s WHERE s.拉黑率订单 IS NOT NULL;'''.format('day_delete_cache')
-        pd.read_sql_query(sql=sql, con=self.engine1)
+        sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 记录日期, 更新时间) SELECT 币种, 删单原因, 拉黑率订单, 订单量, CURDATE() 记录日期, NOW() 更新时间 FROM cache_cp s WHERE s.拉黑率订单 IS NOT NULL;'''.format('day_delete_cache')
+        pd.read_sql_query(sql=sql, con=self.engine1,chunksize=10000)
 
         sl_Black ,sl_Black_iphone , sl_Black_ip = '','',''
         k = 0
@@ -1325,7 +1325,7 @@ class QueryOrder(Settings, Settings_sso):
         df3.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
         print('正在记录 恶意删除信息......')
         sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 记录日期, 更新时间) SELECT 币种, 删单原因, 恶意删除, 订单量, CURDATE() 记录日期, NOW() 更新时间 FROM cache_cp s WHERE s.恶意删除 IS NOT NULL;'''.format('day_delete_cache')
-        pd.read_sql_query(sql=sql, con=self.engine1)
+        pd.read_sql_query(sql=sql, con=self.engine1,chunksize=10000)
 
         st_ey, st_ey_iphone, st_ey_ip = '','',''
         k = 0
@@ -1432,7 +1432,7 @@ class QueryOrder(Settings, Settings_sso):
 				FROM cache_cp s 
 				WHERE s.系统删除 LIKE '%.%' OR s.系统删除 LIKE '%9%' OR s.系统删除 LIKE '%8%' OR s.系统删除 LIKE '%7%' OR s.系统删除 LIKE '%6%' OR s.系统删除 LIKE '%5%' 
 				   OR s.系统删除 LIKE '%4%' OR s.系统删除 LIKE '%3%' OR s.系统删除 LIKE '%2%' OR s.系统删除 LIKE '%1%' OR s.系统删除 LIKE '%0%';'''.format('day_delete_cache')
-        pd.read_sql_query(sql=sql, con=self.engine1)
+        pd.read_sql_query(sql=sql, con=self.engine1,chunksize=10000)
 
         st_del, st_del_iphone, st_del_ip = '', '', ''
         k = 0

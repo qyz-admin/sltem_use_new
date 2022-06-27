@@ -507,7 +507,7 @@ class QueryTwoLower(Settings, Settings_sso):
             print('>>>' + tem_name + '-' + type_name + ' <<< 查询完结！！！')
             data.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             sql = '''REPLACE INTO 已下架表(订单编号,下单时间,新运单号,查件单号,原运单号, 退货单号,产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种, 团队,商品规格, 购买数量, 收货人, 收货地址, 联系电话,订单金额,下架人,获取单号结果,统计时间,记录时间)
-                    SELECT 订单编号,下单时间,新运单号, IF(仓库 LIKE "%天马%" AND LENGTH(新运单号) = 20, CONCAT(861, RIGHT(新运单号, 8)), IF((仓库 LIKE "%速派%" or 仓库 LIKE "%易速配%") AND 新运单号 LIKE "A%", RIGHT(新运单号, LENGTH(新运单号) - 1), UPPER(新运单号))) 查件单号,
+                    SELECT 订单编号,下单时间,新运单号, IF(仓库 LIKE "%天马%" AND LENGTH(新运单号) = 20, CONCAT(861, RIGHT(新运单号, 8)), IF((仓库 LIKE "%速派%" or 仓库 LIKE "%易速配%") AND (新运单号 LIKE "A%" OR 新运单号 LIKE "B%"), RIGHT(新运单号, LENGTH(新运单号) - 1), UPPER(新运单号))) 查件单号,
                            原运单号,NULL 退货单号, 产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种, 团队, 商品规格, 购买数量, 收货人, 收货地址, 联系电话, 订单金额,下架人,获取单号结果,统计时间,NOW() 记录时间
                     FROM customer'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
@@ -536,9 +536,11 @@ class QueryTwoLower(Settings, Settings_sso):
             return None
         print('*' * 50)
 
-    # 进入 组合库存界面  补充已下架的退货单号  （仓储的获取）（二）
+    # 进入 组合库存界面  补充已下架的退货单号  （仓储的获取）（二）'qyz1404039293@163.com'
     def stockcompose_upload(self):
+        emailAdd = {'gat': '"jikenyin666@163.com", "qyz1404039293@163.com"'}
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        today = datetime.date.today().strftime('%Y.%m.%d')
         print('++++正在获取 退货单号： ......')
         sql = '''SELECT * FROM 已下架表 x WHERE x.记录时间 >= TIMESTAMP (CURDATE()) AND x.`原运单号` IS NOT NULL AND x.`仓库` = '易速配-桃园仓';'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -572,40 +574,21 @@ class QueryTwoLower(Settings, Settings_sso):
                         set a.`退货单号`= IF(b.`退货单号` = '' OR b.`退货单号` IS NULL,NULL, b.`退货单号`)
                     WHERE a.记录时间 >= TIMESTAMP (CURDATE()) AND a.`原运单号` = b.`原运单号`;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-            dp.to_excel('G:\输出文件\\查询已下架 退货单号 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
 
         print('++++正在获取 收货人信息： ......')
         orderId = list(df['订单编号'])
         max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
-        if max_count > 0:
+        if 0 < max_count <= 500:
+            ord = ','.join(orderId)
             df = pd.DataFrame([])
-            dlist = []
-            for ord in orderId:
-                # print(ord)
-                if ";" in ord:
-                    ordersdict = []
-                    res = {}
-                    billno = ''
-                    refund_number = ''
-                    for od in ord.split(';'):
-                        bill, refund = self._stockcompose_upload(od)
-                        billno = billno + ';' + bill
-                        refund_number = refund_number + ';' + refund
-                    res['原运单号'] = billno[1:]
-                    res['退货单号'] = refund_number[1:]
-                    ordersdict.append(res)
-                    data = pd.json_normalize(ordersdict)
-                else:
-                    data = self._stockcompose_upload_two(ord)
-                dlist.append(data)
-            dp = df.append(dlist, ignore_index=True)
+            dp = self._stockcompose_upload_three(ord)
             print(dp)
             dp.to_sql('customer_cp', con=self.engine1, index=False, if_exists='replace')
             sql = '''update `已下架表` a, `customer_cp` b
-                        set a.`退货单号`= IF(b.`退货单号` = '' OR b.`退货单号` IS NULL,NULL, b.`退货单号`)
-                    WHERE a.记录时间 >= TIMESTAMP (CURDATE()) AND a.`原运单号` = b.`原运单号`;'''
+                        set a.`收货人`= IF(b.`收货人` = '' OR b.`收货人` IS NULL,NULL, b.`收货人`),
+                            a.`收货地址`= IF(b.`收货地址` = '' OR b.`收货地址` IS NULL,NULL, b.`收货地址`)
+                    WHERE a.记录时间 >= TIMESTAMP (CURDATE()) AND a.`订单编号` = b.`订单编号`;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-            dp.to_excel('G:\输出文件\\查询已下架 退货单号 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
 
             print('获取每日新增 桃园仓重出 表......')
             rq = datetime.datetime.now().strftime('%m.%d')
@@ -627,7 +610,8 @@ class QueryTwoLower(Settings, Settings_sso):
                 wbsht.close()
                 app.quit()
                 app.quit()
-                print('获取成功......')
+                print('获取成功发送中......')
+                self.e.send('{0} 桃园仓重出 {1}单.xlsx'.format(today, str(len(df))), file_path, emailAdd['gat'])
             else:
                 print('****** 今日无新增 桃园仓重出 数据！！！')
     def _stockcompose_upload(self, waybill):                            # 进入压单检索界面
@@ -732,21 +716,10 @@ class QueryTwoLower(Settings, Settings_sso):
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
         data = pd.json_normalize(ordersdict)
-        df = None
-        try:
-            # df = data[['orderNumber', 'currency', 'area', 'orderStatus', 'addTime', 'username', 'verifyTime',
-            #            'dpeStyle', 'reassignmentTypeName', 'logisticsStatus', 'delReason', 'questionReason',
-            #            'transferTime', 'deliveryTime', 'hasLowPrice', 'remark', 'ip', 'autoVerify', 'warehouse']]
-            # df.columns = ['订单编号', '币种', '运营团队', '订单状态', '下单时间', '操作人', '审核时间',
-            #               '货物类型', '订单类型', '物流状态', '删除原因', '问题原因',
-            #               '转采购时间', '发货时间', '是否低价', '备注', 'IP', '审单类型', '发货仓库']
-            df = data[['orderNumber', 'username']]
-            df.columns = ['订单编号', '删除人']
-        except Exception as e:
-            print('------查询为空')
+        df = data[['orderNumber', 'shipInfo.shipName', 'shipInfo.shipAddress']]
+        df.columns = ['订单编号', '收货人', '收货地址']
         print('******本批次查询成功')
         return df
-
 
     # 进入组合库存查询界面 ？？？？
     def gp_order_stockcompose(self):

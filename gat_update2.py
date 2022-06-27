@@ -6607,7 +6607,10 @@ class QueryUpdate(Settings):
                             ss1.约派送, ss1.核实拒收, ss1.再派签收, 
                             ss2.挽回单数, ss2.未确认, ss2.退款单数, ss2.实际挽回单数, 
                             ss3.正常发货, ss3.取消订单,
-                            ss4.`联系量（有结果）`,ss4.挽单量
+                            ss4.`联系量（有结果）`,ss4.挽单量,
+                             ss4.张联系量 AS '张陈平-联系量（有结果）',ss4.张挽单量 AS '张陈平-挽单量',
+                             ss4.蔡联系量 AS '蔡利英-联系量（有结果）',ss4.蔡挽单量 AS '蔡利英-挽单量',
+                             ss4.杨联系量 AS '杨嘉仪-联系量（有结果）',ss4.杨挽单量 AS '杨嘉仪-挽单量'
                     FROM date
                     LEFT JOIN
                         (SELECT 日期 AS 系统问题,
@@ -6717,14 +6720,14 @@ class QueryUpdate(Settings):
                         COUNT(订单编号) AS '联系量（有结果）',
                         SUM(IF(s.`再次克隆下单` IS NOT NULL,1,0)) AS 挽单量,
                         
-                        SUM(IF(处理人='张陈平',1,0)) AS '张陈平-联系量（有结果）',
-                        SUM(IF(处理人='张陈平' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS '张陈平-挽单量',
+                        SUM(IF(处理人='张陈平',1,0)) AS 张联系量,
+                        SUM(IF(处理人='张陈平' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS 张挽单量,
                         
-                        SUM(IF(处理人='蔡利英',1,0)) AS '蔡利英-联系量（有结果）',
-                        SUM(IF(处理人='蔡利英' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS '蔡利英-挽单量',
+                        SUM(IF(处理人='蔡利英',1,0)) AS 蔡联系量,
+                        SUM(IF(处理人='蔡利英' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS 蔡挽单量,
                         
-                        SUM(IF(处理人='杨嘉仪',1,0)) AS '杨嘉仪-联系量（有结果）',
-                        SUM(IF(处理人='杨嘉仪' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS '杨嘉仪-挽单量'
+                        SUM(IF(处理人='杨嘉仪',1,0)) AS 杨联系量,
+                        SUM(IF(处理人='杨嘉仪' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS 杨挽单量
             FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`
                         FROM (SELECT * 
                                     FROM 拒收问题件 

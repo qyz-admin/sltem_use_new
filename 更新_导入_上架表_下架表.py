@@ -135,13 +135,13 @@ class Updata_return_bill(Settings, Settings_sso):
             wb = app.books.open(filePath, update_links=False, read_only=True)
             for sht in wb.sheets:
                 if sht.api.Visible == -1:
+                    db = None
                     try:
-                        db = None
                         db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                         # db = pd.read_excel(filePath, sheet_name=sht.name)
-                        if tem_data != '协来运':
-                            db.dropna(axis=0, how='any', inplace=True)  # 空值（缺失值），将空值所在的行/列删除后
-                        # print(db)
+                        if tem_data == '协来运':
+                            db.dropna(axis=0, how='any', inplace=True, subset = ['配編'])  # 空值（缺失值），将空值所在的行/列删除后
+
                         if tem_data == '速派':
                             if team == 'gat_return_bill':   # 上架表
                                 db.rename(columns={'订单号': '订单编号', '承运单号': '运单编号'}, inplace=True)
@@ -266,6 +266,7 @@ class Updata_return_bill(Settings, Settings_sso):
                                 db = None
                     except Exception as e:
                         print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
+                    print(db)
                     if db is not None and len(db) > 0:
                         print('++++正在导入：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
                         db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')

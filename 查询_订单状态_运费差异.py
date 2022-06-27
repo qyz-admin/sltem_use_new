@@ -475,7 +475,7 @@ class QueryUpdate(Settings):
         print('正在获取查询 在途-未上线 数据…………')
         rq = datetime.datetime.now().strftime('%Y.%m.%d')
         month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
-        sql = '''SELECT 日期,团队,币种,订单编号,IF(物流方式 LIKE "%天马%" AND LENGTH(运单编号) = 20, CONCAT(861, RIGHT(运单编号, 8)), IF((物流方式 LIKE "%速派%" or 物流方式 LIKE "%易速配%" or 物流方式 LIKE "%龟山%") AND 运单编号 LIKE "A%", RIGHT(运单编号, LENGTH(运单编号) - 1), UPPER(运单编号))) 运单编号,
+        sql = '''SELECT 日期,团队,币种,订单编号,IF(物流方式 LIKE "%天马%" AND LENGTH(运单编号) = 20, CONCAT(861, RIGHT(运单编号, 8)), IF((物流方式 LIKE "%速派%" or 物流方式 LIKE "%易速配%" or 物流方式 LIKE "%龟山%") AND (运单编号 LIKE "A%" OR 运单编号 LIKE "B%"), RIGHT(运单编号, LENGTH(运单编号) - 1), UPPER(运单编号))) 运单编号,
         是否改派,物流方式, 系统订单状态,系统物流状态,物流状态,签收表物流状态,
                         最终状态,下单时间,审核时间,仓储扫描时间,出货时间,上线时间,状态时间,完结状态时间,在途未上线
                 FROM ( SELECT *, IF(最终状态 = '在途',
