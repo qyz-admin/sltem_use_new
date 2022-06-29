@@ -734,7 +734,7 @@ class SltemMonitoring(Settings):
                             ) sl_cx_zf_wc ON sl_cx_zf_wc.`币种` = sl_zong.`币种` AND sl_cx_zf_wc.`年` = sl_zong.`年` AND sl_cx_zf_wc.`年月` = sl_zong.`年月` AND sl_cx_zf_wc.`物流方式` = sl_zong.`物流方式` AND sl_cx_zf_wc.`父级分类` = sl_zong.`父级分类`  AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
                         GROUP BY  sl_zong.年, sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
                         with rollup
-												) sl_rb;;'''.format('qsb_缓存_month_cp', currency, match[team])
+												) sl_rb;'''.format('qsb_缓存_month_cp', currency, match[team])
         listT.append(sqltime4)
         show_name.append(' 月(各月)时效…………')
 
@@ -1075,8 +1075,8 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2022.05.23'
-    now_month = '2022.06.23'
+    last_month = '2022.05.30'
+    now_month = '2022.06.29'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传
@@ -1101,4 +1101,4 @@ if __name__ == '__main__':
 
     # 测试监控运行（三）-- 第二种自动方式
     # m.match_time('港台')      # 检测时间
-    win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒", win32con.MB_OK)
+    # win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒", win32con.MB_OK)

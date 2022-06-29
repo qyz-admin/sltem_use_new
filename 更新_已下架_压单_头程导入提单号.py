@@ -176,6 +176,8 @@ class QueryTwoLower(Settings, Settings_sso):
                         elif tem == '超峰国际':
                             if '提货物流' not in db.columns:
                                 db.insert(0, '提货物流', tem)
+                            if '提單號' in db.columns:
+                                db.rename(columns={'提單號': '提单号', '出貨時間': '出货时间', '開船時間': '开船时间', '到達時間': '到达时间'}, inplace=True)
                             db = db[['提货物流', '出货时间', '提单号', '开船时间', '到达时间']]
                             db['开船时间'] = db['开船时间'].apply(lambda x: self._fun_time(x))       # 时间函数
                             db['到达时间'] = db['到达时间'].apply(lambda x: self._fun_time(x))
@@ -183,6 +185,7 @@ class QueryTwoLower(Settings, Settings_sso):
                             #   db['开船时间'] = db['开船时间'].apply(lambda x: (datetime.datetime.strptime(x, '%Y/%m/%d %H:%M:%S')).strftime("%Y-%m-%d %H:%M:%S"))
                             #   db['到达时间'] = db['到达时间'].apply(lambda x: datetime.datetime.now().strftime("%Y/") + x.split("早上")[0] + " 03:00:00" if "早上" in x else 0)
                             #   db['到达时间'] = db['到达时间'].apply(lambda x: (datetime.datetime.strptime(x, '%Y/%m/%d %H:%M:%S')).strftime("%Y-%m-%d %H:%M:%S"))
+                            # print(db)
                             db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
                             sql = '''update gat_take_delivery a, customer b 
                                     set a.`主號` = IF(b.`提单号` = '' or  b.`提单号` is NULL, a.`主號`, b.`提单号`),
@@ -199,13 +202,13 @@ class QueryTwoLower(Settings, Settings_sso):
         app.quit()
     def _fun_time(self, val):    # 时间函数
         val_time = ''
-        if "晚上" in val and ("12点" in val or "12點" in val):
+        if "晚上" in val and "12点" in val or "晚上" in val and "12點" in val:
             val_time = datetime.datetime.now().strftime("%Y/") + val.split("晚上")[0] + " 23:59:59"
             # 将字符串转化为datetime
             val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
             # 将datetime转化为字符串
             val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
-        if "晚上" in val:
+        elif "晚上" in val:
             val_time = datetime.datetime.now().strftime("%Y/") + val.split("晚上")[0] + " 23:59:59"
             # 将字符串转化为datetime
             val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
@@ -239,7 +242,7 @@ class QueryTwoLower(Settings, Settings_sso):
             val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
 
 
-        elif "上午" in val and "3点" in val:
+        elif "上午" in val and ("3点" in val or "3點" in val):
             val_time = datetime.datetime.now().strftime("%Y/") + val.split("上午")[0] + " 03:00:00"
             # 将字符串转化为datetime
             val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
@@ -248,6 +251,12 @@ class QueryTwoLower(Settings, Settings_sso):
 
         elif "上午" in val and ("8点" in val or "8點" in val):
             val_time = datetime.datetime.now().strftime("%Y/") + val.split("上午")[0] + " 08:00:00"
+            # 将字符串转化为datetime
+            val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
+            # 将datetime转化为字符串
+            val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
+        elif "上午" in val and ("11点" in val or "11點" in val):
+            val_time = datetime.datetime.now().strftime("%Y/") + val.split("上午")[0] + " 11:00:00"
             # 将字符串转化为datetime
             val_time = datetime.datetime.strptime(val_time, '%Y/%m/%d %H:%M:%S')
             # 将datetime转化为字符串
@@ -538,7 +547,7 @@ class QueryTwoLower(Settings, Settings_sso):
 
     # 进入 组合库存界面  补充已下架的退货单号  （仓储的获取）（二）'qyz1404039293@163.com'
     def stockcompose_upload(self):
-        emailAdd = {'gat': '"jikenyin666@163.com", "qyz1404039293@163.com"'}
+        emailAdd = {'gat': 'jikenyin666@163.com'}
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         today = datetime.date.today().strftime('%Y.%m.%d')
         print('++++正在获取 退货单号： ......')
@@ -605,13 +614,15 @@ class QueryTwoLower(Settings, Settings_sso):
                 wbsht = app.books.open('D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm')
                 wbsht1 = app.books.open(file_path)
                 wbsht.macro('A解析')()
+
                 wbsht1.save()
                 wbsht1.close()
                 wbsht.close()
                 app.quit()
                 app.quit()
                 print('获取成功发送中......')
-                self.e.send('{0} 桃园仓重出 {1}单.xlsx'.format(today, str(len(df))), file_path, emailAdd['gat'])
+                filepath = [file_path]
+                self.e.send('{0} 桃园仓重出 {1}单.xlsx'.format(today, str(len(df))), filepath, emailAdd['gat'])
             else:
                 print('****** 今日无新增 桃园仓重出 数据！！！')
     def _stockcompose_upload(self, waybill):                            # 进入压单检索界面

@@ -9481,4 +9481,4 @@ if __name__ == '__main__':
     # m.EportOrder(team)       #  导出需要更新的签收表
     # m.qsb_report(team, '2021-06-26', '2021-05-26')
     print('耗时：', datetime.datetime.now() - start)
-    win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)
+    # win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)

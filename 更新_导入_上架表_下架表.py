@@ -160,13 +160,22 @@ class Updata_return_bill(Settings, Settings_sso):
                                 db.insert(0, '仓库名称', '龟山')
                                 db = db[['物流渠道', '订单编号', '运单编号', '退货单号', '退货上架货架', '上架时间', '仓库名称']]
                         elif tem_data == '桃园仓':
-                            if team == 'gat_return_bill':
-                                if '订单编号' not in db.columns:
-                                    db.insert(0, '订单编号', tem_data)
+                            if '上架' in sht.name:
+                                if team == 'gat_return_bill':
+                                    if '订单编号' not in db.columns:
+                                        db.insert(0, '订单编号', tem_data)
+                                    db.rename(columns={'订单编号': '订单编号', '原单': '运单编号', '退件单号': '退货单号', '架位': '退货上架货架', '上架日期':'上架时间'}, inplace=True)
+                                    db.insert(0, '物流渠道', tem_data)
+                                    db.insert(0, '仓库名称', tem_data)
+                                    db = db[['物流渠道', '订单编号', '运单编号', '退货单号', '退货上架货架', '上架时间', '仓库名称']]
+                            elif '下架' in sht.name:
+                                team = 'gat_return_bill_over'
                                 db.rename(columns={'订单编号': '订单编号', '原单': '运单编号', '退件单号': '退货单号', '架位': '退货上架货架', '上架日期':'上架时间'}, inplace=True)
                                 db.insert(0, '物流渠道', tem_data)
                                 db.insert(0, '仓库名称', tem_data)
-                                db = db[['物流渠道', '订单编号', '运单编号', '退货单号', '退货上架货架', '上架时间', '仓库名称']]
+                                db.insert(0, '在仓天数', '')
+                                db.insert(0, '末条状态', '')
+                                db = db[['物流渠道', '订单编号', '运单编号', '退货单号', '退货上架货架', '上架时间', '仓库名称', '在仓天数', '末条状态']]
 
                         elif tem_data == '协来运':
                             if sht.name == 'ALL工作表':

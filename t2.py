@@ -147,7 +147,7 @@ elif team in ('ga99t', 'slsc', 'sl_rb'):
 
 
 
-win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)
+# win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)
 # 输出签收率表、(备用)
 # tem = '泰国'
 # w.OrderQuan(team, tem)

@@ -231,17 +231,17 @@ class QueryOrder(Settings, Settings_sso):
                         orderId = list(db['电话'])
                         # print(orderId)
                         max_count = len(orderId)                                    # 使用len()获取列表的长度，上节学的
-                        if max_count > 100:
+                        if max_count > 10:
                             # ord = ','.join(orderId[0:100])
-                            ord = ','.join('%s' % d for d in orderId[0:100])
+                            ord = ','.join('%s' % d for d in orderId[0:10])
                             # print(ord)
                             df = self.orderInfo_iphone(ord, searchType, timeStart, timeEnd)
                             dlist = []
                             n = 0
-                            while n < max_count-100:                                # 这里用到了一个while循环，穿越过来的
-                                n = n + 100
+                            while n < max_count-10:                                # 这里用到了一个while循环，穿越过来的
+                                n = n + 10
                                 # ord = ','.join(orderId[n:n + 100])
-                                ord = ','.join('%s' % d for d in orderId[n:n + 100])
+                                ord = ','.join('%s' % d for d in orderId[n:n + 10])
                                 # print(ord)
                                 data = self.orderInfo_iphone(ord, searchType, timeStart, timeEnd)
                                 dlist.append(data)
@@ -1141,9 +1141,6 @@ class QueryOrder(Settings, Settings_sso):
 
     # 删除订单的  分析导出
     def del_order_day(self):
-        sql ='''UPDATE day_delete_cache d SET d.`删单明细` = IF(d.`删单明细` LIKE '0%', RIGHT(d.`删单明细`,LENGTH(d.`删单明细`)-1),d.`删单明细`);'''
-        pd.read_sql_query(sql=sql, con=self.engine1,chunksize=10000)
-
         print('正在分析 昨日 删单原因中')
         sql ='''SELECT *,concat(ROUND(SUM(IF(删单原因 IS NULL OR 删单原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
                 FROM (SELECT s1.*,总订单量,总删单量, 系统删单量
@@ -1386,7 +1383,7 @@ class QueryOrder(Settings, Settings_sso):
         print('*' * 50)
         print(cf_del)
 
-        print('正在获取 删单明细 系统删除信息 物五…………')
+        print('正在获取 删单明细 系统删除信息 五…………')
         sql = '''SELECT s1.*
                         FROM ( 
         					    (SELECT *
@@ -1479,8 +1476,41 @@ class QueryOrder(Settings, Settings_sso):
         print('*' * 50)
         print(st_del + st_del_iphone + st_del_ip)
 
+        print('正在获取 连续3天以上的黑名单 电话、IP信息 六…………')
+        sql ='''UPDATE day_delete_cache d 
+                    SET d.`删单明细` = IF(d.`删单明细` LIKE '0%', RIGHT(d.`删单明细`,LENGTH(d.`删单明细`)-1),d.`删单明细`);'''
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        sql = '''SELECT *
+                FROM (
+                        SELECT 币种,删单类型,删单明细, COUNT(记录日期) AS 次数
+                        FROM day_delete_cache d
+                        WHERE d.`记录日期` >= IF(DATE_FORMAT('2022-06-29','%w') = 2 ,DATE_SUB(CURDATE(), INTERVAL 5 DAY),IF(DATE_FORMAT('2022-06-29','%w') = 1 ,DATE_SUB(CURDATE(), INTERVAL 6 DAY),DATE_SUB(CURDATE(), INTERVAL 2 DAY)))
+                        GROUP BY 币种,删单类型,删单明细
+                ) s
+                WHERE s.次数 >= 3
+                ORDER BY 币种,删单类型,删单明细, 次数 DESC;'''
+        df6 = pd.read_sql_query(sql=sql, con=self.engine1)
+        db61 = df6[~(df6['删单类型'].str.contains('系统删除'))]
+        # day_del = db61.to_markdown()
+        day_del = '''注意：连续3天同电话\IP的信息>>>'''
+        day_del2 = '恶意订单:'
+        day_del3 = '拉黑率订单:'
+        for row in db61.itertuples():
+            tem = getattr(row, '删单类型')
+            info = getattr(row, '删单明细')
+            count = getattr(row, '次数')
+            # day_del = day_del + '\n' + tem + ':' + info + ':  ' + str(int(count)) + '单,'
+            if '恶意订单' in tem:
+                day_del2 = day_del2 + '\n' + info + ':  ' + str(int(count)) + '单,'
+            elif '拉黑率订单' in tem:
+                day_del3 = day_del3 + '\n' + info + ':  ' + str(int(count)) + '单,'
+
+        print('*' * 50)
+        print(day_del + '\n' + day_del2 + '\n' + day_del3)
+
+
         # url = "https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e"  # url为机器人的webhook
-        url = "https://oapi.dingtalk.com/robot/send?access_token=9a92f00296846dcd3ec8b52d7bacce114a9e34cb2d5dbfad9ce3371ab8d037f9"  # url为机器人的webhook
+        url = "https://oapi.dingtalk.com/robot/send?access_token=9a92f00296846dcd3ec8b52d7bacce114a9e34cb2d5dbfad9ce3371ab8d037f9"  # url为机器人的webhook  港台客服
         content = r'r"H:\桌面\需要用到的文件\文件夹\out2.jpeg"'  # 钉钉消息内容，注意test是自定义的关键字，需要在钉钉机器人设置中添加，这样才能接收到消息
         mobile_list = ['18538110674']  # 要@的人的手机号，可以是多个，注意：钉钉机器人设置中需要添加这些人，否则不会接收到消息
         isAtAll = '是'  # 是否@所有人
@@ -1510,7 +1540,8 @@ class QueryOrder(Settings, Settings_sso):
                                sl_Black + sl_Black_iphone + sl_Black_ip + '\n' +
                                st_ey + st_ey_iphone + st_ey_ip + '\n' +
                                cf_del + '\n' +
-                               st_del + st_del_iphone + st_del_ip
+                               st_del + st_del_iphone + st_del_ip + '\n' + '\n' +
+                               day_del
                     # "content": 'TEST'
                 },
                 "at": {# 要@的人
@@ -2194,11 +2225,11 @@ if __name__ == '__main__':
         team = 'gat'
         searchType = '电话'
         pople_Query = '电话检索'                # 电话查询；订单检索
-        timeStart = '2022-05-01 00:00:00'
-        timeEnd = '2022-05-31 23:59:59'
+        timeStart = '2022-01-01 00:00:00'
+        timeEnd = '2022-06-27 23:59:59'
         m.readFormHost(team, searchType, pople_Query, timeStart, timeEnd)
 
     elif int(select) == 9:
-        m.del_order_day_two()
+        m.del_order_day()
 
     print('查询耗时：', datetime.datetime.now() - start)

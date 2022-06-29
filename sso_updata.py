@@ -2224,7 +2224,8 @@ class Query_sso_updata(Settings):
     def gp_order(self):
         print('正在获取 改派未发货…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
-        sql = '''SELECT xj.订单编号, xj.下单时间, xj.新运单号 运单编号, xj.查件单号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, b.物流状态, c.标准物流状态,b.状态时间, NULL 系统订单状态, NULL 系统物流状态
+        sql = '''SELECT xj.订单编号, xj.下单时间, xj.新运单号 运单编号, xj.查件单号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, b.物流状态, c.标准物流状态,b.状态时间, NULL 系统订单状态, NULL 系统物流状态, 
+                        IF(统计时间 >=CURDATE( ) ,'未发货',NULL) AS 状态
                 FROM ( SELECT *
                        FROM 已下架表 x
                        WHERE x.记录时间 >= TIMESTAMP ( CURDATE( ) ) AND x.币种 = '台币'
