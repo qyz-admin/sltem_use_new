@@ -1541,7 +1541,7 @@ class QueryOrder(Settings, Settings_sso):
                                st_ey + st_ey_iphone + st_ey_ip + '\n' +
                                cf_del + '\n' +
                                st_del + st_del_iphone + st_del_ip + '\n' + '\n' +
-                               day_del
+                               day_del + '\n' + day_del2 + '\n' + day_del3
                     # "content": 'TEST'
                 },
                 "at": {# 要@的人

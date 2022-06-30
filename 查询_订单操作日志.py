@@ -236,7 +236,7 @@ class QueryTwo(Settings, Settings_sso):
                     orderId = list(db['订单编号'])
                     max_count = len(orderId)                                    # 使用len()获取列表的长度，上节学的
                     if max_count > 10:
-                        ord = ', '.join(orderId[0:10])
+                        ord = ','.join(orderId[0:10])
                         df = self.orderInfoQuery(ord, searchType)
                         dlist = []
                         n = 0

@@ -222,6 +222,7 @@ class QueryTwoT(Settings, Settings_sso):
                     print(df)
                     dlist = []
                     for proId in productId[1:]:
+                        print(proId)
                         data = self.orderInfoQuery(proId)
                         dlist.append(data)
                     dp = df.append(dlist, ignore_index=True)
@@ -250,30 +251,32 @@ class QueryTwoT(Settings, Settings_sso):
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
         ordersDict = []
-        try:
-            for result in req['data']['list']:
-                # 添加新的字典键-值对，为下面的重新赋值用
-                result['cate_id'] = 0
-                result['second_cate_id'] = 0
-                result['third_cate_id'] = 0
-                result['cate_id'] = (result['categorys']).split('>')[2]
-                result['second_cate_id'] = (result['categorys']).split('>')[1]
-                result['third_cate_id'] = (result['categorys']).split('>')[0]
-                ordersDict.append(result)
-        except Exception as e:
-            print('转化失败： 重新获取中', str(Exception) + str(e))
-            self.orderInfoQuery(ord)
-        data = pd.json_normalize(ordersDict)
-        data['name'] = data['name'].str.strip()
-        data['cate_id'] = data['cate_id'].str.strip()
-        data['second_cate_id'] = data['second_cate_id'].str.strip()
-        data['third_cate_id'] = data['third_cate_id'].str.strip()
-        data = data[['id', 'name', 'cate_id', 'second_cate_id', 'third_cate_id', 'status', 'price', 'selectionName',
-                     'sellerCount', 'buyerName', 'saleCount', 'logisticsCost', 'lender', 'isGift', 'createTime',
-                     'categorys', 'image']]
-        data.columns = ['产品id', '产品名称', '一级分类', '二级分类', '三级分类', '产品状态', '价格(￥)', '选品人',
-                        '供应商数', '采购人', '商品数', 'logisticsCost', '出借人', '特殊信息', '添加时间',
-                        '产品分类', '产品图片']
+        data = None
+        if req['data']['list'] != [] and req['data']['count'] != 0:
+            try:
+                for result in req['data']['list']:
+                    # 添加新的字典键-值对，为下面的重新赋值用
+                    result['cate_id'] = 0
+                    result['second_cate_id'] = 0
+                    result['third_cate_id'] = 0
+                    result['cate_id'] = (result['categorys']).split('>')[2]
+                    result['second_cate_id'] = (result['categorys']).split('>')[1]
+                    result['third_cate_id'] = (result['categorys']).split('>')[0]
+                    ordersDict.append(result)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+                self.orderInfoQuery(ord)
+            data = pd.json_normalize(ordersDict)
+            data['name'] = data['name'].str.strip()
+            data['cate_id'] = data['cate_id'].str.strip()
+            data['second_cate_id'] = data['second_cate_id'].str.strip()
+            data['third_cate_id'] = data['third_cate_id'].str.strip()
+            data = data[['id', 'name', 'cate_id', 'second_cate_id', 'third_cate_id', 'status', 'price', 'selectionName',
+                         'sellerCount', 'buyerName', 'saleCount', 'logisticsCost', 'lender', 'isGift', 'createTime',
+                         'categorys', 'image']]
+            data.columns = ['产品id', '产品名称', '一级分类', '二级分类', '三级分类', '产品状态', '价格(￥)', '选品人',
+                            '供应商数', '采购人', '商品数', 'logisticsCost', '出借人', '特殊信息', '添加时间',
+                            '产品分类', '产品图片']
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         return data
@@ -360,13 +363,13 @@ class QueryTwoT(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    m = QueryTwoT('+86-18538110674', 'qyz04163510')
+    m = QueryTwoT('+86-18538110674', 'qyz35100416')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # 1、手动导入状态
-    # for team in ['gat']:
-    #     m.readFormHost(team)
-    m.productInfo('gat')
+    for team in ['gat']:
+        m.readFormHost(team)
+    # m.productInfo('gat')
 
     print('查询耗时：', datetime.datetime.now() - start)

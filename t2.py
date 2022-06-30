@@ -133,7 +133,7 @@ elif team != 'gat' and updata == '全1部':
     sso = Query_sso_updata('+86-18538110674', 'qyz35100416', '1343','',handle)
     sso.readFormHost('gat', '导入')                                   # 导入新增的订单 line运营  手动导入
     sso.readFormHost('gat', '更新')                                   # 更新新增的订单 手动导入
-    qu.EportOrder(team, month_last, month_yesterday, month_begin)     # 最近两个月的更新信息导出
+    qu.EportOrder(team, month_last, month_yesterday, month_begin, '是')     # 最近两个月的更新信息导出
 
 
 

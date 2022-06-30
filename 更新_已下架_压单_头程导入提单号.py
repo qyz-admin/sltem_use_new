@@ -552,40 +552,50 @@ class QueryTwoLower(Settings, Settings_sso):
         today = datetime.date.today().strftime('%Y.%m.%d')
         print('++++正在获取 退货单号： ......')
         sql = '''SELECT * FROM 已下架表 x WHERE x.记录时间 >= TIMESTAMP (CURDATE()) AND x.`原运单号` IS NOT NULL AND x.`仓库` = '易速配-桃园仓';'''
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        orderId = list(df['原运单号'])
-        max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
-        if max_count > 0:
-            df = pd.DataFrame([])
-            dlist = []
-            for ord in orderId:
-                # print(ord)
-                if ";" in ord:
-                    ordersdict = []
-                    res = {}
-                    billno = ''
-                    refund_number = ''
-                    for od in ord.split(';'):
-                        bill, refund = self._stockcompose_upload(od)
-                        billno = billno + ';' + bill
-                        refund_number = refund_number + ';' + refund
-                    res['原运单号'] = billno[1:]
-                    res['退货单号'] = refund_number[1:]
-                    ordersdict.append(res)
-                    data = pd.json_normalize(ordersdict)
-                else:
-                    data = self._stockcompose_upload_two(ord)
-                dlist.append(data)
-            dp = df.append(dlist, ignore_index=True)
-            print(dp)
-            dp.to_sql('customer_cp', con=self.engine1, index=False, if_exists='replace')
-            sql = '''update `已下架表` a, `customer_cp` b
-                        set a.`退货单号`= IF(b.`退货单号` = '' OR b.`退货单号` IS NULL,NULL, b.`退货单号`)
-                    WHERE a.记录时间 >= TIMESTAMP (CURDATE()) AND a.`原运单号` = b.`原运单号`;'''
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        df0 = pd.read_sql_query(sql=sql, con=self.engine1)
+        # orderId = list(df0['原运单号'])
+        # max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
+        # if max_count > 0:
+        #     df = pd.DataFrame([])
+        #     dlist = []
+        #     for ord in orderId:
+        #         print(ord)
+        #         if ";" in ord:
+        #             ordersdict = []
+        #             res = {}
+        #             billno = ''
+        #             refund_number = ''
+        #             for od in ord.split(';'):
+        #                 status = 1
+        #                 bill, refund = self._stockcompose_upload(od, status)
+        #                 if bill == "":
+        #                     status = 2
+        #                     bill, refund = self._stockcompose_upload(od, status)
+        #                 billno = billno + ';' + bill
+        #                 refund_number = refund_number + ';' + refund
+        #             res['原运单号'] = billno[1:]
+        #             res['退货单号'] = refund_number[1:]
+        #             ordersdict.append(res)
+        #             data = pd.json_normalize(ordersdict)
+        #         else:
+        #             status = 1          # 已锁定
+        #             data = self._stockcompose_upload_two(ord, status)
+        #             if data is None or len(data) == 0:
+        #                 status = 2                          # 已使用
+        #                 data = self._stockcompose_upload_two(ord, status)
+        #         dlist.append(data)
+        #     dp = df.append(dlist, ignore_index=True)
+        #     print(dp)
+        #     dp.to_excel('G:\\输出文件\\组合库存-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        #     dp.to_sql('customer_cp', con=self.engine1, index=False, if_exists='replace')
+        #     sql = '''update `已下架表` a, `customer_cp` b
+        #                 set a.`退货单号`= IF(b.`退货单号` = '' OR b.`退货单号` IS NULL,NULL, b.`退货单号`)
+        #             WHERE a.记录时间 >= TIMESTAMP (CURDATE()) AND a.`原运单号` = b.`原运单号`;'''
+        #     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
         print('++++正在获取 收货人信息： ......')
-        orderId = list(df['订单编号'])
+        self.sso__online_auto()
+        orderId = list(df0['订单编号'])
         max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
         if 0 < max_count <= 500:
             ord = ','.join(orderId)
@@ -605,6 +615,7 @@ class QueryTwoLower(Settings, Settings_sso):
                      FROM 已下架表 yx
                      WHERE yx.记录时间 >= TIMESTAMP(CURDATE()) AND yx.仓库 = '易速配-桃园仓' AND (yx.`新运单号` IS NULL OR yx.`新运单号` = '');'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
+            dp.to_excel('G:\\输出文件\\组合库存-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             if df is not None and len(df) > 0:
                 file_path = 'G:\\输出文件\\{0} 桃园仓重出 {1}单.xlsx'.format(rq, str(len(df)))
                 df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
@@ -622,10 +633,10 @@ class QueryTwoLower(Settings, Settings_sso):
                 app.quit()
                 print('获取成功发送中......')
                 filepath = [file_path]
-                self.e.send('{0} 桃园仓重出 {1}单.xlsx'.format(today, str(len(df))), filepath, emailAdd['gat'])
+                # self.e.send('{0} 桃园仓重出 {1}单.xlsx'.format(today, str(len(df))), filepath, emailAdd['gat'])
             else:
                 print('****** 今日无新增 桃园仓重出 数据！！！')
-    def _stockcompose_upload(self, waybill):                            # 进入压单检索界面
+    def _stockcompose_upload(self, waybill, status):                            # 进入压单检索界面
         print('+++正在查询订单信息中')
         url = r'http://gwms-v3.giikin.cn/stock/stockcompose/index'
         r_header = {
@@ -634,7 +645,7 @@ class QueryTwoLower(Settings, Settings_sso):
             'Referer': 'http://gwms-v3.giikin.cn/order/refund/sale'}
         data = {'page': 1,
                 'limit': 20,
-                'selectStr': "1=1 and scb.billno= '" + waybill + "'",
+                'selectStr': "1=1 and scb.billno= '" + waybill + "'and scb.status= '" + str(status) + "'",
                 'relateNumber': None}
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
@@ -649,29 +660,12 @@ class QueryTwoLower(Settings, Settings_sso):
         max_count = req['count']
         billno = ''
         refund_number = ''
-        if max_count != [] or max_count != 0:
+        if req['data'] != [] and max_count != 0:
             for result in req['data']:
                 billno = result['billno']
                 refund_number = result['refund_number']
-
-        # data = req['failMsg']
-        # data = pd.json_normalize(req)
-        # print(data)
-        # max_count = req['count']
-        # if max_count != [] or max_count != 0:
-        #     ordersdict = []
-        #     try:
-        #         for result in req['data']:
-        #             ordersdict.append(result)
-        #     except Exception as e:
-        #         print('转化失败： 重新获取中', str(Exception) + str(e))
-        #     data = pd.json_normalize(ordersdict)
-        #     # print(data)
-        # else:
-        #     data = None
-        #     print('****** 没有信息！！！')
         return billno, refund_number            # 进入订单检索界面  获取收货人信息
-    def _stockcompose_upload_two(self, waybill):  # 进入压单检索界面
+    def _stockcompose_upload_two(self, waybill, status):  # 进入压单检索界面
         print('+++正在查询订单信息中')
         url = r'http://gwms-v3.giikin.cn/stock/stockcompose/index'
         r_header = {
@@ -680,7 +674,7 @@ class QueryTwoLower(Settings, Settings_sso):
             'Referer': 'http://gwms-v3.giikin.cn/order/refund/sale'}
         data = {'page': 1,
                 'limit': 20,
-                'selectStr': "1=1 and scb.billno= '" + waybill + "'",
+                'selectStr': "1=1 and scb.billno= '" + waybill + "'and scb.status= '" + str(status) + "'",
                 'relateNumber': None}
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
@@ -692,9 +686,10 @@ class QueryTwoLower(Settings, Settings_sso):
         req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
         # print(req)
         print(req['comment'])
+        # print(req['data'])
         max_count = req['count']
         data = None
-        if max_count != [] or max_count != 0:
+        if req['data'] != [] and max_count != 0:
             ordersdict = []
             for result in req['data']:
                 ordersdict.append(result)
@@ -704,14 +699,16 @@ class QueryTwoLower(Settings, Settings_sso):
         return data
     def _stockcompose_upload_three(self, ord):          # 进入订单检索界面  获取收货人信息
         # print('......正在查询信息中......')
-        url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRemoveOrderList'
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/deletedOrder'}
-        data = {'page': 1, 'pageSize': 500, 'orderPrefix': ord, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
-                'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
-                'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None,
-                'questionId': None, 'reassignmentType': None, 'delUserId': None, 'delReasonIds': None,'delTimeStart':None, 'delTimeEnd': None}
+        data = {'page': 1, 'pageSize': 500, 'order_number': ord, 'shippingNumber': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None,'currencyId': None,
+                'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '', 'warehouse': None, 'isEmptyWayBillNumber': None,  'logisticsStatus': None,
+                'orderStatus': None, 'tuan': None,  'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None,  'chooser_id': None, 'service_id': None,
+                'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None,'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None,
+                'order': None, 'sortField': None, 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,'timeStart': None, 'timeEnd': None}
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
@@ -719,7 +716,7 @@ class QueryTwoLower(Settings, Settings_sso):
         req = self.session.post(url=url, headers=r_header, data=data)
         # print('......已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
-        # print(req)
+        print(req)
         ordersdict = []
         try:
             for result in req['data']['list']:
@@ -1140,7 +1137,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
-    select = 2
+    select = 3
     if select == 1:
         m.readFile(select)            # 上传每日压单核实结果
         m.order_spec()                # 压单反馈  （备注（压单核实是否需要））
