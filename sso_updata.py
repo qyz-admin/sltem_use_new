@@ -1718,7 +1718,7 @@ class Query_sso_updata(Settings):
                        'spec', 'quantity', 'orderStatus', 'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime', 'transferTime', 'onlineTime', 'deliveryTime',
                        'finishTime', 'stateTime', 'logisticsUpdateTime', 'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName', 'dpeStyle', 'amount', 'payType',
                        'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks', 'auto_VerifyTip',
-                       'order_count', 'order_qs', 'order_js']]
+                       'order_count', 'order_qs', 'order_js', 'composite_amount']]
             print(df)
             # print('正在更新临时表中......')
             df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
@@ -1754,13 +1754,14 @@ class Query_sso_updata(Settings):
             				    h.`order_count` 订单配送总量,
             				    h.`order_qs` 签收量,
             				    h.`order_js` 拒收量,
-            				    h.`delReason` 删除原因,
+            				    IF(h.`delReason` LIKE ';%',RIGHT(h.`delReason`,LENGTH(h.`delReason`)-1),h.`delReason`) as 删除原因,
             				    h.`delTime` 删除时间,
             				    h.`questionReason` 问题原因,
             				    h.`questionTime` 问题时间,
             				    h.`service` 下单人,
             				    h.`cloneUser` 克隆人,
             				    h.`chooser` 选品人,
+            				    h.`composite_amount` 组合销售金额,
             				    h.`logisticsRemarks` 物流状态注释
                             FROM d1_cpy h
                                 LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
@@ -1804,7 +1805,8 @@ class Query_sso_updata(Settings):
                                 a.`问题时间`= IF(b.`问题时间` = '', NULL,  b.`问题时间`),
                                 a.`下单人`= IF(b.`下单人` = '', NULL,  b.`下单人`),
                                 a.`克隆人`= IF(b.`克隆人` = '', NULL,  b.`克隆人`),
-                                a.`选品人`= IF(b.`选品人` = '', NULL,  b.`选品人`)
+                                a.`选品人`= IF(b.`选品人` = '', NULL,  b.`选品人`),
+                                a.`组合销售金额`= IF(b.`组合销售金额` = '', NULL,  b.`组合销售金额`)
                     where a.`订单编号`=b.`订单编号`;'''.format('gat_order_list')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:

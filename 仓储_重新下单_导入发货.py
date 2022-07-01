@@ -64,8 +64,8 @@ class import_Data(Settings, Settings_sso):
     # 创建上传 的临时文件
     def _build_file(self):
         print(datetime.datetime.now())
-        # file_data = input('重新下单:  请输入 运单编号,多个以逗号分割:  ')
-        file_data ='7464302731,7464320043,7464314104'
+        file_data = input('重新下单:  请输入 运单编号,多个以逗号分割:  ')
+        # file_data ='7464302731,7464320043,7464314104'
         mkpath = r"D:\Users\Administrator\Desktop\需要用到的文件\Temp"
         isExists = os.path.exists(mkpath)
         if not isExists:

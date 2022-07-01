@@ -15,6 +15,7 @@ import pandas.io.formats.excel
 import win32api,win32con
 import win32com.client as win32
 
+
 from sqlalchemy import create_engine
 from settings import Settings
 from settings_sso import Settings_sso
@@ -35,10 +36,10 @@ class QueryTwoLower(Settings, Settings_sso):
         # self.sso_online_cang()
         # self.bulid_file()
 
-        if handle == '手动':
-            self.sso_online_cang_handle(login_TmpCode)
-        else:
-            self.sso_online_cang_auto()
+        # if handle == '手动':
+        #     self.sso_online_cang_handle(login_TmpCode)
+        # else:
+        #     self.sso_online_cang_auto()
 
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -601,7 +602,8 @@ class QueryTwoLower(Settings, Settings_sso):
             ord = ','.join(orderId)
             df = pd.DataFrame([])
             dp = self._stockcompose_upload_three(ord)
-            print(dp)
+            # print(dp)
+            # print(11)
             dp.to_sql('customer_cp', con=self.engine1, index=False, if_exists='replace')
             sql = '''update `已下架表` a, `customer_cp` b
                         set a.`收货人`= IF(b.`收货人` = '' OR b.`收货人` IS NULL,NULL, b.`收货人`),
@@ -617,13 +619,19 @@ class QueryTwoLower(Settings, Settings_sso):
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             dp.to_excel('G:\\输出文件\\组合库存-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             if df is not None and len(df) > 0:
-                file_path = 'G:\\输出文件\\{0} 桃园仓重出 {1}单.xlsx'.format(rq, str(len(df)))
+                file_path = r'G:\\输出文件\\{0} 桃园仓重出 {1}单.xlsx'.format(rq, str(len(df)))
                 df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
                 print('正在运行宏…………')
-                app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-                app.display_alerts = False
-                wbsht = app.books.open('D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm')
-                wbsht1 = app.books.open(file_path)
+                # app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
+                # app.display_alerts = False
+                # wbsht = app.books.open('D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm')
+                # wbsht1 = app.books.open(file_path)
+                # wbsht.macro('A解析')()
+
+                app = win32.Dispatch('Excel.Application')       # 通过Win32的方式并不限制xls和xlsx（因为操作是wps在做）
+                app.DisplayAlerts = 0
+                wbsht = app.Workbooks.open(r'D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm')
+                wbsht1 = app.Workbooks.open(file_path)
                 wbsht.macro('A解析')()
 
                 wbsht1.save()
@@ -716,7 +724,7 @@ class QueryTwoLower(Settings, Settings_sso):
         req = self.session.post(url=url, headers=r_header, data=data)
         # print('......已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
-        print(req)
+        # print(req)
         ordersdict = []
         try:
             for result in req['data']['list']:
