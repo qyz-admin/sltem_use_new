@@ -1005,7 +1005,7 @@ class Settings_sso():
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
-                'araToken': '0#19171629428116275265671469741653992895872711GC87818BBCC3CCDF73DCA3659F13FFA069CD0EA',
+                'araToken': '0#19171629428116275265671469741656903392035557GC87818BBCC3CCDF73DCA3659F13FFA069CD0EA',
                 'araScene': 'login',
                 'captchaImgCode': '',
                 'captchaSessionId': '',
@@ -1016,7 +1016,7 @@ class Settings_sso():
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         req = req.json()
         # print(req)
-        # req_url = req['data']
+        # req_url = req['data']  0#19171629428116275265671469741656903392035557GC87818BBCC3CCDF73DCA3659F13FFA069CD0EA
         # loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
         login_TmpCode = '获取不到参数'
         if 'data' in req.keys():

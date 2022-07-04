@@ -23,7 +23,7 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  
 
 # -*- coding:utf-8 -*-
 class QueryTwo(Settings, Settings_sso):
-    def __init__(self, userMobile, password, login_TmpCode):
+    def __init__(self, userMobile, password, login_TmpCode, handle):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
@@ -32,7 +32,12 @@ class QueryTwo(Settings, Settings_sso):
         # self._online()
         # self.sso_online_Two()
         # self.sso__online_handle(login_TmpCode)
-        self.sso__online_auto()
+        # self.sso__online_auto()
+        if handle == '手动':
+            self.sso__online_handle(login_TmpCode)
+        else:
+            self.sso__online_auto()
+
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -508,7 +513,7 @@ class QueryTwo(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    m = QueryTwo('+86-18538110674', 'qyz35100416','2501226929713d0ab95d811d0ead9e23')
+    m = QueryTwo('+86-18538110674', 'qyz35100416','eb4f64d039c03d9f855629b0cdd6f9ca','手0动')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     '''

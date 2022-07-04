@@ -14,7 +14,7 @@ from threading import Thread #  使用 threading 模块创建线程
 import pandas.io.formats.excel
 import win32api,win32con
 import win32com.client as win32
-
+import win32com.client
 
 from sqlalchemy import create_engine
 from settings import Settings
@@ -36,10 +36,10 @@ class QueryTwoLower(Settings, Settings_sso):
         # self.sso_online_cang()
         # self.bulid_file()
 
-        # if handle == '手动':
-        #     self.sso_online_cang_handle(login_TmpCode)
-        # else:
-        #     self.sso_online_cang_auto()
+        if handle == '手动':
+            self.sso_online_cang_handle(login_TmpCode)
+        else:
+            self.sso_online_cang_auto()
 
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -554,45 +554,45 @@ class QueryTwoLower(Settings, Settings_sso):
         print('++++正在获取 退货单号： ......')
         sql = '''SELECT * FROM 已下架表 x WHERE x.记录时间 >= TIMESTAMP (CURDATE()) AND x.`原运单号` IS NOT NULL AND x.`仓库` = '易速配-桃园仓';'''
         df0 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # orderId = list(df0['原运单号'])
-        # max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
-        # if max_count > 0:
-        #     df = pd.DataFrame([])
-        #     dlist = []
-        #     for ord in orderId:
-        #         print(ord)
-        #         if ";" in ord:
-        #             ordersdict = []
-        #             res = {}
-        #             billno = ''
-        #             refund_number = ''
-        #             for od in ord.split(';'):
-        #                 status = 1
-        #                 bill, refund = self._stockcompose_upload(od, status)
-        #                 if bill == "":
-        #                     status = 2
-        #                     bill, refund = self._stockcompose_upload(od, status)
-        #                 billno = billno + ';' + bill
-        #                 refund_number = refund_number + ';' + refund
-        #             res['原运单号'] = billno[1:]
-        #             res['退货单号'] = refund_number[1:]
-        #             ordersdict.append(res)
-        #             data = pd.json_normalize(ordersdict)
-        #         else:
-        #             status = 1          # 已锁定
-        #             data = self._stockcompose_upload_two(ord, status)
-        #             if data is None or len(data) == 0:
-        #                 status = 2                          # 已使用
-        #                 data = self._stockcompose_upload_two(ord, status)
-        #         dlist.append(data)
-        #     dp = df.append(dlist, ignore_index=True)
-        #     print(dp)
-        #     dp.to_excel('G:\\输出文件\\组合库存-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-        #     dp.to_sql('customer_cp', con=self.engine1, index=False, if_exists='replace')
-        #     sql = '''update `已下架表` a, `customer_cp` b
-        #                 set a.`退货单号`= IF(b.`退货单号` = '' OR b.`退货单号` IS NULL,NULL, b.`退货单号`)
-        #             WHERE a.记录时间 >= TIMESTAMP (CURDATE()) AND a.`原运单号` = b.`原运单号`;'''
-        #     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        orderId = list(df0['原运单号'])
+        max_count = len(orderId)    # 使用len()获取列表的长度，上节学的
+        if max_count > 0:
+            df = pd.DataFrame([])
+            dlist = []
+            for ord in orderId:
+                print(ord)
+                if ";" in ord:
+                    ordersdict = []
+                    res = {}
+                    billno = ''
+                    refund_number = ''
+                    for od in ord.split(';'):
+                        status = 1
+                        bill, refund = self._stockcompose_upload(od, status)
+                        if bill == "":
+                            status = 2
+                            bill, refund = self._stockcompose_upload(od, status)
+                        billno = billno + ';' + bill
+                        refund_number = refund_number + ';' + refund
+                    res['原运单号'] = billno[1:]
+                    res['退货单号'] = refund_number[1:]
+                    ordersdict.append(res)
+                    data = pd.json_normalize(ordersdict)
+                else:
+                    status = 1          # 已锁定
+                    data = self._stockcompose_upload_two(ord, status)
+                    if data is None or len(data) == 0:
+                        status = 2                          # 已使用
+                        data = self._stockcompose_upload_two(ord, status)
+                dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+            print(dp)
+            dp.to_excel('G:\\输出文件\\组合库存-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_sql('customer_cp', con=self.engine1, index=False, if_exists='replace')
+            sql = '''update `已下架表` a, `customer_cp` b
+                        set a.`退货单号`= IF(b.`退货单号` = '' OR b.`退货单号` IS NULL,NULL, b.`退货单号`)
+                    WHERE a.记录时间 >= TIMESTAMP (CURDATE()) AND a.`原运单号` = b.`原运单号`;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
         print('++++正在获取 收货人信息： ......')
         self.sso__online_auto()
@@ -602,8 +602,8 @@ class QueryTwoLower(Settings, Settings_sso):
             ord = ','.join(orderId)
             df = pd.DataFrame([])
             dp = self._stockcompose_upload_three(ord)
-            # print(dp)
-            # print(11)
+            print(dp)
+            print(11)
             dp.to_sql('customer_cp', con=self.engine1, index=False, if_exists='replace')
             sql = '''update `已下架表` a, `customer_cp` b
                         set a.`收货人`= IF(b.`收货人` = '' OR b.`收货人` IS NULL,NULL, b.`收货人`),
@@ -622,23 +622,17 @@ class QueryTwoLower(Settings, Settings_sso):
                 file_path = r'G:\\输出文件\\{0} 桃园仓重出 {1}单.xlsx'.format(rq, str(len(df)))
                 df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
                 print('正在运行宏…………')
-                # app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-                # app.display_alerts = False
-                # wbsht = app.books.open('D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm')
-                # wbsht1 = app.books.open(file_path)
-                # wbsht.macro('A解析')()
+                # 通过Win32的方式并不限制xls和xlsx（因为操作是wps在做）  https://wenku.baidu.com/view/3d298b06de36a32d7375a417866fb84ae45cc3ef.html
+                # excel =win32com.client.Dispatch('Excel.Application')  # word、excel、powerpoint对应的是微软的文字、表格和演示
+                excel = win32com.client.Dispatch('Ket.Application')  # wps、et、wpp对应的是金山文件、表格和演示
+                excel.Visible = False  # 可视化选项
+                Path = r"D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm"
+                workbook = excel.Workbooks.Open(Path)
+                workbook1 = excel.Workbooks.Open(file_path)
+                workbook.Application.Run("'D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm'!总审核解析.A解析")
+                workbook1.Save()
+                excel.Quit()
 
-                app = win32.Dispatch('Excel.Application')       # 通过Win32的方式并不限制xls和xlsx（因为操作是wps在做）
-                app.DisplayAlerts = 0
-                wbsht = app.Workbooks.open(r'D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm')
-                wbsht1 = app.Workbooks.open(file_path)
-                wbsht.macro('A解析')()
-
-                wbsht1.save()
-                wbsht1.close()
-                wbsht.close()
-                app.quit()
-                app.quit()
                 print('获取成功发送中......')
                 filepath = [file_path]
                 # self.e.send('{0} 桃园仓重出 {1}单.xlsx'.format(today, str(len(df))), filepath, emailAdd['gat'])
@@ -1145,7 +1139,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
-    select = 3
+    select = 2
     if select == 1:
         m.readFile(select)            # 上传每日压单核实结果
         m.order_spec()                # 压单反馈  （备注（压单核实是否需要））
