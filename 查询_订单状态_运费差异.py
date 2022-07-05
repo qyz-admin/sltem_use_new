@@ -471,7 +471,7 @@ class QueryUpdate(Settings):
         #             sheet_name='查询', index=False)
         # print('----已写入excel')
 
-    def onrount_online(self, team, login_TmpCode):
+    def onrount_online(self, team, login_TmpCode, handle):
         print('正在获取查询 在途-未上线 数据…………')
         rq = datetime.datetime.now().strftime('%Y.%m.%d')
         month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
@@ -506,7 +506,7 @@ class QueryUpdate(Settings):
                 where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
         # 调用更新库 函数
         up = Settings_sso()
-        up.updata(sql, sql2, team, data_df, data_df2, login_TmpCode)
+        up.updata(sql, sql2, team, data_df, data_df2, login_TmpCode, handle)
         print('更新完成…………')
 
         print('正在获取写入excel内容…………')
@@ -594,8 +594,9 @@ if __name__ == '__main__':
         if week.isoweekday() == 2 or week.isoweekday() == 4:
             upload = '查询-运单号'    # 获取在途未上线 催促的
             team = 'gat'
-            login_TmpCode = '535a53d574d134e9868c9c4a7f9758ba'
-            m.onrount_online(team, login_TmpCode)
+            login_TmpCode = '4692ea060abf38c1bcfe4cae9868c64a'
+            handle = '手动'
+            m.onrount_online(team, login_TmpCode, handle)
 
         
 

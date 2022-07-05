@@ -2009,7 +2009,7 @@ class Query_sso_updata(Settings):
         return df
 
     # 更新团队订单明细（新后台的获取  方法三的每天新增的订单更新）
-    def orderInfo_append(self, timeStart, timeEnd, areaId):  # 进入订单检索界面
+    def orderInfo_append(self, timeStart, timeEnd, areaId, token,handle):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
@@ -2130,7 +2130,7 @@ class Query_sso_updata(Settings):
             print(' ****** 没有要补充的信息; ****** ')
         else:
             print('！！！ 请再次补充缺少的数据中！！！')
-            lw = QueryTwoT('+86-18538110674', 'qyz35100416')
+            lw = QueryTwoT('+86-18538110674', 'qyz35100416', token, handle)
             lw.productInfo('d1_host_cp', ordersDict)
 
         print('正在导入 总表中......')

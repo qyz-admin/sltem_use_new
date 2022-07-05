@@ -23,7 +23,7 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  
 
 # -*- coding:utf-8 -*-
 class QueryTwoT(Settings, Settings_sso):
-    def __init__(self, userMobile, password):
+    def __init__(self, userMobile, password, login_TmpCode, handle):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
@@ -31,7 +31,13 @@ class QueryTwoT(Settings, Settings_sso):
         self.password = password
         # self._online()
         # self.sso_online_Two()
-        self.sso__online_auto()
+
+        # self.sso__online_auto()
+        if handle == '手动':
+            self.sso__online_handle(login_TmpCode)
+        else:
+            self.sso__online_auto()
+
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
