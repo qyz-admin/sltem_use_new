@@ -46,10 +46,10 @@ else:
     # 更新时间
     data_begin = datetime.date(2022, 5, 1)  # 数据库更新
     begin = datetime.date(2022, 5, 1)      # 单点更新
-    end = datetime.date(2022, 7, 5)
+    end = datetime.date(2022, 7, 6)
     # 导出时间
     month_last = '2022-05-01'
-    month_yesterday = '2022-07-04'
+    month_yesterday = '2022-07-05'
     month_begin = '2021-04-01'
 print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
@@ -99,7 +99,7 @@ print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
 print('---------------------------------- 数据库更新部分：--------------------------------')
-# m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
+m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
 
 # qu.EportOrder(team, month_last, month_yesterday, month_begin, '是')     # 最近两个月的更新信息导出
 # m.connectOrder(team, month_last, month_yesterday, month_begin)      # 停用 最近两个月的订单信息导出
@@ -110,7 +110,7 @@ print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
 if team == 'gat' and updata == '全部':
     print('---------------------------------- 单点更新部分：--------------------------------')
-    sso = Query_sso_updata('+86-18538110674', 'qyz35100416', '1343', '0233ce651208364ca5deb499a9325de4', '手动')
+    sso = Query_sso_updata('+86-18538110674', 'qyz35100416', '1343', '0233ce651208364ca5deb499a9325de4', '手0动')
 
     # sso.readFormHost('gat', '导入')                       # 导入新增的订单 line运营  手动导入
     # for i in range((end - begin).days):  # 按天循环获取订单状态
@@ -118,7 +118,7 @@ if team == 'gat' and updata == '全部':
     #     day_time = str(day)
     #     sso.orderInfo_append(day_time, day_time, '')               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
 
-    sso.orderInfo_append(str(begin), str(end), 179, '697d346f186f3b3fa8d7ff84bc928b20', '手动')               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
+    sso.orderInfo_append(str(begin), str(end), 179, '697d346f186f3b3fa8d7ff84bc928b20', '手0动')               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
     sso.orderInfo(team, updata, begin, end)
     print('更新耗时：', datetime.datetime.now() - start)
 
