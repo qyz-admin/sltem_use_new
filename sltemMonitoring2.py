@@ -351,143 +351,76 @@ class SltemMonitoring(Settings):
         show_name.append(' 月（旬）签收率_…………')
         # 月签收率（各月）---查询
         sqlqsb5 = '''SELECT sl_gat.`币种`,sl_gat.`年月`,sl_gat.父级分类,sl_gat.二级分类,sl_gat.三级分类,'' 产品名称,sl_gat.物流方式,sl_gat.旬,
-                                        sl_gat.`总订单量`,
-                                        sl_gat.`已签收订单量` / sl_gat.`拒收订单量` AS '总签收/完成',
-                                        sl_gat.`已签收订单量` / sl_gat.`总订单量` AS '总签收/总计',
-                                        sl_gat.`退货订单量` / sl_gat.`总订单量` AS '退款率',
-                                        sl_gat.`拒收订单量` / sl_gat.`总订单量` AS '总完成占比',
-                                        sl_gat.`直发订单量` 直发总计,
-                                        sl_gat.`直发已签收订单量` / sl_gat.`直发拒收订单量` AS '直发签收/完成',
-                                        sl_gat.`直发已签收订单量` / sl_gat.`直发订单量` AS '直发签收/总计', 
-                                        sl_gat.`直发拒收订单量` / sl_gat.`直发订单量` AS '直发完成占比',
-                                        sl_gat.`改派订单量` 改派总计,
-                                        sl_gat.`改派已签收订单量` / sl_gat.`改派拒收订单量` AS '改派签收/完成',
-                                        sl_gat.`改派已签收订单量` / sl_gat.`改派订单量` AS '改派签收/总计',
-                                        sl_gat.`改派拒收订单量` / sl_gat.`改派订单量` AS '改派完成占比',
-                                        sl_gat.`总销售额`,
-                                        sl_gat.`已签收销售额` / sl_gat.`拒收销售额` AS '总签收/完成(金额)',
-                                        sl_gat.`已签收销售额` / sl_gat.`总销售额` AS '总签收/总计(金额)',
-                                        sl_gat.`退货销售额` / sl_gat.`总销售额` AS '退款率(金额)',
-                                        sl_gat.`拒收销售额` / sl_gat.`总销售额` AS '总完成占比(金额)',
-                                        sl_gat.`直发销售额`,
-                                        sl_gat.`直发已签收销售额` / sl_gat.`直发拒收销售额` AS '直发签收/完成(金额)',
-                                        sl_gat.`直发已签收销售额` / sl_gat.`直发销售额` AS '直发签收/总计(金额)',
-                                        sl_gat.`直发拒收销售额` / sl_gat.`直发销售额` AS '直发完成占比(金额)',
-                                        sl_gat.`改派销售额`,
-                                        sl_gat.`改派已签收销售额` / sl_gat.`改派拒收销售额` AS '改派签收/完成(金额)',
-                                        sl_gat.`改派已签收销售额` / sl_gat.`改派销售额` AS '改派签收/总计(金额)',
-                                        sl_gat.`改派拒收销售额` / sl_gat.`改派销售额` AS '改派完成占比(金额)'
-                                FROM (SELECT  sl_zong.币种,IFNULL(sl_zong.年月,'合计') 年月,IFNULL(sl_zong.父级分类,'合计') 父级分类,IFNULL(sl_zong.二级分类,'合计') 二级分类, IFNULL(sl_zong.三级分类,'合计') 三级分类,IFNULL(sl_zong.物流方式,'合计') 物流方式,IFNULL(sl_zong.旬,'合计') 旬,
-                                            SUM(总订单量) 总订单量,
-                                            SUM(总销售额) 总销售额,
-                                            IFNULL(SUM(直发订单量),0) 直发订单量, IFNULL(SUM(直发销售额),0) 直发销售额,
-                                            IFNULL(SUM(直发已签收订单量),0) 直发已签收订单量, IFNULL(SUM(直发已签收销售额),0) 直发已签收销售额,
-                                            IFNULL(SUM(直发拒收订单量),0) 直发拒收订单量, IFNULL(SUM(直发拒收销售额),0) 直发拒收销售额,
-                                            (SUM(总订单量) - IFNULL(SUM(直发订单量),0)) AS 改派订单量, (SUM(总销售额) - IFNULL(SUM(直发销售额),0)) AS 改派销售额,
-                                            IFNULL(SUM(改派已签收订单量),0) 改派已签收订单量, IFNULL(SUM(改派已签收销售额),0) 改派已签收销售额,
-                                            IFNULL(SUM(改派拒收订单量),0) 改派拒收订单量, IFNULL(SUM(改派拒收销售额),0) 改派拒收销售额,
-                                            IFNULL(SUM(已签收订单量),0) 已签收订单量, IFNULL(SUM(已签收销售额),0) 已签收销售额,
-                                            IFNULL(SUM(拒收订单量),0) 拒收订单量, IFNULL(SUM(拒收销售额),0) 拒收销售额,
-                                            IFNULL(SUM(退货订单量),0) 退货订单量, IFNULL(SUM(退货销售额),0) 退货销售额
-                FROM (SELECT  币种,年月,父级分类,二级分类,三级分类,物流方式,旬,COUNT(`订单编号`) 总订单量,SUM(`价格RMB`) 总销售额
-                        FROM  {0} sl_cx
-                        WHERE sl_cx.`币种` = '{1}' AND sl_cx.`团队` IN ({2}) AND sl_cx.`父级分类` IS NOT NULL
-                        GROUP BY 币种,年月,父级分类,二级分类,三级分类,物流方式,旬
-                        ORDER BY 币种,年月
-                        ) sl_zong
-                LEFT JOIN
-                        (SELECT 币种,年月,父级分类,二级分类,三级分类,物流方式,旬,COUNT(`订单编号`) 直发订单量,SUM(`价格RMB`) 直发销售额
-                        FROM  {0}	sl_zong_zf
-                        WHERE sl_zong_zf.`币种` = '{1}' AND sl_zong_zf.`团队` IN ({2}) AND sl_zong_zf.`是否改派` = "直发" AND sl_zong_zf.`父级分类` IS NOT NULL
-                        GROUP BY 币种,年月,父级分类,二级分类,三级分类,物流方式,旬
-                        ORDER BY 币种,年月
-                        ) sl_zong_zf 
-                ON sl_zong_zf.`币种` = sl_zong.`币种` AND sl_zong_zf.`年月` = sl_zong.`年月`AND sl_zong_zf.`父级分类` = sl_zong.`父级分类` 
-                    AND sl_zong_zf.`二级分类` = sl_zong.`二级分类` AND sl_zong_zf.`三级分类` = sl_zong.`三级分类` 
-                    AND sl_zong_zf.`物流方式` = sl_zong.`物流方式` AND sl_zong_zf.`旬` = sl_zong.`旬` 							
-                LEFT JOIN
-                        (SELECT 币种,年月,父级分类,二级分类,三级分类,物流方式,旬,COUNT(`订单编号`) 直发已签收订单量,SUM(`价格RMB`) 直发已签收销售额
-                        FROM  {0}	slzf_qs
-                        WHERE slzf_qs.`币种` = '{1}' AND slzf_qs.`团队` IN ({2}) AND slzf_qs.`是否改派` = "直发"  AND slzf_qs.`最终状态` = "已签收" AND slzf_qs.`父级分类` IS NOT NULL
-                        GROUP BY 币种,年月,父级分类,二级分类,三级分类,物流方式,旬
-                        ORDER BY 币种,年月
-                        ) sl_cx_zf_qs
-                ON sl_cx_zf_qs.`币种` = sl_zong.`币种` AND sl_cx_zf_qs.`年月` = sl_zong.`年月` AND sl_cx_zf_qs.`父级分类` = sl_zong.`父级分类` 
-                    AND sl_cx_zf_qs.`二级分类` = sl_zong.`二级分类` AND sl_cx_zf_qs.`三级分类` = sl_zong.`三级分类` 
-                    AND sl_cx_zf_qs.`物流方式` = sl_zong.`物流方式` AND sl_cx_zf_qs.`旬` = sl_zong.`旬` 		
-                LEFT JOIN
-                        (SELECT 币种,年月,父级分类,二级分类,三级分类,物流方式,旬,COUNT(`订单编号`) 直发拒收订单量,SUM(`价格RMB`) 直发拒收销售额
-                        FROM  {0}	slzf_js
-                        WHERE slzf_js.`币种` = '{1}' AND slzf_js.`团队` IN ({2}) AND slzf_js.`是否改派` = "直发"  AND slzf_js.`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件')  AND slzf_js.`父级分类` IS NOT NULL 
-                        GROUP BY 币种,年月,父级分类,二级分类,三级分类,物流方式,旬
-                        ORDER BY 币种,年月
-                        ) sl_cx_zf_js
-                ON sl_cx_zf_js.`币种` = sl_zong.`币种` AND sl_cx_zf_js.`年月` = sl_zong.`年月` AND sl_cx_zf_js.`父级分类` = sl_zong.`父级分类` 
-                    AND sl_cx_zf_js.`二级分类` = sl_zong.`二级分类` AND sl_cx_zf_js.`三级分类` = sl_zong.`三级分类` 
-                    AND sl_cx_zf_js.`物流方式` = sl_zong.`物流方式` AND sl_cx_zf_js.`旬` = sl_zong.`旬` 
-                LEFT JOIN
-                        (SELECT 币种,年月,父级分类,二级分类,三级分类,物流方式,旬,COUNT(`订单编号`) 改派订单量,SUM(`价格RMB`) 改派销售额
-                        FROM  {0}	sl_cx_gp
-                        WHERE sl_cx_gp.`币种` = '{1}' AND sl_cx_gp.`团队` IN ({2}) AND sl_cx_gp.`是否改派` = "改派" AND sl_cx_gp.`父级分类` IS NOT NULL
+                            sl_gat.`总订单量`,
+                            sl_gat.`已签收订单量` / sl_gat.`完成订单量` AS '总签收/完成',
+                            sl_gat.`已签收订单量` / sl_gat.`总订单量` AS '总签收/总计',
+                            sl_gat.`退货订单量` / sl_gat.`总订单量` AS '退款率',
+                            sl_gat.`完成订单量` / sl_gat.`总订单量` AS '总完成占比',
+                            sl_gat.`直发订单量` 直发总计,
+                            sl_gat.`直发已签收订单量` / sl_gat.`直发完成订单量` AS '直发签收/完成',
+                            sl_gat.`直发已签收订单量` / sl_gat.`直发订单量` AS '直发签收/总计', 
+                            sl_gat.`直发完成订单量` / sl_gat.`直发订单量` AS '直发完成占比',
+                            sl_gat.`改派订单量` 改派总计,
+                            sl_gat.`改派已签收订单量` / sl_gat.`改派完成订单量` AS '改派签收/完成',
+                            sl_gat.`改派已签收订单量` / sl_gat.`改派订单量` AS '改派签收/总计',
+                            sl_gat.`改派完成订单量` / sl_gat.`改派订单量` AS '改派完成占比',
+                            sl_gat.`总销售额`,
+                            sl_gat.`已签收销售额` / sl_gat.`完成销售额` AS '总签收/完成(金额)',
+                            sl_gat.`已签收销售额` / sl_gat.`总销售额` AS '总签收/总计(金额)',
+                            sl_gat.`退货销售额` / sl_gat.`总销售额` AS '退款率(金额)',
+                            sl_gat.`完成销售额` / sl_gat.`总销售额` AS '总完成占比(金额)',
+                            sl_gat.`直发销售额`,
+                            sl_gat.`直发已签收销售额` / sl_gat.`直发完成销售额` AS '直发签收/完成(金额)',
+                            sl_gat.`直发已签收销售额` / sl_gat.`直发销售额` AS '直发签收/总计(金额)',
+                            sl_gat.`直发完成销售额` / sl_gat.`直发销售额` AS '直发完成占比(金额)',
+                            sl_gat.`改派销售额`,
+                            sl_gat.`改派已签收销售额` / sl_gat.`改派完成销售额` AS '改派签收/完成(金额)',
+                            sl_gat.`改派已签收销售额` / sl_gat.`改派销售额` AS '改派签收/总计(金额)',
+                            sl_gat.`改派完成销售额` / sl_gat.`改派销售额` AS '改派完成占比(金额)'
+                    FROM (SELECT  币种,IFNULL(年月,'合计') 年月,IFNULL(父级分类,'合计') 父级分类,IFNULL(二级分类,'合计') 二级分类, IFNULL(三级分类,'合计') 三级分类,IFNULL(物流方式,'合计') 物流方式,IFNULL(旬,'合计') 旬,
+                                SUM(总订单量) 总订单量,
+                                SUM(总销售额) 总销售额,
+                                IFNULL(SUM(直发订单量),0) 直发订单量, IFNULL(SUM(直发销售额),0) 直发销售额,
+                                IFNULL(SUM(直发已签收订单量),0) 直发已签收订单量, IFNULL(SUM(直发已签收销售额),0) 直发已签收销售额,
+                                IFNULL(SUM(直发完成订单量),0) 直发完成订单量, IFNULL(SUM(直发完成销售额),0) 直发完成销售额,
+                                (SUM(总订单量) - IFNULL(SUM(直发订单量),0)) AS 改派订单量, (SUM(总销售额) - IFNULL(SUM(直发销售额),0)) AS 改派销售额,
+                                IFNULL(SUM(改派已签收订单量),0) 改派已签收订单量, IFNULL(SUM(改派已签收销售额),0) 改派已签收销售额,
+                                IFNULL(SUM(改派完成订单量),0) 改派完成订单量, IFNULL(SUM(改派完成销售额),0) 改派完成销售额,
+                                IFNULL(SUM(已签收订单量),0) 已签收订单量, IFNULL(SUM(已签收销售额),0) 已签收销售额,
+                                IFNULL(SUM(完成订单量),0) 完成订单量, IFNULL(SUM(完成销售额),0) 完成销售额,
+                                IFNULL(SUM(退货订单量),0) 退货订单量, IFNULL(SUM(退货销售额),0) 退货销售额
+                        FROM (SELECT  币种,年月,父级分类,二级分类,三级分类,物流方式,旬,
+                                    COUNT(`订单编号`) 总订单量,
+                                    SUM(`价格RMB`) 总销售额,
+                                    SUM(IF(`最终状态` = "已签收",1,0)) 已签收订单量,
+                                    SUM(IF(`最终状态` = "已签收",1,0)) 已签收销售额,
+                                    SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0)) 完成订单量,
+                                    SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0)) 完成销售额,
+                                    SUM(IF(`最终状态` = "已退货",1,0)) 退货订单量,
+                                    SUM(IF(`最终状态` = "已退货",1,0)) 退货销售额,
+
+                                    SUM(IF(`是否改派` = "直发",1,0)) 直发订单量,
+                                    SUM(IF(`是否改派` = "直发",`价格RMB`,0)) 直发销售额,
+                                    SUM(IF(`是否改派` = "直发" AND `最终状态` = "已签收",1,0)) 直发已签收订单量,
+                                    SUM(IF(`是否改派` = "直发" AND `最终状态` = "已签收",`价格RMB`,0)) 直发已签收销售额,
+                                    SUM(IF(`是否改派` = "直发" AND `最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0)) 直发完成订单量,
+                                    SUM(IF(`是否改派` = "直发" AND `最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),`价格RMB`,0)) 直发完成销售额,
+                                    
+                                    SUM(IF(`是否改派` = "改派",1,0)) 改派订单量,
+                                    SUM(IF(`是否改派` = "改派",`价格RMB`,0)) 改派销售额,
+                                    SUM(IF(`是否改派` = "改派" AND `最终状态` = "已签收",1,0)) 改派已签收订单量,
+                                    SUM(IF(`是否改派` = "改派" AND `最终状态` = "已签收",`价格RMB`,0)) 改派已签收销售额,
+                                    SUM(IF(`是否改派` = "改派" AND `最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0)) 改派完成订单量,
+                                    SUM(IF(`是否改派` = "改派" AND `最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),`价格RMB`,0)) 改派完成销售额	
+                            FROM {0} sl_cx
+                            WHERE sl_cx.`币种` = '{1}' AND sl_cx.`团队` IN ({2}) AND sl_cx.`父级分类` IS NOT NULL
                             GROUP BY 币种,年月,父级分类,二级分类,三级分类,物流方式,旬
                             ORDER BY 币种,年月
-                        ) sl_zong_gp
-                ON sl_zong_gp.`币种` = sl_zong.`币种` AND sl_zong_gp.`年月` = sl_zong.`年月` AND sl_zong_gp.`父级分类` = sl_zong.`父级分类` 
-                    AND sl_zong_gp.`二级分类` = sl_zong.`二级分类` AND sl_zong_gp.`三级分类` = sl_zong.`三级分类` 
-                    AND sl_zong_gp.`物流方式` = sl_zong.`物流方式` AND sl_zong_gp.`旬` = sl_zong.`旬` 
-                LEFT JOIN
-                        (SELECT 币种,年月,父级分类,二级分类,三级分类,物流方式,旬,COUNT(`订单编号`) 改派已签收订单量,SUM(`价格RMB`) 改派已签收销售额
-                        FROM  {0}	slgp_qs
-                        WHERE slgp_qs.`币种` = '{1}' AND slgp_qs.`团队` IN ({2})  AND slgp_qs.`是否改派` = "改派"  AND slgp_qs.`最终状态` = "已签收" AND slgp_qs.`父级分类` IS NOT NULL
-                        GROUP BY 币种,年月,父级分类,二级分类,三级分类,物流方式,旬
-                        ORDER BY 币种,年月
-                        ) sl_cx_gp_qs
-                    ON sl_cx_gp_qs.`币种` = sl_zong.`币种` AND sl_cx_gp_qs.`年月` = sl_zong.`年月` AND sl_cx_gp_qs.`父级分类` = sl_zong.`父级分类` 
-                        AND sl_cx_gp_qs.`二级分类` = sl_zong.`二级分类` AND sl_cx_gp_qs.`三级分类` = sl_zong.`三级分类` 
-                        AND sl_cx_gp_qs.`物流方式` = sl_zong.`物流方式` AND sl_cx_gp_qs.`旬` = sl_zong.`旬` 
-                LEFT JOIN
-                        (SELECT 币种,年月,父级分类,二级分类,三级分类,物流方式,旬,COUNT(`订单编号`) 改派拒收订单量,SUM(`价格RMB`) 改派拒收销售额
-                        FROM  {0}	sl_cx_gp_jushou
-                        WHERE sl_cx_gp_jushou.`币种` = '{1}' AND sl_cx_gp_jushou.`团队` IN ({2}) AND sl_cx_gp_jushou.`父级分类` IS NOT NULL AND sl_cx_gp_jushou.`是否改派` = "改派"  AND sl_cx_gp_jushou.`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') 
-                        GROUP BY 币种,年月,父级分类,二级分类,三级分类,物流方式,旬
-                        ORDER BY 币种,年月
-                        ) sl_cx_gp_js
-                    ON sl_cx_gp_js.`币种` = sl_zong.`币种` AND sl_cx_gp_js.`年月` = sl_zong.`年月` AND sl_cx_gp_js.`父级分类` = sl_zong.`父级分类` 
-                        AND sl_cx_gp_js.`二级分类` = sl_zong.`二级分类` AND sl_cx_gp_js.`三级分类` = sl_zong.`三级分类` 
-                        AND sl_cx_gp_js.`物流方式` = sl_zong.`物流方式` AND sl_cx_gp_js.`旬` = sl_zong.`旬` 				
-                LEFT JOIN
-                        (SELECT 币种,年月,父级分类,二级分类,三级分类,物流方式,旬,COUNT(`订单编号`) 已签收订单量,SUM(`价格RMB`) 已签收销售额
-                        FROM  {0}	sl_cx_qianshou
-                        WHERE sl_cx_qianshou.`币种` = '{1}' AND sl_cx_qianshou.`团队` IN ({2}) AND sl_cx_qianshou.`最终状态` = "已签收" AND sl_cx_qianshou.`父级分类` IS NOT NULL
-                        GROUP BY 币种,年月,父级分类,二级分类,三级分类,物流方式,旬
-                        ORDER BY 币种,年月
-                        ) sl_zong_qianshou
-                    ON sl_zong_qianshou.`币种` = sl_zong.`币种` AND sl_zong_qianshou.`年月` = sl_zong.`年月` AND sl_zong_qianshou.`父级分类` = sl_zong.`父级分类` 
-                        AND sl_zong_qianshou.`二级分类` = sl_zong.`二级分类`  AND sl_zong_qianshou.`三级分类` = sl_zong.`三级分类` 
-                        AND sl_zong_qianshou.`物流方式` = sl_zong.`物流方式` AND sl_zong_qianshou.`旬` = sl_zong.`旬`
-                LEFT JOIN
-                        (SELECT 币种,年月,父级分类,二级分类,三级分类,物流方式,旬,COUNT(`订单编号`) 拒收订单量,SUM(`价格RMB`) 拒收销售额
-                        FROM  {0}	sl_cx_jushou
-                        WHERE sl_cx_jushou.`币种` = '{1}' AND sl_cx_jushou.`团队` IN ({2}) AND sl_cx_jushou.`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件')  AND sl_cx_jushou.`父级分类` IS NOT NULL
-                        GROUP BY 币种,年月,父级分类,二级分类,三级分类,物流方式,旬
-                        ORDER BY 币种,年月
-                        ) sl_zong_jushou
-                    ON sl_zong_jushou.`币种` = sl_zong.`币种` AND sl_zong_jushou.`年月` = sl_zong.`年月` AND sl_zong_jushou.`父级分类` = sl_zong.`父级分类` 
-                        AND sl_zong_jushou.`二级分类` = sl_zong.`二级分类` AND sl_zong_jushou.`三级分类` = sl_zong.`三级分类` 
-                        AND sl_zong_jushou.`物流方式` = sl_zong.`物流方式` AND sl_zong_jushou.`旬` = sl_zong.`旬` 
-                LEFT JOIN
-                        (SELECT 币种,年月,父级分类,二级分类,三级分类,物流方式,旬,COUNT(`订单编号`) 退货订单量,SUM(`价格RMB`) 退货销售额
-                        FROM  {0}	sl_cx_tuihuo
-                        WHERE sl_cx_tuihuo.`币种` = '{1}' AND sl_cx_tuihuo.`团队` IN ({2}) AND sl_cx_tuihuo.`最终状态` = "已退货" AND sl_cx_tuihuo.`父级分类` IS NOT NULL
-                        GROUP BY 币种,年月,父级分类,二级分类,三级分类,物流方式,旬
-                        ORDER BY 币种,年月
-                        ) sl_zong_tuihuo
-                    ON sl_zong_tuihuo.`币种` = sl_zong.`币种` AND sl_zong_tuihuo.`年月` = sl_zong.`年月` AND sl_zong_tuihuo.`父级分类` = sl_zong.`父级分类` 
-                        AND sl_zong_tuihuo.`二级分类` = sl_zong.`二级分类` AND sl_zong_tuihuo.`三级分类` = sl_zong.`三级分类` 
-                        AND sl_zong_tuihuo.`物流方式` = sl_zong.`物流方式`AND sl_zong_tuihuo.`旬` = sl_zong.`旬` 
-                GROUP BY sl_zong.年月,sl_zong.父级分类,sl_zong.二级分类,sl_zong.三级分类,sl_zong.物流方式,sl_zong.旬
-                with rollup) sl_gat 
-                ORDER BY sl_gat.`年月` DESC;'''.format('qsb_缓存_month_cp', currency, match[team])
+						) s
+						GROUP BY s.年月,s.父级分类,s.二级分类,s.三级分类,s.物流方式,s.旬
+                        with rollup
+					) sl_gat 
+                    ORDER BY sl_gat.`年月` DESC;'''.format('qsb_缓存_month_cp', currency, match[team])
         listT.append(sqlqsb5)
         show_name.append(' 月（各月）签收率_…………')
 
@@ -1075,14 +1008,14 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2022.06.06'
-    now_month = '2022.07.06'
+    last_month = '2022.06.07'
+    now_month = '2022.07.07'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传
 
     # 测试监控运行（二）-- 第一种手动方式
-    # m.order_Monitoring('港台')        # 各月缓存（整体一）
+    m.order_Monitoring('港台')        # 各月缓存（整体一）
     # for team in ['神龙-台湾', '神龙-香港', '神龙运营1组-台湾', '火凤凰-台湾', '火凤凰-香港', '小虎队-台湾']:
     for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '神龙运营1组-台湾']:
     # for team in ['神龙-台湾', '神龙-香港', '神龙运营1组-台湾']:

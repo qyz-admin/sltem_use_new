@@ -94,6 +94,7 @@ class QueryTwo(Settings, Settings_sso):
                     if team == 'gat_logisitis_googs':
                         db.rename(columns={'订单号': '订单编号'}, inplace=True)
                         db.rename(columns={'承运单号': '运单编号'}, inplace=True)
+                        db.rename(columns={'子单号': '运单编号'}, inplace=True)
                         # print(db.columns)
                         if '物流状态' not in db.columns and '末条时间' not in db.columns and '末条信息' not in db.columns:
                             db.insert(0, '物流状态', '')
