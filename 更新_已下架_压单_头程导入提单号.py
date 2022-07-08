@@ -610,14 +610,13 @@ class QueryTwoLower(Settings, Settings_sso):
                             a.`收货地址`= IF(b.`收货地址` = '' OR b.`收货地址` IS NULL,NULL, b.`收货地址`)
                     WHERE a.记录时间 >= TIMESTAMP (CURDATE()) AND a.`订单编号` = b.`订单编号`;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
             print('获取每日新增 桃园仓重出 表......')
             rq = datetime.datetime.now().strftime('%m.%d')
             sql = '''SELECT NULL AS 客代,原运单号 AS 原單號, 退货单号 AS 退單號, 订单编号, 收货人 AS 收件人, 联系电话 AS 收件人電話, 收货地址 AS 收件人地址, 商品名称 AS 品名, 购买数量 AS 件數, 订单金额 AS 台幣代收款, 团队
                      FROM 已下架表 yx
                      WHERE yx.记录时间 >= TIMESTAMP(CURDATE()) AND yx.仓库 = '易速配-桃园仓' AND (yx.`新运单号` IS NULL OR yx.`新运单号` = '');'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            dp.to_excel('G:\\输出文件\\组合库存-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel('G:\\输出文件\\组合库存-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             if df is not None and len(df) > 0:
                 file_path = r'G:\\输出文件\\{0} 桃园仓重出 {1}单.xlsx'.format(rq, str(len(df)))
                 df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
@@ -1139,7 +1138,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
-    select = 2
+    select = 3
     if select == 1:
         m.readFile(select)            # 上传每日压单核实结果
         m.order_spec()                # 压单反馈  （备注（压单核实是否需要））

@@ -99,16 +99,16 @@ print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
 print('---------------------------------- 数据库更新部分：--------------------------------')
-m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
+# m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
 
-# qu.EportOrder(team, month_last, month_yesterday, month_begin, '是')     # 最近两个月的更新信息导出
+qu.EportOrder(team, month_last, month_yesterday, month_begin, '是')     # 最近两个月的更新信息导出
 # m.connectOrder(team, month_last, month_yesterday, month_begin)      # 停用 最近两个月的订单信息导出
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
     m.creatMyOrderSlTWO(team, begin, end)                               # 停用 最近两个月的 部分内容 更新信息
     m.connectOrder(team, month_last, month_yesterday, month_begin)      # 停用 最近两个月的订单信息导出
 '''
-if team == 'gat' and updata == '全部':
+if team == 'ga0t' and updata == '全部':
     print('---------------------------------- 单点更新部分：--------------------------------')
     sso = Query_sso_updata('+86-18538110674', 'qyz35100416', '1343', '0233ce651208364ca5deb499a9325de4', '手0动')
 
