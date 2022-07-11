@@ -1453,7 +1453,7 @@ if __name__ == '__main__':
         start: datetime = datetime.datetime.now()
 
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 已下架       更新； 自动时 输入的时间无效；切为不自动时，有效
-        # lw.stockcompose_upload()                              # 获取 桃园仓重出、
+        lw.stockcompose_upload()                              # 获取 桃园仓重出、
         lw.get_take_delivery_no()                             # 头程物流跟踪 更新； 获取最近10天的信息
 
         lw.readFile(1)                                        # 上传每日压单核实结果

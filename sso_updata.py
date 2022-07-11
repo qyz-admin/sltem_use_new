@@ -2111,7 +2111,7 @@ class Query_sso_updata(Settings):
                     				        null 回款时间,
                                             null IP,
                     				        null 选品人
-                                    FROM d1_host h 
+                                    FROM d1_host h
                                     LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
                                     LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
                                     LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`
