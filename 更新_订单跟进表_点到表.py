@@ -74,14 +74,19 @@ class QueryTwo(Settings, Settings_sso):
                 print(filePath)
                 if '时长区间订单明细' in dir:
                     team = 'gat_waybill_list'
+                    reassignmentTypeName = '直发'
+                elif '改派时长区间订单明细' in dir:
+                    team = 'gat_waybill_list'
+                    reassignmentTypeName = '改派'
                 else:
+                    reassignmentTypeName = ''
                     team = 'gat_logisitis_googs'
-                self.wbsheetHost(filePath, team)
+                self.wbsheetHost(filePath, team, reassignmentTypeName)
                 os.remove(filePath)
                 print('已清除上传文件…………')
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
-    def wbsheetHost(self, filePath, team):
+    def wbsheetHost(self, filePath, team, reassignmentTypeName):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
         app.display_alerts = False
@@ -110,7 +115,8 @@ class QueryTwo(Settings, Settings_sso):
                         db.dropna(axis=0, how='any', inplace=True)  # 空值（缺失值），将空值所在的行/列删除后
                     elif team == 'gat_waybill_list':
                         db.insert(0, '运单编号', '')
-                        db = db[['订单编号', '运单编号', '物流', '物流状态', '订单状态', '下单时间', '出库时间', '提货时间','上线时间','完成时间']]
+                        db.insert(0, '是否改派', reassignmentTypeName)
+                        db = db[['订单编号', '是否改派', '运单编号', '物流', '物流状态', '订单状态', '下单时间', '出库时间', '提货时间','上线时间','完成时间']]
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:

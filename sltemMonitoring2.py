@@ -496,9 +496,9 @@ class SltemMonitoring(Settings):
                                     SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发下单完成量,
                                     SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`),0)) AS '直发下单-完成时',
                                     SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发出货上线量,
-                                    SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`,`出货时间`),0)) AS '直发出货-上线时',
+                                    SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`)),0)) AS '直发出货-上线时',
                                     SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发上线完成量,
-                                    SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`完结状态时间`,`上线时间`),0)) AS '直发上线-完成时'
+                                    SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`),0)) AS '直发上线-完成时'
                             FROM {0} sl_cx
                             WHERE (sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}')
                                 AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
@@ -532,9 +532,9 @@ class SltemMonitoring(Settings):
                                     SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发下单完成量,
                                     SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`),0)) AS '直发下单-完成时',
                                     SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发出货上线量,
-                                    SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`,`出货时间`),0)) AS '直发出货-上线时',
+                                    SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`)),0)) AS '直发出货-上线时',
                                     SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发上线完成量,
-                                    SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`完结状态时间`,`上线时间`),0)) AS '直发上线-完成时'
+                                    SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`),0)) AS '直发上线-完成时'
                             FROM {0} sl_cx
                             WHERE (sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}')
                                 AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
@@ -597,9 +597,9 @@ class SltemMonitoring(Settings):
                                         COUNT(`订单编号`) 直发下单完成量,
                                         SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
                                         COUNT(`订单编号`) 直发出货上线量,
-                                        SUM(DATEDIFF(`上线时间`,`出货时间`)) AS '直发出货-上线时',
+                                        SUM(DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`))) AS '直发出货-上线时',
                                         COUNT(`订单编号`) 直发上线完成量,
-                                        SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
+                                        SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`)) AS '直发上线-完成时'
                                 FROM  {0}	sl_cx_zf_wancheng
                                 WHERE sl_cx_zf_wancheng.`币种` = '{1}' AND sl_cx_zf_wancheng.`团队` IN ({2}) AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL AND sl_cx_zf_wancheng.`是否改派` = "直发" AND sl_cx_zf_wancheng.`最终状态`IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') 
                                 GROUP BY 币种,年月,物流方式,父级分类,旬
@@ -657,9 +657,9 @@ class SltemMonitoring(Settings):
                                         COUNT(`订单编号`) 直发下单完成量,
                                         SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
                                         COUNT(`订单编号`) 直发出货上线量,
-                                        SUM(DATEDIFF(`上线时间`,`出货时间`)) AS '直发出货-上线时',
+                                        SUM(DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`))) AS '直发出货-上线时',
                                         COUNT(`订单编号`) 直发上线完成量,
-                                        SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
+                                        SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`)) AS '直发上线-完成时'
                                 FROM  {0} sl_cx_zf_wancheng
                                 WHERE sl_cx_zf_wancheng.`币种` = '{1}' AND sl_cx_zf_wancheng.`团队` IN ({2}) AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL AND sl_cx_zf_wancheng.`是否改派` = "直发" AND sl_cx_zf_wancheng.`最终状态`IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') 
                                 GROUP BY 币种,年,年月,物流方式,父级分类,旬
@@ -696,9 +696,9 @@ class SltemMonitoring(Settings):
                                             SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发下单完成量,
                                             SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`),0)) AS '直发下单-完成时',
                                             SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发出货上线量,
-                                            SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`,`出货时间`),0)) AS '直发出货-上线时',
+                                            SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`)),0)) AS '直发出货-上线时',
                                             SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发上线完成量,
-                                            SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`完结状态时间`,`上线时间`),0)) AS '直发上线-完成时'
+                                            SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`),0)) AS '直发上线-完成时'
                                     FROM {0} sl_cx
                                     WHERE (sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}')
                                         AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
@@ -732,9 +732,9 @@ class SltemMonitoring(Settings):
                                             SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发下单完成量,
                                             SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`),0)) AS '直发下单-完成时',
                                             SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发出货上线量,
-                                            SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`,`出货时间`),0)) AS '直发出货-上线时',
+                                            SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`)),0)) AS '直发出货-上线时',
                                             SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发上线完成量,
-                                            SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`完结状态时间`,`上线时间`),0)) AS '直发上线-完成时'
+                                            SUM(IF(`最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`),0)) AS '直发上线-完成时'
                                     FROM {0} sl_cx
                                     WHERE (sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}')
                                         AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
@@ -797,9 +797,9 @@ class SltemMonitoring(Settings):
                                                 COUNT(`订单编号`) 直发下单完成量,
                                                 SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
                                                 COUNT(`订单编号`) 直发出货上线量,
-                                                SUM(DATEDIFF(`上线时间`,`出货时间`)) AS '直发出货-上线时',
+                                                SUM(DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`))) AS '直发出货-上线时',
                                                 COUNT(`订单编号`) 直发上线完成量,
-                                                SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
+                                                SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`)) AS '直发上线-完成时'
                                         FROM  {0}	sl_cx_zf_wancheng
                                         WHERE sl_cx_zf_wancheng.`币种` = '{1}' AND sl_cx_zf_wancheng.`团队` IN ({2}) AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL AND sl_cx_zf_wancheng.`是否改派` = "改派" AND sl_cx_zf_wancheng.`最终状态`IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') 
                                         GROUP BY 币种,年月,物流方式,父级分类,旬
@@ -857,9 +857,9 @@ class SltemMonitoring(Settings):
                                                 COUNT(`订单编号`) 直发下单完成量,
                                                 SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
                                                 COUNT(`订单编号`) 直发出货上线量,
-                                                SUM(DATEDIFF(`上线时间`,`出货时间`)) AS '直发出货-上线时',
+                                                SUM(DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`))) AS '直发出货-上线时',
                                                 COUNT(`订单编号`) 直发上线完成量,
-                                                SUM(DATEDIFF(`完结状态时间`,`上线时间`)) AS '直发上线-完成时'
+                                                SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`)) AS '直发上线-完成时'
                                         FROM  {0} sl_cx_zf_wancheng
                                         WHERE sl_cx_zf_wancheng.`币种` = '{1}' AND sl_cx_zf_wancheng.`团队` IN ({2}) AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL AND sl_cx_zf_wancheng.`是否改派` = "改派" AND sl_cx_zf_wancheng.`最终状态`IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') 
                                         GROUP BY 币种,年,年月,物流方式,父级分类,旬
@@ -1009,7 +1009,7 @@ if __name__ == '__main__':
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
     last_month = '2022.06.13'
-    now_month = '2022.07.11'
+    now_month = '2022.07.12'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传

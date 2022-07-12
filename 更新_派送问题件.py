@@ -111,7 +111,7 @@ class QueryTwo(Settings, Settings_sso):
                                 SUM(IF(s1.回复类型 <> "" AND 备注 <> "已签收" AND 备注 <> "无人接听",1,0)) AS 电话, 
                                 SUM(IF(回复类型 = "回复",1,0)) AS 客户回复再派量, 物流再派, 物流再派签收, 物流3派, 物流3派签收, NULL AS 未派, 异常,
                                 s4.签收单量 AS 上月签收单量, s4.拒收单量 AS 上月拒收单量, s4.总单量 AS 上月总单量, s5.上月派送问题件单量
-                        FROM(   SELECT *, IF(派送问题 LIKE "地址问题" OR 派送问题 LIKE "客户要求更改派送时间或者地址","地址问题/客户要求更改派送时间或者地址",派送问题) AS 问题件类型,
+                        FROM(   SELECT *, IF(派送问题 LIKE "地址问题" OR 派送问题 LIKE "客户要求更改派送时间或者地址","地址问题/客户要求更改派送时间或者地址",IF(派送问题 LIKE "送达客户不在" OR 派送问题 LIKE "客户长期不在","送达客户不在/客户长期不在",派送问题)) AS 问题件类型,
                                         IF(备注 <> "", IF(备注 LIKE "已签收%","已签收",IF(备注 LIKE "无人接听%","无人接听",IF(备注 LIKE "拒收%","拒收",
                                         IF(备注 LIKE "%*%","未回复",IF(备注 NOT LIKE "%*%","回复",备注))))),备注) AS 回复类型
                                 FROM 派送问题件_跟进表 p
@@ -143,7 +143,7 @@ class QueryTwo(Settings, Settings_sso):
                         GROUP BY s1.币种, s1.创建日期, s1.问题件类型
                 ) s
                 ORDER BY s.币种, s.创建日期 , 
-                FIELD(s.问题件类型,'送至便利店','地址问题/客户要求更改派送时间或者地址','客户长期不在','送达客户不在','客户不接电话','拒收','合计');'''.format(timeStart)
+                FIELD(s.问题件类型,'送至便利店','地址问题/客户要求更改派送时间或者地址','客户自取','客户不接电话','送达客户不在/客户长期不在','拒收','合计');'''.format(timeStart)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         db2 = df[(df['币种'].str.contains('台币'))]
         db3 = df[(df['币种'].str.contains('港币'))]
@@ -228,11 +228,11 @@ class QueryTwo(Settings, Settings_sso):
             dp.columns = ['订单编号', '币种', '下单时间', '创建时间', '完成时间', '派送问题', '订单状态', '物流状态',
                           '订单类型', '物流渠道',  '派送问题首次时间', '处理人', '处理记录', '处理时间', '备注', '派送次数']
             print('正在写入......')
-            dp.to_sql('customer_up', con=self.engine1, index=False, if_exists='replace')
+            dp.to_sql('cache_info', con=self.engine1, index=False, if_exists='replace')
             # dp.to_excel('G:\\输出文件\\派送问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO 派送问题件_跟进表(订单编号,币种, 下单时间,完成时间,订单状态,物流状态,订单类型,物流渠道, 创建日期, 创建时间, 派送问题, 派送问题首次时间, 派送次数,处理人, 处理记录, 处理时间,备注, 记录时间) 
                     SELECT 订单编号,币种, 下单时间,完成时间,订单状态,物流状态,订单类型,物流渠道, DATE_FORMAT(创建时间,'%Y-%m-%d') 创建日期, 创建时间, 派送问题, 派送问题首次时间, 派送次数, 处理人, 处理记录, IF(处理时间 = '',NULL,处理时间) 处理时间,备注,NOW() 记录时间 
-                    FROM customer_up;'''
+                    FROM cache_info;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
         else:
@@ -303,10 +303,10 @@ class QueryTwo(Settings, Settings_sso):
                 print(data)
                 dlist.append(data)
         dp = df.append(dlist, ignore_index=True)
-        dp.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
+        dp.to_sql('cache_info', con=self.engine1, index=False, if_exists='replace')
         sql = '''REPLACE INTO 派送问题件_跟进表2(币种,日期,总单量,签收单量, 拒收单量) 
                 SELECT 币种,日期,总单量,签收单量, 拒收单量
-                FROM cache_cp;'''
+                FROM cache_info;'''
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
     def _getOrderList(self, id, log, timeStart, timeEnd):  # 进入订单检索界面
         print('+++正在查询信息中')
@@ -358,17 +358,15 @@ if __name__ == '__main__':
 
         elif int(select) == 99:         # 查询更新-派送问题件
             timeStart, timeEnd = m.readInfo('派送问题件_跟进表')
-            # m.getOrderList('2022-07-07', '2022-07-12')
+            m.getOrderList('2022-07-10', '2022-07-11')
             # m.getOrderList(timeStart, timeEnd)                        # 订单完成单量 更新
 
             # m.getDeliveryList('2022-06-12', '2022-06-30')
-            # m.getDeliveryList('2022-07-07', '2022-07-12')
+            m.getDeliveryList('2022-07-01', '2022-07-11')
             # m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
 
-
-
-            m.outport_getDeliveryList('2022-07-01', '2022-07-10')
-            # m.outport_getDeliveryList(timeStart, timeEnd)
+            m.outport_getDeliveryList('2022-07-01', '2022-07-11')
+            # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
 
 
