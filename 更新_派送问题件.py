@@ -100,17 +100,34 @@ class QueryTwo(Settings, Settings_sso):
                  FIELD(问题件类型,'送至便利店','地址问题/客户要求更改派送时间或者地址','客户长期不在','送达客户不在','客户不接电话','拒收','合计');'''.format(timeStart)
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
 
-        sql = '''SELECT 币种, 创建日期, 签收单量, 拒收单量, concat(ROUND(IFNULL(签收单量 / 总单量,0) * 100,2),'%') as 签收率,
+        print('正在获取拒收内容…………')
+        sql = '''SELECT 创建日期, 具体原因,COUNT(s1.订单编号) AS 单量
+                 FROM(   SELECT *, IF(派送问题 LIKE "地址问题" OR 派送问题 LIKE "客户要求更改派送时间或者地址","地址问题/客户要求更改派送时间或者地址",IF(派送问题 LIKE "送达客户不在" OR 派送问题 LIKE "客户长期不在","送达客户不在/客户长期不在",派送问题)) AS 问题件类型,
+                                    IF(备注 <> "", IF(备注 LIKE "已签收%","已签收",IF(备注 LIKE "无人接听%","无人接听",IF(备注 LIKE "拒收%","拒收",
+                                    IF(备注 LIKE "%*%","未回复",IF(备注 NOT LIKE "%*%","回复",备注))))),备注) AS 回复类型
+                        FROM 派送问题件_跟进表 p
+                        WHERE p.创建日期 >= '{0}'  AND p.物流状态 = "拒收"
+                 ) s1
+                 LEFT JOIN 拒收问题件 js ON s1.订单编号 =js.订单编号
+                 WHERE s1.回复类型 = "回复" AND js.具体原因 <> '未联系上客户' AND js.具体原因 IS not NULL
+                 GROUP BY 创建日期, 具体原因
+                 ORDER BY 创建日期, 单量 DESC;'''.format(timeStart)
+        df11 = pd.read_sql_query(sql=sql, con=self.engine1)
+
+        print('正在获取跟进内容…………')
+        sql = '''SELECT 币种, 创建日期, 
+                        CASE DATE_FORMAT(创建日期,'%w')	WHEN 1 THEN '星期一' WHEN 2 THEN '星期二' WHEN 3 THEN '星期三' WHEN 4 THEN '星期四' WHEN 5 THEN '星期五' WHEN 6 THEN '星期六' WHEN 0 THEN '星期日' END as 上月周,
+                        签收单量, 拒收单量, concat(ROUND(IFNULL(签收单量 / 总单量,0) * 100,2),'%') as 签收率,
                         派送问题件单量, 问题件类型,单量,短信,邮件,在线, 电话,客户回复再派量,
                         concat(ROUND(IFNULL(物流再派签收 / 物流再派,0) * 100,2),'%') as 物流再派签收率,
                         concat(ROUND(IFNULL(物流3派签收 / 物流3派,0) * 100,2),'%') as 物流3派签收率,
                         未派, 异常, 上月签收单量, 上月拒收单量, 
-                        concat(ROUND(IFNULL(上月签收单量 / 上月总单量,0) * 100,2),'%') as 上月签收率, 上月派送问题件单量
+                        concat(ROUND(IFNULL(上月签收单量 / 上月总单量,0) * 100,2),'%') as 上月签收率, 上月派送问题件单量,上月周
                 FROM (  SELECT s1.币种, s1.创建日期, s3.签收单量, s3.拒收单量, s3.总单量, 派送问题件单量, 问题件类型,
                                 COUNT(订单编号) AS 单量, NULL AS 短信, NULL AS 邮件, NULL AS 在线, 
                                 SUM(IF(s1.回复类型 <> "" AND 备注 <> "已签收" AND 备注 <> "无人接听",1,0)) AS 电话, 
                                 SUM(IF(回复类型 = "回复",1,0)) AS 客户回复再派量, 物流再派, 物流再派签收, 物流3派, 物流3派签收, NULL AS 未派, 异常,
-                                s4.签收单量 AS 上月签收单量, s4.拒收单量 AS 上月拒收单量, s4.总单量 AS 上月总单量, s5.上月派送问题件单量
+                                s4.签收单量 AS 上月签收单量, s4.拒收单量 AS 上月拒收单量, s4.总单量 AS 上月总单量, s5.上月派送问题件单量, s5.上月周
                         FROM(   SELECT *, IF(派送问题 LIKE "地址问题" OR 派送问题 LIKE "客户要求更改派送时间或者地址","地址问题/客户要求更改派送时间或者地址",IF(派送问题 LIKE "送达客户不在" OR 派送问题 LIKE "客户长期不在","送达客户不在/客户长期不在",派送问题)) AS 问题件类型,
                                         IF(备注 <> "", IF(备注 LIKE "已签收%","已签收",IF(备注 LIKE "无人接听%","无人接听",IF(备注 LIKE "拒收%","拒收",
                                         IF(备注 LIKE "%*%","未回复",IF(备注 NOT LIKE "%*%","回复",备注))))),备注) AS 回复类型
@@ -125,8 +142,7 @@ class QueryTwo(Settings, Settings_sso):
                                 SUM(IF(物流状态 = "已签收" AND 派送次数 > 2,1,0)) AS 物流3派签收,
                                 NULL AS 未派, 
                                 SUM(IF(回复类型 = "回复" AND 物流状态 = "拒收",1,0)) AS 异常
-                            FROM ( SELECT *, IF(派送问题 LIKE "地址问题" OR 派送问题 LIKE "客户要求更改派送时间或者地址","地址问题/客户要求更改派送时间或者地址",派送问题) AS 问题件类型, 
-                                            IF(备注 <> "", IF(备注 LIKE "已签收%","已签收",IF(备注 LIKE "无人接听%","无人接听",IF(备注 LIKE "拒收%","拒收",
+                            FROM ( SELECT *, IF(备注 <> "", IF(备注 LIKE "已签收%","已签收",IF(备注 LIKE "无人接听%","无人接听",IF(备注 LIKE "拒收%","拒收",
                                             IF(备注 LIKE "%*%","未回复",IF(备注 NOT LIKE "%*%","回复",备注))))),备注) AS 回复类型
                                     FROM 派送问题件_跟进表 p
                                     WHERE p.创建日期 >= '{0}'  
@@ -135,7 +151,9 @@ class QueryTwo(Settings, Settings_sso):
                         ) s2 on s1.币种 =s2.币种 AND s1.创建日期 =s2.创建日期
                         LEFT JOIN `派送问题件_跟进表2` s3 on s1.币种 = s3.币种 AND s1.创建日期 = s3.日期
                         LEFT JOIN `派送问题件_跟进表2` s4 on s1.币种 = s4.币种 AND s1.创建日期 = DATE_SUB(s4.日期,INTERVAL -1 MONTH)
-                        LEFT JOIN (SELECT 币种, 创建日期, COUNT(订单编号) AS 上月派送问题件单量
+                        LEFT JOIN (SELECT 币种, 创建日期,
+                                        CASE DATE_FORMAT(创建日期,'%w')	WHEN 1 THEN '星期一' WHEN 2 THEN '星期二' WHEN 3 THEN '星期三' WHEN 4 THEN '星期四' WHEN 5 THEN '星期五' WHEN 6 THEN '星期六' WHEN 0 THEN '星期日' END as 上月周,
+                                        COUNT(订单编号) AS 上月派送问题件单量
                                     FROM 派送问题件_跟进表 p
                                     WHERE p.创建日期 >= DATE_SUB('{0}',INTERVAL 1 MONTH)  AND p.创建日期 < '{0}'  
                                     GROUP BY 币种, 创建日期
@@ -161,6 +179,7 @@ class QueryTwo(Settings, Settings_sso):
         db2.drop(['币种'], axis=1).to_excel(excel_writer=writer, sheet_name='台湾', index=False)
         db3.drop(['币种'], axis=1).to_excel(excel_writer=writer, sheet_name='香港', index=False)
         df1.to_excel(excel_writer=writer, sheet_name='明细', index=False)
+        df11.to_excel(excel_writer=writer, sheet_name='拒收', index=False)
         if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
             del book['Sheet1']
         writer.save()
@@ -358,14 +377,14 @@ if __name__ == '__main__':
 
         elif int(select) == 99:         # 查询更新-派送问题件
             timeStart, timeEnd = m.readInfo('派送问题件_跟进表')
-            m.getOrderList('2022-07-10', '2022-07-11')
+            m.getOrderList('2022-07-12', '2022-07-14')
             # m.getOrderList(timeStart, timeEnd)                        # 订单完成单量 更新
 
             # m.getDeliveryList('2022-06-12', '2022-06-30')
-            m.getDeliveryList('2022-07-01', '2022-07-11')
+            m.getDeliveryList('2022-07-01', '2022-07-13')
             # m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
 
-            m.outport_getDeliveryList('2022-07-01', '2022-07-11')
+            m.outport_getDeliveryList('2022-07-01', '2022-07-13')
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
 

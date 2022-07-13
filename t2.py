@@ -26,7 +26,7 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
 '''
 # 初始化时间设置
 updata = '全部'           #  后台获取全部（两月）、部分更新（近五天）
-if team in ('gat', 'slsc', 'sl_r9b'):
+if team in ('g0at', 'slsc', 'sl_r9b'):
     # 更新时间
     yy = int((datetime.datetime.now() - relativedelta(months=1)).strftime('%Y'))
     mm = int((datetime.datetime.now() - relativedelta(months=1)).strftime('%m'))
@@ -44,12 +44,12 @@ if team in ('gat', 'slsc', 'sl_r9b'):
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    data_begin = datetime.date(2022, 6, 24)  # 数据库更新
-    begin = datetime.date(2022, 6, 24)      # 单点更新
-    end = datetime.date(2022, 7, 11)
+    data_begin = datetime.date(2022, 5, 1)  # 数据库更新
+    begin = datetime.date(2022, 5, 1)      # 单点更新
+    end = datetime.date(2022, 6, 1)
     # 导出时间
     month_last = '2022-05-01'
-    month_yesterday = '2022-07-10'
+    month_yesterday = '2022-05-31'
     month_begin = '2021-04-01'
 print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
@@ -110,7 +110,7 @@ print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
 if team == 'gat' and updata == '全部':
     print('---------------------------------- 单点更新部分：--------------------------------')
-    sso = Query_sso_updata('+86-18538110674', 'qyz35100416', '1343', '538b7c23be3e39a98bff887b31a3f396', '手0动')
+    sso = Query_sso_updata('+86-18538110674', 'qyz35100416', '1343', '8dc3e3e4b73937e49812519bc0c540fd', '手0动')
 
     # sso.readFormHost('gat', '导入')                       # 导入新增的订单 line运营  手动导入
     # for i in range((end - begin).days):  # 按天循环获取订单状态
