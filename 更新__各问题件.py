@@ -1373,7 +1373,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 909
+    select = 99
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '7e00200b074b38be93d83578da27e666'
@@ -1446,7 +1446,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 已下架 状态运行（四）-----------------------------------------
     '''
-    if int(select) == 909:
+    if int(select) == 99:
         login_TmpCode = '53ffd428c388386fb04a9cb951211ba3'
         handle = '手0动'
         lw = QueryTwoLower('+86-18538110674', 'qyz35100416', login_TmpCode,handle)
@@ -1454,11 +1454,11 @@ if __name__ == '__main__':
 
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 已下架       更新； 自动时 输入的时间无效；切为不自动时，有效
         lw.stockcompose_upload()                              # 获取 桃园仓重出、
-        lw.get_take_delivery_no()                             # 头程物流跟踪 更新； 获取最近10天的信息
 
         lw.readFile(1)                                        # 上传每日压单核实结果
         lw.order_spec()                                       # 压单         更新；压单反馈  （备注（压单核实是否需要））
 
+        lw.get_take_delivery_no()                             # 头程物流跟踪 更新； 获取最近10天的信息
         print('查询耗时：', datetime.datetime.now() - start)
 
 

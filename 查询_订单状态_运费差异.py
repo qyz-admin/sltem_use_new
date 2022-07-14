@@ -510,7 +510,7 @@ class QueryUpdate(Settings):
         print('更新完成…………')
 
         print('正在获取写入excel内容…………')
-        sql = '''SELECT 订单编号,运单编号, 是否改派,发货时间,物流方式,最终状态
+        sql = '''SELECT 订单编号,运单编号, 是否改派,发货时间,物流方式,最终状态, NULL 查询状态结果,NULL 配送问题, NULL 状态时间
                 FROM (  SELECT c.订单编号,c.运单编号,c.系统订单状态, c.系统物流状态, c.是否改派, g.标准物流状态,g.签收表物流状态, c.仓储扫描时间 AS 发货时间, 物流方式, b.出货时间 AS 新出货时间,
 							IF(ISNULL(系统物流状态), IF(ISNULL(g.标准物流状态) OR g.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , 
 													IF(物流方式 like '%天马%' and g.签收表物流状态 = '在途','未上线', g.标准物流状态)
@@ -536,7 +536,7 @@ class QueryUpdate(Settings):
         writer.close()
 
         # print(df)
-        waybill = ['天马&天马', '速派&速派', '龟山|易速配&易速配', '铱熙无敌&协来运', '香港&立邦']
+        waybill = ['天马&天马', '速派&速派', '龟山|易速配&易速配', '铱熙无敌&协来运', '立邦&立邦', '圆通&圆通']
         # waybill = ['立邦']
         for wy in waybill:
             wy1 = wy.split('&')[0]
@@ -548,8 +548,8 @@ class QueryUpdate(Settings):
 
             file_path = 'G:\\输出文件\\{0}{1} 在途未上线.xlsx'.format(rq, wy2)
             writer2 = pd.ExcelWriter(file_path, engine='openpyxl')
-            db2[['订单编号', '运单编号', '是否改派', '发货时间']].to_excel(writer2, sheet_name='在途', index=False, startrow=0)
-            db3[['订单编号', '运单编号', '是否改派', '发货时间']].to_excel(writer2, sheet_name='未上线', index=False, startrow=0)
+            db2[['订单编号', '运单编号', '是否改派', '发货时间', '查询状态结果', '配送问题', '状态时间']].to_excel(writer2, sheet_name='在途', index=False, startrow=0)
+            db3[['订单编号', '运单编号', '是否改派', '发货时间', '查询状态结果', '配送问题', '状态时间']].to_excel(writer2, sheet_name='未上线', index=False, startrow=0)
             writer2.save()
             writer2.close()
         print('----已写入excel')
@@ -588,8 +588,8 @@ if __name__ == '__main__':
 
 
     elif int(select) == 4:
-        m.readFormHost('查询运费')
-        m.trans_way_cost_new(team)  # 同产品下的规格运费查询
+        # m.readFormHost('查询运费')
+        # m.trans_way_cost_new(team)  # 同产品下的规格运费查询
         
         if week.isoweekday() == 2 or week.isoweekday() == 4:
             upload = '查询-运单号'    # 获取在途未上线 催促的
