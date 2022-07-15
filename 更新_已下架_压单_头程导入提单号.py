@@ -1130,7 +1130,7 @@ class QueryTwoLower(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    m = QueryTwoLower('+86-18538110674', 'qyz35100416','84c3a0212a7b3de386b2a20d4a46b0ea','手0动')
+    m = QueryTwoLower('+86-18538110674', 'qyz35100416','28bcc7b0b3333eabb1b181b0d5dcc7d6','手动')
     # m.bulid_file()
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
@@ -1138,7 +1138,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
-    select = 3
+    select = 1
     if select == 1:
         m.readFile(select)            # 上传每日压单核实结果
         m.order_spec()                # 压单反馈  （备注（压单核实是否需要））

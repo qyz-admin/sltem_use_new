@@ -40,10 +40,10 @@ class QueryTwo(Settings, Settings_sso):
         # self.sso__online_handle(login_TmpCode)
         # # self.sso__online_auto()
         #
-        if handle == '手动':
-            self.sso__online_handle(login_TmpCode)
-        else:
-            self.sso__online_auto()
+        # if handle == '手动':
+        #     self.sso__online_handle(login_TmpCode)
+        # else:
+        #     self.sso__online_auto()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],
@@ -114,29 +114,15 @@ class QueryTwo(Settings, Settings_sso):
                  ORDER BY 创建日期, 单量 DESC;'''.format(timeStart)
         df11 = pd.read_sql_query(sql=sql, con=self.engine1)
 
-        # print('正在获取趋势图数据…………')
-        sql = '''SELECT 创建日期, 具体原因,COUNT(s1.订单编号) AS 单量
-                 FROM(   SELECT *, IF(派送问题 LIKE "地址问题" OR 派送问题 LIKE "客户要求更改派送时间或者地址","地址问题/客户要求更改派送时间或者地址",IF(派送问题 LIKE "送达客户不在" OR 派送问题 LIKE "客户长期不在","送达客户不在/客户长期不在",派送问题)) AS 问题件类型,
-                                    IF(备注 <> "", IF(备注 LIKE "已签收%","已签收",IF(备注 LIKE "无人接听%","无人接听",IF(备注 LIKE "拒收%","拒收",
-                                    IF(备注 LIKE "%*%","未回复",IF(备注 NOT LIKE "%*%","回复",备注))))),备注) AS 回复类型
-                        FROM 派送问题件_跟进表 p
-                        WHERE p.创建日期 >= '{0}'  AND p.物流状态 = "拒收"
-                 ) s1
-                 LEFT JOIN 拒收问题件 js ON s1.订单编号 =js.订单编号
-                 WHERE s1.回复类型 = "回复" AND js.具体原因 <> '未联系上客户' AND js.具体原因 IS not NULL
-                 GROUP BY 创建日期, 具体原因
-                 ORDER BY 创建日期, 单量 DESC;'''.format(timeStart)
-        # df12 = pd.read_sql_query(sql=sql, con=self.engine1)
-
         print('正在获取跟进内容…………')
         sql = '''SELECT 币种, 创建日期, 
                         CASE DATE_FORMAT(创建日期,'%w')	WHEN 1 THEN '星期一' WHEN 2 THEN '星期二' WHEN 3 THEN '星期三' WHEN 4 THEN '星期四' WHEN 5 THEN '星期五' WHEN 6 THEN '星期六' WHEN 0 THEN '星期日' END as 上月周,
-                        签收单量, 拒收单量, concat(ROUND(IFNULL(签收单量 / 总单量,0) * 100,2),'%') as 签收率,
+                        总单量, 签收单量, 拒收单量, concat(ROUND(IFNULL(签收单量 / 总单量,0) * 100,2),'%') as 签收率,
                         派送问题件单量, 问题件类型,单量,短信,邮件,在线, 
                         IF(电话 = 0,NULL,电话) AS 电话,IF(客户回复再派量 = 0,NULL,客户回复再派量) AS 客户回复再派量,
                         concat(ROUND(IFNULL(物流再派签收 / 物流再派,0) * 100,2),'%') as 物流再派签收率,
                         concat(ROUND(IFNULL(物流3派签收 / 物流3派,0) * 100,2),'%') as 物流3派签收率,
-                        未派, 异常, 上月签收单量, 上月拒收单量, 
+                        未派, 异常, 上月总单量, 上月签收单量, 上月拒收单量, 
                         concat(ROUND(IFNULL(上月签收单量 / 上月总单量,0) * 100,2),'%') as 上月签收率, 上月派送问题件单量,上月周
                 FROM (  SELECT s1.币种, s1.创建日期, s3.签收单量, s3.拒收单量, s3.总单量, 派送问题件单量, 问题件类型,
                                 COUNT(订单编号) AS 单量, NULL AS 短信, NULL AS 邮件, NULL AS 在线, 
@@ -180,23 +166,50 @@ class QueryTwo(Settings, Settings_sso):
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         db2 = df[(df['币种'].str.contains('台币'))]
         db3 = df[(df['币种'].str.contains('港币'))]
-        print(df)
-        print(db2)
-        print(db3)
+
+        print('正在获取趋势图数据…………')
+        db2.to_sql('cp', con=self.engine1, index=False, if_exists='replace')
+        sql = '''SELECT DISTINCT 创建日期, 总单量, 上月总单量, 派送问题件单量, 上月派送问题件单量, 签收率, 上月签收率 FROM cp;'''.format(timeStart)
+        df5 = pd.read_sql_query(sql=sql, con=self.engine1)
+        df51 = df5[['创建日期', '总单量', '上月总单量']]
+        df52 = df5[['创建日期', '派送问题件单量', '上月派送问题件单量']]
+        df53 = df5[['创建日期', '签收率', '上月签收率']]
+        df54 = df5[['创建日期', '总单量', '派送问题件单量']]
+        df55 = df5[['创建日期', '上月总单量', '上月派送问题件单量']]
+
+        df51.rename(columns={'总单量': '当日', '上月总单量': '上月'}, inplace=True)
+        df52.rename(columns={'派送问题件单量': '当日', '上月派送问题件单量': '上月'}, inplace=True)
+        df53.rename(columns={'签收率': '当日', '上月签收率': '上月'}, inplace=True)
+        df54.rename(columns={'总单量': '完成单量', '派送问题件单量': '派送问题件单量'}, inplace=True)
+        df55.rename(columns={'上月总单量': '完成单量', '上月派送问题件单量': '派送问题件单量'}, inplace=True)
+        # print(df)
+        # print(db2)
+        # print(db3)
         print('正在写入excel…………')
-        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况.xlsx'.format(rq)
+        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情02况.xlsx'.format(rq)
 
         df0 = pd.DataFrame([])
         df0.to_excel(file_pathT, index=False)
         writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
         book = load_workbook(file_pathT)
         writer.book = book
-        db2.drop(['币种'], axis=1).to_excel(excel_writer=writer, sheet_name='台湾', index=False)
-        db3.drop(['币种'], axis=1).to_excel(excel_writer=writer, sheet_name='香港', index=False)
+        db2.drop(['币种', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='台湾', index=False)
+        db3.drop(['币种', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='香港', index=False)
         df1.to_excel(excel_writer=writer, sheet_name='明细', index=False)
         df11.to_excel(excel_writer=writer, sheet_name='拒收', index=False)
-        db2[['创建日期', '签收单量', '拒收单量', '单量', '上月签收单量', '上月拒收单量', '上月派送问题件单量']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+
+        # df5[['创建日期', '总单量', '上月总单量', '派送问题件单量', '上月派送问题件单量', '签收率', '上月签收率']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False)
+        # df5[['创建日期', '上月总单量', '上月派送问题件单量']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False, startcol=10)
+        # df5[['创建日期', '总单量', '派送问题件单量']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False, startcol=15)
+
+        df51.to_excel(excel_writer=writer, sheet_name='同期完成订单', index=False)
+        df52.to_excel(excel_writer=writer, sheet_name='同期派送问题件', index=False)
+        df53.to_excel(excel_writer=writer, sheet_name='同期签收率', index=False)
+        df54.to_excel(excel_writer=writer, sheet_name='当日', index=False)
+        df55.to_excel(excel_writer=writer, sheet_name='上月', index=False)
+
+
+        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表 cp
             del book['Sheet1']
         writer.save()
         writer.close()
@@ -381,11 +394,11 @@ if __name__ == '__main__':
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     '''
 
-    select = 99
+    select = 1
     if int(select) == 99:
-        handle = '手0动'
-        login_TmpCode = '78b998328b4834f59bc8d4f734cd78f0'
-        m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode,handle)
+        handle = '手动'
+        login_TmpCode = '1458ad80ac3938a59c4872698cda3814'
+        m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode, handle)
         start: datetime = datetime.datetime.now()
 
         if int(select) == 1:
@@ -403,6 +416,9 @@ if __name__ == '__main__':
             m.outport_getDeliveryList('2022-07-01', '2022-07-14')
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
-
+    elif int(select) == 1:
+        m = QueryTwo('+86-18538110674', 'qyz35100416', "", "")
+        timeStart, timeEnd = m.readInfo('物流问题件')
+        m.outport_getDeliveryList('2022-07-01', '2022-07-14')
 
     print('查询耗时：', datetime.datetime.now() - start)

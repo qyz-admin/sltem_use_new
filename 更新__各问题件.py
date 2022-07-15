@@ -1373,10 +1373,10 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 99
+    select = 909
     if int(select) == 99:
         handle = '手0动'
-        login_TmpCode = '7e00200b074b38be93d83578da27e666'
+        login_TmpCode = '78f54c5035ac36f2b499ca7543f85f7a'
         m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode,handle)
         start: datetime = datetime.datetime.now()
 
@@ -1430,7 +1430,9 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 昨日头程直发渠道的订单明细 状态运行（二）-----------------------------------------
     '''
     if int(select) == 99:
-        js = QueryOrder('+86-18538110674', 'qyz35100416', '')
+        login_TmpCode = '2ac68cfc6e0f312e891df49db514378b'
+        handle = '手0动'
+        js = QueryOrder('+86-18538110674', 'qyz35100416', login_TmpCode, handle)
         time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         time_now = time_yesterday
         js.order_TimeQueryT(time_yesterday,time_now, '',  '检查头程直发渠道|删单原因')   # 检查头程直发渠道|删单原0因
@@ -1447,17 +1449,17 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 已下架 状态运行（四）-----------------------------------------
     '''
     if int(select) == 99:
-        login_TmpCode = '53ffd428c388386fb04a9cb951211ba3'
+        login_TmpCode = '601f3b020679338dbcc8ca83cb3420df'
         handle = '手0动'
         lw = QueryTwoLower('+86-18538110674', 'qyz35100416', login_TmpCode,handle)
         start: datetime = datetime.datetime.now()
 
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 已下架       更新； 自动时 输入的时间无效；切为不自动时，有效
-        lw.stockcompose_upload()                              # 获取 桃园仓重出、
 
         lw.readFile(1)                                        # 上传每日压单核实结果
         lw.order_spec()                                       # 压单         更新；压单反馈  （备注（压单核实是否需要））
 
+        lw.stockcompose_upload()                              # 获取 桃园仓重出、
         lw.get_take_delivery_no()                             # 头程物流跟踪 更新； 获取最近10天的信息
         print('查询耗时：', datetime.datetime.now() - start)
 
