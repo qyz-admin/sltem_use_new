@@ -122,10 +122,10 @@ class QueryTwo(Settings, Settings_sso):
                         IF(电话 = 0,NULL,电话) AS 电话,IF(客户回复再派量 = 0,NULL,客户回复再派量) AS 客户回复再派量,
                         concat(ROUND(IFNULL(物流再派签收 / 物流再派,0) * 100,2),'%') as 物流再派签收率,
                         concat(ROUND(IFNULL(物流3派签收 / 物流3派,0) * 100,2),'%') as 物流3派签收率,
-                        未派, 异常, 上月总单量, 上月签收单量, 上月拒收单量, 
+                        IF(单量 >= 短信,"获取物流轨迹信息后，后台会排队处理中；若30-40分钟内订单状态变为已完结，则不发送短信。",IF(单量 < 短信,"物流轨迹更新后， 根据派送问题类型的更改，会再次发送短信。", NULL)) 未派, 异常, 上月总单量, 上月签收单量, 上月拒收单量, 
                         concat(ROUND(IFNULL(上月签收单量 / 上月总单量,0) * 100,2),'%') as 上月签收率, 上月派送问题件单量,上月周
                 FROM (  SELECT s1.币种, s1.创建日期, s3.签收单量, s3.拒收单量, s3.总单量, 派送问题件单量, 问题件类型,
-                                COUNT(订单编号) AS 单量, NULL AS 短信, NULL AS 邮件, NULL AS 在线, 
+                                COUNT(订单编号) AS 单量, 发送量 短信, NULL AS 邮件, NULL AS 在线, 
                                 SUM(IF(备注 <> "" AND 回复类型 <> "已完结" AND 回复类型 <> "无人接听",1,0)) AS 电话, 
                                 SUM(IF(回复类型 = "回复",1,0)) AS 客户回复再派量, 物流再派, 物流再派签收, 物流3派, 物流3派签收, NULL AS 未派, 异常,
                                 s4.签收单量 AS 上月签收单量, s4.拒收单量 AS 上月拒收单量, s4.总单量 AS 上月总单量, s5.上月派送问题件单量, s5.上月周
@@ -159,6 +159,7 @@ class QueryTwo(Settings, Settings_sso):
                                     WHERE p.创建日期 >= DATE_SUB('{0}',INTERVAL 1 MONTH)  AND p.创建日期 < '{0}'  
                                     GROUP BY 币种, 创建日期
                         ) s5 on s1.币种 = s5.币种 AND s1.创建日期 = DATE_SUB(s5.创建日期,INTERVAL -1 MONTH)
+                        LEFT JOIN 派送问题件_跟进表_message s6 on s1.币种 = s6.币种 AND s1.创建日期 = s6.日期 AND s1.问题件类型 =s6.短信模板
                         GROUP BY s1.币种, s1.创建日期, s1.问题件类型
                 ) s
                 ORDER BY s.币种, s.创建日期 , 
@@ -370,7 +371,7 @@ class QueryTwo(Settings, Settings_sso):
                 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None, 'service_id': None, 'autoVerifyStatus': None, 'shipZip': None,
                 'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None,
                 'order': None, 'sortField': None, 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
-                'timeStart': None, 'timeEnd': None, 'finishTimeStart': timeStart + '00:00:00', 'finishTimeEnd': timeEnd + '23:59:59'}
+                'timeStart': None, 'timeEnd': None, 'finishTimeStart': timeStart + ' 00:00:00', 'finishTimeEnd': timeEnd + ' 23:59:59'}
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
@@ -393,7 +394,7 @@ class QueryTwo(Settings, Settings_sso):
         print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
         # currencyId = [13, 6]            # 6 是港币；13 是台币
         template_id = ['90,89,88', '49,73,77', '50,72,78']
-        match = {'90,89,88': '客户自取', '49,73,77': '地址问题/客户要求更改派送时间或者地址', '50,72,78': '送至便利店'}
+        match = {'90,89,88': '客户自取', '49,73,77': '地址问题', '50,72,78': '便利店'}
         # match2 = {2: '已签收', 3: '拒收'}
         dlist = []
         df = pd.DataFrame([])
@@ -425,7 +426,7 @@ class QueryTwo(Settings, Settings_sso):
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
         data = {'order_number': None, 'waybill_number': None, 'to_phone': None, 'add_date': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59',
                 'send_status': None, 'msgid': None, 'template_id': id, 'page': 1, 'pageSize': 10}
-        print(data)
+        # print(data)
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
@@ -460,21 +461,19 @@ if __name__ == '__main__':
 
         elif int(select) == 99:         # 查询更新-派送问题件
             timeStart, timeEnd = m.readInfo('派送问题件_跟进表')
-            m.getOrderList('2022-07-15', '2022-07-17')
+            m.getOrderList('2022-07-14', '2022-07-15')
             # m.getOrderList(timeStart, timeEnd)                        # 订单完成单量 更新
-            m.getMessageLog('2022-07-15', '2022-07-17')
-            # m.getMessageLog(timeStart, timeEnd)                       # 短信发送单量 更新
 
             # m.getDeliveryList('2022-06-12', '2022-06-30')
-            m.getDeliveryList('2022-07-01', '2022-07-17')
+            m.getDeliveryList('2022-07-01', '2022-07-15')
             # m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
 
-            m.outport_getDeliveryList('2022-07-01', '2022-07-17')
+            m.outport_getDeliveryList('2022-07-01', '2022-07-15')
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
     elif int(select) == 1:
         m = QueryTwo('+86-18538110674', 'qyz35100416', "", "")
-        timeStart, timeEnd = m.readInfo('派送问题件_跟进表')
+        # timeStart, timeEnd = m.readInfo('物流问题件')
         # m.outport_getDeliveryList('2022-07-01', '2022-07-14')
         m.getMessageLog('2022-07-01', '2022-07-15')
 

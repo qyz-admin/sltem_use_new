@@ -332,6 +332,7 @@ class MysqlControl(Settings):
                                         a.ship_zip 邮编,
                                         a.turn_purchase_time 添加物流单号时间,
                                         null 省洲,
+                                        null 市区,
                                         a.del_reason 订单删除原因,
                                         IF(dim_area.name = '精灵家族-品牌',IF(a.coll_id=1000000269,'饰品','内衣'),a.coll_id) 站点ID
                                 FROM gk_order a
@@ -459,6 +460,7 @@ class MysqlControl(Settings):
                             a.turn_purchase_time 添加物流单号时间,
                             null 规格中文,
                             a.ship_state 省洲,
+                            null 市区,
                             null 审单类型,
                             null 审单类型明细,
                             null 拉黑率,

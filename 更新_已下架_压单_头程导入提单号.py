@@ -478,10 +478,14 @@ class QueryTwoLower(Settings, Settings_sso):
             ordersDict = []
             try:
                 for result in req['data']:              # 添加新的字典键-值对，为下面的重新赋值
-                    if result['intime'] > (result['intime']).split()[0] + ' 08:30:00':      # 判断修改统计时间
+                    if '' in tem_name:
                         result['count_time'] = (datetime.datetime.strptime(result['intime'], '%Y-%m-%d %H:%M:%S') + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
                     else:
-                        result['count_time'] = (result['intime']).split()[0]
+                        if result['intime'] > (result['intime']).split()[0] + ' 08:30:00':      # 判断修改统计时间
+                            result['count_time'] = (datetime.datetime.strptime(result['intime'], '%Y-%m-%d %H:%M:%S') + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+                        else:
+                            result['count_time'] = (result['intime']).split()[0]
+
                     # result['count_time'] = timeEnd
                     if type_name == 'SKU库存':
                         result['waill_name'] = '龟山备货'

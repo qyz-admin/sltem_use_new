@@ -1373,7 +1373,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 909
+    select = 99
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '78f54c5035ac36f2b499ca7543f85f7a'
@@ -1460,7 +1460,7 @@ if __name__ == '__main__':
         lw.order_spec()                                       # 压单         更新；压单反馈  （备注（压单核实是否需要））
 
         lw.stockcompose_upload()                              # 获取 桃园仓重出、
-        lw.get_take_delivery_no()                             # 头程物流跟踪 更新； 获取最近10天的信息
+        # lw.get_take_delivery_no()                             # 头程物流跟踪 更新； 获取最近10天的信息
         print('查询耗时：', datetime.datetime.now() - start)
 
 
