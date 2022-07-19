@@ -101,16 +101,30 @@ class QueryTwo(Settings, Settings_sso):
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
 
         print('正在获取拒收内容…………')
-        sql = '''SELECT 创建日期, 具体原因,COUNT(s1.订单编号) AS 单量
-                 FROM(   SELECT *, IF(派送问题 LIKE "地址问题" OR 派送问题 LIKE "客户要求更改派送时间或者地址","地址问题/客户要求更改派送时间或者地址",IF(派送问题 LIKE "送达客户不在" OR 派送问题 LIKE "客户长期不在","送达客户不在/客户长期不在",派送问题)) AS 问题件类型,
-                                    IF(备注 <> "", IF(备注 LIKE "已签收%","已签收",IF(备注 LIKE "无人接听%","无人接听",IF(备注 LIKE "拒收%","拒收",
-                                    IF(备注 LIKE "%*%","未回复",IF(备注 NOT LIKE "%*%","回复",备注))))),备注) AS 回复类型
+        sql = '''SELECT 创建日期, IFNULL(具体原因,'拒收原因'), 单量,concat(ROUND(IFNULL(单量 / 总单量,0) * 100,2),'%') as 占比
+                FROM (	
+                    SELECT 创建日期, 具体原因,COUNT(s1.订单编号) AS 单量
+                    FROM(SELECT *, IF(派送问题 LIKE "地址问题" OR 派送问题 LIKE "客户要求更改派送时间或者地址","地址问题/客户要求更改派送时间或者地址",IF(派送问题 LIKE "送达客户不在" OR 派送问题 LIKE "客户长期不在","送达客户不在/客户长期不在",派送问题)) AS 问题件类型,
+                                            IF(备注 <> "", IF(备注 LIKE "已签收%" OR 备注 LIKE "已完结%","已完结",IF(备注 LIKE "无人接听%" OR 备注 LIKE "无效号码%","无人接听", IF(备注 LIKE "已通知%" OR 备注 LIKE "已告知%" OR 备注 LIKE "请告知%" OR 备注 LIKE "请通知%","已发短信", 
+                                            IF(备注 LIKE "%*%","未回复",IF((备注 NOT LIKE "%*%" AND 备注 NOT LIKE "%拒收%") AND (备注 LIKE "%客%取%" OR 备注 LIKE "%客%拿%" OR 备注 LIKE "%送货%" OR 备注 LIKE "%送貨%" OR 备注 LIKE "%取件%" OR 备注 LIKE "%取货%" OR 备注 LIKE "%取貨%"),"回复",""))))),备注) AS 回复类型
+                             FROM 派送问题件_跟进表 p
+                             WHERE p.创建日期 >= '2022-07-01'    AND p.物流状态 = "拒收"
+                    ) s1
+                    LEFT JOIN 拒收问题件 js ON s1.订单编号 =js.订单编号
+                    WHERE s1.回复类型 = "回复" AND js.具体原因 <> '未联系上客户' AND js.具体原因 IS not NULL
+                    GROUP BY 创建日期, 具体原因
+                    WITH ROLLUP
+                ) s
+                LEFT JOIN 
+                ( SELECT 创建日期 日期, 具体原因 具体,COUNT(s1.订单编号) AS 总单量
+                   FROM(SELECT *, IF(备注 <> "", IF(备注 LIKE "已签收%" OR 备注 LIKE "已完结%","已完结",IF(备注 LIKE "无人接听%" OR 备注 LIKE "无效号码%","无人接听", IF(备注 LIKE "已通知%" OR 备注 LIKE "已告知%" OR 备注 LIKE "请告知%" OR 备注 LIKE "请通知%","已发短信", IF(备注 LIKE "%*%","未回复",IF((备注 NOT LIKE "%*%" AND 备注 NOT LIKE "%拒收%") AND (备注 LIKE "%客%取%" OR 备注 LIKE "%客%拿%" OR 备注 LIKE "%送货%" OR 备注 LIKE "%送貨%" OR 备注 LIKE "%取件%" OR 备注 LIKE "%取货%" OR 备注 LIKE "%取貨%"),"回复",""))))),备注) AS 回复类型
                         FROM 派送问题件_跟进表 p
-                        WHERE p.创建日期 >= '{0}'  AND p.物流状态 = "拒收"
-                 ) s1
-                 LEFT JOIN 拒收问题件 js ON s1.订单编号 =js.订单编号
-                 WHERE s1.回复类型 = "回复" AND js.具体原因 <> '未联系上客户' AND js.具体原因 IS not NULL
-                 GROUP BY 创建日期, 具体原因
+                        WHERE p.创建日期 >= '2022-07-01'    AND p.物流状态 = "拒收"
+                   ) s1
+                   LEFT JOIN 拒收问题件 js ON s1.订单编号 =js.订单编号
+                   WHERE s1.回复类型 = "回复" AND js.具体原因 <> '未联系上客户' AND js.具体原因 IS not NULL
+                   GROUP BY 创建日期
+                ) ss ON s.创建日期 =ss.日期
                  ORDER BY 创建日期, 单量 DESC;'''.format(timeStart)
         df11 = pd.read_sql_query(sql=sql, con=self.engine1)
 
@@ -122,16 +136,16 @@ class QueryTwo(Settings, Settings_sso):
                         IF(电话 = 0,NULL,电话) AS 电话,IF(客户回复再派量 = 0,NULL,客户回复再派量) AS 客户回复再派量,
                         concat(ROUND(IFNULL(物流再派签收 / 物流再派,0) * 100,2),'%') as 物流再派签收率,
                         concat(ROUND(IFNULL(物流3派签收 / 物流3派,0) * 100,2),'%') as 物流3派签收率,
-                        未派, 异常, 上月总单量, 上月签收单量, 上月拒收单量, 
+                        IF(单量 >= 短信,"获取物流轨迹信息后，后台会排队处理中；若30-40分钟内订单状态变为已完结，则不发送短信。",IF(单量 < 短信,"物流轨迹更新后， 根据派送问题类型的更改，会再次发送短信。", NULL)) 未派, 异常, 上月总单量, 上月签收单量, 上月拒收单量, 
                         concat(ROUND(IFNULL(上月签收单量 / 上月总单量,0) * 100,2),'%') as 上月签收率, 上月派送问题件单量,上月周
                 FROM (  SELECT s1.币种, s1.创建日期, s3.签收单量, s3.拒收单量, s3.总单量, 派送问题件单量, 问题件类型,
-                                COUNT(订单编号) AS 单量, NULL AS 短信, NULL AS 邮件, NULL AS 在线, 
+                                COUNT(订单编号) AS 单量, 发送量 短信, NULL AS 邮件, NULL AS 在线, 
                                 SUM(IF(备注 <> "" AND 回复类型 <> "已完结" AND 回复类型 <> "无人接听",1,0)) AS 电话, 
                                 SUM(IF(回复类型 = "回复",1,0)) AS 客户回复再派量, 物流再派, 物流再派签收, 物流3派, 物流3派签收, NULL AS 未派, 异常,
                                 s4.签收单量 AS 上月签收单量, s4.拒收单量 AS 上月拒收单量, s4.总单量 AS 上月总单量, s5.上月派送问题件单量, s5.上月周
                         FROM(   SELECT *, IF(派送问题 LIKE "地址问题" OR 派送问题 LIKE "客户要求更改派送时间或者地址","地址问题/客户要求更改派送时间或者地址",IF(派送问题 LIKE "送达客户不在" OR 派送问题 LIKE "客户长期不在","送达客户不在/客户长期不在",派送问题)) AS 问题件类型,
-                                        IF(备注 <> "", IF(备注 LIKE "已签收%" OR 备注 LIKE "已完结%","已完结",IF(备注 LIKE "无人接听%" OR 备注 LIKE "无效号码%","无人接听", IF(备注 LIKE "%*%","未回复",
-                                        IF((备注 NOT LIKE "%*%" AND 备注 NOT LIKE "%拒收%") AND (备注 LIKE "%客%取%" OR 备注 LIKE "%客%拿%" OR 备注 LIKE "%送货%" OR 备注 LIKE "%送貨%" OR 备注 LIKE "%取件%" OR 备注 LIKE "%取货%" OR 备注 LIKE "%取貨%"),"回复","")))),备注) AS 回复类型
+                                        IF(备注 <> "", IF(备注 LIKE "已签收%" OR 备注 LIKE "已完结%","已完结",IF(备注 LIKE "无人接听%" OR 备注 LIKE "无效号码%","无人接听", IF(备注 LIKE "已通知%" OR 备注 LIKE "已告知%" OR 备注 LIKE "请告知%" OR 备注 LIKE "请通知%","已发短信", 
+	                                    IF(备注 LIKE "%*%","未回复",IF((备注 NOT LIKE "%*%" AND 备注 NOT LIKE "%拒收%") AND (备注 LIKE "%客%取%" OR 备注 LIKE "%客%拿%" OR 备注 LIKE "%送货%" OR 备注 LIKE "%送貨%" OR 备注 LIKE "%取件%" OR 备注 LIKE "%取货%" OR 备注 LIKE "%取貨%"),"回复",""))))),备注) AS 回复类型
                                 FROM 派送问题件_跟进表 p
                                 WHERE p.创建日期 >= '{0}'  
                         ) s1
@@ -159,6 +173,7 @@ class QueryTwo(Settings, Settings_sso):
                                     WHERE p.创建日期 >= DATE_SUB('{0}',INTERVAL 1 MONTH)  AND p.创建日期 < '{0}'  
                                     GROUP BY 币种, 创建日期
                         ) s5 on s1.币种 = s5.币种 AND s1.创建日期 = DATE_SUB(s5.创建日期,INTERVAL -1 MONTH)
+                        LEFT JOIN 派送问题件_跟进表_message s6 on s1.币种 = s6.币种 AND s1.创建日期 = s6.日期 AND s1.问题件类型 =s6.短信模板
                         GROUP BY s1.币种, s1.创建日期, s1.问题件类型
                 ) s
                 ORDER BY s.币种, s.创建日期 , 
@@ -448,7 +463,7 @@ if __name__ == '__main__':
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     '''
 
-    select = 1
+    select = 99
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '1458ad80ac3938a59c4872698cda3814'
@@ -460,16 +475,16 @@ if __name__ == '__main__':
 
         elif int(select) == 99:         # 查询更新-派送问题件
             timeStart, timeEnd = m.readInfo('派送问题件_跟进表')
-            m.getOrderList('2022-07-15', '2022-07-17')
+            m.getOrderList('2022-07-16', '2022-07-18')
             # m.getOrderList(timeStart, timeEnd)                        # 订单完成单量 更新
-            m.getMessageLog('2022-07-15', '2022-07-17')
+            m.getMessageLog('2022-07-16', '2022-07-18')
             # m.getMessageLog(timeStart, timeEnd)                       # 短信发送单量 更新
 
             # m.getDeliveryList('2022-06-12', '2022-06-30')
-            m.getDeliveryList('2022-07-01', '2022-07-17')
+            m.getDeliveryList('2022-07-01', '2022-07-18')
             # m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
 
-            m.outport_getDeliveryList('2022-07-01', '2022-07-17')
+            m.outport_getDeliveryList('2022-07-01', '2022-07-18')
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
     elif int(select) == 1:
