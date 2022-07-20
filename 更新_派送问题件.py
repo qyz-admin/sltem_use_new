@@ -92,8 +92,8 @@ class QueryTwo(Settings, Settings_sso):
 
         print('正在获取excel内容…………')
         sql = '''SELECT *, IF(派送问题 LIKE "地址问题" OR 派送问题 LIKE "客户要求更改派送时间或者地址","地址问题/客户要求更改派送时间或者地址",派送问题) AS 问题件类型, 
-                                            IF(备注 <> "", IF(备注 LIKE "已签收%","已签收",IF(备注 LIKE "无人接听%","无人接听",IF(备注 LIKE "拒收%","拒收",
-                                            IF(备注 LIKE "%*%","未回复",IF(备注 NOT LIKE "%*%","回复",备注))))),备注) AS 回复类型
+                        IF(备注 <> "", IF(备注 LIKE "已签收%" OR 备注 LIKE "已完结%","已完结",IF(备注 LIKE "无人接听%" OR 备注 LIKE "无效号码%","无人接听", IF(备注 LIKE "已通知%" OR 备注 LIKE "已告知%" OR 备注 LIKE "请告知%" OR 备注 LIKE "请通知%","已发短信", 
+                        IF(备注 LIKE "%*%","未回复",IF((备注 NOT LIKE "%*%" AND 备注 NOT LIKE "%拒收%") AND (备注 LIKE "%客%取%" OR 备注 LIKE "%客%拿%" OR 备注 LIKE "%送货%" OR 备注 LIKE "%送貨%" OR 备注 LIKE "%取件%" OR 备注 LIKE "%取货%" OR 备注 LIKE "%取貨%"),"回复",""))))),备注) AS 回复类型
                  FROM 派送问题件_跟进表 p
                  WHERE p.创建日期 >= '{0}'  
                  ORDER BY 币种, 创建日期 , 
@@ -105,10 +105,10 @@ class QueryTwo(Settings, Settings_sso):
                 FROM (	
                     SELECT 创建日期, 具体原因,COUNT(s1.订单编号) AS 单量
                     FROM(SELECT *, IF(派送问题 LIKE "地址问题" OR 派送问题 LIKE "客户要求更改派送时间或者地址","地址问题/客户要求更改派送时间或者地址",IF(派送问题 LIKE "送达客户不在" OR 派送问题 LIKE "客户长期不在","送达客户不在/客户长期不在",派送问题)) AS 问题件类型,
-                                            IF(备注 <> "", IF(备注 LIKE "已签收%" OR 备注 LIKE "已完结%","已完结",IF(备注 LIKE "无人接听%" OR 备注 LIKE "无效号码%","无人接听", IF(备注 LIKE "已通知%" OR 备注 LIKE "已告知%" OR 备注 LIKE "请告知%" OR 备注 LIKE "请通知%","已发短信", 
-                                            IF(备注 LIKE "%*%","未回复",IF((备注 NOT LIKE "%*%" AND 备注 NOT LIKE "%拒收%") AND (备注 LIKE "%客%取%" OR 备注 LIKE "%客%拿%" OR 备注 LIKE "%送货%" OR 备注 LIKE "%送貨%" OR 备注 LIKE "%取件%" OR 备注 LIKE "%取货%" OR 备注 LIKE "%取貨%"),"回复",""))))),备注) AS 回复类型
+                                IF(备注 <> "", IF(备注 LIKE "已签收%" OR 备注 LIKE "已完结%","已完结",IF(备注 LIKE "无人接听%" OR 备注 LIKE "无效号码%","无人接听", IF(备注 LIKE "已通知%" OR 备注 LIKE "已告知%" OR 备注 LIKE "请告知%" OR 备注 LIKE "请通知%","已发短信", 
+                                IF(备注 LIKE "%*%","未回复",IF((备注 NOT LIKE "%*%" AND 备注 NOT LIKE "%拒收%") AND (备注 LIKE "%客%取%" OR 备注 LIKE "%客%拿%" OR 备注 LIKE "%送货%" OR 备注 LIKE "%送貨%" OR 备注 LIKE "%取件%" OR 备注 LIKE "%取货%" OR 备注 LIKE "%取貨%"),"回复",""))))),备注) AS 回复类型
                              FROM 派送问题件_跟进表 p
-                             WHERE p.创建日期 >= '2022-07-01'    AND p.物流状态 = "拒收"
+                             WHERE p.创建日期 >= '{0}'    AND p.物流状态 = "拒收"
                     ) s1
                     LEFT JOIN 拒收问题件 js ON s1.订单编号 =js.订单编号
                     WHERE s1.回复类型 = "回复" AND js.具体原因 <> '未联系上客户' AND js.具体原因 IS not NULL
@@ -119,7 +119,7 @@ class QueryTwo(Settings, Settings_sso):
                 ( SELECT 创建日期 日期, 具体原因 具体,COUNT(s1.订单编号) AS 总单量
                    FROM(SELECT *, IF(备注 <> "", IF(备注 LIKE "已签收%" OR 备注 LIKE "已完结%","已完结",IF(备注 LIKE "无人接听%" OR 备注 LIKE "无效号码%","无人接听", IF(备注 LIKE "已通知%" OR 备注 LIKE "已告知%" OR 备注 LIKE "请告知%" OR 备注 LIKE "请通知%","已发短信", IF(备注 LIKE "%*%","未回复",IF((备注 NOT LIKE "%*%" AND 备注 NOT LIKE "%拒收%") AND (备注 LIKE "%客%取%" OR 备注 LIKE "%客%拿%" OR 备注 LIKE "%送货%" OR 备注 LIKE "%送貨%" OR 备注 LIKE "%取件%" OR 备注 LIKE "%取货%" OR 备注 LIKE "%取貨%"),"回复",""))))),备注) AS 回复类型
                         FROM 派送问题件_跟进表 p
-                        WHERE p.创建日期 >= '2022-07-01'    AND p.物流状态 = "拒收"
+                        WHERE p.创建日期 >= '{0}'    AND p.物流状态 = "拒收"
                    ) s1
                    LEFT JOIN 拒收问题件 js ON s1.订单编号 =js.订单编号
                    WHERE s1.回复类型 = "回复" AND js.具体原因 <> '未联系上客户' AND js.具体原因 IS not NULL
@@ -186,11 +186,11 @@ class QueryTwo(Settings, Settings_sso):
         db2.to_sql('cp', con=self.engine1, index=False, if_exists='replace')
         sql = '''SELECT DISTINCT 创建日期, 总单量, 上月总单量, 派送问题件单量, 上月派送问题件单量, 签收率, 上月签收率 FROM cp;'''.format(timeStart)
         df5 = pd.read_sql_query(sql=sql, con=self.engine1)
-        df51 = df5[['创建日期', '总单量', '上月总单量']]
-        df52 = df5[['创建日期', '派送问题件单量', '上月派送问题件单量']]
-        df53 = df5[['创建日期', '签收率', '上月签收率']]
-        df54 = df5[['创建日期', '总单量', '派送问题件单量']]
-        df55 = df5[['创建日期', '上月总单量', '上月派送问题件单量']]
+        df51 = df5[['创建日期', '总单量', '上月总单量']].copy()
+        df52 = df5[['创建日期', '派送问题件单量', '上月派送问题件单量']].copy()
+        df53 = df5[['创建日期', '签收率', '上月签收率']].copy()
+        df54 = df5[['创建日期', '总单量', '派送问题件单量']].copy()
+        df55 = df5[['创建日期', '上月总单量', '上月派送问题件单量']].copy()
 
         df51.rename(columns={'总单量': '当日', '上月总单量': '上月'}, inplace=True)
         df52.rename(columns={'派送问题件单量': '当日', '上月派送问题件单量': '上月'}, inplace=True)
@@ -201,7 +201,7 @@ class QueryTwo(Settings, Settings_sso):
         # print(db2)
         # print(db3)
         print('正在写入excel…………')
-        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情02况.xlsx'.format(rq)
+        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况.xlsx'.format(rq)
 
         df0 = pd.DataFrame([])
         df0.to_excel(file_pathT, index=False)
@@ -399,6 +399,100 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
         return max_count
 
+
+    def getOrderList_T(self, timeStart, timeEnd):  # 进入订单检索界面
+        begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d')
+        begin = begin.date()
+        end = datetime.datetime.strptime(timeEnd, '%Y-%m-%d')
+        end = (end + datetime.timedelta(days=1)).date()
+        print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
+        currencyId = [13, 6]            # 13 是台币； 6 是港币
+        logisticsStatus = [9999, 2, 3, 4]
+        logisticsId_tw = [9999, '85,191,348', '198,199,229,356,376', '555,556,557', '367,383,255']
+        logisticsId_hk = [9999, '230,277', '6']
+
+        match = {6: '港币', 13: '台币'}
+        match2 = {9999: '全部', 2: '已签收', 3: '拒收', 4: '已退货'}
+        match3 = {9999: '全部', '85,191,348': '速派', '198,199,229,356,376': '天马', '555,556,557': '协来运', '367,383,255': '易速配', '230,277': '立邦', '6': '圆通'}
+
+        dlist = []
+        df =pd.DataFrame([])
+        for i in range((end - begin).days):  # 按天循环获取订单状态
+            day = begin + datetime.timedelta(days=i)
+            day_time = str(day)
+            for id in currencyId:
+                logisticsId = ''
+                if id == 13:
+                    logisticsId = logisticsId_tw
+                elif id == 6:
+                    logisticsId = logisticsId_hk
+
+                dict = []
+                for log_Id in logisticsId:
+                    print('+++正在查询： ' + day_time + match[id] + match3[log_Id] + '完成 信息')
+                    res = {}
+                    res['币种'] = match[id]
+                    res['日期'] = day_time
+                    res['物流名称'] = match3[log_Id]
+                    res['总单量'] = ''
+                    res['签收单量'] = ''
+                    res['拒收单量'] = ''
+                    res['退货单量'] = ''
+                    for log in logisticsStatus:
+                        print('+++正在查询： ' + match[id] + match3[log_Id] + match2[log] + ' 信息')
+                        count2 = self._getOrderList_T(id, log_Id, log, day_time, day_time)
+                        if log == 9999:
+                            res['总单量'] = count2
+                        elif log == 2:
+                            res['签收单量'] = count2
+                        elif log == 3:
+                            res['拒收单量'] = count2
+                        elif log == 4:
+                            res['退货单量'] = count2
+                        dict.append(res)
+
+                data = pd.json_normalize(dict)
+                print(data)
+                dlist.append(data)
+        dp = df.append(dlist, ignore_index=True)
+        dp.to_sql('cache_info', con=self.engine1, index=False, if_exists='replace')
+        sql = '''REPLACE INTO 派送问题件_跟进表2_cp(币种,日期, 物流名称, 总单量,签收单量, 拒收单量, 退货单量) 
+                SELECT 币种,日期,物流名称, 总单量,签收单量, 拒收单量, 退货单量
+                FROM cache_info;'''
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+    def _getOrderList_T(self, id, log_Id, log, timeStart, timeEnd):  # 进入订单检索界面
+        print('+++正在查询信息中')
+        if log_Id == 9999:
+            log = None
+        if log == 9999:
+            log = None
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'page': 1, 'pageSize': 500, 'order_number': None, 'shippingNumber': None, 'orderNumberFuzzy': None, 'shipUsername': None,
+                'phone': None, 'email': None, 'ip': None, 'productIds': None, 'saleIds': None, 'payType': None, 'logisticsId': log_Id,
+                'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': id, 'emailStatus': None,
+                'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '', 'warehouse': None, 'isEmptyWayBillNumber': None,
+                'logisticsStatus': log, 'orderStatus': None, 'tuan': None, 'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None,
+                'volumeEnd': None, 'volumeStart': None, 'chooser_id': None, 'service_id': None, 'autoVerifyStatus': None, 'shipZip': None,
+                'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None,
+                'order': None, 'sortField': None, 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
+                'timeStart': None, 'timeEnd': None, 'finishTimeStart': timeStart + '00:00:00', 'finishTimeEnd': timeEnd + '23:59:59'}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        max_count = req['data']['count']  # 获取 请求订单量
+        print('++++++本批次查询成功+++++++')
+        print('*' * 50)
+        return max_count
+
+
     # 查询更新（新后台的获取-订单完成） 查询更新（新后台的获取-订单完成）
     def getMessageLog(self, timeStart, timeEnd):  # 进入订单检索界面
         begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d')
@@ -463,7 +557,7 @@ if __name__ == '__main__':
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     '''
 
-    select = 99
+    select = 1
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '1458ad80ac3938a59c4872698cda3814'
@@ -474,23 +568,24 @@ if __name__ == '__main__':
             timeStart, timeEnd = m.readInfo('物流问题件')
 
         elif int(select) == 99:         # 查询更新-派送问题件
-            timeStart, timeEnd = m.readInfo('派送问题件_跟进表')
-            m.getOrderList('2022-07-16', '2022-07-18')
+            timeStart, timeEnd = m.readInfo('派送问题件_跟进表') 
+            m.getOrderList('2022-07-17', '2022-07-19')
             # m.getOrderList(timeStart, timeEnd)                        # 订单完成单量 更新
-            m.getMessageLog('2022-07-16', '2022-07-18')
+            m.getMessageLog('2022-07-17', '2022-07-19')
             # m.getMessageLog(timeStart, timeEnd)                       # 短信发送单量 更新
 
             # m.getDeliveryList('2022-06-12', '2022-06-30')
-            m.getDeliveryList('2022-07-01', '2022-07-18')
+            m.getDeliveryList('2022-07-01', '2022-07-19')
             # m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
 
-            m.outport_getDeliveryList('2022-07-01', '2022-07-18')
+            m.outport_getDeliveryList('2022-07-01', '2022-07-19')
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
     elif int(select) == 1:
         m = QueryTwo('+86-18538110674', 'qyz35100416', "", "")
         timeStart, timeEnd = m.readInfo('派送问题件_跟进表')
         # m.outport_getDeliveryList('2022-07-01', '2022-07-14')
-        m.getMessageLog('2022-07-01', '2022-07-15')
+        # m.getMessageLog('2022-07-01', '2022-07-15')
+        m.getOrderList_T('2022-07-01', '2022-07-05')
 
     print('查询耗时：', datetime.datetime.now() - start)

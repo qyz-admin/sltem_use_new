@@ -634,7 +634,7 @@ class QueryTwoLower(Settings, Settings_sso):
                 workbook1 = excel.Workbooks.Open(file_path)
                 workbook.Application.Run("'D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm'!总审核解析.A解析")
                 workbook1.Save()
-                # excel.Quit()
+                excel.Quit()
 
                 print('获取成功发送中......')
                 filepath = [file_path]

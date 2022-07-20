@@ -132,7 +132,7 @@ class QueryTwo(Settings, Settings_sso):
                 if data is not None and len(data) > 0:
                     dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
-            dp.dropna(axis=0, how='any', inplace=True)
+            # dp.dropna(axis=0, how='any', inplace=True)
         else:
             dp = None
         print(dp)
@@ -248,8 +248,8 @@ class QueryTwo(Settings, Settings_sso):
         # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         data = pd.json_normalize(ordersDict)
         # print(data)
-        # data.dropna(axis=0, how='any', inplace=True)
-        data.sort_values(by=["查货号码", "轨迹时间"], inplace=True, ascending=[True, True])
+        data.dropna(axis=0, how='any', inplace=True)
+        # data.sort_values(by=["查货号码", "轨迹时间"], inplace=True, ascending=[True, True])
         # data.sort_values(by="轨迹时间", inplace=True, ascending=True)  # inplace: 原地修改; ascending：升序
         # print(data)
         # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
