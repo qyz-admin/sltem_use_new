@@ -116,7 +116,7 @@ class QueryTwo(Settings, Settings_sso):
                     elif team == 'gat_waybill_list':
                         db.insert(0, '运单编号', '')
                         db.insert(0, '是否改派', reassignmentTypeName)
-                        db = db[['订单编号', '是否改派', '运单编号', '物流', '物流状态', '订单状态', '下单时间', '出库时间', '提货时间','上线时间','完成时间']]
+                        db = db[['订单编号', '是否改派', '运单编号', '物流', '物流状态', '订单状态', '下单时间', '出库时间', '是否装箱', '装箱时间', '提货时间','上线时间','完成时间']]
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:

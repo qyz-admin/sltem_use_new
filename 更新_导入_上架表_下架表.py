@@ -92,11 +92,11 @@ class Updata_return_bill(Settings, Settings_sso):
                     tem_kuwei = '天马仓退件库位'
                     tem_day = 45
 
-                elif '吉客印龟山库存总表' in dir:
+                elif '吉客印龟山库存总表' in dir or '吉客印台湾上架表-龟山仓' in dir:
                     team = 'gat_return_bill'
                     tem_data = '易速配'
                     tem_kuwei = '龟山易速配退件库位'
-                    tem_day = 60
+                    tem_day = 30
                 elif '桃園仓' in dir:
                     team = 'gat_return_bill'
                     tem_data = '桃园仓'
