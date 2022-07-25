@@ -912,7 +912,7 @@ class Query_sso_updata(Settings):
             time.sleep(5)
             js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
                         data: { mobile: '+86-18538110674',
-                                pwd: 'qyz35100416',
+                                pwd: 'qyz04163510',
                                 goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                                 pdmToken: '',
                                 araAppkey: '1917',
@@ -1567,7 +1567,7 @@ class Query_sso_updata(Settings):
         print('单日查询耗时：', datetime.datetime.now() - start)
 
 
-    # 更新团队订单明细（新后台的获取  方法一的全部更新）
+    # 更新团队订单明细（新后台的获取  方法一（1）的全部更新）
     def orderInfo(self, team, updata, begin, end):  # 进入订单检索界面
         # print('正在获取需要订单信息......')
         match1 = {'gat': '港台',
@@ -1814,6 +1814,235 @@ class Query_sso_updata(Settings):
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('*************************本批次更新成功***********************************')
+    # 更新团队订单明细（新后台的获取  方法一（2）的全部更新）
+    def order_getList(self, team, updata, begin, end):  # 进入订单检索界面
+        # print('正在获取需要订单信息......')
+        match1 = {'gat': '港台', 'slsc': '品牌'}
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'page': 1, 'pageSize': 500, 'orderPrefix': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': None, 'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None,
+                'orderStatus': None, 'tuan': None, 'tuanStatus': None, 'hasChangeSale': None, 'isComposite': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
+                'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None,
+                'estimateWeightEnd': None, 'order': None, 'sortField': None, 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None, 'percentStart': None,
+                'percentEnd': None, 'userid': None, 'questionId': None, 'delUserId': None, 'transferNumber': None, 'smsStatus': None, 'designer_id': None, 'logistics_remarks': None, 'clone_type': None,
+                'categoryId': None, 'addressType': None, 'timeStart': begin + ' 00:00:00', 'timeEnd': end + ' 23:59:59'}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)          # json类型数据转换为dict字典
+        max_count = req['data']['count']    # 获取 请求订单量
+        if max_count != 0 and max_count != []:
+            print('++++++' + begin + '号总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+            print('*' * 50)
+            in_count = math.ceil(max_count / 500)
+            df = pd.DataFrame([])
+            dlist = []
+            n = 1
+            while n <= in_count:  # 这里用到了一个while循环，穿越过来的
+                data = self._order_getList(n, begin, end)
+                dlist.append(data)
+                print('剩余查询次数' + str(in_count - n))
+                n = n + 1
+            dp = df.append(dlist, ignore_index=True)
+            # print('正在写入缓存中......')
+            dp = dp[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'wayBillNumber','saleId', 'saleProduct', 'productId','spec','quantity', 'orderStatus', 'logisticsStatus', 'logisticsName',
+                     'addTime', 'verifyTime','transferTime', 'onlineTime', 'deliveryTime','finishTime','stateTime', 'logisticsUpdateTime', 'cloneUser', 'logisticsUpdateTime','reassignmentTypeName',  'dpeStyle', 'amount',
+                     'payType','weight', 'autoVerify','delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks', 'auto_VerifyTip', 'order_count', 'order_qs', 'order_js']]
+            print(dp)
+            # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+            # dp.to_excel('H:\\桌面\\需要用到的文件\\\输出文件\\派送问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            print('正在更新临时表中......')
+            dp.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
+            sql = '''SELECT DATE(h.addTime) 日期,
+                                    IF(h.`currency` = '日币', '日本', IF(h.`currency` = '泰铢', '泰国', IF(h.`currency` = '港币', '香港', IF(h.`currency` = '台币', '台湾', IF(h.`currency` = '韩元', '韩国', h.`currency`))))) 币种,
+                                    h.orderNumber 订单编号,
+                                    h.quantity 数量,
+                                    h.`shipInfo.shipPhone` 电话号码,
+                                    UPPER(h.wayBillNumber) 运单编号,
+                                    IF(h.logisticsName LIKE "台湾-天马-711" AND LENGTH(h.wayBillNumber)=20, CONCAT(861,RIGHT(h.wayBillNumber,8)), IF((h.logisticsName LIKE "台湾-速派-新竹改派" or h.logisticsName LIKE "台湾-易速配-新竹改派") AND h.wayBillNumber LIKE "A%",RIGHT(h.wayBillNumber,LENGTH(h.wayBillNumber)-1),UPPER(h.wayBillNumber))) 查件单号,
+                                    h.orderStatus 系统订单状态,
+                                    IF(h.`logisticsStatus` in ('发货中'), null, h.`logisticsStatus`) 系统物流状态,
+                                    IF(h.`reassignmentTypeName` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
+                                    TRIM(h.logisticsName) 物流方式,
+                                    dim_trans_way.simple_name 物流名称,
+                                    IF(h.`dpeStyle` = 'P 普通货', 'P', IF(h.`dpeStyle` = 'T 特殊货', 'T', h.`dpeStyle`)) 货物类型,
+                                    h.`saleId` 商品id,
+                                    h.`productId` 产品id,
+                                    h.`saleProduct` 产品名称,
+                                    h.amount 价格,
+                                    h.verifyTime 审核时间,
+                                    h.transferTime 转采购时间,
+                                    h.onlineTime 上线时间,
+                                    h.deliveryTime 仓储扫描时间,
+                                    h.finishTime 完结状态时间,
+                                    h.logisticsUpdateTime 物流更新时间,
+                                    h.stateTime 状态时间,
+                                    h.`weight` 包裹重量,
+                                       h.`shipInfo.shipState` 省洲,
+                                    h.`spec` 规格中文,
+                                    h.`autoVerify` 审单类型,
+                                    h.`auto_VerifyTip` 拉黑率,
+                                    h.`order_count` 订单配送总量,
+                                    h.`order_qs` 签收量,
+                                    h.`order_js` 拒收量,
+                                    h.`delReason` 删除原因,
+                                    h.`delTime` 删除时间,
+                                    h.`questionReason` 问题原因,
+                                    h.`questionTime` 问题时间,
+                                    h.`service` 下单人,
+                                    h.`cloneUser` 克隆人,
+                                    h.`chooser` 选品人,
+                                    h.`logisticsRemarks` 物流状态注释
+                                   FROM d1_cpy h
+                                       LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
+                                       LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
+                                       LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = TRIM(h.logisticsName);'''.format('gat_order_list')
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            df.to_sql('d1_cpy_cp', con=self.engine1, index=False, if_exists='replace')
+            print('正在更新表总表中......')
+            sql = '''update {0} a, d1_cpy_cp b
+                                   set a.`币种`= b.`币种`,
+                                       a.`数量`= b.`数量`,
+                                       a.`电话号码`= b.`电话号码` ,
+                                       a.`运单编号`= IF(b.`运单编号` = '', NULL, b.`运单编号`),
+                                       a.`查件单号`= IF(b.`查件单号` = '', NULL, b.`查件单号`),
+                                       a.`系统订单状态`= IF(b.`系统订单状态` = '', NULL, b.`系统订单状态`),
+                                       a.`系统物流状态`= IF(b.`系统物流状态` = '', NULL, b.`系统物流状态`),
+                                       a.`是否改派`= b.`是否改派`,
+                                       a.`物流方式`= IF(b.`物流方式` = '',NULL, b.`物流方式`),
+                                       a.`物流名称`= IF(b.`物流名称` = '', NULL, b.`物流名称`),
+                                       a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),
+                                       a.`商品id`= IF(b.`商品id` = '', a.`商品id`, b.`商品id`),
+                                       a.`产品id`= IF(b.`产品id` = '', a.`产品id`, b.`产品id`),
+                                       a.`产品名称`= IF(b.`产品名称` = '', a.`产品名称`, b.`产品名称`),
+                                       a.`价格`= IF(b.`价格` = '', a.`价格`, b.`价格`),
+                                       a.`审核时间`= IF(b.`审核时间` = '', NULL, b.`审核时间`),
+                                       a.`上线时间`= IF(b.`上线时间` = '' or b.`上线时间` = '0000-00-00 00:00:00' , NULL, b.`上线时间`),
+                                       a.`仓储扫描时间`= IF(b.`仓储扫描时间` = '', NULL, b.`仓储扫描时间`),
+                                       a.`完结状态时间`= IF(b.`状态时间` = '', IF(b.`物流更新时间` = '', IF(b.`完结状态时间` = '', NULL, b.`完结状态时间`), b.`物流更新时间`), b.`状态时间`),
+                                       a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`),
+                                       a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`),
+                                       a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
+                                       a.`审单类型`= IF(b.`审单类型` = '', NULL, IF(b.`审单类型` like '%自动审单%','是','否')),
+                                       a.`审单类型明细`= IF(b.`审单类型` = '', NULL, b.`审单类型`),
+                                       a.`拉黑率`= IF(b.`拉黑率` = '', '0.00%', b.`拉黑率`),
+                                       a.`订单配送总量`= IF(b.`订单配送总量` = '', NULL, b.`订单配送总量`),
+                                       a.`签收量`= IF(b.`签收量` = '', NULL, b.`签收量`),
+                                       a.`拒收量`= IF(b.`拒收量` = '', NULL, b.`拒收量`),
+                                       a.`删除原因`= IF(b.`删除原因` = '', NULL,  b.`删除原因`),
+                                       a.`删除时间`= IF(b.`删除时间` = '', NULL,  b.`删除时间`),
+                                       a.`问题原因`= IF(b.`问题原因` = '', NULL,  b.`问题原因`),
+                                       a.`问题时间`= IF(b.`问题时间` = '', NULL,  b.`问题时间`),
+                                       a.`下单人`= IF(b.`下单人` = '', NULL,  b.`下单人`),
+                                       a.`克隆人`= IF(b.`克隆人` = '', NULL,  b.`克隆人`),
+                                       a.`选品人`= IF(b.`选品人` = '', NULL,  b.`选品人`)
+                           where a.`订单编号`=b.`订单编号`;'''.format('gat_order_list')
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        else:
+            print('没有需要获取的信息！！！')
+            return
+        print('*' * 50)
+    def _order_getList(self, n, begin, end):  # 进入订单检索界面
+        # print('+++正在查询订单信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'page': n, 'pageSize': 500, 'orderPrefix': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': None, 'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None,
+                'orderStatus': None, 'tuan': None, 'tuanStatus': None, 'hasChangeSale': None, 'isComposite': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
+                'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None,
+                'estimateWeightEnd': None, 'order': None, 'sortField': None, 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None, 'percentStart': None,
+                'percentEnd': None, 'userid': None, 'questionId': None, 'delUserId': None, 'transferNumber': None, 'smsStatus': None, 'designer_id': None, 'logistics_remarks': None, 'clone_type': None,
+                'categoryId': None, 'addressType': None, 'timeStart': begin + ' 00:00:00', 'timeEnd': end + ' 23:59:59'}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        ordersDict = []
+        count = 0
+        try:
+            for result in req['data']['list']:
+                # print(result['orderNumber'])
+                # print(result['specs'])
+                # 添加新的字典键-值对，为下面的重新赋值用
+                # 添加新的字典键-值对，为下面的重新赋值用
+                if result['specs'] != []:
+                    result['saleId'] = 0
+                    result['saleProduct'] = 0
+                    result['productId'] = 0
+                    result['spec'] = 0
+                    result['chooser'] = 0
+                    result['saleId'] = result['specs'][0]['saleId']
+                    result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
+                    result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+                    result['spec'] = result['specs'][0]['spec']
+                    result['chooser'] = result['specs'][0]['chooser']
+                else:
+                    result['saleId'] = ''
+                    result['saleProduct'] = ''
+                    result['productId'] = ''
+                    result['spec'] = ''
+                    result['chooser'] = ''
+                result['auto_VerifyTip'] = ''
+                result['order_count'] = ''
+                result['order_qs'] = ''
+                result['order_js'] = ''
+                if result['autoVerifyTip'] == "":
+                    result['auto_VerifyTip'] = '0.00%'
+                else:
+                    if '未读到拉黑表记录' in result['autoVerifyTip']:
+                        result['auto_VerifyTip'] = '0.00%'
+                    else:
+                        if '拉黑率问题' not in result['autoVerifyTip']:
+                            t2 = result['autoVerifyTip'].split('拉黑率')[1]
+                            for tt2 in t2:
+                                if '%' in tt2:
+                                    result['auto_VerifyTip'] = t2.split('%')[0] + '%'
+                            # t2 = result['autoVerifyTip'].split(',拉黑率')[1]
+                            # result['auto_VerifyTip'] = t2.split('%;')[0] + '%'  ：26,：0,
+                        elif '拉黑率问题' in result['autoVerifyTip']:
+                            t2 = result['autoVerifyTip'].split('拒收订单量：')[1]
+                            t2 = t2.split('%')[0]
+                            result['auto_VerifyTip'] = t2.split('拉黑率')[1] + '%'
+                    if '订单配送总量：' in result['autoVerifyTip']:
+                        t4 = result['autoVerifyTip'].split('订单配送总量：')[1]
+                        result['order_count'] = t4.split(',')[0]
+                    if '送达订单量：' in result['autoVerifyTip']:
+                        t4 = result['autoVerifyTip'].split('送达订单量：')[1]
+                        result['order_qs'] = t4.split(',')[0]
+                    if '拒收订单量：' in result['autoVerifyTip']:
+                        t4 = result['autoVerifyTip'].split('拒收订单量：')[1]
+                        result['order_js'] = t4.split(',')[0]
+                quest = ''
+                for re in result['questionReason']:
+                    quest = quest + ';' + re
+                result['questionReason'] = quest
+                delr = ''
+                for re in result['delReason']:
+                    delr = delr + ';' + re
+                result['delReason'] = delr
+                auto = ''
+                for re in result['autoVerify']:
+                    auto = auto + ';' + re
+                result['autoVerify'] = auto
+                ordersDict.append(result)
+            data = pd.json_normalize(ordersDict)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e) + begin)
+        print('*************************查询成功***********************************')
+        return data
 
 
     # 更新团队订单明细（新后台的获取  方法二的部分更新）
@@ -2132,7 +2361,7 @@ class Query_sso_updata(Settings):
             print(' ****** 没有要补充的信息; ****** ')
         else:
             print('！！！ 请再次补充缺少的数据中！！！')
-            lw = QueryTwoT('+86-18538110674', 'qyz35100416', token, handle)
+            lw = QueryTwoT('+86-18538110674', 'qyz04163510', token, handle)
             lw.productInfo('d1_host_cp', ordersDict)
 
         print('正在导入 总表中......')
@@ -2313,7 +2542,7 @@ class Query_sso_updata(Settings):
 
 
 if __name__ == '__main__':
-    m = Query_sso_updata('+86-18538110674', 'qyz35100416', 1343,'')
+    m = Query_sso_updata('+86-18538110674', 'qyz04163510', 1343,'',"")
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台',
               'gat_order_list': '港台',

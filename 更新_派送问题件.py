@@ -40,10 +40,10 @@ class QueryTwo(Settings, Settings_sso):
         # self.sso__online_handle(login_TmpCode)
         # # self.sso__online_auto()
         #
-        # if handle == '手动':
-        #     self.sso__online_handle(login_TmpCode)
-        # else:
-        #     self.sso__online_auto()
+        if handle == '手动':
+            self.sso__online_handle(login_TmpCode)
+        else:
+            self.sso__online_auto()
 
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -102,7 +102,7 @@ class QueryTwo(Settings, Settings_sso):
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
 
         print('正在获取拒收内容…………')
-        sql = '''SELECT 创建日期, IFNULL(具体原因,'拒收原因'), 单量,concat(ROUND(IFNULL(单量 / 总单量,0) * 100,2),'%') as 占比
+        sql = '''SELECT 创建日期, IFNULL(具体原因,'合计') AS 拒收原因, 单量,concat(ROUND(IFNULL(单量 / 总单量,0) * 100,2),'%') as 占比
                 FROM (	
                     SELECT 创建日期, 具体原因,COUNT(s1.订单编号) AS 单量
                     FROM(SELECT *, IF(派送问题 LIKE "地址问题" OR 派送问题 LIKE "客户要求更改派送时间或者地址","地址问题/客户要求更改派送时间或者地址",IF(派送问题 LIKE "送达客户不在" OR 派送问题 LIKE "客户长期不在","送达客户不在/客户长期不在",派送问题)) AS 问题件类型,
@@ -187,6 +187,8 @@ class QueryTwo(Settings, Settings_sso):
 				) s1
                 ORDER BY 币种, 日期;'''.format(timeStart)
         df12 = pd.read_sql_query(sql=sql, con=self.engine1)
+        # df121 = df12[(df12['币种'].str.contains('台币'))]
+        # df122 = df12[(df12['币种'].str.contains('港币'))]
 
         print('正在获取跟进内容…………')
         sql = '''SELECT 币种, 创建日期, 
@@ -259,7 +261,7 @@ class QueryTwo(Settings, Settings_sso):
         df55.rename(columns={'上月总单量': '完成单量', '上月派送问题件单量': '派送问题件单量'}, inplace=True)
 
         print('正在写入excel…………')
-        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况99.xlsx'.format(rq)
+        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况909.xlsx'.format(rq)
         df0 = pd.DataFrame([])
         df0.to_excel(file_pathT, index=False)
         writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
@@ -616,11 +618,11 @@ if __name__ == '__main__':
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     '''
 
-    select = 1
+    select = 99
     if int(select) == 99:
-        handle = '手0动'
-        login_TmpCode = '1458ad80ac3938a59c4872698cda3814'
-        m = QueryTwo('+86-18538110674', 'qyz35100416', login_TmpCode, handle)
+        handle = '手动'
+        login_TmpCode = '0fc03d32901e33348ff7919ce519a0aa'
+        m = QueryTwo('+86-18538110674', 'qyz04163510', login_TmpCode, handle)
         start: datetime = datetime.datetime.now()
 
         if int(select) == 11:
@@ -629,20 +631,20 @@ if __name__ == '__main__':
         elif int(select) == 99:         # 查询更新-派送问题件
             timeStart, timeEnd = m.readInfo('派送问题件_跟进表') 
             # m.getOrderList('2022-07-01', '2022-07-19')
-            m.getOrderList_T('2022-07-01', '2022-07-20')
+            m.getOrderList_T('2022-07-21', '2022-07-24')
             # m.getOrderList(timeStart, timeEnd)                        # 订单完成单量 更新
-            m.getMessageLog('2022-07-17', '2022-07-20')
+            m.getMessageLog('2022-07-21', '2022-07-24')
             # m.getMessageLog(timeStart, timeEnd)                       # 短信发送单量 更新
 
             # m.getDeliveryList('2022-06-12', '2022-06-30')
-            m.getDeliveryList('2022-07-01', '2022-07-20')
+            m.getDeliveryList('2022-07-10', '2022-07-24')
             # m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
 
-            m.outport_getDeliveryList('2022-07-01', '2022-07-20')
+            m.outport_getDeliveryList('2022-07-01', '2022-07-24')
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
     elif int(select) == 1:
-        m = QueryTwo('+86-18538110674', 'qyz35100416', "", "")
+        m = QueryTwo('+86-18538110674', 'qyz04163510', "", "")
         timeStart, timeEnd = m.readInfo('派送问题件_跟进表')
         # m.getOrderList_T('2022-06-01', '2022-06-30')
         m.outport_getDeliveryList('2022-07-01', '2022-07-20')

@@ -134,7 +134,7 @@ class QueryTwo(Settings, Settings_sso):
                         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                         # self.waybill_info()
                         # self.waybill_updata()
-                        print('++++成功导出订单跟进明细')
+                        print('++++成功导入订单跟进明细')
                 else:
                     print('----------数据为空,不需导入：' + sht.name)
             wb.close()
@@ -475,7 +475,7 @@ class QueryTwo(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    m = QueryTwo('+86-18538110674', 'qyz35100416')
+    m = QueryTwo('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
     '''
     # -----------------------------------------------查询状态运行（一）-----------------------------------------
@@ -502,12 +502,12 @@ if __name__ == '__main__':
 
     elif int(select) == 5:
         team = 'gat_waybill_list'
-        login_TmpCode = '8f60a2f666d73bb1ac7afedf7d31cb14'
-        handle = '手0动'
+        login_TmpCode = 'fa418ac71c66310f8c99e61abee616d3'
+        handle = '手动'
 
         m.readFormHost(team)
-        m.waybill_info(login_TmpCode, handle)
-        m.chuhuo_info('217b05a1c8e8345fb1476c28f3fb91ee', 'fbb2cfe70910362d8dc937190da35507', handle)
+        # m.waybill_info(login_TmpCode, handle)
+        m.chuhuo_info('82c3c24043613eadbf967ff2a52b587c', '9554b254a2963a93b16b8174ea702acf', handle)
         m.waybill_updata()
 
 

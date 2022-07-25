@@ -9,6 +9,7 @@ from settings import Settings
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
 import requests
 
 class Settings_sso():
@@ -16,7 +17,7 @@ class Settings_sso():
         self.SS = Settings()
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.userMobile = '+86-18538110674'
-        self.password = 'qyz35100416'
+        self.password = 'qyz04163510'
         self.userID = '1343'
         # self.userMobile = '+86-15565053520'
         # self.password = 'sunan1022wang.@&'
@@ -866,14 +867,18 @@ class Settings_sso():
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoag6pwcnuxvwto821j&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gwms-v3.giikin.cn/tool/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
-                'araToken': '0#19171629428116275265671469741653893620010015GC87818BBCC3CCDF73DCA3659F13FFA069CD0EA',
+                'araToken': '0#19171629428116275265671469741658739291139085GC87818BBCC3CCDF73DCA3659F13FFA069CD0EA',
                 'araScene': 'login',
                 'captchaImgCode': '',
                 'captchaSessionId': '',
                 'type': 'h5'}
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0',
-            'Origin': 'https://login.dingtalk.com',
-            'Referer': 'https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoag6pwcnuxvwto821j&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gwms-v3.giikin.cn/tool/dingtalk_service/getunionidbytempcode'}
+                    'Origin': 'https://login.dingtalk.com',
+                    'Referer': 'https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoag6pwcnuxvwto821j&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gwms-v3.giikin.cn/tool/dingtalk_service/getunionidbytempcode'}
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0',
+                    'Host': 'login.dingtalk.com',
+                    'Origin': 'https://login.dingtalk.com',
+                    'Referer': 'https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoag6pwcnuxvwto821j&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gwms-v3.giikin.cn/tool/dingtalk_service/getunionidbytempcode'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         req = req.json()
         # print(req)
@@ -899,6 +904,56 @@ class Settings_sso():
 
         if login_TmpCode == '获取不到参数':
             time.sleep(1)
+            # 模拟打开火狐浏览器 获取token
+            options = Options()
+            # options.add_argument('-headless')
+            driver = webdriver.Firefox(options=options)
+            # driver.get('https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
+            driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
+            driver.implicitly_wait(5)
+            js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
+                                    data: { mobile: '+86-18538110674',
+                                            pwd: 'qyz04163510',
+                                            goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoag6pwcnuxvwto821j&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gwms-v3.giikin.cn/tool/dingtalk_service/getunionidbytempcode',
+                                            pdmToken: '',
+                                            araAppkey: '1917',
+                                            araToken: '0#19171646622570440595157649661653036928565594G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
+                                            araScene: 'login',
+                                            captchaImgCode: '',
+                                            captchaSessionId: '',
+                                            type: 'h5'
+                                        },
+                                        type: 'POST',
+                                        timeout: '10000',
+                                        async:false, 
+                                        beforeSend(xhr, settings) {
+                                            xhr.setRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
+                                        },
+                                        success: function(data) {
+                                            if (data.success) {
+                                                 console.log(data.data);
+                                                 console.log("loginTmpCode值是：", data.data.split('loginTmpCode=')[1]);
+                                                  document.documentElement.getElementsByClassName("noGoto")[0].textContent = data.data.split('loginTmpCode=')[1];
+                                                 arguments[0].value=data.data.split('loginTmpCode=')[1];
+                                            } else {
+                                                    console.log(data.code);
+                                            }
+                                        },
+                                        error: function(error) {
+                                            alert("请检查网络");
+                                        }
+                                    });
+                                    '''
+            element = driver.find_element('id', 'mobile')
+            driver.execute_script(js, element)
+            # driver.implicitly_wait(5)
+            time.sleep(5)
+            login_TmpCode = driver.execute_script('return document.documentElement.getElementsByClassName("noGoto")[0].textContent;')
+            print('loginTmpCode值: ' + login_TmpCode)
+            driver.quit()
+
+        elif login_TmpCode == '获取不到参数':
+            time.sleep(1)
             options = webdriver.ChromeOptions()
             options.add_argument(r"user-data-dir=C:\Program Files\Google\Chrome\Application\profile")
             driver = webdriver.Chrome(r'C:\Program Files\Google\Chrome\Application\chromedriver.exe')
@@ -906,7 +961,7 @@ class Settings_sso():
             time.sleep(3)
             js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
                         data: { mobile: '+86-18538110674',
-                                pwd: 'qyz35100416',
+                                pwd: 'qyz04163510',
                                 goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoag6pwcnuxvwto821j&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gwms-v3.giikin.cn/tool/dingtalk_service/getunionidbytempcode',
                                 pdmToken: '',
                                 araAppkey: '1917',
@@ -1005,17 +1060,18 @@ class Settings_sso():
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
-                'araToken': '0#19171629428116275265671469741656903392035557GC87818BBCC3CCDF73DCA3659F13FFA069CD0EA',
+                'araToken': '0#19171629428116275265671469741658739612489317GC87818BBCC3CCDF73DCA3659F13FFA069CD0EA',
                 'araScene': 'login',
                 'captchaImgCode': '',
                 'captchaSessionId': '',
                 'type': 'h5'}
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0',
-            'Origin': 'https://login.dingtalk.com',
-            'Referer': 'https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode'}
+                    'Host': 'login.dingtalk.com',
+                    'Origin': 'https://login.dingtalk.com',
+                    'Referer': 'https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         req = req.json()
-        # print(req)
+        print(req)
         # req_url = req['data']  0#19171629428116275265671469741656903392035557GC87818BBCC3CCDF73DCA3659F13FFA069CD0EA
         # loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
         login_TmpCode = '获取不到参数'
@@ -1035,24 +1091,22 @@ class Settings_sso():
             print('请检查失败原因：', str(req))
             win32api.MessageBox(0, "请检查失败原因: 是否触发了验证码； 或者3分钟后再尝试登录！！！", "错误 提醒", win32con.MB_ICONSTOP)
             # sys.exit()
-
         if login_TmpCode == '获取不到参数':
             time.sleep(1)
-            # 模拟打开浏览器 获取token
-            options = webdriver.ChromeOptions()
-            options.add_argument(r"user-data-dir=C:\Program Files\Google\Chrome\Application\profile")
-            driver = webdriver.Chrome(r'C:\Program Files\Google\Chrome\Application\chromedriver.exe')
-
+            # 模拟打开火狐浏览器 获取token
+            options = Options()
+            # options.add_argument('-headless')
+            driver = webdriver.Firefox(options=options)
+            # driver.get('https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
             driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
-            # driver.implicitly_wait(5)
-            time.sleep(5)
+            driver.implicitly_wait(5)
             js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
                         data: { mobile: '+86-18538110674',
-                                pwd: 'qyz35100416',
+                                pwd: 'qyz04163510',
                                 goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                                 pdmToken: '',
                                 araAppkey: '1917',
-                                araToken: '0#19171646622570440595157649661652144581488416G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
+                                araToken: '0#19171646622570440595157649661658739404065586G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
                                 araScene: 'login',
                                 captchaImgCode: '',
                                 captchaSessionId: '',
@@ -1086,6 +1140,59 @@ class Settings_sso():
             login_TmpCode = driver.execute_script('return document.documentElement.getElementsByClassName("noGoto")[0].textContent;')
             print('loginTmpCode值: ' + login_TmpCode)
             driver.quit()
+
+        elif login_TmpCode == '获取不到参数':
+            time.sleep(1)
+            # 模拟打开谷歌浏览器 获取token
+            options = webdriver.ChromeOptions()
+            options.add_argument(r"user-data-dir=C:\Program Files\Google\Chrome\Application\profile")
+            driver = webdriver.Chrome(r'C:\Program Files\Google\Chrome\Application\chromedriver.exe')
+
+            driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
+            # driver.implicitly_wait(5)
+            time.sleep(5)
+            js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
+                        data: { mobile: '+86-18538110674',
+                                pwd: 'qyz04163510',
+                                goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
+                                pdmToken: '',
+                                araAppkey: '1917',
+                                araToken: '0#19171646622570440595157649661658739404065586G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
+                                araScene: 'login',
+                                captchaImgCode: '',
+                                captchaSessionId: '',
+                                type: 'h5'
+                            },
+                            type: 'POST',
+                            timeout: '10000',
+                            async:false,
+                            beforeSend(xhr, settings) {
+                                xhr.setRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
+                            },
+                            success: function(data) {
+                                if (data.success) {
+                                     console.log(data.data);
+                                     console.log("loginTmpCode值是：", data.data.split('loginTmpCode=')[1]);
+                                      document.documentElement.getElementsByClassName("noGoto")[0].textContent = data.data.split('loginTmpCode=')[1];
+                                     arguments[0].value=data.data.split('loginTmpCode=')[1];
+                                } else {
+                                        console.log(data.code);
+                                }
+                            },
+                            error: function(error) {
+                                alert("请检查网络");
+                            }
+                        });
+                        '''
+            element = driver.find_element('id', 'mobile')
+            driver.execute_script(js, element)
+            # driver.implicitly_wait(5)
+            time.sleep(5)
+            login_TmpCode = driver.execute_script('return document.documentElement.getElementsByClassName("noGoto")[0].textContent;')
+            print('loginTmpCode值: ' + login_TmpCode)
+            driver.quit()
+
+
 
         print('******已获取loginTmpCode值: ' + str(login_TmpCode))
         loginTmpCode = login_TmpCode
@@ -1826,7 +1933,8 @@ class Settings_sso():
         df.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
 if __name__ == '__main__':
     m = Settings_sso()
-    m.sso_online_Two_Five()
+    # m.sso_online_Two_Five()
+    m.sso__online_auto()
     # m.test()
     # m._updata_tihuo('GT203302314025681','','')
 
@@ -1837,7 +1945,7 @@ if __name__ == '__main__':
     2、后台请求获取值：loginTmpCode=971701a5cf0230e9a685e4a651cc82e1
       $.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
             data: { mobile: '+86-18538110674',
-                    pwd: 'qyz35100416',
+                    pwd: 'qyz04163510',
                     goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                     pdmToken: '',
                     araAppkey: '1917',
@@ -1866,12 +1974,14 @@ if __name__ == '__main__':
                 }
             })
             
+            
+            
     3、仓储后台请求网站：
     https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoag6pwcnuxvwto821j&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gwms-v3.giikin.cn/tool/dingtalk_service/getunionidbytempcode
     4、后台请求获取值：loginTmpCode=971701a5cf0230e9a685e4a651cc82e1
       $.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
             data: { mobile: '+86-18538110674',
-                    pwd: 'qyz35100416',
+                    pwd: 'qyz04163510',
                     goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoag6pwcnuxvwto821j&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gwms-v3.giikin.cn/tool/dingtalk_service/getunionidbytempcode',
                     pdmToken: '',
                     araAppkey: '1917',

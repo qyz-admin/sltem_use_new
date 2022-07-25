@@ -120,7 +120,7 @@ if wb == '改派未发货 已导出':
     print(wb)
 else:
     print('正在获取 改派未发货 中')
-    sso = Query_sso_updata('+86-18538110674', 'qyz35100416', '1343', '6acfa3bb68c23b24a851bfca4e8ec49b', '手0动')
+    sso = Query_sso_updata('+86-18538110674', 'qyz35100416', '1343', '4e9dbeef85d43ef8a273bdf02ceb2cbf', '手动')
     sso.gp_order()
 
 print('*' * 50)

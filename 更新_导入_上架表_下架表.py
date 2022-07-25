@@ -499,7 +499,7 @@ class Updata_return_bill(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    m = Updata_return_bill('+86-18538110674', 'qyz35100416')
+    m = Updata_return_bill('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
     '''
     # -----------------------------------------------查询状态运行（一）-----------------------------------------
@@ -515,7 +515,7 @@ if __name__ == '__main__':
 
     elif int(select) == 3:
         m.readFormHost()
-        m.tianma_upload_return('手0动','login_TmpCode')       # 天马上架
+        m.tianma_upload_return('手动','8ccecbd8f0c03faf91c79a4dffc7b3d0')       # 天马上架
 
     elif int(select) == 4:
         m.check_data()

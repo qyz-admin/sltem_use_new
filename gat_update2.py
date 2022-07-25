@@ -270,7 +270,7 @@ class QueryUpdate(Settings):
                 print(' ****** 没有要补充的信息; ****** ')
             else:
                 print('！！！ 请再次补充缺少的数据中！！！')
-                lw = QueryTwoT('+86-18538110674', 'qyz35100416')
+                lw = QueryTwoT('+86-18538110674', 'qyz04163510',"")
                 lw.productInfo('gat_order_list', ordersDict)
 
         if team in ('gat'):
@@ -5210,12 +5210,14 @@ class QueryUpdate(Settings):
         try:
             print('正在更新单表中......')
             sql = '''update {0}_order_list a, gat_update b
-                            set a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`)
+                            set a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`),
+                            set a.`市区`= IF(b.`市区` = '', NULL, b.`市区`)
         		            where a.`订单编号`= b.`订单编号`;'''.format(team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('正在更新总表中......')
             sql = '''update {0}_zqsb a, gat_update b
                             set a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`)
+                            set a.`市区`= IF(b.`市区` = '', NULL, b.`市区`)
                     		where a.`订单编号`= b.`订单编号`;'''.format(team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
@@ -5287,7 +5289,7 @@ class QueryUpdate(Settings):
                                     SUM(`价格RMB`) as 总计金额,
                                     SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
                                 FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "%火凤凰%","火凤凰",IF(cc.团队 LIKE "%神龙家族%","神龙",IF(cc.团队 LIKE "%金狮%","金狮",IF(cc.团队 LIKE "%金鹏%","小虎队",IF(cc.团队 LIKE "%神龙-运营1组%","神龙运营1组",cc.团队)))))) as 家族
+                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族
                                     FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                                 ) cx
                                 GROUP BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`是否改派`, cx.`省洲`
