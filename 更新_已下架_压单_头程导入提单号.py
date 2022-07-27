@@ -1134,7 +1134,7 @@ class QueryTwoLower(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    m = QueryTwoLower('+86-18538110674', 'qyz35100416','28bcc7b0b3333eabb1b181b0d5dcc7d6','手动')
+    m = QueryTwoLower('+86-18538110674', 'qyz04163510.','1dd6113668f83ab5b79797b87b8bcc41','手动')
     # m.bulid_file()
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}

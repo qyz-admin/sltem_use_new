@@ -2197,7 +2197,7 @@ class QueryOrder(Settings, Settings_sso):
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
-    m = QueryOrder('+86-18538110674', 'qyz35100416', 'f92db1dd1c2032cb9768b633afca4e2d', '手动')
+    m = QueryOrder('+86-18538110674', 'qyz04163510.', 'f92db1dd1c2032cb9768b633afca4e2d', '手0动')
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}

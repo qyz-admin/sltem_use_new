@@ -495,7 +495,7 @@ if __name__ == '__main__':
 
     elif int(select) == 4:
         team = 'gat_waybill_list'
-        handle = '手动'
+        handle = '手0动'
         m.readFormHost(team)
         m.waybill_info('login_TmpCode', handle)
         m.chuhuo_info('login_TmpCode', 'login_TmpCode2', handle)
@@ -503,10 +503,10 @@ if __name__ == '__main__':
     elif int(select) == 5:
         team = 'gat_waybill_list'
         login_TmpCode = 'fa418ac71c66310f8c99e61abee616d3'
-        handle = '手动'
+        handle = '手0动'
 
         m.readFormHost(team)
-        # m.waybill_info(login_TmpCode, handle)
+        m.waybill_info(login_TmpCode, handle)
         m.chuhuo_info('82c3c24043613eadbf967ff2a52b587c', '9554b254a2963a93b16b8174ea702acf', handle)
         m.waybill_updata()
 

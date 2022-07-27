@@ -20,6 +20,7 @@ from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, \
     Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
 from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
 from 查询_产品明细 import QueryTwoT
 
 # -*- coding:utf-8 -*-
@@ -864,23 +865,24 @@ class Query_sso_updata(Settings):
         print('正在登录后台系统中......')
         print('一、获取-钉钉用户信息......')
         url = r'https://login.dingtalk.com/login/login_with_pwd'
-        data = {'mobile': self.userMobile,
-                'pwd': self.password,
+        data = {'mobile': '+86-18538110674',
+                'pwd': 'qyz04163510.',
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
-                'araToken': '0#19171629428116275265671469741653892975540685GC87818BBCC3CCDF73DCA3659F13FFA069CD0EA',
+                'araToken': '0#19171629428116275265671469741658739612489317GC87818BBCC3CCDF73DCA3659F13FFA069CD0EA',
                 'araScene': 'login',
                 'captchaImgCode': '',
                 'captchaSessionId': '',
                 'type': 'h5'}
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0',
-            'Origin': 'https://login.dingtalk.com',
-            'Referer': 'https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode'}
+                    'Origin': 'https://login.dingtalk.com',
+                    'Referer': 'https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         req = req.json()
+        # req = {}
         # print(req)
-        # req_url = req['data']
+        # req_url = req['data']  0#19171629428116275265671469741656903392035557GC87818BBCC3CCDF73DCA3659F13FFA069CD0EA
         # loginTmpCode = req_url.split('loginTmpCode=')[1]        # 获取loginTmpCode值
         login_TmpCode = '获取不到参数'
         if 'data' in req.keys():
@@ -897,26 +899,25 @@ class Query_sso_updata(Settings):
             # sys.exit()
         else:
             print('请检查失败原因：', str(req))
-            win32api.MessageBox(0, "请检查失败原因: 是否触发了验证码； 或者3分钟后再尝试登录！！！", "错误 提醒", win32con.MB_ICONSTOP)
+            # win32api.MessageBox(0, "请检查失败原因: 是否触发了验证码； 或者3分钟后再尝试登录！！！", "错误 提醒", win32con.MB_ICONSTOP)
             # sys.exit()
 
         if login_TmpCode == '获取不到参数':
             time.sleep(1)
-            # 模拟打开浏览器 获取token
-            options = webdriver.ChromeOptions()
-            options.add_argument(r"user-data-dir=C:\Program Files\Google\Chrome\Application\profile")
-            driver = webdriver.Chrome(r'C:\Program Files\Google\Chrome\Application\chromedriver.exe')
-
+            # 模拟打开火狐浏览器 获取token
+            options = Options()
+            options.add_argument('-headless')
+            driver = webdriver.Firefox(options=options)
+            # driver.get('https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
             driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
-            # driver.implicitly_wait(5)
-            time.sleep(5)
+            driver.implicitly_wait(5)
             js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
                         data: { mobile: '+86-18538110674',
-                                pwd: 'qyz04163510',
+                                pwd: 'qyz04163510.',
                                 goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                                 pdmToken: '',
                                 araAppkey: '1917',
-                                araToken: '0#19171646622570440595157649661652144581488416G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
+                                araToken: '0#19171646622570440595157649661658739404065586G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
                                 araScene: 'login',
                                 captchaImgCode: '',
                                 captchaSessionId: '',
@@ -951,8 +952,62 @@ class Query_sso_updata(Settings):
             print('loginTmpCode值: ' + login_TmpCode)
             driver.quit()
 
+        elif login_TmpCode == '获取不到参数':
+            time.sleep(1)
+            # 模拟打开谷歌浏览器 获取token
+            options = webdriver.ChromeOptions()
+            options.add_argument(r"user-data-dir=C:\Program Files\Google\Chrome\Application\profile")
+            driver = webdriver.Chrome(r'C:\Program Files\Google\Chrome\Application\chromedriver.exe')
+
+            driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
+            # driver.implicitly_wait(5)
+            time.sleep(5)
+            js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
+                        data: { mobile: '+86-18538110674',
+                                pwd: 'qyz04163510.',
+                                goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
+                                pdmToken: '',
+                                araAppkey: '1917',
+                                araToken: '0#19171646622570440595157649661658739404065586G6D6E584D74E37BE891FAC3A49235AAA00C9B53',
+                                araScene: 'login',
+                                captchaImgCode: '',
+                                captchaSessionId: '',
+                                type: 'h5'
+                            },
+                            type: 'POST',
+                            timeout: '10000',
+                            async:false,
+                            beforeSend(xhr, settings) {
+                                xhr.setRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
+                            },
+                            success: function(data) {
+                                if (data.success) {
+                                     console.log(data.data);
+                                     console.log("loginTmpCode值是：", data.data.split('loginTmpCode=')[1]);
+                                      document.documentElement.getElementsByClassName("noGoto")[0].textContent = data.data.split('loginTmpCode=')[1];
+                                     arguments[0].value=data.data.split('loginTmpCode=')[1];
+                                } else {
+                                        console.log(data.code);
+                                }
+                            },
+                            error: function(error) {
+                                alert("请检查网络");
+                            }
+                        });
+                        '''
+            element = driver.find_element('id', 'mobile')
+            driver.execute_script(js, element)
+            # driver.implicitly_wait(5)
+            time.sleep(5)
+            login_TmpCode = driver.execute_script('return document.documentElement.getElementsByClassName("noGoto")[0].textContent;')
+            print('loginTmpCode值: ' + login_TmpCode)
+            driver.quit()
+
+
+
         print('******已获取loginTmpCode值: ' + str(login_TmpCode))
         loginTmpCode = login_TmpCode
+        # loginTmpCode = 'af8203b900ce347287492b0051fe1e11'
         # print('1、加载： ' + 'https://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html')
         url = r'https://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html'
         data = {'tmpCode': loginTmpCode,
@@ -1056,7 +1111,7 @@ class Query_sso_updata(Settings):
         # print(req)
         # print(req.headers)
 
-        print('++++++已成功登录++++++' + str(req))
+        print('++++++已成功登录++++++++++ ' + str(req))
         print(datetime.datetime.now())
         print('*' * 100)
 
@@ -1838,7 +1893,7 @@ class Query_sso_updata(Settings):
         req = json.loads(req.text)          # json类型数据转换为dict字典
         max_count = req['data']['count']    # 获取 请求订单量
         if max_count != 0 and max_count != []:
-            print('++++++' + begin + '号总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+            print('++++++' + begin + ' 总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
             print('*' * 50)
             in_count = math.ceil(max_count / 500)
             df = pd.DataFrame([])
@@ -2041,7 +2096,7 @@ class Query_sso_updata(Settings):
             data = pd.json_normalize(ordersDict)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e) + begin)
-        print('*************************查询成功***********************************')
+        # print('*************************查询成功***********************************')
         return data
 
 
@@ -2361,7 +2416,7 @@ class Query_sso_updata(Settings):
             print(' ****** 没有要补充的信息; ****** ')
         else:
             print('！！！ 请再次补充缺少的数据中！！！')
-            lw = QueryTwoT('+86-18538110674', 'qyz04163510', token, handle)
+            lw = QueryTwoT('+86-18538110674', 'qyz04163510.', token, handle)
             lw.productInfo('d1_host_cp', ordersDict)
 
         print('正在导入 总表中......')
@@ -2542,7 +2597,7 @@ class Query_sso_updata(Settings):
 
 
 if __name__ == '__main__':
-    m = Query_sso_updata('+86-18538110674', 'qyz04163510', 1343,'',"")
+    m = Query_sso_updata('+86-18538110674', 'qyz04163510.', 1343,'',"")
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台',
               'gat_order_list': '港台',
