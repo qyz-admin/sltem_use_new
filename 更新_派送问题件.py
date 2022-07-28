@@ -73,8 +73,22 @@ class QueryTwo(Settings, Settings_sso):
         print('>>>>>>正式查询中<<<<<<')
         print('正在获取需要订单信息......')
         start = datetime.datetime.now()
-        if team == '派送问题件_跟进表':
+        if team == '派送问题件_导出':
             last_time = datetime.datetime.now().strftime('%Y-%m') + '-01'
+            now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+
+        elif team == '派送问题件_更新':
+            sql = 'SELECT DISTINCT 日期 FROM 派送问题件_跟进表2_cp d  ORDER BY 日期 DESC'
+            rq = pd.read_sql_query(sql=sql, con=self.engine1)
+            rq = pd.to_datetime(rq['日期'][0])
+            last_time = (rq - datetime.timedelta(days=15)).strftime('%Y-%m-%d')
+            now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+
+        elif team == '派送问题件_订单完成单量&短信发送单量':
+            sql = 'SELECT DISTINCT 日期 FROM 派送问题件_跟进表2_cp d  ORDER BY 日期 DESC'
+            rq = pd.read_sql_query(sql=sql, con=self.engine1)
+            rq = pd.to_datetime(rq['日期'][0])
+            last_time = rq.strftime('%Y-%m-%d')
             now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 
         else:
@@ -404,7 +418,8 @@ class QueryTwo(Settings, Settings_sso):
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
         return data
-    # 查询更新（新后台的获取-订单完成）
+
+    # 查询更新（新后台的获取-订单完成 一）
     def getOrderList(self, timeStart, timeEnd):  # 进入订单检索界面
         begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d')
         begin = begin.date()
@@ -476,7 +491,7 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
         return max_count
 
-
+    # 查询更新（新后台的获取-订单完成 二）
     def getOrderList_T(self, timeStart, timeEnd):  # 进入订单检索界面
         begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d')
         begin = begin.date()
@@ -569,8 +584,7 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
         return max_count
 
-
-    # 查询更新（新后台的获取-订单完成） 查询更新（新后台的获取-订单完成）
+    # 查询更新（新后台的获取-短信发送）
     def getMessageLog(self, timeStart, timeEnd):  # 进入订单检索界面
         begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d')
         begin = begin.date()
@@ -611,7 +625,7 @@ class QueryTwo(Settings, Settings_sso):
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
         data = {'order_number': None, 'waybill_number': None, 'to_phone': None, 'add_date': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59',
                 'send_status': None, 'msgid': None, 'template_id': id, 'page': 1, 'pageSize': 10}
-        print(data)
+        # print(data)
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
@@ -634,7 +648,7 @@ if __name__ == '__main__':
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     '''
 
-    select = 1
+    select = 99
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '78af361bbca0306ca227b15133e47e9b'
@@ -645,19 +659,21 @@ if __name__ == '__main__':
             timeStart, timeEnd = m.readInfo('物流问题件')
 
         elif int(select) == 99:         # 查询更新-派送问题件
-            timeStart, timeEnd = m.readInfo('派送问题件_跟进表') 
-            # m.getOrderList('2022-07-01', '2022-07-19')
-            m.getOrderList_T('2022-07-25', '2022-07-26')
-            # m.getOrderList(timeStart, timeEnd)                        # 订单完成单量 更新
-            m.getMessageLog('2022-07-25', '2022-07-26')
-            # m.getMessageLog(timeStart, timeEnd)                       # 短信发送单量 更新
+            timeStart, timeEnd = m.readInfo('派送问题件_订单完成单量&短信发送单量')
+            # m.getOrderList_T('2022-07-25', '2022-07-26')
+            m.getOrderList_T(timeStart, timeEnd)                      # 订单完成单量 更新
 
+            # m.getMessageLog('2022-07-25', '2022-07-26')
+            m.getMessageLog(timeStart, timeEnd)                       # 短信发送单量 更新
+
+            timeStart, timeEnd = m.readInfo('派送问题件_更新')
             # m.getDeliveryList('2022-06-12', '2022-06-30')
-            m.getDeliveryList('2022-07-10', '2022-07-26')
-            # m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
+            # m.getDeliveryList('2022-07-10', '2022-07-26')
+            m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
 
-            m.outport_getDeliveryList('2022-07-01', '2022-07-26')
-            # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
+            timeStart, timeEnd = m.readInfo('派送问题件_导出')
+            # m.outport_getDeliveryList('2022-07-01', '2022-07-26')
+            m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
     elif int(select) == 1:
         m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "")

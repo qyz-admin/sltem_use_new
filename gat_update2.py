@@ -320,6 +320,10 @@ class QueryUpdate(Settings):
             shutil.copyfile(old_path, new_path)     # copy到指定位置
             print('----已写入excel; 并复制到指定文件夹中')
 
+        sql = '''DELETE FROM d1_gat gt WHERE gt.`订单编号` IN (SELECT 订单编号 FROM gat_易速配退运);'''
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        print('已清除不参与计算的易速配退运订单…………')
+
         print('正在写入' + match[team] + ' 全部签收表中…………')
         sql = 'REPLACE INTO {0}_zqsb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
@@ -328,12 +332,6 @@ class QueryUpdate(Settings):
                    and gz.`审核时间` >= '{0} 00:00:00' AND gz.`日期` >= '{1}';'''.format(month_yesterday, month_last)
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('已清除不参与计算的今日改派订单…………')
-
-        sql = '''DELETE FROM gat_zqsb gt WHERE gt.年月 >= {0} and gt.`订单编号` IN (SELECT 订单编号 FROM gat_ysp_cache);'''.format(month_last)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        sql = '''DELETE FROM d1_gat gt WHERE gt.`订单编号` IN (SELECT 订单编号 FROM gat_ysp_cache);'''
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        print('已清除不参与计算的易速配退运订单…………')
 
     # 导出总的签收表---各家族-港澳台(三)
     def EportOrderBook(self, team, month_last, month_yesterday):

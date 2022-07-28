@@ -865,19 +865,19 @@ class Query_sso_updata(Settings):
         print('正在登录后台系统中......')
         print('一、获取-钉钉用户信息......')
         url = r'https://login.dingtalk.com/login/login_with_pwd'
-        data = {'mobile': '+86-18538110674',
-                'pwd': 'qyz04163510.',
+        data = {'mobile': "+86-18538110674",
+                'pwd': "qyz04163510.",
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
-                'araToken': '0#19171629428116275265671469741658739612489317GC87818BBCC3CCDF73DCA3659F13FFA069CD0EA',
+                'araToken': '0#19171653727303200791658056521658928039705627G724AFE4E3392F35159AB9A341B2E56DAA31033',
                 'araScene': 'login',
                 'captchaImgCode': '',
                 'captchaSessionId': '',
                 'type': 'h5'}
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0',
-                    'Origin': 'https://login.dingtalk.com',
-                    'Referer': 'https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode'}
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0',
+            'Origin': 'https://login.dingtalk.com',
+            'Referer': 'https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         req = req.json()
         # req = {}
