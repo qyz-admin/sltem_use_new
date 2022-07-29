@@ -197,6 +197,7 @@ class SltemMonitoring(Settings):
         elif team in ('品牌-日本', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾', '品牌-台湾', '品牌-香港'):
             family = 'qsb_slsc'
         currency = team.split('-')[1]
+        month_begin = (datetime.datetime.now() - relativedelta(months=13)).strftime('%Y%m')
         print('*********开始运行监控对比表*********')
         # 获取对比时间-本期
         sql = '''SELECT DISTINCT 年月,日期
@@ -406,21 +407,19 @@ class SltemMonitoring(Settings):
                                     SUM(IF(`是否改派` = "直发" AND `最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0)) 直发完成订单量,
                                     SUM(IF(`是否改派` = "直发" AND `最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),`价格RMB`,0)) 直发完成销售额,
                                     
-                                    SUM(IF(`是否改派` = "改派",1,0)) 改派订单量,
-                                    SUM(IF(`是否改派` = "改派",`价格RMB`,0)) 改派销售额,
                                     SUM(IF(`是否改派` = "改派" AND `最终状态` = "已签收",1,0)) 改派已签收订单量,
                                     SUM(IF(`是否改派` = "改派" AND `最终状态` = "已签收",`价格RMB`,0)) 改派已签收销售额,
                                     SUM(IF(`是否改派` = "改派" AND `最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0)) 改派完成订单量,
                                     SUM(IF(`是否改派` = "改派" AND `最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),`价格RMB`,0)) 改派完成销售额	
                             FROM {0} sl_cx
-                            WHERE sl_cx.`币种` = '{1}' AND sl_cx.`团队` IN ({2}) AND sl_cx.`父级分类` IS NOT NULL
+                            WHERE sl_cx.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx.`团队` IN ({2}) AND sl_cx.`父级分类` IS NOT NULL 
                             GROUP BY 币种,年月,父级分类,二级分类,三级分类,物流方式,旬
                             ORDER BY 币种,年月
 						) s
 						GROUP BY s.年月,s.父级分类,s.二级分类,s.三级分类,s.物流方式,s.旬
                         with rollup
 					) sl_gat 
-                    ORDER BY sl_gat.`年月` DESC;'''.format('qsb_缓存_month_cp', currency, match[team])
+                    ORDER BY sl_gat.`年月` DESC;'''.format('qsb_缓存_month_cp', currency, match[team], month_begin)
         listT.append(sqlqsb5)
         show_name.append(' 月（各月）签收率_…………')
 
@@ -570,14 +569,14 @@ class SltemMonitoring(Settings):
                                 SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
                         FROM (SELECT  币种,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 总订单量
                                 FROM  {0} sl_cx
-                                WHERE sl_cx.`币种` = '{1}' AND sl_cx.`团队` IN ({2}) AND sl_cx.`父级分类` IS NOT NULL AND sl_cx.`是否改派` = "直发"
+                                WHERE sl_cx.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx.`团队` IN ({2}) AND sl_cx.`父级分类` IS NOT NULL AND sl_cx.`是否改派` = "直发"
                                 GROUP BY 币种,年月,物流方式,父级分类,旬
                                 ORDER BY 币种,年月
                                 ) sl_zong
                         LEFT JOIN
                                 (SELECT 币种,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 直发订单量, SUM(DATEDIFF(`仓储扫描时间`,`下单时间`)) AS '直发下单-出库时'
                                 FROM  {0} sl_cx_zf
-                                WHERE sl_cx_zf.`币种` = '{1}' AND sl_cx_zf.`团队` IN ({2}) AND sl_cx_zf.`父级分类` IS NOT NULL  AND sl_cx_zf.`是否改派` = "直发" AND sl_cx_zf.`仓储扫描时间` is not null
+                                WHERE sl_cx_zf.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx_zf.`团队` IN ({2}) AND sl_cx_zf.`父级分类` IS NOT NULL  AND sl_cx_zf.`是否改派` = "直发" AND sl_cx_zf.`仓储扫描时间` is not null
                                 GROUP BY 币种,年月,物流方式,父级分类,旬
                                 ORDER BY 币种,年月
                             ) sl_zong_zf
@@ -585,7 +584,7 @@ class SltemMonitoring(Settings):
                             LEFT JOIN
                                 (SELECT 币种,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 直发已签收订单量
                                 FROM  {0}	sl_cx_zf_qianshou
-                                WHERE sl_cx_zf_qianshou.`币种` = '{1}' AND sl_cx_zf_qianshou.`团队` IN ({2}) AND sl_cx_zf_qianshou.`父级分类` IS NOT NULL AND sl_cx_zf_qianshou.`是否改派` = "直发" AND sl_cx_zf_qianshou.`仓储扫描时间` is not null AND sl_cx_zf_qianshou.`最终状态` = "已签收"
+                                WHERE sl_cx_zf_qianshou.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx_zf_qianshou.`团队` IN ({2}) AND sl_cx_zf_qianshou.`父级分类` IS NOT NULL AND sl_cx_zf_qianshou.`是否改派` = "直发" AND sl_cx_zf_qianshou.`仓储扫描时间` is not null AND sl_cx_zf_qianshou.`最终状态` = "已签收"
                                 GROUP BY 币种,年月,物流方式,父级分类,旬
                                 ORDER BY 币种,年月
                             ) sl_cx_zf_qs
@@ -601,13 +600,13 @@ class SltemMonitoring(Settings):
                                         COUNT(`订单编号`) 直发上线完成量,
                                         SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`)) AS '直发上线-完成时'
                                 FROM  {0}	sl_cx_zf_wancheng
-                                WHERE sl_cx_zf_wancheng.`币种` = '{1}' AND sl_cx_zf_wancheng.`团队` IN ({2}) AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL AND sl_cx_zf_wancheng.`是否改派` = "直发" AND sl_cx_zf_wancheng.`最终状态`IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') 
+                                WHERE sl_cx_zf_wancheng.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx_zf_wancheng.`团队` IN ({2}) AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL AND sl_cx_zf_wancheng.`是否改派` = "直发" AND sl_cx_zf_wancheng.`最终状态`IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') 
                                 GROUP BY 币种,年月,物流方式,父级分类,旬
                                 ORDER BY 币种,年月
                             ) sl_cx_zf_wc
                              ON sl_cx_zf_wc.`币种` = sl_zong.`币种`  AND sl_cx_zf_wc.`年月` = sl_zong.`年月` AND sl_cx_zf_wc.`物流方式` = sl_zong.`物流方式` AND sl_cx_zf_wc.`父级分类` = sl_zong.`父级分类`  AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
                         GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-                        with rollup) sl_rb;'''.format('qsb_缓存_month_cp', currency, match[team])
+                        with rollup) sl_rb;'''.format('qsb_缓存_month_cp', currency, match[team], month_begin)
         sqltime4 = '''SELECT sl_rb.`币种`,sl_rb.`年`,sl_rb.`年月`,sl_rb.`物流方式`,sl_rb.`父级分类`,sl_rb.`旬`,
                                 sl_rb.`总单量`,
                                 sl_rb.`直发下单出库单量`,sl_rb.`直发下单出库时效`,
@@ -632,21 +631,21 @@ class SltemMonitoring(Settings):
                                 SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
                         FROM (SELECT  币种,年,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 总订单量
                                 FROM  {0} sl_cx
-                                WHERE sl_cx.`币种` = '{1}' AND sl_cx.`团队` IN ({2}) AND sl_cx.`父级分类` IS NOT NULL AND sl_cx.`是否改派` = "直发"
+                                WHERE sl_cx.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx.`团队` IN ({2}) AND sl_cx.`父级分类` IS NOT NULL AND sl_cx.`是否改派` = "直发"
                                 GROUP BY 币种,年,年月,物流方式,父级分类,旬
                                 ORDER BY 币种,年,年月
                                 ) sl_zong
                         LEFT JOIN
                                 (SELECT 币种,年,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 直发订单量, SUM(DATEDIFF(`仓储扫描时间`,`下单时间`)) AS '直发下单-出库时'
                                 FROM  {0} sl_cx_zf
-                                WHERE sl_cx_zf.`币种` = '{1}' AND sl_cx_zf.`团队` IN ({2}) AND sl_cx_zf.`父级分类` IS NOT NULL  AND sl_cx_zf.`是否改派` = "直发" AND sl_cx_zf.`仓储扫描时间` is not null
+                                WHERE sl_cx_zf.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx_zf.`团队` IN ({2}) AND sl_cx_zf.`父级分类` IS NOT NULL  AND sl_cx_zf.`是否改派` = "直发" AND sl_cx_zf.`仓储扫描时间` is not null
                                 GROUP BY 币种,年,年月,物流方式,父级分类,旬
                                 ORDER BY 币种,年,年月
                             ) sl_zong_zf  ON sl_zong_zf.`币种` = sl_zong.`币种` AND sl_zong_zf.`年` = sl_zong.`年` AND sl_zong_zf.`年月` = sl_zong.`年月` AND sl_zong_zf.`物流方式` = sl_zong.`物流方式` AND sl_zong_zf.`父级分类` = sl_zong.`父级分类`  AND sl_zong_zf.`旬` = sl_zong.`旬` 	
                        LEFT JOIN
                                 (SELECT 币种,年,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 直发已签收订单量
                                 FROM  {0} sl_cx_zf_qianshou
-                                WHERE sl_cx_zf_qianshou.`币种` = '{1}' AND sl_cx_zf_qianshou.`团队` IN ({2}) AND sl_cx_zf_qianshou.`父级分类` IS NOT NULL AND sl_cx_zf_qianshou.`是否改派` = "直发" AND sl_cx_zf_qianshou.`仓储扫描时间` is not null AND sl_cx_zf_qianshou.`最终状态` = "已签收"
+                                WHERE sl_cx_zf_qianshou.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx_zf_qianshou.`团队` IN ({2}) AND sl_cx_zf_qianshou.`父级分类` IS NOT NULL AND sl_cx_zf_qianshou.`是否改派` = "直发" AND sl_cx_zf_qianshou.`仓储扫描时间` is not null AND sl_cx_zf_qianshou.`最终状态` = "已签收"
                                 GROUP BY 币种,年,年月,物流方式,父级分类,旬
                                 ORDER BY 币种,年,年月
                             ) sl_cx_zf_qs  ON sl_cx_zf_qs.`币种` = sl_zong.`币种`  AND sl_cx_zf_qs.`年` = sl_zong.`年`  AND sl_cx_zf_qs.`年月` = sl_zong.`年月`  AND sl_cx_zf_qs.`物流方式` = sl_zong.`物流方式` AND sl_cx_zf_qs.`父级分类` = sl_zong.`父级分类`  AND sl_cx_zf_qs.`旬` = sl_zong.`旬` 	
@@ -661,13 +660,13 @@ class SltemMonitoring(Settings):
                                         COUNT(`订单编号`) 直发上线完成量,
                                         SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`)) AS '直发上线-完成时'
                                 FROM  {0} sl_cx_zf_wancheng
-                                WHERE sl_cx_zf_wancheng.`币种` = '{1}' AND sl_cx_zf_wancheng.`团队` IN ({2}) AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL AND sl_cx_zf_wancheng.`是否改派` = "直发" AND sl_cx_zf_wancheng.`最终状态`IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') 
+                                WHERE sl_cx_zf_wancheng.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx_zf_wancheng.`团队` IN ({2}) AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL AND sl_cx_zf_wancheng.`是否改派` = "直发" AND sl_cx_zf_wancheng.`最终状态`IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') 
                                 GROUP BY 币种,年,年月,物流方式,父级分类,旬
                                 ORDER BY 币种,年,年月
                             ) sl_cx_zf_wc ON sl_cx_zf_wc.`币种` = sl_zong.`币种` AND sl_cx_zf_wc.`年` = sl_zong.`年` AND sl_cx_zf_wc.`年月` = sl_zong.`年月` AND sl_cx_zf_wc.`物流方式` = sl_zong.`物流方式` AND sl_cx_zf_wc.`父级分类` = sl_zong.`父级分类`  AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
                         GROUP BY  sl_zong.年, sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
                         with rollup
-												) sl_rb;'''.format('qsb_缓存_month_cp', currency, match[team])
+												) sl_rb;'''.format('qsb_缓存_month_cp', currency, match[team], month_begin)
         listT.append(sqltime4)
         show_name.append(' 月(各月)时效…………')
 
@@ -770,14 +769,14 @@ class SltemMonitoring(Settings):
                                         SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
                                 FROM (SELECT  币种,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 总订单量
                                         FROM  {0} sl_cx
-                                        WHERE sl_cx.`币种` = '{1}' AND sl_cx.`团队` IN ({2}) AND sl_cx.`父级分类` IS NOT NULL AND sl_cx.`是否改派` = "改派"
+                                        WHERE sl_cx.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx.`团队` IN ({2}) AND sl_cx.`父级分类` IS NOT NULL AND sl_cx.`是否改派` = "改派"
                                         GROUP BY 币种,年月,物流方式,父级分类,旬
                                         ORDER BY 币种,年月
                                         ) sl_zong
                                 LEFT JOIN
                                         (SELECT 币种,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 直发订单量, SUM(DATEDIFF(`仓储扫描时间`,`下单时间`)) AS '直发下单-出库时'
                                         FROM  {0} sl_cx_zf
-                                        WHERE sl_cx_zf.`币种` = '{1}' AND sl_cx_zf.`团队` IN ({2}) AND sl_cx_zf.`父级分类` IS NOT NULL  AND sl_cx_zf.`是否改派` = "改派" AND sl_cx_zf.`仓储扫描时间` is not null
+                                        WHERE sl_cx_zf.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx_zf.`团队` IN ({2}) AND sl_cx_zf.`父级分类` IS NOT NULL  AND sl_cx_zf.`是否改派` = "改派" AND sl_cx_zf.`仓储扫描时间` is not null
                                         GROUP BY 币种,年月,物流方式,父级分类,旬
                                         ORDER BY 币种,年月
                                     ) sl_zong_zf
@@ -785,7 +784,7 @@ class SltemMonitoring(Settings):
                                     LEFT JOIN
                                         (SELECT 币种,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 直发已签收订单量
                                         FROM  {0}	sl_cx_zf_qianshou
-                                        WHERE sl_cx_zf_qianshou.`币种` = '{1}' AND sl_cx_zf_qianshou.`团队` IN ({2}) AND sl_cx_zf_qianshou.`父级分类` IS NOT NULL AND sl_cx_zf_qianshou.`是否改派` = "改派" AND sl_cx_zf_qianshou.`仓储扫描时间` is not null AND sl_cx_zf_qianshou.`最终状态` = "已签收"
+                                        WHERE sl_cx_zf_qianshou.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx_zf_qianshou.`团队` IN ({2}) AND sl_cx_zf_qianshou.`父级分类` IS NOT NULL AND sl_cx_zf_qianshou.`是否改派` = "改派" AND sl_cx_zf_qianshou.`仓储扫描时间` is not null AND sl_cx_zf_qianshou.`最终状态` = "已签收"
                                         GROUP BY 币种,年月,物流方式,父级分类,旬
                                         ORDER BY 币种,年月
                                     ) sl_cx_zf_qs
@@ -801,13 +800,13 @@ class SltemMonitoring(Settings):
                                                 COUNT(`订单编号`) 直发上线完成量,
                                                 SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`)) AS '直发上线-完成时'
                                         FROM  {0}	sl_cx_zf_wancheng
-                                        WHERE sl_cx_zf_wancheng.`币种` = '{1}' AND sl_cx_zf_wancheng.`团队` IN ({2}) AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL AND sl_cx_zf_wancheng.`是否改派` = "改派" AND sl_cx_zf_wancheng.`最终状态`IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') 
+                                        WHERE sl_cx_zf_wancheng.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx_zf_wancheng.`团队` IN ({2}) AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL AND sl_cx_zf_wancheng.`是否改派` = "改派" AND sl_cx_zf_wancheng.`最终状态`IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') 
                                         GROUP BY 币种,年月,物流方式,父级分类,旬
                                         ORDER BY 币种,年月
                                     ) sl_cx_zf_wc
                                      ON sl_cx_zf_wc.`币种` = sl_zong.`币种`  AND sl_cx_zf_wc.`年月` = sl_zong.`年月` AND sl_cx_zf_wc.`物流方式` = sl_zong.`物流方式` AND sl_cx_zf_wc.`父级分类` = sl_zong.`父级分类`  AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
                                 GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-                                with rollup) sl_rb;'''.format('qsb_缓存_month_cp', currency, match[team])
+                                with rollup) sl_rb;'''.format('qsb_缓存_month_cp', currency, match[team], month_begin)
         sqltime72 = '''SELECT sl_rb.`币种`,sl_rb.`年`,sl_rb.`年月`,sl_rb.`物流方式`,sl_rb.`父级分类`,sl_rb.`旬`,
                                         sl_rb.`总单量`,
                                         sl_rb.`直发下单出库单量`,sl_rb.`直发下单出库时效`,
@@ -832,21 +831,21 @@ class SltemMonitoring(Settings):
                                         SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
                                 FROM (SELECT  币种,年,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 总订单量
                                         FROM  {0} sl_cx
-                                        WHERE sl_cx.`币种` = '{1}' AND sl_cx.`团队` IN ({2}) AND sl_cx.`父级分类` IS NOT NULL AND sl_cx.`是否改派` = "改派"
+                                        WHERE sl_cx.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx.`团队` IN ({2}) AND sl_cx.`父级分类` IS NOT NULL AND sl_cx.`是否改派` = "改派"
                                         GROUP BY 币种,年,年月,物流方式,父级分类,旬
                                         ORDER BY 币种,年,年月
                                         ) sl_zong
                                 LEFT JOIN
                                         (SELECT 币种,年,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 直发订单量, SUM(DATEDIFF(`仓储扫描时间`,`下单时间`)) AS '直发下单-出库时'
                                         FROM  {0} sl_cx_zf
-                                        WHERE sl_cx_zf.`币种` = '{1}' AND sl_cx_zf.`团队` IN ({2}) AND sl_cx_zf.`父级分类` IS NOT NULL  AND sl_cx_zf.`是否改派` = "改派" AND sl_cx_zf.`仓储扫描时间` is not null
+                                        WHERE sl_cx_zf.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx_zf.`团队` IN ({2}) AND sl_cx_zf.`父级分类` IS NOT NULL  AND sl_cx_zf.`是否改派` = "改派" AND sl_cx_zf.`仓储扫描时间` is not null
                                         GROUP BY 币种,年,年月,物流方式,父级分类,旬
                                         ORDER BY 币种,年,年月
                                     ) sl_zong_zf  ON sl_zong_zf.`币种` = sl_zong.`币种` AND sl_zong_zf.`年` = sl_zong.`年` AND sl_zong_zf.`年月` = sl_zong.`年月` AND sl_zong_zf.`物流方式` = sl_zong.`物流方式` AND sl_zong_zf.`父级分类` = sl_zong.`父级分类`  AND sl_zong_zf.`旬` = sl_zong.`旬` 	
                                LEFT JOIN
                                         (SELECT 币种,年,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 直发已签收订单量
                                         FROM  {0} sl_cx_zf_qianshou
-                                        WHERE sl_cx_zf_qianshou.`币种` = '{1}' AND sl_cx_zf_qianshou.`团队` IN ({2}) AND sl_cx_zf_qianshou.`父级分类` IS NOT NULL AND sl_cx_zf_qianshou.`是否改派` = "改派" AND sl_cx_zf_qianshou.`仓储扫描时间` is not null AND sl_cx_zf_qianshou.`最终状态` = "已签收"
+                                        WHERE sl_cx_zf_qianshou.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx_zf_qianshou.`团队` IN ({2}) AND sl_cx_zf_qianshou.`父级分类` IS NOT NULL AND sl_cx_zf_qianshou.`是否改派` = "改派" AND sl_cx_zf_qianshou.`仓储扫描时间` is not null AND sl_cx_zf_qianshou.`最终状态` = "已签收"
                                         GROUP BY 币种,年,年月,物流方式,父级分类,旬
                                         ORDER BY 币种,年,年月
                                     ) sl_cx_zf_qs  ON sl_cx_zf_qs.`币种` = sl_zong.`币种`  AND sl_cx_zf_qs.`年` = sl_zong.`年`  AND sl_cx_zf_qs.`年月` = sl_zong.`年月`  AND sl_cx_zf_qs.`物流方式` = sl_zong.`物流方式` AND sl_cx_zf_qs.`父级分类` = sl_zong.`父级分类`  AND sl_cx_zf_qs.`旬` = sl_zong.`旬` 	
@@ -861,13 +860,13 @@ class SltemMonitoring(Settings):
                                                 COUNT(`订单编号`) 直发上线完成量,
                                                 SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`)) AS '直发上线-完成时'
                                         FROM  {0} sl_cx_zf_wancheng
-                                        WHERE sl_cx_zf_wancheng.`币种` = '{1}' AND sl_cx_zf_wancheng.`团队` IN ({2}) AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL AND sl_cx_zf_wancheng.`是否改派` = "改派" AND sl_cx_zf_wancheng.`最终状态`IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') 
+                                        WHERE sl_cx_zf_wancheng.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx_zf_wancheng.`团队` IN ({2}) AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL AND sl_cx_zf_wancheng.`是否改派` = "改派" AND sl_cx_zf_wancheng.`最终状态`IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') 
                                         GROUP BY 币种,年,年月,物流方式,父级分类,旬
                                         ORDER BY 币种,年,年月
                                     ) sl_cx_zf_wc ON sl_cx_zf_wc.`币种` = sl_zong.`币种` AND sl_cx_zf_wc.`年` = sl_zong.`年` AND sl_cx_zf_wc.`年月` = sl_zong.`年月` AND sl_cx_zf_wc.`物流方式` = sl_zong.`物流方式` AND sl_cx_zf_wc.`父级分类` = sl_zong.`父级分类`  AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
                                 GROUP BY  sl_zong.年, sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
                                 with rollup
-        												) sl_rb;;'''.format('qsb_缓存_month_cp', currency, match[team])
+        												) sl_rb;;'''.format('qsb_缓存_month_cp', currency, match[team], month_begin)
         listT.append(sqltime72)
         show_name.append(' 月(改派各月)时效…………')
 
@@ -1008,14 +1007,14 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2022.06.28'
-    now_month = '2022.07.28'
+    last_month = '2022.06.29'
+    now_month = '2022.07.29'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传
 
     # 测试监控运行（二）-- 第一种手动方式
-    # m.order_Monitoring('港台')        # 各月缓存（整体一）
+    m.order_Monitoring('港台')        # 各月缓存（整体一）
     # for team in ['神龙-台湾', '神龙-香港', '神龙运营1组-台湾', '火凤凰-台湾', '火凤凰-香港', '小虎队-台湾']:
     for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '神龙运营1组-台湾']:
     # for team in ['神龙-台湾', '神龙-香港', '神龙运营1组-台湾']:
