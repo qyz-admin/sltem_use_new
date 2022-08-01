@@ -506,7 +506,7 @@ if __name__ == '__main__':
     # 1、 点到表上传 team = 'gat_logisitis_googs'；2、上架表上传；；3、订单跟进上传 team = 'gat_waybill_list'--->>数据更新切换
     '''
 
-    select = 2
+    select = 3
     if int(select) == 1:
         m.readFormHost()
 
@@ -515,7 +515,7 @@ if __name__ == '__main__':
 
     elif int(select) == 3:
         m.readFormHost()
-        m.tianma_upload_return('手动','2eb0100d74dc38c49d37a645b73f1bd7')       # 天马上架
+        m.tianma_upload_return('手0动','2eb0100d74dc38c49d37a645b73f1bd7')       # 天马上架
 
     elif int(select) == 4:
         m.check_data()

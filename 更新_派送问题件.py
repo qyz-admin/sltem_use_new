@@ -29,7 +29,7 @@ from 查询_订单检索 import QueryOrder
 
 # -*- coding:utf-8 -*-
 class QueryTwo(Settings, Settings_sso):
-    def __init__(self, userMobile, password, login_TmpCode,handle):
+    def __init__(self, userMobile, password, login_TmpCode,handle, select):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
@@ -39,11 +39,11 @@ class QueryTwo(Settings, Settings_sso):
         # self.sso_online_Two()
         # self.sso__online_handle(login_TmpCode)
         # # self.sso__online_auto()
-
-        if handle == '手动':
-            self.sso__online_handle(login_TmpCode)
-        else:
-            self.sso__online_auto()
+        if select == 99:
+            if handle == '手动':
+                self.sso__online_handle(login_TmpCode)
+            else:
+                self.sso__online_auto()
 
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -773,12 +773,11 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 问题件 状态运行（一）-----------------------------------------
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     '''
-
-    select = 99
+    select = 1
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '78af361bbca0306ca227b15133e47e9b'
-        m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
+        m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, select)
         start: datetime = datetime.datetime.now()
 
         if int(select) == 11:
@@ -802,10 +801,10 @@ if __name__ == '__main__':
             m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
     elif int(select) == 1:
-        m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "")
+        m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "",select)
         # timeStart, timeEnd = m.readInfo('派送问题件_跟进表')
         # m.getOrderList_T('2022-06-01', '2022-06-30')
-        m.outport_getDeliveryList('2022-07-01', '2022-07-28')
+        m.outport_getDeliveryList('2022-07-01', '2022-07-31')
         # m.getMessageLog('2022-07-01', '2022-07-15')
         
 
