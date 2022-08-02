@@ -101,9 +101,11 @@ class QueryTwo(Settings, Settings_sso):
                         db.rename(columns={'承运单号': '运单编号'}, inplace=True)
                         db.rename(columns={'子单号': '运单编号'}, inplace=True)
                         # print(db.columns)
-                        if '物流状态' not in db.columns and '末条时间' not in db.columns and '末条信息' not in db.columns:
+                        if '物流状态' not in db.columns:
                             db.insert(0, '物流状态', '')
+                        if '末条时间' not in db.columns:
                             db.insert(0, '末条时间', '')
+                        if '末条信息' not in db.columns:
                             db.insert(0, '末条信息', '')
                         if '下单时间' not in db.columns:
                             db.insert(0, '下单时间', '')
@@ -111,6 +113,7 @@ class QueryTwo(Settings, Settings_sso):
                         if '核重时间' not in db.columns:
                             db.insert(0, '核重时间', '')
                             db['核重时间'] = db['下单时间'].copy()
+                        # print(db.columns)
                         db = db[['下单时间', '订单编号', '运单编号', '核重时间', '物流状态', '末条时间', '末条信息']]
                         db.dropna(axis=0, how='any', inplace=True)  # 空值（缺失值），将空值所在的行/列删除后
                     elif team == 'gat_waybill_list':

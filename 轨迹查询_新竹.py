@@ -202,17 +202,17 @@ class QueryTwo(Settings, Settings_sso):
             result = {}
             # print(val)
             if "請檢查您的查貨資料。" in str(val):            # 没有查询到货态
-                data = pd.DataFrame([[res, res2, '', '', online_time]], columns=['查货号码', '查货时间', '轨迹时间', '轨迹内容', '上线时间'])
+                data = pd.DataFrame([[res, res2, '', '', online_time]], columns=['查件单号', '查货时间', '轨迹时间', '轨迹内容', '上线时间'])
                 # data.dropna(axis=0, how='any', inplace=True)
-                data.dropna(axis=0, subset=["查货号码"], inplace=True)
+                data.dropna(axis=0, subset=["查件单号"], inplace=True)
                 data.sort_values(by="轨迹时间", inplace=True, ascending=True)  # inplace: 原地修改; ascending：升序
                 # print(data)
                 return data
             if "ctl00_ContentFrame_lblInvoiceNo" in str(val):       # 查询到货态（一）
                 result['序号'] = index
-                result['查货号码'] = str(val).split(r'ctl00_ContentFrame_lblInvoiceNo">')[1].split('</')[0]
+                result['查件单号'] = str(val).split(r'ctl00_ContentFrame_lblInvoiceNo">')[1].split('</')[0]
                 result['查货时间'] = str(val).split('時間：')[1].split('</')[0]
-                res = result['查货号码'].strip()
+                res = result['查件单号'].strip()
                 res2 = result['查货时间']
             if "L_time" in str(val):                                # 查询到货态（二）
                 if "貨件已退回" in str(val):
@@ -239,7 +239,7 @@ class QueryTwo(Settings, Settings_sso):
                 # print(L_time) 
                 # print(res)
                 result['序号'] = index
-                result['查货号码'] = res
+                result['查件单号'] = res
                 result['查货时间'] = res2
                 result['轨迹时间'] = L_time
                 result['轨迹内容'] = L_cls.replace("\n\n", "").strip()
@@ -249,7 +249,7 @@ class QueryTwo(Settings, Settings_sso):
         data = pd.json_normalize(ordersDict)
         # print(data)
         data.dropna(axis=0, how='any', inplace=True)
-        data.sort_values(by=["查货号码", "轨迹时间"], inplace=True, ascending=[True, True])
+        data.sort_values(by=["查件单号", "轨迹时间"], inplace=True, ascending=[True, True])
         # data.sort_values(by="轨迹时间", inplace=True, ascending=True)  # inplace: 原地修改; ascending：升序
         # print(data)
         # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
