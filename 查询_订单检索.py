@@ -1178,26 +1178,26 @@ class QueryOrder(Settings, Settings_sso):
             if tem == '神龙家族-港澳台' and delreson == None:
                 sl_tem = '*神  龙:   昨日单量：' + str(int(getattr(row, '总订单量'))) + '；删单量：' + str(int(getattr(row, '总删单量'))) + '；删单率：' + str(getattr(row, '删单率')) + '；系统删单量：' + str(int(getattr(row, '系统删单量'))) + '单;'
                 # print(sl_tem)
-            elif tem == '神龙家族-港澳台' and '拉黑率订单' in delreson:
+            elif tem == '神龙家族-港澳台' and '拉黑率订单' == delreson:
                 sl_tem_lh = '，\n            其中占比较多的是：拉黑率订单：' + str(int(count)) + '单, '
                 # print(sl_tem_lh)
-            elif tem == '神龙家族-港澳台' and '恶意订单' in delreson:
+            elif tem == '神龙家族-港澳台' and '恶意订单' == delreson:
                 sl_tem_ey = '恶意订单：' + str(int(count)) + '单, '
                 # print(sl_tem_ey)
-            elif tem == '神龙家族-港澳台' and '重复订单' in delreson:
+            elif tem == '神龙家族-港澳台' and '重复订单' == delreson:
                 sl_tem_cf = '重复订单：' + str(int(count)) + '单;'
                 # print(sl_tem_cf)
 
             elif tem == '火凤凰-港澳台' and delreson == None:
                 hfh_tem = '*火凤凰:  昨日单量：' + str(int(getattr(row, '总订单量'))) + '；删单量：' + str(int(getattr(row, '总删单量'))) + '；删单率：' + str(getattr(row, '删单率')) + '；系统删单量：' + str(int(getattr(row, '系统删单量'))) + '单;'
                 # print(hfh_tem)
-            elif tem == '火凤凰-港澳台' and '拉黑率订单' in delreson:
+            elif tem == '火凤凰-港澳台' and '拉黑率订单' == delreson:
                 hfh_tem_lh = '，\n            其中占比较多的是：拉黑率订单：' + str(int(count)) + '单, '
                 # print(hfh_tem_lh)
-            elif tem == '火凤凰-港澳台' and '恶意订单' in delreson:
+            elif tem == '火凤凰-港澳台' and '恶意订单' == delreson:
                 hfh_tem_ey = '恶意订单：' + str(int(count)) + '单, '
                 # print(hfh_tem_ey)
-            elif tem == '火凤凰-港澳台' and '重复订单' in delreson:
+            elif tem == '火凤凰-港澳台' and '重复订单' == delreson:
                 hfh_tem_cf = '重复订单：' + str(int(count)) + '单;'
                 # print(hfh_tem_cf)
         print('*' * 50)
@@ -1538,7 +1538,7 @@ class QueryOrder(Settings, Settings_sso):
                 # },
                 "text": {
                     # 要发送的内容【支持markdown】【！注意：content内容要包含机器人自定义关键字，不然消息不会发送出去，这个案例中是test字段】
-                    "content": '神龙 - 火凤凰 昨日订单删除分析' + '\n' +
+                    "content": 'TEST神龙 - 火凤凰 昨日订单删除分析' + '\n' +
                                sl_tem + sl_tem_lh + sl_tem_ey + sl_tem_cf + '\n' +
                                hfh_tem + hfh_tem_lh + hfh_tem_ey + hfh_tem_cf + '\n' +
                                sl_Black + sl_Black_iphone + sl_Black_ip + '\n' +
@@ -2210,7 +2210,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 3                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 9                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'

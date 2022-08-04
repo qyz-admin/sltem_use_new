@@ -398,7 +398,7 @@ class QueryTwoLower(Settings, Settings_sso):
     # 进入 已下架 界面  （仓储的获取）（一）
     def order_lower(self, timeStart, timeEnd, auto_time):  # 进入已下架界面
         start: datetime = datetime.datetime.now()
-        team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓', '协来运', '协来运（废弃）','易速配-桃园仓']
+        team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓', '协来运', '协来运（废弃）','易速配-桃园仓', '香港圆通仓']
         # team_whid = ['协来运']
         team_stock_type = [1, 2]
         # team_stock_type = [2]
@@ -415,7 +415,8 @@ class QueryTwoLower(Settings, Settings_sso):
                   '天马顺丰仓': 204,
                   '协来运': 241,
                   '协来运（废弃）': 49,
-                  '易速配-桃园仓': 253
+                  '易速配-桃园仓': 253,
+                  '香港圆通仓': 274
                   }
         if auto_time == '自动':
             # sql = '''SELECT DISTINCT 统计时间 FROM 已下架表 d GROUP BY 统计时间 ORDER BY 统计时间 DESC'''
@@ -436,7 +437,7 @@ class QueryTwoLower(Settings, Settings_sso):
             timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
             print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
             for tem in team_whid:
-                if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货','易速配-桃园仓'):
+                if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货', '易速配-桃园仓'):
                     for tem_type in team_stock_type:
                         print('+++正在查询仓库： ' + tem + '；库存类型:' + match[tem_type] + ' 信息')
                         self._order_lower_info(match2[tem], tem_type, timeStart, timeEnd, tem, match[tem_type])
@@ -446,7 +447,7 @@ class QueryTwoLower(Settings, Settings_sso):
         else:
             print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
             for tem in team_whid:
-                if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货','易速配-桃园仓'):
+                if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货', '易速配-桃园仓'):
                     for tem_type in team_stock_type:
                         print('+++正在查询仓库： ' + tem + '；库存类型:' + match[tem_type] + ' 信息')
                         self._order_lower_info(match2[tem], tem_type, timeStart, timeEnd, tem, match[tem_type])
@@ -500,6 +501,8 @@ class QueryTwoLower(Settings, Settings_sso):
                             result['waill_name'] = '天马新竹'
                         elif '立邦香港顺丰' in result['whid']:
                             result['waill_name'] = '立邦'
+                        elif '香港圆通仓' in result['whid']:
+                            result['waill_name'] = '圆通'
                         elif '香港易速配' in result['whid']:
                             result['waill_name'] = '易速配'
                         elif '神龙备货' in result['whid']:

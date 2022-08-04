@@ -155,7 +155,8 @@ class QueryTwo(Settings, Settings_sso):
                    WHERE s1.回复类型 = "回复" AND js.具体原因 <> '未联系上客户' AND js.具体原因 IS not NULL
                    GROUP BY 创建日期
                 ) ss ON s.创建日期 =ss.日期
-                 ORDER BY 创建日期, 单量 DESC;'''.format(timeStart)
+                HAVING 创建日期 IS NOT NULL
+                ORDER BY 创建日期, FIELD(拒收原因,'合计') DESC, 单量 DESC;'''.format(timeStart)
         df11 = pd.read_sql_query(sql=sql, con=self.engine1)
 
         print('正在获取物流内容…………')
@@ -797,7 +798,7 @@ if __name__ == '__main__':
             m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
 
             # timeStart, timeEnd = m.readInfo('派送问题件_导出')
-            m.outport_getDeliveryList('2022-07-01', '2022-08-01')
+            m.outport_getDeliveryList('2022-07-01', '2022-08-03')
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
     elif int(select) == 1:

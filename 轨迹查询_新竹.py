@@ -96,7 +96,7 @@ class QueryTwo(Settings, Settings_sso):
                         elif '运单号' in db.columns:
                             tm = '运单号'
                         elif '物流单号' in db.columns:
-                            tm = '运单号'
+                            tm = '物流单号'
                         db = db[[tm]]
                         db[tm] = db[tm].astype(str)
                         db.dropna(axis=0, how='any', inplace=True)                  # 空值（缺失值），将空值所在的行/列删除后
