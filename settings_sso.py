@@ -1193,9 +1193,7 @@ class Settings_sso():
             print('loginTmpCode值: ' + login_TmpCode)
             driver.quit()
 
-
-
-        print('******已获取loginTmpCode值: ' + str(login_TmpCode))
+        # print('******已获取loginTmpCode值: ' + str(login_TmpCode))
         loginTmpCode = login_TmpCode
         # loginTmpCode = 'af8203b900ce347287492b0051fe1e11'
         # print('1、加载： ' + 'https://gsso.giikin.com/admin/dingtalk_service/gettempcodebylogin.html')
@@ -1252,14 +1250,15 @@ class Settings_sso():
 
         time.sleep(1)
         if url != '/portal/index/index.html':
-            print('4.2、加载： ' + 'https://gimp.giikin.com')
+            # print('4.2、加载： ' + 'https://gimp.giikin.com')
+            # print('4.2、加载： ' + 'https://gimp.giikin.com')
             url = req.headers['Location']
             r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                         'Referer': 'http://gsso.giikin.com/'}
             req = self.session.get(url=url, headers=r_header, allow_redirects=False)
             index = req.headers['Location']
-            print(req)
-            print(req.headers)
+            # print(req)
+            # print(req.headers)
         else:
             index = req.headers['Location']
 

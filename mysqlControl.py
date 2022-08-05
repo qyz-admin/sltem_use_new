@@ -446,7 +446,7 @@ class MysqlControl(Settings):
                             a.addtime 下单时间,
                             a.verity_time 审核时间,
                             a.delivery_time 仓储扫描时间,
-                            IF(a.finish_status=0,'未收款',IF(a.finish_status=2,'收款',IF(a.finish_status=4,'退款',a.finish_status))) 完结状态,
+                            IF(a.finish_status=0,'未收款',IF(a.finish_status=2,'收款',IF(a.finish_status=3,'拒收',IF(a.finish_status=4,'退款',IF(a.finish_status=5,'售后订单',a.finish_status))))) 完结状态,
                             a.endtime 完结状态时间,   
                             a.salesRMB 价格RMB,
                             intervals.intervals 价格区间,

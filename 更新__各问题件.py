@@ -238,31 +238,34 @@ class QueryTwo(Settings, Settings_sso):
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
                 # print(result)
+                # print(11)
                 # print(result['order_number'])
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
                 result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
                 if ';' in result['traceRecord']:
                     trace_record = result['traceRecord'].split(";")
                     for record in trace_record:
-                        result['deal_time'] = ''
-                        result['result_reson'] = ''
-                        result['result_info'] = ''
+                        if record.split("#处理结果：")[1] != '':
+                            result['deal_time'] = record.split()[0]
+                            result['result_reson'] = ''
+                            result['result_info'] = ''
 
-                        result['deal_time'] = record.split()[0]
-                        rec = record.split("#处理结果：")[1]
-                        # print(rec)
-                        if len(rec.split()) > 2:
-                            result['result_info'] = rec.split()[2]        # 客诉原因
-                        if len(rec.split()) > 1:
-                            result['result_reson'] = rec.split()[1]     # 处理内容
-                        result['dealContent'] = rec.split()[0]            # 最新处理结果
-                        rec_name = record.split("#处理结果：")[0]
-                        if len(rec_name.split()) > 2:
-                            if (rec_name.split())[2] != '' or (rec_name.split())[2] != []:
-                                result['traceUserName'] = (rec_name.split())[2]
-                        else:
-                            result['traceUserName'] = ''
-                        ordersDict.append(result.copy())
+                            rec = record.split("#处理结果：")[1]
+                            if len(rec.split()) > 2:
+                                result['result_info'] = rec.split()[2]        # 客诉原因
+                            if len(rec.split()) > 1:
+                                result['result_reson'] = rec.split()[1]     # 处理内容
+                            result['dealContent'] = rec.split()[0]            # 最新处理结果
+                            rec_name = record.split("#处理结果：")[0]
+                            if len(rec_name.split()) > 1:
+                                if (rec_name.split())[2] != '' and (rec_name.split())[2] != []:
+                                    if '客服' in (rec_name.split())[2]:
+                                        result['traceUserName'] = ((rec_name.split())[2]).split("(客服)")[0]
+                                    else:
+                                        result['traceUserName'] = (rec_name.split())[2]
+                            else:
+                                result['traceUserName'] = ''
+                            ordersDict.append(result.copy())
                 else:
                     result['deal_time'] = ''
                     result['result_reson'] = ''
@@ -298,17 +301,18 @@ class QueryTwo(Settings, Settings_sso):
             else:
                 dp = df
             dp = dp[['order_number',  'currency', 'amount', 'customer_name', 'customer_mobile', 'arrived_address', 'arrived_time', 'create_time', 'dealStatus', 'dealContent',
-                     'deal_time', 'result_reson', 'result_info', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus',
+                     'deal_time', 'result_reson', 'result_info', 'questionType', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus',
                      'gift_reissue_order_number', 'update_time']]
             dp.columns = ['订单编号', '币种', '订单金额', '客户姓名', '客户电话', '客户地址', '送达时间', '导入时间', '最新处理状态', '最新处理结果',
-                          '处理时间', '拒收原因', '具体原因', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态', '赠品补发订单编号', '更新时间']
+                          '处理时间', '拒收原因', '具体原因', '问题类型状态', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态',
+                          '赠品补发订单编号', '更新时间']
             dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞|张陈平', na=False))]
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO 物流问题件(处理时间,物流反馈时间,处理人,订单编号,处理结果, 拒收原因, 币种, 记录时间) 
-                    SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,最新处理结果 AS 处理结果, 拒收原因, 币种, NOW() 记录时间 
-                    FROM customer'''
+                    SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,IF(最新处理结果 = '',问题类型状态,最新处理结果) AS 处理结果, 拒收原因, 币种, NOW() 记录时间 
+                    FROM customer;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
         else:
@@ -329,35 +333,39 @@ class QueryTwo(Settings, Settings_sso):
         # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
-        print('+++已成功发送请求......')
+        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersDict = []
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
+                # print(55)
+                # print(result['order_number'])
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
                 result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
                 if ';' in result['traceRecord']:
                     trace_record = result['traceRecord'].split(";")
                     for record in trace_record:
-                        result['deal_time'] = ''
-                        result['result_reson'] = ''
-                        result['result_info'] = ''
+                        if record.split("#处理结果：")[1] != '':
+                            result['deal_time'] = record.split()[0]
+                            result['result_reson'] = ''
+                            result['result_info'] = ''
 
-                        result['deal_time'] = record.split()[0]
-                        rec = record.split("#处理结果：")[1]
-                        # print(rec)
-                        if len(rec.split()) > 2:
-                            result['result_info'] = rec.split()[2]  # 客诉原因
-                        if len(rec.split()) > 1:
-                            result['result_reson'] = rec.split()[1]  # 处理内容
-                        result['dealContent'] = rec.split()[0]  # 最新处理结果
-                        rec_name = record.split("#处理结果：")[0]
-                        if len(rec_name.split()) > 2:
-                            if (rec_name.split())[2] != '' or (rec_name.split())[2] != []:
-                                result['traceUserName'] = (rec_name.split())[2]
-                        else:
-                            result['traceUserName'] = ''
-                        ordersDict.append(result.copy())
+                            rec = record.split("#处理结果：")[1]
+                            if len(rec.split()) > 2:
+                                result['result_info'] = rec.split()[2]        # 客诉原因
+                            if len(rec.split()) > 1:
+                                result['result_reson'] = rec.split()[1]     # 处理内容
+                            result['dealContent'] = rec.split()[0]            # 最新处理结果
+                            rec_name = record.split("#处理结果：")[0]
+                            if len(rec_name.split()) > 1:
+                                if (rec_name.split())[2] != '' and (rec_name.split())[2] != []:
+                                    if '客服' in (rec_name.split())[2]:
+                                        result['traceUserName'] = ((rec_name.split())[2]).split("(客服)")[0]
+                                    else:
+                                        result['traceUserName'] = (rec_name.split())[2]
+                            else:
+                                result['traceUserName'] = ''
+                            ordersDict.append(result.copy())
                 else:
                     result['deal_time'] = ''
                     result['result_reson'] = ''
@@ -1373,58 +1381,41 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 99
+    select = 909
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '3129878cee9537a6b68f48743902548e'
         m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
         start: datetime = datetime.datetime.now()
 
-        if int(select) == 1:
-            timeStart, timeEnd = m.readInfo('物流问题件')
-            m.waybill_InfoQuery('2022-05-27', '2022-05-29')                     # 查询更新-物流问题件
-            m.waybill_Query('2022-05-27', '2022-05-29')
-        elif int(select) == 2:
-            timeStart, timeEnd = m.readInfo('物流客诉件')
-            m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
-        elif int(select) == 3:
-            timeStart, timeEnd = m.readInfo('采购异常')
-            # m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
-            # m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
-            m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))  # 查询更新-采购问题件（一、简单查询）
-        elif int(select) == 4:
-            timeStart, timeEnd = m.readInfo('派送问题件')
-            m.waybill_deliveryList(timeStart, timeEnd)                        # 查询更新-派送问题件
+        timeStart, timeEnd = m.readInfo('物流问题件')
+        m.waybill_InfoQuery('2021-12-01', '2021-12-01')             # 查询更新-物流问题件
+        m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
+        # m.waybill_InfoQuery('2022-05-20', '2022-06-05')           # 查询更新-物流问题件
 
-        elif int(select) == 99:
-            timeStart, timeEnd = m.readInfo('物流问题件')
-            m.waybill_InfoQuery('2021-12-01', '2021-12-01')             # 查询更新-物流问题件
-            m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
-            # m.waybill_InfoQuery('2022-05-20', '2022-06-05')                     # 查询更新-物流问题件
+        timeStart, timeEnd = m.readInfo('物流客诉件')
+        m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
+        # m.waybill_Query('2022-05-20', '2022-06-05')               # 查询更新-物流客诉件
 
-            timeStart, timeEnd = m.readInfo('物流客诉件')
-            m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
-            # m.waybill_Query('2022-05-20', '2022-06-05')                      # 查询更新-物流客诉件
+        timeStart, timeEnd = m.readInfo('退换货表')
+        for team in [1, 2]:
+            m.orderReturnList_Query(team, timeStart, timeEnd)                   # 查询更新-退换货
+            # m.orderReturnList_Query(team, '2022-05-20', '2022-06-05')         # 查询更新-退换货
 
-            timeStart, timeEnd = m.readInfo('退换货表')
-            for team in [1, 2]:
-                m.orderReturnList_Query(team, timeStart, timeEnd)       # 查询更新-退换货
-                # m.orderReturnList_Query(team, '2022-05-20', '2022-06-05')       # 查询更新-退换货
+        timeStart, timeEnd = m.readInfo('拒收问题件')
+        m.order_js_Query(timeStart, timeEnd)                                    # 查询更新-拒收问题件-·123456
+        # m.order_js_Query('2022-05-20', '2022-06-05')                          # 查询更新-拒收问题件-·123456
 
-            timeStart, timeEnd = m.readInfo('拒收问题件')
-            m.order_js_Query(timeStart, timeEnd)                        # 查询更新-拒收问题件-·123456
-            # m.order_js_Query('2022-05-20', '2022-06-05')                      # 查询更新-拒收问题件-·123456
+        timeStart, timeEnd = m.readInfo('派送问题件')
+        m.waybill_deliveryList(timeStart, timeEnd)                              # 查询更新-派送问题件、
+        # m.waybill_deliveryList('2022-05-20', '2022-06-05')                    # 查询更新-派送问题件
 
-            timeStart, timeEnd = m.readInfo('派送问题件')
-            m.waybill_deliveryList(timeStart, timeEnd)                        # 查询更新-派送问题件、
-            # m.waybill_deliveryList('2022-05-20', '2022-06-05')                       # 查询更新-派送问题件
+        timeStart, timeEnd = m.readInfo('采购异常')
+        m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
 
-            timeStart, timeEnd = m.readInfo('采购异常')
-            m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
-
-            # m.ssale_Query('2022-04-28', datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
-            # m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
-            # m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
+        # m.ssale_Query('2022-04-28', datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
+        # m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
+        # m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
         print('查询耗时：', datetime.datetime.now() - start)
     '''
     # -----------------------------------------------自动获取 昨日头程直发渠道的订单明细 状态运行（二）-----------------------------------------
@@ -1469,19 +1460,20 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    # handle = '手0动'
-    # login_TmpCode = '7e00200b074b38be93d83578da27e666'
-    # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
+    handle = '手0动'
+    login_TmpCode = '3129878cee9537a6b68f48743902548e'
+    m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
+    start: datetime = datetime.datetime.now()
     #
     #
     # begin = datetime.date(2022, 5, 23)
     # end = datetime.date(2022, 5, 24)
     # m.order_check(begin, end)
 
+    timeStart, timeEnd = m.readInfo('物流问题件')
+    m.waybill_InfoQuery('2021-12-01', '2021-12-01')  # 查询更新-物流问题件
+    m.waybill_InfoQuery('2022-07-01', '2022-08-03')  # 查询更新-物流问题件
 
-    # timeStart, timeEnd = m.readInfo('物流问题件')
-    #
-    # m.waybill_InfoQuery('2022-05-31', '2022-06-05')         # 查询更新-物流问题件
 
     # timeStart, timeEnd = m.readInfo('派送问题件')
     # m.waybill_deliveryList(timeStart, timeEnd)         # 查询更新-派送问题件

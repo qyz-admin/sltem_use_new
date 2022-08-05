@@ -798,7 +798,7 @@ if __name__ == '__main__':
             m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
 
             # timeStart, timeEnd = m.readInfo('派送问题件_导出')
-            m.outport_getDeliveryList('2022-07-01', '2022-08-03')
+            m.outport_getDeliveryList('2022-07-01', '2022-08-04')
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
     elif int(select) == 1:
