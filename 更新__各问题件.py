@@ -1381,7 +1381,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 909
+    select = 99
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '3129878cee9537a6b68f48743902548e'
@@ -1460,19 +1460,19 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    handle = '手0动'
-    login_TmpCode = '3129878cee9537a6b68f48743902548e'
-    m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
-    start: datetime = datetime.datetime.now()
+    # handle = '手0动'
+    # login_TmpCode = '3129878cee9537a6b68f48743902548e'
+    # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
+    # start: datetime = datetime.datetime.now()
     #
     #
     # begin = datetime.date(2022, 5, 23)
     # end = datetime.date(2022, 5, 24)
     # m.order_check(begin, end)
 
-    timeStart, timeEnd = m.readInfo('物流问题件')
-    m.waybill_InfoQuery('2021-12-01', '2021-12-01')  # 查询更新-物流问题件
-    m.waybill_InfoQuery('2022-07-01', '2022-08-03')  # 查询更新-物流问题件
+    # timeStart, timeEnd = m.readInfo('物流问题件')
+    # m.waybill_InfoQuery('2021-12-01', '2021-12-01')  # 查询更新-物流问题件
+    # m.waybill_InfoQuery('2022-07-01', '2022-08-03')  # 查询更新-物流问题件
 
 
     # timeStart, timeEnd = m.readInfo('派送问题件')

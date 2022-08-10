@@ -270,7 +270,7 @@ class QueryUpdate(Settings):
                 print(' ****** 没有要补充的信息; ****** ')
             else:
                 print('！！！ 请再次补充缺少的数据中！！！')
-                lw = QueryTwoT('+86-18538110674', 'qyz04163510.',"")
+                lw = QueryTwoT('+86-18538110674', 'qyz04163510.',"","手动")
                 lw.productInfo('gat_order_list', ordersDict)
 
         if team in ('gat'):

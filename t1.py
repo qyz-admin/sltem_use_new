@@ -120,8 +120,8 @@ if wb == '改派未发货 已导出':
     print(wb)
 else:
     print('正在获取 改派未发货 中')
-    handle = '手0动'
-    token = '3f9a3410b45035a180743c4a13093a05'
+    handle = '手动'
+    token = 'b5f77df863013fff819fac93725951d6'
     sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', token, handle)
     sso.gp_order()
 

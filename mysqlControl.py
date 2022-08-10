@@ -283,6 +283,7 @@ class MysqlControl(Settings):
             # print(str(day))
             yesterday = str(day) + ' 23:59:59'
             last_month = str(day)
+            print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
             df = None
             if team == 'slsc':
                 sql = '''SELECT a.id,
@@ -346,7 +347,6 @@ class MysqlControl(Settings):
 							            LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
                                 WHERE  a.rq = '{0}' AND a.rq <= '{1}'
                                     AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
-                print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
                 df = pd.read_sql_query(sql=sql, con=self.engine4)
             elif team == 'sl_rb':
                 sql = '''SELECT a.id,
@@ -409,7 +409,6 @@ class MysqlControl(Settings):
 							                LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
                                     WHERE  a.rq = '{0}' AND a.rq <= '{1}'
                                         AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
-                print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
                 df = pd.read_sql_query(sql=sql, con=self.engine20)
             elif team == 'gat':
                 sql = '''SELECT a.id,
@@ -495,7 +494,6 @@ class MysqlControl(Settings):
                             LEFT JOIN dim_order_status os ON os.id = a.order_status
 							LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
                     WHERE  a.rq = '{0}' AND a.rq <= '{1}' AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
-                print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
                 df = pd.read_sql_query(sql=sql, con=self.engine2)
             # sql = 'SELECT * FROM dim_order_status;'
             # df1 = pd.read_sql_query(sql=sql, con=self.engine1)
