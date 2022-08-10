@@ -1245,6 +1245,7 @@ class QueryTwo(Settings, Settings_sso):
             os.makedirs(mkpath + "\\物流表")
             print('创建成功')
             file_path = mkpath + '\\导运单号&提货时间\\{} 龟山 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path1 = mkpath + '\\导运单号&提货时间\\{} 圆通 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
             file_path2 = mkpath + '\\导运单号&提货时间\\{} 立邦 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
             file_path3 = mkpath + '\\导运单号&提货时间\\{} 天马 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
             file_path4 = mkpath + '\\导运单号&提货时间\\{} 速派 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
@@ -1252,6 +1253,7 @@ class QueryTwo(Settings, Settings_sso):
             file_path50 = mkpath + '\\导运单号&提货时间\\{} 协来运特货 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
             df = pd.DataFrame([['', '']], columns=['订单编号', '物流单号'])
             df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel(file_path1, sheet_name='查询', index=False, engine='xlsxwriter')
             df.to_excel(file_path2, sheet_name='查询', index=False, engine='xlsxwriter')
             df.to_excel(file_path3, sheet_name='查询', index=False, engine='xlsxwriter')
             df.to_excel(file_path4, sheet_name='查询', index=False, engine='xlsxwriter')
@@ -1450,7 +1452,7 @@ if __name__ == '__main__':
         lw.readFile(1)                                        # 上传每日压单核实结果
         lw.order_spec()                                       # 压单         更新；压单反馈  （备注（压单核实是否需要））
 
-        # lw.stockcompose_upload()                              # 获取 桃园仓重出、
+        lw.stockcompose_upload()                              # 获取 桃园仓重出、
         # lw.get_take_delivery_no()                             # 头程物流跟踪 更新； 获取最近10天的信息
         print('查询耗时：', datetime.datetime.now() - start)
 

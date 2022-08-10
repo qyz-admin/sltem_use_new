@@ -156,7 +156,7 @@ class SltemMonitoring(Settings):
             sql = '''SELECT LEFT(年月,4) AS 年, 年月, 旬, 日期, 团队, 币种, 订单来源, 订单编号, 出货时间, 状态时间, 上线时间, 最终状态, 是否改派,物流方式,产品id,
                             父级分类,二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格RMB
                     FROM {0}_zqsb a 
-                    WHERE a.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 13 MONTH),'%Y%m') AND a.年月 <= DATE_FORMAT(curdate(),'%Y%m')
+                    WHERE a.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 7 MONTH),'%Y%m') AND a.年月 <= DATE_FORMAT(curdate(),'%Y%m')
                     ORDER BY a.`下单时间`;'''.format(match[team])
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('----写入中......')
@@ -197,7 +197,7 @@ class SltemMonitoring(Settings):
         elif team in ('品牌-日本', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾', '品牌-台湾', '品牌-香港'):
             family = 'qsb_slsc'
         currency = team.split('-')[1]
-        month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y%m')
+        month_begin = (datetime.datetime.now() - relativedelta(months=13)).strftime('%Y%m')
         print('*********开始运行监控对比表*********')
         # 获取对比时间-本期
         sql = '''SELECT DISTINCT 年月,日期

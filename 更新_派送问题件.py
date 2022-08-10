@@ -17,6 +17,8 @@ from dateutil.relativedelta import relativedelta
 from threading import Thread #  使用 threading 模块创建线程
 import pandas.io.formats.excel
 import zhconv          # transform2_zh_hant：转为繁体;transform2_zh_hans：转为简体
+import win32com.client as win32
+import win32com.client
 
 from mysqlControl import MysqlControl
 from sqlalchemy import create_engine
@@ -431,18 +433,14 @@ class QueryTwo(Settings, Settings_sso):
         df11.to_excel(excel_writer=writer, sheet_name='拒收', index=False)
         df1211.to_excel(excel_writer=writer, sheet_name='台湾-物流', index=False)
         df1222.to_excel(excel_writer=writer, sheet_name='香港-物流', index=False)
-
         # df5[['创建日期', '总单量', '上月总单量', '派送问题件单量', '上月派送问题件单量', '签收率', '上月签收率']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False)
         # df5[['创建日期', '上月总单量', '上月派送问题件单量']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False, startcol=10)
         # df5[['创建日期', '总单量', '派送问题件单量']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False, startcol=15)
-
         df51.to_excel(excel_writer=writer, sheet_name='同期完成订单', index=False)
         df52.to_excel(excel_writer=writer, sheet_name='同期派送问题件', index=False)
         df53.to_excel(excel_writer=writer, sheet_name='同期签收率', index=False)
         df54.to_excel(excel_writer=writer, sheet_name='当日', index=False)
         df55.to_excel(excel_writer=writer, sheet_name='上月', index=False)
-
-
         if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表 cp
             del book['Sheet1']
         writer.save()
@@ -459,6 +457,19 @@ class QueryTwo(Settings, Settings_sso):
             wbsht.close()
             app.quit()
             app.quit()
+
+            # print('正在运行 派送问题件表 宏…………')
+            # # 通过Win32的方式并不限制xls和xlsx（因为操作是wps在做）  https://wenku.baidu.com/view/3d298b06de36a32d7375a417866fb84ae45cc3ef.html
+            # # excel =win32com.client.Dispatch('Excel.Application')  # word、excel、powerpoint对应的是微软的文字、表格和演示
+            # excel = win32com.client.Dispatch('Ket.Application')  # wps、et、wpp对应的是金山文件、表格和演示
+            # excel.Visible = False  # 可视化选项
+            # Path = r"D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm"
+            # workbook = excel.Workbooks.Open(Path)
+            # workbook1 = excel.Workbooks.Open(file_pathT)
+            # workbook.Application.Run("'D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm'!派送问题件_修饰")
+            # workbook1.Save()
+            # excel.Quit()
+
         except Exception as e:
             print('运行失败：', str(Exception) + str(e))
         print('----已写入excel')
@@ -1397,7 +1408,7 @@ if __name__ == '__main__':
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
     elif int(select) == 1:
-        m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "",select)
+        m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "", select)
         # timeStart, timeEnd = m.readInfo('派送问题件_跟进表')
         # m.getOrderList_T('2022-06-01', '2022-06-30')
         m.outport_getDeliveryList('2022-07-01', '2022-07-31')
