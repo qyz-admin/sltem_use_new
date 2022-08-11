@@ -1452,7 +1452,7 @@ if __name__ == '__main__':
         lw.readFile(1)                                        # 上传每日压单核实结果
         lw.order_spec()                                       # 压单         更新；压单反馈  （备注（压单核实是否需要））
 
-        lw.stockcompose_upload()                              # 获取 桃园仓重出、
+        # lw.stockcompose_upload()                              # 获取 桃园仓重出、
         # lw.get_take_delivery_no()                             # 头程物流跟踪 更新； 获取最近10天的信息
         print('查询耗时：', datetime.datetime.now() - start)
 

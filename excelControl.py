@@ -179,6 +179,13 @@ class ExcelControl():
         needDrop = []
         columns = list(df.columns)
         # print(columns)
+        if '圓通-轉單表' in shtName:
+            df.insert(0, '订单编号', '')  # 圆通直发
+            df.drop(labels=['發貨日期'], axis=1, inplace=True)  # 圆通改派
+            df.rename(columns={'到港日期': '發貨日期'}, inplace=True)
+        if '圓通-國內單號' in shtName:
+            if '單號' in df.columns and '發貨日期' in df.columns and '到港日期' in df.columns and '狀態' in df.columns and '最後操作日期' in df.columns:
+                df.insert(0, '订单编号', '')        # 圆通直发
         if team == 'slgat' or team == 'gat':
             if '运单号' in columns and '查件单号' in columns and '订单编号' in columns and '换单号' in columns:
                 df.drop(labels=['查件单号'], axis=1, inplace=True)     # 速派7-11的去掉多余的查件单号
@@ -192,9 +199,6 @@ class ExcelControl():
                 df.drop(labels=['原单号'], axis=1, inplace=True)   # 龟山的去掉多余的承运单号
             if '客人订单号' in columns and '内部单号' in columns and '转单号码' in columns and '架位' in columns:
                 df.rename(columns={'内部单号': '吉客印内部单号'}, inplace=True)
-
-            if '到港日期' in df.columns and '單號' in df.columns and '備註欄' in df.columns:
-                df.insert(0, '订单编号', '')
             # print(df)
             # print(df.columns)
         if team == 'slxmt':
@@ -384,6 +388,8 @@ class ExcelControl():
                 df['上线时间'] = df['清关时间'].copy()
             if '月重出' in shtName or '月总表' in shtName or '备货转寄' in shtName:       # 添加上线时间  易速配 改派
                 df.insert(0, '上线时间', '')
+                df['上线时间'] = df['出货时间'].copy()
+            if '圓通-轉單表' in shtName:
                 df['上线时间'] = df['出货时间'].copy()
             # print(df['上线时间'])
             return df

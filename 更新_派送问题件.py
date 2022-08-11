@@ -160,6 +160,29 @@ class QueryTwo(Settings, Settings_sso):
                 ) ss ON s.创建日期 =ss.日期
                 HAVING 创建日期 IS NOT NULL
                 ORDER BY 创建日期, FIELD(拒收原因,'合计') DESC, 单量 DESC;'''.format(timeStart)
+        sql = '''SELECT 创建日期, IFNULL(具体原因,'合计') AS 拒收原因, 单量,concat(ROUND(IFNULL(单量 / 总单量,0) * 100,2),'%') as 占比
+                FROM ( SELECT 创建日期, 具体原因,COUNT(s1.订单编号) AS 单量
+                     FROM( SELECT 订单编号,币种, IF(完结状态时间 IS NULL,状态时间,完结状态时间) AS 完结时间,  DATE_FORMAT(IF(完结状态时间 IS NULL,状态时间,完结状态时间), '%Y-%m-%d') AS 创建日期
+                            FROM d1_gat d
+                            WHERE d.最终状态 = '拒收'
+                     ) s1
+                    LEFT JOIN 拒收问题件 js ON s1.订单编号 =js.订单编号
+                    WHERE js.拒收问题件 <> '未联系上客户' AND js.具体原因 IS not NULL
+                    GROUP BY 创建日期, 具体原因
+                    WITH ROLLUP
+                ) s
+                LEFT JOIN 
+                ( SELECT 创建日期 日期, 具体原因 具体,COUNT(s1.订单编号) AS 总单量
+                    FROM(  SELECT 订单编号,币种, IF(完结状态时间 IS NULL,状态时间,完结状态时间) AS 完结时间,  DATE_FORMAT(IF(完结状态时间 IS NULL,状态时间,完结状态时间), '%Y-%m-%d') AS 创建日期
+                            FROM d1_gat d
+                            WHERE d.最终状态 = '拒收'
+                     ) s1
+                     LEFT JOIN 拒收问题件 js ON s1.订单编号 =js.订单编号
+                     WHERE js.拒收问题件 <> '未联系上客户' AND js.具体原因 IS not NULL
+                     GROUP BY 创建日期
+                ) ss ON s.创建日期 =ss.日期
+                WHERE 创建日期 IS NOT NULL
+                ORDER BY 创建日期, FIELD(拒收原因,'合计') DESC, 单量 DESC;'''.format(timeStart)
         df11 = pd.read_sql_query(sql=sql, con=self.engine1)
 
         print('正在获取物流内容…………')
@@ -219,7 +242,7 @@ class QueryTwo(Settings, Settings_sso):
                         GROUP BY 币种, 日期
 				) s1
                 ORDER BY 币种, 日期;'''.format(timeStart)
-        sql = '''SELECT 币种, 日期, 周, 
+        sql = '''SELECT 币种, 年月, 日期, 周,
                         全部签收 AS 签收单量, 全部拒收 拒收单量, 
                             concat(ROUND(IFNULL(全部签收 / 全部单量,0) * 100,2),'%') as 签收率,
                             concat(ROUND(IFNULL(全部退货 / 全部单量,0) * 100,2),'%') as 退款率,
@@ -265,7 +288,7 @@ class QueryTwo(Settings, Settings_sso):
                         上月圆通签收单量, 上月圆通拒收单量, 
                             concat(ROUND(IFNULL(上月圆通签收单量 / 上月圆通单量,0) * 100,2),'%') as 上月圆通签收率,
                             concat(ROUND(IFNULL(上月圆通退货单量 / 上月圆通单量,0) * 100,2),'%') as 上月圆通退款率					
-				FROM (  SELECT 币种, 日期, CASE DATE_FORMAT(日期,'%w')	WHEN 1 THEN '星期一' WHEN 2 THEN '星期二' WHEN 3 THEN '星期三' WHEN 4 THEN '星期四' WHEN 5 THEN '星期五' WHEN 6 THEN '星期六' WHEN 0 THEN '星期日' END as 周,
+				FROM (  SELECT IFNULL(币种,'合计') 币种,IFNULL(年月,'合计') 年月,IFNULL(日期,'合计') 日期, CASE DATE_FORMAT(日期,'%w')	WHEN 1 THEN '星期一' WHEN 2 THEN '星期二' WHEN 3 THEN '星期三' WHEN 4 THEN '星期四' WHEN 5 THEN '星期五' WHEN 6 THEN '星期六' WHEN 0 THEN '星期日' END as 周,
                             SUM(IF(`物流名称` = '全部',总单量,0)) AS 全部单量,
                                 SUM(IF(`物流名称` = '全部',签收单量,0)) AS 全部签收,
                                 SUM(IF(`物流名称` = '全部',拒收单量,0)) AS 全部拒收,
@@ -326,16 +349,16 @@ class QueryTwo(Settings, Settings_sso):
                                 SUM(IF(`物流名称` = '圆通',上月拒收单量,0)) AS 上月圆通拒收单量,
                                 SUM(IF(`物流名称` = '圆通',上月退货单量,0)) AS 上月圆通退货单量
                         FROM ( SELECT s1.*,s2.`总单量` AS 上月总单量 ,s2.`签收单量` AS 上月签收单量 ,s2.`拒收单量` AS 上月拒收单量 ,s2.`退货单量` AS 上月退货单量 
-								FROM( SELECT *
+								FROM( SELECT *,EXTRACT(YEAR_MONTH FROM p.日期) AS 年月
 									 FROM 派送问题件_跟进表2_cp p 
 									 WHERE p.`日期` >= '{0}'
-								) s1
-								LEFT JOIN  派送问题件_跟进表2_cp s2 on s1.币种 = s2.币种 AND s1.物流名称 = s2.物流名称 AND s1.日期 = DATE_SUB(s2.日期,INTERVAL -1 MONTH)
+							    ) s1
+							    LEFT JOIN  派送问题件_跟进表2_cp s2 on s1.币种 = s2.币种 AND s1.物流名称 = s2.物流名称 AND s1.日期 = DATE_SUB(s2.日期,INTERVAL -1 MONTH)
 						) p 
-                        GROUP BY 币种, 日期
+                        GROUP BY 币种, 年月, 日期
 						WITH ROLLUP
 				) s1
-				HAVING s1.币种 IS NOT NULL
+				WHERE s1.币种 <> '合计'
                 ORDER BY 币种, 日期;'''.format(timeStart)
         df12 = pd.read_sql_query(sql=sql, con=self.engine1)
         df121 = df12[(df12['币种'].str.contains('台币'))]
@@ -778,600 +801,63 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
         return max_count
 
-    def sl_Monitoring(self, team, now_month, last_month, ready):
-        match = {'品牌-日本': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
-                 '品牌-香港': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
-                 '品牌-台湾': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
-                 '品牌-马来西亚': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
-                 '品牌-新加坡': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
-                 '品牌-菲律宾': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
-                 '港台-台湾': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队", "火凤凰-港台(繁体)", "神龙-低价", "神龙-主页运营1组", "神龙-运营1组", "神龙-主页运营"',
-                 '神龙-香港': '"神龙家族-港澳台"',
-                 '神龙-台湾': '"神龙家族-港澳台"',
-                 '小虎队-香港': '"金鹏家族-小虎队"',
-                 '小虎队-台湾': '"金鹏家族-小虎队"',
-                 '神龙运营1组-台湾': '"神龙-运营1组"',
-                 '神龙火凤凰-台湾': '"神龙家族-港澳台","火凤凰-港澳台", "火凤凰-港台(繁体)"',
-                 '火凤凰-台湾': '"火凤凰-港澳台", "火凤凰-港台(繁体)"',
-                 '火凤凰-香港': '"火凤凰-港澳台", "火凤凰-港台(繁体)"'}
-        emailAdd = {'神龙香港': 'giikinliujun@163.com', '神龙台湾': 'giikinliujun@163.com',
-                    '火凤凰香港': 'giikinliujun@163.com', '火凤凰台湾': 'giikinliujun@163.com',
-                    '品牌-日本': 'sunyaru@giikin.com', '品牌-台湾': 'sunyaru@giikin.com', '品牌-香港': 'sunyaru@giikin.com',
-                    '品牌-马来西亚': 'sunyaru@giikin.com', '品牌-新加坡': 'sunyaru@giikin.com', '品牌-菲律宾': 'sunyaru@giikin.com'}
-        # 初始化配置
-        start: datetime = datetime.datetime.now()
-        family = ""
-        if team in ('港台-台湾', '神龙火凤凰-台湾', '神龙-香港', '神龙-台湾', '火凤凰-香港', '火凤凰-台湾', '小虎队-香港', '小虎队-台湾', '神龙运营1组-台湾'):
-            family = 'qsb_gat'
-        elif team in ('品牌-日本', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾', '品牌-台湾', '品牌-香港'):
-            family = 'qsb_slsc'
-        currency = team.split('-')[1]
-        month_begin = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y%m')
-        print('*********开始运行监控对比表*********')
-        # 获取对比时间-本期
-        sql = '''SELECT DISTINCT 年月,日期
-                    FROM {0} d
-                    WHERE d.`记录时间` ='{1}'
-                    GROUP BY 年月
-                    ORDER BY 年月 DESC'''.format(family, now_month)
-        rq = pd.read_sql_query(sql=sql, con=self.engine1)
-        now_month_new = ''
-        now_month_old = ''
-        if ready == '本期宏':
-            now_month_new = rq['年月'][0]
-            now_month_old = rq['年月'][1]
-        elif ready == '本期上月宏':
-            now_month_new = rq['年月'][0]
-            now_month_old = rq['年月'][1]
-        elif ready == '上期宏':
-            now_month_new = rq['年月'][1]
-            now_month_old = rq['年月'][2]
-        print('本期时间：' + now_month)
-        print('当月: ', end="")
-        print(now_month_new)
-        print('上月: ', end="")
-        print(now_month_old)
-        # 获取对比时间-上期
-        sql = '''SELECT DISTINCT 年月,日期
-                    FROM {0} d
-                    WHERE d.`记录时间` ='{1}'
-                    GROUP BY 年月
-                    ORDER BY 年月 DESC'''.format(family, last_month)
-        rq = pd.read_sql_query(sql=sql, con=self.engine1)
-        last_month_new = ''
-        last_month_old = ''
-        if ready == '本期宏':
-            last_month_new = rq['年月'][0]
-            last_month_old = rq['年月'][1]
-        elif ready == '本期上月宏':
-            last_month_new = rq['年月'][0]
-            last_month_old = rq['年月'][1]
-        elif ready == '上期宏':
-            last_month_new = rq['年月'][1]
-            last_month_old = rq['年月'][2]
-        print('上期时间：' + last_month)
-        print('当月: ', end="")
-        print(last_month_new)
-        print('上月: ', end="")
-        print(last_month_old)
+    def outport_List(self, timeStart, timeEnd):
+        rq = datetime.datetime.now().strftime('%m.%d')
 
-        listT = []  # 查询sql 存放池
-        show_name = []  # 打印进度需要
-
-        # 月时效（天）---查询
-        sqltime2 = '''SELECT 上月年月, 物流方式 AS 上月物流方式, 旬 AS 上月旬,
-                            IF(上月直发订单量 = 0,NULL, 上月直发订单量) AS 上月直发下单出库量,
-                                IFNULL(`上月直发下单-出库时`,0) / IFNULL(`上月直发订单量`,0) AS 上月下单出库时效,
-                            IF(上月直发出库完成量 = 0,NULL, 上月直发出库完成量) AS 上月直发出库完成量,
-                                IFNULL(`上月直发出库-完成时`,0) / IFNULL(`上月直发出库完成量`,0) 上月出库完成时效,
-                            IF(上月直发下单完成量 = 0,NULL, 上月直发下单完成量) AS 上月直发下单完成量,
-                                IFNULL(`上月直发下单-完成时`,0) / IFNULL(`上月直发下单完成量`,0) 上月下单完成时效,
-                            IF(上月直发出货上线量 = 0,NULL, 上月直发出货上线量) AS 上月直发出货上线量,
-                                IFNULL(`上月直发出货-上线时`,0) / IFNULL(`上月直发出货上线量`,0) 上月出货上线时效,
-                            IF(上月直发上线完成量 = 0,NULL, 上月直发上线完成量) AS 上月直发上线完成量,
-                                IFNULL(`上月直发上线-完成时`,0) / IFNULL(`上月直发上线完成量`,0) 上月上线完成时效,				
-                            (上月直发已签收订单量 / 上月直发下单完成量) AS '上月签收/完成',
-                                (上月直发已签收订单量 / 上月直发出库完成量) AS '上月签收/总计',
-                                concat(ROUND(上月直发订单量 / 上月单量 * 100,2),'%') as '上月单量占比',
-                            NULL,
-                            年月,物流方式,旬,
-                            IF(直发订单量 = 0,NULL, 直发订单量) AS 直发下单出库量,
-                                IFNULL(`直发下单-出库时`,0) / IFNULL(`直发订单量`,0) AS 下单出库时效,
-                                IFNULL(`直发下单-出库时`,0) / IFNULL(`直发订单量`,0) - IFNULL(`上月直发下单-出库时`,0) / IFNULL(`上月直发订单量`,0) AS 下单出库时效对比,
-                            IF(直发出库完成量 = 0,NULL, 直发出库完成量) AS 直发出库完成量,
-                                IFNULL(`直发出库-完成时`,0) / IFNULL(`直发出库完成量`,0) 出库完成时效,
-                                IFNULL(`直发出库-完成时`,0) / IFNULL(`直发出库完成量`,0) - IFNULL(`上月直发出库-完成时`,0) / IFNULL(`上月直发出库完成量`,0)出库完成时效对比,
-                            IF(直发下单完成量 = 0,NULL, 直发下单完成量) AS 直发下单完成量,
-                                IFNULL(`直发下单-完成时`,0) / IFNULL(`直发下单完成量`,0) 下单完成时效,
-                                IFNULL(`直发下单-完成时`,0) / IFNULL(`直发下单完成量`,0) -IFNULL(`上月直发下单-完成时`,0) / IFNULL(`上月直发下单完成量`,0) 下单完成时效对比,
-                            IF(直发出货上线量 = 0,NULL, 直发出货上线量) AS 直发出货上线量,
-                                IFNULL(`直发出货-上线时`,0) / IFNULL(`直发出货上线量`,0) 出货上线时效,
-                                IFNULL(`直发出货-上线时`,0) / IFNULL(`直发出货上线量`,0) - IFNULL(`上月直发出货-上线时`,0) / IFNULL(`上月直发出货上线量`,0) 出货上线时效对比,
-                            IF(直发上线完成量 = 0,NULL, 直发上线完成量) AS 直发上线完成量,
-                                IFNULL(`直发上线-完成时`,0) / IFNULL(`直发上线完成量`,0) 上线完成时效,					
-                                IFNULL(`直发上线-完成时`,0) / IFNULL(`直发上线完成量`,0) - IFNULL(`上月直发上线-完成时`,0) / IFNULL(`上月直发上线完成量`,0) 上线完成时效对比,
-                            (直发已签收订单量 / 直发下单完成量) AS '签收/完成',
-                                (直发已签收订单量 / 直发出库完成量) AS '签收/总计',
-                                concat(ROUND(直发订单量 / 单量 * 100,2),'%') as '单量占比',
-                                concat(ROUND((直发订单量 / 单量 - 上月直发订单量 / 上月单量)* 100,2),'%') AS '单量占比对比',
-                                上月直发订单量,
-                                上月单量,
-                                直发订单量,
-                                单量
-                    FROM( SELECT IFNULL(币种,'合计') 币种, '{4}' AS 上月年月,'{2}' AS 年月,IFNULL(物流方式,'合计') 物流方式,IFNULL(旬,'合计') 旬,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}',1,0)) AS 上月直发订单量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 最终状态 = '已签收' ,1,0)) AS 上月直发已签收订单量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}',DATEDIFF(`仓储扫描时间`,`下单时间`),0)) AS '上月直发下单-出库时',
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发出库完成量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`),0)) AS '上月直发出库-完成时',
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发下单完成量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`),0)) AS '上月直发下单-完成时',
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发出货上线量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`)),0)) AS '上月直发出货-上线时',
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发上线完成量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`),0)) AS '上月直发上线-完成时',
-
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}',1,0)) AS 直发订单量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '已签收',1,0)) AS 直发已签收订单量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}',DATEDIFF(`仓储扫描时间`,`下单时间`),0)) AS '直发下单-出库时',
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发出库完成量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`),0)) AS '直发出库-完成时',
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发下单完成量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`),0)) AS '直发下单-完成时',
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发出货上线量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`)),0)) AS '直发出货-上线时',
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发上线完成量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`),0)) AS '直发上线-完成时'   
-                        FROM {0} sl_cx
-                        WHERE  ( sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}' OR sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}')
-                                AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
-                                AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
-                        GROUP BY 物流方式,旬
-                        with rollup 
-                        ) s
-                        LEFT JOIN (SELECT 币种,SUM(IF(年月 = '{4}',1,0)) AS 上月单量,SUM(IF(年月 = '{2}',1,0)) AS 单量
-                                    FROM {0} sl_cx
-                                    WHERE ( sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}' OR sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}')
-                                            AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
-                                            AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
-                        ) ss  ON s.币种 = ss.币种;'''.format(family, now_month, now_month_new, last_month, last_month_new, currency, match[team])
-        listT.append(sqltime2)
-        show_name.append(' 月（天）时效…………')
-        # 月时效（月）---查询
-        sqltime21 = '''SELECT 上月年月, 物流方式 AS 上月物流方式, 旬 AS 上月旬,
-                                    IF(上月直发订单量 = 0,NULL, 上月直发订单量) AS 上月直发下单出库量,
-                                        IFNULL(`上月直发下单-出库时`,0) / IFNULL(`上月直发订单量`,0) AS 上月下单出库时效,
-                                    IF(上月直发出库完成量 = 0,NULL, 上月直发出库完成量) AS 上月直发出库完成量,
-                                        IFNULL(`上月直发出库-完成时`,0) / IFNULL(`上月直发出库完成量`,0) 上月出库完成时效,
-                                    IF(上月直发下单完成量 = 0,NULL, 上月直发下单完成量) AS 上月直发下单完成量,
-                                        IFNULL(`上月直发下单-完成时`,0) / IFNULL(`上月直发下单完成量`,0) 上月下单完成时效,
-                                    IF(上月直发出货上线量 = 0,NULL, 上月直发出货上线量) AS 上月直发出货上线量,
-                                        IFNULL(`上月直发出货-上线时`,0) / IFNULL(`上月直发出货上线量`,0) 上月出货上线时效,
-                                    IF(上月直发上线完成量 = 0,NULL, 上月直发上线完成量) AS 上月直发上线完成量,
-                                        IFNULL(`上月直发上线-完成时`,0) / IFNULL(`上月直发上线完成量`,0) 上月上线完成时效,				
-                                    上月直发已签收订单量 / 上月直发下单完成量 AS '上月签收/完成',
-                                        上月直发已签收订单量 / 上月直发出库完成量 AS '上月签收/总计',
-                                        concat(ROUND(上月直发订单量 / 上月单量 * 100,2),'%') as '上月单量占比',
-                                    NULL,
-                                    年月,物流方式,旬,
-                                    IF(直发订单量 = 0,NULL, 直发订单量) AS 直发下单出库量,
-                                        IFNULL(`直发下单-出库时`,0) / IFNULL(`直发订单量`,0) AS 下单出库时效,
-                                        IFNULL(`直发下单-出库时`,0) / IFNULL(`直发订单量`,0) - IFNULL(`上月直发下单-出库时`,0) / IFNULL(`上月直发订单量`,0) AS 下单出库时效对比,
-                                    IF(直发出库完成量 = 0,NULL, 直发出库完成量) AS 直发出库完成量,
-                                        IFNULL(`直发出库-完成时`,0) / IFNULL(`直发出库完成量`,0) 出库完成时效,
-                                        IFNULL(`直发出库-完成时`,0) / IFNULL(`直发出库完成量`,0) - IFNULL(`上月直发出库-完成时`,0) / IFNULL(`上月直发出库完成量`,0)出库完成时效对比,
-                                    IF(直发下单完成量 = 0,NULL, 直发下单完成量) AS 直发下单完成量,
-                                        IFNULL(`直发下单-完成时`,0) / IFNULL(`直发下单完成量`,0) 下单完成时效,
-                                        IFNULL(`直发下单-完成时`,0) / IFNULL(`直发下单完成量`,0) -IFNULL(`上月直发下单-完成时`,0) / IFNULL(`上月直发下单完成量`,0) 下单完成时效对比,
-                                    IF(直发出货上线量 = 0,NULL, 直发出货上线量) AS 直发出货上线量,
-                                        IFNULL(`直发出货-上线时`,0) / IFNULL(`直发出货上线量`,0) 出货上线时效,
-                                        IFNULL(`直发出货-上线时`,0) / IFNULL(`直发出货上线量`,0) - IFNULL(`上月直发出货-上线时`,0) / IFNULL(`上月直发出货上线量`,0) 出货上线时效对比,
-                                    IF(直发上线完成量 = 0,NULL, 直发上线完成量) AS 直发上线完成量,
-                                        IFNULL(`直发上线-完成时`,0) / IFNULL(`直发上线完成量`,0) 上线完成时效,					
-                                        IFNULL(`直发上线-完成时`,0) / IFNULL(`直发上线完成量`,0) - IFNULL(`上月直发上线-完成时`,0) / IFNULL(`上月直发上线完成量`,0) 上线完成时效对比,
-                                    直发已签收订单量 / 直发下单完成量 AS '签收/完成',
-                                        直发已签收订单量 / 直发出库完成量 AS '签收/总计',
-                                    concat(ROUND(直发订单量 / 单量 * 100,2),'%') as '单量占比',
-                                    concat(ROUND((直发订单量 / 单量 - 上月直发订单量 / 上月单量)* 100,2),'%') AS '单量占比对比'
-                            FROM( SELECT IFNULL(币种,'合计') 币种,'{4}' AS 上月年月,'{2}' AS 年月,IFNULL(物流方式,'合计') 物流方式,IFNULL(旬,'合计') 旬,
-                                        SUM(IF(记录时间= '{3}' AND 年月 = '{4}',1,0)) AS 上月直发订单量,
-                                        SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 最终状态 = '已签收' ,1,0)) AS 上月直发已签收订单量,
-                                        SUM(IF(记录时间= '{3}' AND 年月 = '{4}',DATEDIFF(`仓储扫描时间`,`下单时间`),0)) AS '上月直发下单-出库时',
-                                        SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发出库完成量,
-                                        SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`),0)) AS '上月直发出库-完成时',
-                                        SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发下单完成量,
-                                        SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`),0)) AS '上月直发下单-完成时',
-                                        SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发出货上线量,
-                                        SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`)),0)) AS '上月直发出货-上线时',
-                                        SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发上线完成量,
-                                        SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`),0)) AS '上月直发上线-完成时',
-
-                                        SUM(IF(记录时间= '{1}' AND 年月 = '{2}',1,0)) AS 直发订单量,
-                                        SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '已签收',1,0)) AS 直发已签收订单量,
-                                        SUM(IF(记录时间= '{1}' AND 年月 = '{2}',DATEDIFF(`仓储扫描时间`,`下单时间`),0)) AS '直发下单-出库时',
-                                        SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发出库完成量,
-                                        SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`),0)) AS '直发出库-完成时',
-                                        SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发下单完成量,
-                                        SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`),0)) AS '直发下单-完成时',
-                                        SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发出货上线量,
-                                        SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`)),0)) AS '直发出货-上线时',
-                                        SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发上线完成量,
-                                        SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`),0)) AS '直发上线-完成时'   
-                                FROM {0} sl_cx
-                                WHERE  ( sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}' OR sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}')
-                                        AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
-                                        AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
-                                GROUP BY 物流方式,旬
-                                with rollup 
-                                ) s
-                                LEFT JOIN (SELECT 币种,SUM(IF(年月 = '{3}',1,0)) AS 上月单量,SUM(IF(年月 = '{2}',1,0)) AS 单量
-                                            FROM {0} sl_cx
-                                            WHERE ( sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}' OR sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}')
-                                                    AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
-                                                    AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
-                                ) ss  ON s.币种 = ss.币种;'''.format(family, now_month, now_month_old, last_month, last_month_old, currency, match[team])
-        # listT.append(sqltime21)
-        show_name.append(' 月（月）时效…………')
-
-        # 月时效（旬）---查询
-        sqltime3 = '''SELECT 上月年月,  旬 AS 上月旬, 物流方式 AS 上月物流方式,
-                                IF(上月直发订单量 = 0,NULL, 上月直发订单量) AS 上月直发下单出库量,
-                                    IFNULL(`上月直发下单-出库时`,0) / IFNULL(`上月直发订单量`,0) AS 上月下单出库时效,
-                                IF(上月直发出库完成量 = 0,NULL, 上月直发出库完成量) AS 上月直发出库完成量,
-                                    IFNULL(`上月直发出库-完成时`,0) / IFNULL(`上月直发出库完成量`,0) 上月出库完成时效,
-                                IF(上月直发下单完成量 = 0,NULL, 上月直发下单完成量) AS 上月直发下单完成量,
-                                    IFNULL(`上月直发下单-完成时`,0) / IFNULL(`上月直发下单完成量`,0) 上月下单完成时效,
-                                IF(上月直发出货上线量 = 0,NULL, 上月直发出货上线量) AS 上月直发出货上线量,
-                                    IFNULL(`上月直发出货-上线时`,0) / IFNULL(`上月直发出货上线量`,0) 上月出货上线时效,
-                                IF(上月直发上线完成量 = 0,NULL, 上月直发上线完成量) AS 上月直发上线完成量,
-                                    IFNULL(`上月直发上线-完成时`,0) / IFNULL(`上月直发上线完成量`,0) 上月上线完成时效,	
-                                上月直发已签收订单量 / 上月直发下单完成量 AS '上月签收/完成',
-                                    上月直发已签收订单量 / 上月直发出库完成量 AS '上月签收/总计',
-                                    concat(ROUND(上月直发订单量 / 上月单量 * 100,2),'%') as '上月单量占比',
-                                NULL,
-                                年月,旬, 物流方式,
-                                IF(直发订单量 = 0,NULL, 直发订单量) AS 直发下单出库量,
-                                    IFNULL(`直发下单-出库时`,0) / IFNULL(`直发订单量`,0) AS 下单出库时效,
-                                    IFNULL(`直发下单-出库时`,0) / IFNULL(`直发订单量`,0) - IFNULL(`上月直发下单-出库时`,0) / IFNULL(`上月直发订单量`,0) AS 下单出库时效对比,
-                                IF(直发出库完成量 = 0,NULL, 直发出库完成量) AS 直发出库完成量,
-                                    IFNULL(`直发出库-完成时`,0) / IFNULL(`直发出库完成量`,0) 出库完成时效,
-                                    IFNULL(`直发出库-完成时`,0) / IFNULL(`直发出库完成量`,0) - IFNULL(`上月直发出库-完成时`,0) / IFNULL(`上月直发出库完成量`,0)出库完成时效对比,
-                                IF(直发下单完成量 = 0,NULL, 直发下单完成量) AS 直发下单完成量,
-                                    IFNULL(`直发下单-完成时`,0) / IFNULL(`直发下单完成量`,0) 下单完成时效,
-                                    IFNULL(`直发下单-完成时`,0) / IFNULL(`直发下单完成量`,0) -IFNULL(`上月直发下单-完成时`,0) / IFNULL(`上月直发下单完成量`,0) 下单完成时效对比,
-                                IF(直发出货上线量 = 0,NULL, 直发出货上线量) AS 直发出货上线量,
-                                    IFNULL(`直发出货-上线时`,0) / IFNULL(`直发出货上线量`,0) 出货上线时效,
-                                    IFNULL(`直发出货-上线时`,0) / IFNULL(`直发出货上线量`,0) - IFNULL(`上月直发出货-上线时`,0) / IFNULL(`上月直发出货上线量`,0) 出货上线时效对比,
-                                IF(直发上线完成量 = 0,NULL, 直发上线完成量) AS 直发上线完成量,
-                                    IFNULL(`直发上线-完成时`,0) / IFNULL(`直发上线完成量`,0) 上线完成时效,					
-                                    IFNULL(`直发上线-完成时`,0) / IFNULL(`直发上线完成量`,0) - IFNULL(`上月直发上线-完成时`,0) / IFNULL(`上月直发上线完成量`,0) 上线完成时效对比,
-                                直发已签收订单量 / 直发下单完成量 AS '签收/完成',
-                                    直发已签收订单量 / 直发出库完成量 AS '签收/总计',
-                                concat(ROUND(直发订单量 / 单量 * 100,2),'%') as '单量占比',
-                                concat(ROUND((直发订单量 / 单量 - 上月直发订单量 / 上月单量)* 100,2),'%') AS '单量占比对比',
-                                上月直发订单量,
-                                上月单量,
-                                直发订单量,
-                                单量
-                    FROM( SELECT IFNULL(币种,'合计') 币种,'{4}' AS 上月年月,'{2}' AS 年月,IFNULL(旬,'合计') 旬,IFNULL(物流方式,'合计') 物流方式,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}',1,0)) AS 上月直发订单量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 最终状态 = '已签收' ,1,0)) AS 上月直发已签收订单量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}',DATEDIFF(`仓储扫描时间`,`下单时间`),0)) AS '上月直发下单-出库时',
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发出库完成量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`),0)) AS '上月直发出库-完成时',
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发下单完成量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`),0)) AS '上月直发下单-完成时',
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发出货上线量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`)),0)) AS '上月直发出货-上线时',
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发上线完成量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`),0)) AS '上月直发上线-完成时',
-
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}',1,0)) AS 直发订单量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '已签收',1,0)) AS 直发已签收订单量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}',DATEDIFF(`仓储扫描时间`,`下单时间`),0)) AS '直发下单-出库时',
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发出库完成量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`),0)) AS '直发出库-完成时',
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发下单完成量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`),0)) AS '直发下单-完成时',
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发出货上线量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`)),0)) AS '直发出货-上线时',
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发上线完成量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`),0)) AS '直发上线-完成时'
-
-                    FROM {0} sl_cx
-                    WHERE  ( sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}' OR sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}')
-                            AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
-                            AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
-                    GROUP BY 旬, 物流方式
-                    with rollup 
-                    ) s
-                    LEFT JOIN ( SELECT 币种,SUM(IF(年月 = '{3}',1,0)) AS 上月单量,SUM(IF(年月 = '{2}',1,0)) AS 单量
-                                FROM qsb_gat sl_cx
-                                WHERE ( sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}' OR sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}')
-                                        AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
-                                        AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
-                    ) ss  ON s.币种 = ss.币种;'''.format(family, now_month, now_month_new, last_month, last_month_new, currency, match[team])
-        listT.append(sqltime3)
-        show_name.append(' 月（旬）时效…………')
-        # 月时效（月旬）---查询
-        sqltime31 = '''SELECT 上月年月,  旬 AS 上月旬, 物流方式 AS 上月物流方式,
-                                IF(上月直发订单量 = 0,NULL, 上月直发订单量) AS 上月直发下单出库量,
-                                    IFNULL(`上月直发下单-出库时`,0) / IFNULL(`上月直发订单量`,0) AS 上月下单出库时效,
-                                IF(上月直发出库完成量 = 0,NULL, 上月直发出库完成量) AS 上月直发出库完成量,
-                                    IFNULL(`上月直发出库-完成时`,0) / IFNULL(`上月直发出库完成量`,0) 上月出库完成时效,
-                                IF(上月直发下单完成量 = 0,NULL, 上月直发下单完成量) AS 上月直发下单完成量,
-                                    IFNULL(`上月直发下单-完成时`,0) / IFNULL(`上月直发下单完成量`,0) 上月下单完成时效,
-                                IF(上月直发出货上线量 = 0,NULL, 上月直发出货上线量) AS 上月直发出货上线量,
-                                    IFNULL(`上月直发出货-上线时`,0) / IFNULL(`上月直发出货上线量`,0) 上月出货上线时效,
-                                IF(上月直发上线完成量 = 0,NULL, 上月直发上线完成量) AS 上月直发上线完成量,
-                                    IFNULL(`上月直发上线-完成时`,0) / IFNULL(`上月直发上线完成量`,0) 上月上线完成时效,	
-                                上月直发已签收订单量 / 上月直发下单完成量 AS '上月签收/完成',
-                                    上月直发已签收订单量 / 上月直发出库完成量 AS '上月签收/总计',
-                                    concat(ROUND(上月直发订单量 / 上月单量 * 100,2),'%') as '上月单量占比',
-                                NULL,
-                                年月,旬, 物流方式,
-                                IF(直发订单量 = 0,NULL, 直发订单量) AS 直发下单出库量,
-                                    IFNULL(`直发下单-出库时`,0) / IFNULL(`直发订单量`,0) AS 下单出库时效,
-                                    IFNULL(`直发下单-出库时`,0) / IFNULL(`直发订单量`,0) - IFNULL(`上月直发下单-出库时`,0) / IFNULL(`上月直发订单量`,0) AS 下单出库时效对比,
-                                IF(直发出库完成量 = 0,NULL, 直发出库完成量) AS 直发出库完成量,
-                                    IFNULL(`直发出库-完成时`,0) / IFNULL(`直发出库完成量`,0) 出库完成时效,
-                                    IFNULL(`直发出库-完成时`,0) / IFNULL(`直发出库完成量`,0) - IFNULL(`上月直发出库-完成时`,0) / IFNULL(`上月直发出库完成量`,0)出库完成时效对比,
-                                IF(直发下单完成量 = 0,NULL, 直发下单完成量) AS 直发下单完成量,
-                                    IFNULL(`直发下单-完成时`,0) / IFNULL(`直发下单完成量`,0) 下单完成时效,
-                                    IFNULL(`直发下单-完成时`,0) / IFNULL(`直发下单完成量`,0) -IFNULL(`上月直发下单-完成时`,0) / IFNULL(`上月直发下单完成量`,0) 下单完成时效对比,
-                                IF(直发出货上线量 = 0,NULL, 直发出货上线量) AS 直发出货上线量,
-                                    IFNULL(`直发出货-上线时`,0) / IFNULL(`直发出货上线量`,0) 出货上线时效,
-                                    IFNULL(`直发出货-上线时`,0) / IFNULL(`直发出货上线量`,0) - IFNULL(`上月直发出货-上线时`,0) / IFNULL(`上月直发出货上线量`,0) 出货上线时效对比,
-                                IF(直发上线完成量 = 0,NULL, 直发上线完成量) AS 直发上线完成量,
-                                    IFNULL(`直发上线-完成时`,0) / IFNULL(`直发上线完成量`,0) 上线完成时效,					
-                                    IFNULL(`直发上线-完成时`,0) / IFNULL(`直发上线完成量`,0) - IFNULL(`上月直发上线-完成时`,0) / IFNULL(`上月直发上线完成量`,0) 上线完成时效对比,
-                                直发已签收订单量 / 直发下单完成量 AS '签收/完成',
-                                    直发已签收订单量 / 直发出库完成量 AS '签收/总计',
-                                concat(ROUND(直发订单量 / 单量 * 100,2),'%') as '单量占比',
-                                concat(ROUND((直发订单量 / 单量 - 上月直发订单量 / 上月单量)* 100,2),'%') AS '单量占比对比',
-                                上月直发订单量,
-                                上月单量
-                    FROM( SELECT IFNULL(币种,'合计') 币种,'{4}' AS 上月年月,'{2}' AS 年月,IFNULL(旬,'合计') 旬,IFNULL(物流方式,'合计') 物流方式,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}',1,0)) AS 上月直发订单量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 最终状态 = '已签收' ,1,0)) AS 上月直发已签收订单量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}',DATEDIFF(`仓储扫描时间`,`下单时间`),0)) AS '上月直发下单-出库时',
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发出库完成量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`),0)) AS '上月直发出库-完成时',
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发下单完成量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`),0)) AS '上月直发下单-完成时',
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发出货上线量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`)),0)) AS '上月直发出货-上线时',
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上月直发上线完成量,
-                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`),0)) AS '上月直发上线-完成时',
-
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}',1,0)) AS 直发订单量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '已签收',1,0)) AS 直发已签收订单量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}',DATEDIFF(`仓储扫描时间`,`下单时间`),0)) AS '直发下单-出库时',
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发出库完成量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`),0)) AS '直发出库-完成时',
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发下单完成量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`),0)) AS '直发下单-完成时',
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发出货上线量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`)),0)) AS '直发出货-上线时',
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 直发上线完成量,
-                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`),0)) AS '直发上线-完成时'
-
-                    FROM {0} sl_cx
-                    WHERE  ( sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}' OR sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}')
-                            AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
-                            AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
-                    GROUP BY 旬, 物流方式
-                    with rollup 
-                    ) s
-                    LEFT JOIN ( SELECT 币种,SUM(IF(年月 = '{3}',1,0)) AS 上月单量,SUM(IF(年月 = '{2}',1,0)) AS 单量
-                                FROM qsb_gat sl_cx
-                                WHERE ( sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}' OR sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}')
-                                        AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
-                                        AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
-                    ) ss  ON s.币种 = ss.币种;'''.format(family, now_month, now_month_old, last_month, last_month_old, currency, match[team])
-        # listT.append(sqltime31)
-        show_name.append(' 月（月旬）时效…………')
-
-        # 月时效(各月)---查询
-        sqltime4 = '''SELECT sl_rb.`币种`,sl_rb.`年月`,sl_rb.`物流方式`,sl_rb.`父级分类`,sl_rb.`旬`,
-                                sl_rb.`总单量`,
-                                sl_rb.`直发下单出库单量`,sl_rb.`直发下单出库时效`,
-                                sl_rb.`直发出货上线量`,sl_rb.`直发出货上线时效`,
-                                sl_rb.`直发上线完成量`,sl_rb.`直发上线完成时效`,
-                                sl_rb.`直发出库完成单量`,sl_rb.`直发出库完成时效`,
-                                sl_rb.`直发下单完成时效`,sl_rb.`直发下单完成单量`,
-                                sl_rb.`直发已签收订单量` / sl_rb.`直发下单完成单量` AS '签收/完成',
-                                sl_rb.`直发已签收订单量`/ sl_rb.`直发下单出库单量` AS '签收/总计'
-                    FROM (SELECT sl_zong.币种 币种,IFNULL(sl_zong.年月,'合计') 年月,IFNULL(sl_zong.物流方式,'合计') 物流方式,IFNULL(sl_zong.父级分类,'合计') 父级分类,IFNULL(sl_zong.旬,'合计') 旬,
-                                SUM(sl_zong.`总订单量`) 总单量,
-                                SUM(IFNULL(sl_cx_zf_qs.`直发已签收订单量`,0)) 直发已签收订单量,
-                                SUM(IFNULL(sl_zong_zf.`直发订单量`,0)) 直发下单出库单量,
-                                SUM(IFNULL(sl_zong_zf.`直发下单-出库时`,0)) / SUM(IFNULL(sl_zong_zf.`直发订单量`,0)) 直发下单出库时效,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成单量,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发出库-完成时`,0)) / SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成时效,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成单量,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发出货上线量`,0)) 直发出货上线量,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发出货-上线时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发出货上线量`,0)) 直发出货上线时效,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成量,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
-                        FROM (SELECT  币种,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 总订单量
-                                FROM  {0} sl_cx
-                                WHERE sl_cx.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx.`团队` IN ({2}) AND sl_cx.`父级分类` IS NOT NULL AND sl_cx.`是否改派` = "直发"
-                                GROUP BY 币种,年月,物流方式,父级分类,旬
-                                ORDER BY 币种,年月
-                                ) sl_zong
-                        LEFT JOIN
-                                (SELECT 币种,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 直发订单量, SUM(DATEDIFF(`仓储扫描时间`,`下单时间`)) AS '直发下单-出库时'
-                                FROM  {0} sl_cx_zf
-                                WHERE sl_cx_zf.`币种` = '{1}' AND sl_cx_zf.`年月` >= '{3}' AND sl_cx_zf.`团队` IN ({2}) AND sl_cx_zf.`父级分类` IS NOT NULL  AND sl_cx_zf.`是否改派` = "直发" AND sl_cx_zf.`仓储扫描时间` is not null
-                                GROUP BY 币种,年月,物流方式,父级分类,旬
-                                ORDER BY 币种,年月
-                            ) sl_zong_zf
-                             ON sl_zong_zf.`币种` = sl_zong.`币种` AND sl_zong_zf.`年月` = sl_zong.`年月` AND sl_zong_zf.`物流方式` = sl_zong.`物流方式` AND sl_zong_zf.`父级分类` = sl_zong.`父级分类`  AND sl_zong_zf.`旬` = sl_zong.`旬` 	
-                            LEFT JOIN
-                                (SELECT 币种,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 直发已签收订单量
-                                FROM  {0}	sl_cx_zf_qianshou
-                                WHERE sl_cx_zf_qianshou.`币种` = '{1}' AND sl_cx_zf_qianshou.`年月` >= '{3}' AND sl_cx_zf_qianshou.`团队` IN ({2}) AND sl_cx_zf_qianshou.`父级分类` IS NOT NULL AND sl_cx_zf_qianshou.`是否改派` = "直发" AND sl_cx_zf_qianshou.`仓储扫描时间` is not null AND sl_cx_zf_qianshou.`最终状态` = "已签收"
-                                GROUP BY 币种,年月,物流方式,父级分类,旬
-                                ORDER BY 币种,年月
-                            ) sl_cx_zf_qs
-                             ON sl_cx_zf_qs.`币种` = sl_zong.`币种`  AND sl_cx_zf_qs.`年月` = sl_zong.`年月`  AND sl_cx_zf_qs.`物流方式` = sl_zong.`物流方式` AND sl_cx_zf_qs.`父级分类` = sl_zong.`父级分类`  AND sl_cx_zf_qs.`旬` = sl_zong.`旬` 	
-                        LEFT JOIN
-                                (SELECT 币种,年月,物流方式,父级分类,旬,
-                                        COUNT(`订单编号`) 直发出库完成量,
-                                        SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
-                                        COUNT(`订单编号`) 直发下单完成量,
-                                        SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
-                                        COUNT(`订单编号`) 直发出货上线量,
-                                        SUM(DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`))) AS '直发出货-上线时',
-                                        COUNT(`订单编号`) 直发上线完成量,
-                                        SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`)) AS '直发上线-完成时'
-                                FROM  {0}	sl_cx_zf_wancheng
-                                WHERE sl_cx_zf_wancheng.`币种` = '{1}' AND sl_cx_zf_wancheng.`年月` >= '{3}' AND sl_cx_zf_wancheng.`团队` IN ({2}) AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL AND sl_cx_zf_wancheng.`是否改派` = "直发" AND sl_cx_zf_wancheng.`最终状态`IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') 
-                                GROUP BY 币种,年月,物流方式,父级分类,旬
-                                ORDER BY 币种,年月
-                            ) sl_cx_zf_wc
-                             ON sl_cx_zf_wc.`币种` = sl_zong.`币种`  AND sl_cx_zf_wc.`年月` = sl_zong.`年月` AND sl_cx_zf_wc.`物流方式` = sl_zong.`物流方式` AND sl_cx_zf_wc.`父级分类` = sl_zong.`父级分类`  AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
-                        GROUP BY sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-                        with rollup) sl_rb;'''.format('qsb_缓存_month_cp', currency, match[team], month_begin)
-        sqltime4 = '''SELECT sl_rb.`币种`,sl_rb.`年`,sl_rb.`年月`,sl_rb.`物流方式`,sl_rb.`父级分类`,sl_rb.`旬`,
-                                sl_rb.`总单量`,
-                                sl_rb.`直发下单出库单量`,sl_rb.`直发下单出库时效`,
-                                sl_rb.`直发出货上线量`,sl_rb.`直发出货上线时效`,
-                                sl_rb.`直发上线完成量`,sl_rb.`直发上线完成时效`,
-                                sl_rb.`直发出库完成单量`,sl_rb.`直发出库完成时效`,
-                                sl_rb.`直发下单完成时效`,sl_rb.`直发下单完成单量`,
-                                sl_rb.`直发已签收订单量` / sl_rb.`直发下单完成单量` AS '签收/完成',
-                                sl_rb.`直发已签收订单量`/ sl_rb.`直发下单出库单量` AS '签收/总计'
-                    FROM (SELECT sl_zong.币种 币种,IFNULL(sl_zong.年,'合计') 年,IFNULL(sl_zong.年月,'合计') 年月,IFNULL(sl_zong.物流方式,'合计') 物流方式,IFNULL(sl_zong.父级分类,'合计') 父级分类,IFNULL(sl_zong.旬,'合计') 旬,
-                                SUM(sl_zong.`总订单量`) 总单量,
-                                SUM(IFNULL(sl_cx_zf_qs.`直发已签收订单量`,0)) 直发已签收订单量,
-                                SUM(IFNULL(sl_zong_zf.`直发订单量`,0)) 直发下单出库单量,
-                                SUM(IFNULL(sl_zong_zf.`直发下单-出库时`,0)) / SUM(IFNULL(sl_zong_zf.`直发订单量`,0)) 直发下单出库时效,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成单量,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发出库-完成时`,0)) / SUM(IFNULL(sl_cx_zf_wc.`直发出库完成量`,0)) 直发出库完成时效,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成单量,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发下单-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发下单完成量`,0)) 直发下单完成时效,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发出货上线量`,0)) 直发出货上线量,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发出货-上线时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发出货上线量`,0)) 直发出货上线时效,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成量,
-                                SUM(IFNULL(sl_cx_zf_wc.`直发上线-完成时`,0)) /SUM(IFNULL(sl_cx_zf_wc.`直发上线完成量`,0)) 直发上线完成时效
-                        FROM (SELECT  币种,年,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 总订单量
-                                FROM  {0} sl_cx
-                                WHERE sl_cx.`币种` = '{1}' AND sl_cx.`年月` >= '{3}' AND sl_cx.`团队` IN ({2}) AND sl_cx.`父级分类` IS NOT NULL AND sl_cx.`是否改派` = "直发"
-                                GROUP BY 币种,年,年月,物流方式,父级分类,旬
-                                ORDER BY 币种,年,年月
-                                ) sl_zong
-                        LEFT JOIN
-                                (SELECT 币种,年,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 直发订单量, SUM(DATEDIFF(`仓储扫描时间`,`下单时间`)) AS '直发下单-出库时'
-                                FROM  {0} sl_cx_zf
-                                WHERE sl_cx_zf.`币种` = '{1}' AND sl_cx_zf.`年月` >= '{3}' AND sl_cx_zf.`团队` IN ({2}) AND sl_cx_zf.`父级分类` IS NOT NULL  AND sl_cx_zf.`是否改派` = "直发" AND sl_cx_zf.`仓储扫描时间` is not null
-                                GROUP BY 币种,年,年月,物流方式,父级分类,旬
-                                ORDER BY 币种,年,年月
-                            ) sl_zong_zf  ON sl_zong_zf.`币种` = sl_zong.`币种` AND sl_zong_zf.`年` = sl_zong.`年` AND sl_zong_zf.`年月` = sl_zong.`年月` AND sl_zong_zf.`物流方式` = sl_zong.`物流方式` AND sl_zong_zf.`父级分类` = sl_zong.`父级分类`  AND sl_zong_zf.`旬` = sl_zong.`旬` 	
-                       LEFT JOIN
-                                (SELECT 币种,年,年月,物流方式,父级分类,旬,COUNT(`订单编号`) 直发已签收订单量
-                                FROM  {0} sl_cx_zf_qianshou
-                                WHERE sl_cx_zf_qianshou.`币种` = '{1}' AND sl_cx_zf_qianshou.`年月` >= '{3}' AND sl_cx_zf_qianshou.`团队` IN ({2}) AND sl_cx_zf_qianshou.`父级分类` IS NOT NULL AND sl_cx_zf_qianshou.`是否改派` = "直发" AND sl_cx_zf_qianshou.`仓储扫描时间` is not null AND sl_cx_zf_qianshou.`最终状态` = "已签收"
-                                GROUP BY 币种,年,年月,物流方式,父级分类,旬
-                                ORDER BY 币种,年,年月
-                            ) sl_cx_zf_qs  ON sl_cx_zf_qs.`币种` = sl_zong.`币种`  AND sl_cx_zf_qs.`年` = sl_zong.`年`  AND sl_cx_zf_qs.`年月` = sl_zong.`年月`  AND sl_cx_zf_qs.`物流方式` = sl_zong.`物流方式` AND sl_cx_zf_qs.`父级分类` = sl_zong.`父级分类`  AND sl_cx_zf_qs.`旬` = sl_zong.`旬` 	
-                       LEFT JOIN
-                                (SELECT 币种,年,年月,物流方式,父级分类,旬,
-                                        COUNT(`订单编号`) 直发出库完成量,
-                                        SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`仓储扫描时间`)) AS '直发出库-完成时',
-                                        COUNT(`订单编号`) 直发下单完成量,
-                                        SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`下单时间`)) AS '直发下单-完成时',
-                                        COUNT(`订单编号`) 直发出货上线量,
-                                        SUM(DATEDIFF(`上线时间`, IFNULL(`仓储扫描时间`,`出货时间`))) AS '直发出货-上线时',
-                                        COUNT(`订单编号`) 直发上线完成量,
-                                        SUM(DATEDIFF(IFNULL(`完结状态时间`,`状态时间`),`上线时间`)) AS '直发上线-完成时'
-                                FROM  {0} sl_cx_zf_wancheng
-                                WHERE sl_cx_zf_wancheng.`币种` = '{1}' AND sl_cx_zf_wancheng.`年月` >= '{3}' AND sl_cx_zf_wancheng.`团队` IN ({2}) AND sl_cx_zf_wancheng.`父级分类` IS NOT NULL AND sl_cx_zf_wancheng.`是否改派` = "直发" AND sl_cx_zf_wancheng.`最终状态`IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') 
-                                GROUP BY 币种,年,年月,物流方式,父级分类,旬
-                                ORDER BY 币种,年,年月
-                            ) sl_cx_zf_wc ON sl_cx_zf_wc.`币种` = sl_zong.`币种` AND sl_cx_zf_wc.`年` = sl_zong.`年` AND sl_cx_zf_wc.`年月` = sl_zong.`年月` AND sl_cx_zf_wc.`物流方式` = sl_zong.`物流方式` AND sl_cx_zf_wc.`父级分类` = sl_zong.`父级分类`  AND sl_cx_zf_wc.`旬` = sl_zong.`旬`
-                        GROUP BY  sl_zong.年, sl_zong.年月,sl_zong.物流方式,sl_zong.父级分类,sl_zong.旬
-                        with rollup
-					) sl_rb;'''.format('qsb_缓存_month_cp', currency, match[team], month_begin)
-        # listT.append(sqltime4)
-        show_name.append(' 月(各月)时效…………')
-
-        listTValue = []  # 查询sql的结果 存放池
-        for i, sql in enumerate(listT):
-            print('正在获取 ' + team + show_name[i])
-            df = pd.read_sql_query(sql=sql, con=self.engine1)
-            print(df)
-            columns = list(df.columns)  # 获取数据的标题名，转为列表
-            columns_value = ['采购/销售额', '直发采购/销售额', '运费占比', '手续费占比', '金额签收/完成', '金额签收/总计', '金额完成占比', '数量签收/完成', '数量完成占比',
-                             '签收/完成', '签收/总计', '完成占比', '总签收/完成', '总签收/总计', '退款率', '总完成占比', '直发签收/完成', '直发签收/总计', '直发完成占比',
-                             '改派签收/完成', '改派签收/总计', '改派完成占比', '总签收/完成(金额)', '总签收/总计(金额)', '退款率(金额)', '总完成占比(金额)', '直发签收/完成(金额)',
-                             '直发签收/总计(金额)', '直发完成占比(金额)', '改派签收/完成(金额)', '改派签收/总计(金额)', '改派完成占比(金额)', '订单品类占比', '直发采购额/销售额',
-                             '花费占比', '总成本', '利润率', '改派占比', '采购占比', '广告占比', '总成本占比', '签收/完成', '签收/总计', '完成占比', '上月签收/完成', '上月签收/总计']
-            for column_val in columns_value:
-                if '上月单量占比' in columns:
-                    print(44)
-                    print(df['上月单量占比'])
-                    print(df[:2])
-                    print(df['上月单量占比'][:2])
-                    print(df)
-                    print(55)
-                if column_val in columns:
-                    try:
-                        df[column_val] = df[column_val].fillna(value=0)
-                        df[column_val] = df[column_val].apply(lambda x: format(x, '.2%'))
-                    except Exception as e:
-                        print('修改失败：', str(Exception) + str(e) + df[column_val])
-            listTValue.append(df)
-        print('查询耗时：', datetime.datetime.now() - start)
-        today = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        sheet_name = ['签率(天)_', '签率(月)_', '签率(旬)_', '签率(总)_', '物流(天)_', '物流(月)_', '时效(天)_', '时效(月)_', '时效(旬)_',
-                      '时效(月旬)_', '时效(总)_', '时效(改派天)_', '时效(改派月)_', '时效(改派旬)_', '时效(改派月旬)_', '时效(改派总)_']  # 生成的工作表的表名
-        sheet_name = ['时效(天)_', '时效(旬)_']  # 生成的工作表的表名
-        file_Path = []  # 发送邮箱文件使用
-        filePath = ''
-        if "品牌" in team:
-            filePath = 'F:\\查询\\品牌监控\\{}{} {} 监控表.xlsx'.format(today, team, ready)
-        elif "神龙" in team or "火凤凰" in team or "小虎队" in team or "港台" in team:
-            filePath = 'F:\\查询\\港台监控\\{}{} {} 监控表.xlsx'.format(today, team, ready)
-        if os.path.exists(filePath):  # 判断是否有需要的表格，进行初始化创建
-            print("正在清除重复文件......")
-            os.remove(filePath)
-        print("正在创建文件......")
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(filePath, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        print('正在获取拒收内容…………')
+        sql = '''SELECT 创建日期, IFNULL(具体原因,'合计') AS 拒收原因, 单量,concat(ROUND(IFNULL(单量 / 总单量,0) * 100,2),'%') as 占比
+                FROM ( SELECT 创建日期, 具体原因,COUNT(s1.订单编号) AS 单量
+                     FROM( SELECT 订单编号,币种, IF(完结状态时间 IS NULL,状态时间,完结状态时间) AS 完结时间,  DATE_FORMAT(IF(完结状态时间 IS NULL,状态时间,完结状态时间), '%Y-%m-%d') AS 创建日期
+                            FROM d1_gat d
+                            WHERE d.最终状态 = '拒收'
+                     ) s1
+                    LEFT JOIN 拒收问题件 js ON s1.订单编号 =js.订单编号
+                    WHERE js.拒收问题件 <> '未联系上客户' AND js.具体原因 IS not NULL
+                    GROUP BY 创建日期, 具体原因
+                    WITH ROLLUP
+                ) s
+                LEFT JOIN 
+                ( SELECT 创建日期 日期, 具体原因 具体,COUNT(s1.订单编号) AS 总单量
+                    FROM(  SELECT 订单编号,币种, IF(完结状态时间 IS NULL,状态时间,完结状态时间) AS 完结时间,  DATE_FORMAT(IF(完结状态时间 IS NULL,状态时间,完结状态时间), '%Y-%m-%d') AS 创建日期
+                            FROM d1_gat d
+                            WHERE d.最终状态 = '拒收'
+                     ) s1
+                     LEFT JOIN 拒收问题件 js ON s1.订单编号 =js.订单编号
+                     WHERE js.拒收问题件 <> '未联系上客户' AND js.具体原因 IS not NULL
+                     GROUP BY 创建日期
+                ) ss ON s.创建日期 =ss.日期
+                WHERE 创建日期 IS NOT NULL
+                ORDER BY 创建日期, FIELD(拒收原因,'合计') DESC, 单量 DESC;'''.format(timeStart)
+        df11 = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入excel…………')
-        writer = pd.ExcelWriter(filePath, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(filePath)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        for i in range(len(listTValue)):
-            listTValue[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i] + team, index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况.xlsx'.format(rq)
+        df0 = pd.DataFrame([])
+        df0.to_excel(file_pathT, index=False)
+        writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
+        book = load_workbook(file_pathT)
+        writer.book = book
+
+        df11.to_excel(excel_writer=writer, sheet_name='拒收', index=False)
+        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表 cp
             del book['Sheet1']
         writer.save()
         writer.close()
-        # print('正在运行宏…………')
-        # app = xl.App(visible=False, add_book=False)  # 运行宏调整
-        # app.display_alerts = False
-        # wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
-        # wbsht1 = app.books.open(filePath)
-        # if ready == '本期宏':
-        #     wbsht.macro('sl_总监控运行')()
-        # elif ready == '本期上月宏':
-        #     wbsht.macro('sl_总监控运行3')()
-        # else:
-        #     wbsht.macro('sl_总监控运行3')()
-        # wbsht1.save()
-        # wbsht1.close()
-        # wbsht.close()
-        # app.quit()
-        print('输出(监控)文件成功…………')
-        file_Path.append(filePath)
-        if team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
-            self.e.send('{} {}监控表.xlsx'.format(today, team), file_Path,
-                        emailAdd[team])
-        print('处理耗时：', datetime.datetime.now() - start)
+        try:
+            print('正在运行 派送问题件表 宏…………')
+            # # 通过Win32的方式并不限制xls和xlsx（因为操作是wps在做）  https://wenku.baidu.com/view/3d298b06de36a32d7375a417866fb84ae45cc3ef.html
+            # # excel =win32com.client.Dispatch('Excel.Application')  # word、excel、powerpoint对应的是微软的文字、表格和演示
+            # excel = win32com.client.Dispatch('Ket.Application')  # wps、et、wpp对应的是金山文件、表格和演示
+            # excel.Visible = False  # 可视化选项
+            # Path = r"D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm"
+            # workbook = excel.Workbooks.Open(Path)
+            # workbook1 = excel.Workbooks.Open(file_pathT)
+            # workbook.Application.Run("'D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm'!派送问题件_修饰")
+            # workbook1.Save()
+            # excel.Quit()
+
+        except Exception as e:
+            print('运行失败：', str(Exception) + str(e))
+        print('----已写入excel')
 
 
 if __name__ == '__main__':
@@ -1404,7 +890,7 @@ if __name__ == '__main__':
             m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
 
             # timeStart, timeEnd = m.readInfo('派送问题件_导出')
-            m.outport_getDeliveryList('2022-07-01', '2022-08-09')
+            m.outport_getDeliveryList('2022-07-01', '2022-08-10')
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
     elif int(select) == 1:
@@ -1414,16 +900,14 @@ if __name__ == '__main__':
         m.outport_getDeliveryList('2022-07-01', '2022-07-31')
         # m.getMessageLog('2022-07-01', '2022-07-15')
 
-
-
-    elif int(select) == 2:          # 测试
-        m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "", select)
-        last_month = '2022.07.11'
-        now_month = '2022.08.09'
-        for team in ['神龙-香港']:
-            now_month = now_month.replace('.', '-')  # 修改配置时间
-            last_month = last_month.replace('.', '-')
-            m.sl_Monitoring(team, now_month, last_month, '本期宏')  # 输出数据--每月正常使用的时间（二）、
         
+
+    elif int(select) == 2:
+        m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "", select)
+        # timeStart, timeEnd = m.readInfo('派送问题件_跟进表')
+        # m.getOrderList_T('2022-06-01', '2022-06-30')
+        m.outport_List('2022-07-20', '2022-07-31')
+        # m.getMessageLog('2022-07-01', '2022-07-15')
+
 
     print('查询耗时：', datetime.datetime.now() - start)
