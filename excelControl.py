@@ -181,8 +181,8 @@ class ExcelControl():
         # print(columns)
         if '圓通-轉單表' in shtName:
             df.insert(0, '订单编号', '')  # 圆通直发
-            df.drop(labels=['發貨日期'], axis=1, inplace=True)  # 圆通改派
-            df.rename(columns={'到港日期': '發貨日期'}, inplace=True)
+            # df.drop(labels=['發貨日期'], axis=1, inplace=True)  # 圆通改派
+            # df.rename(columns={'到港日期': '發貨日期'}, inplace=True)
         if '圓通-國內單號' in shtName:
             if '單號' in df.columns and '發貨日期' in df.columns and '到港日期' in df.columns and '狀態' in df.columns and '最後操作日期' in df.columns:
                 df.insert(0, '订单编号', '')        # 圆通直发

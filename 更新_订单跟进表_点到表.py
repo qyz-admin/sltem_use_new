@@ -118,8 +118,9 @@ class QueryTwo(Settings, Settings_sso):
                         db.dropna(axis=0, how='any', inplace=True)  # 空值（缺失值），将空值所在的行/列删除后
                     elif team == 'gat_waybill_list':
                         db.insert(0, '运单编号', '')
+                        db.insert(0, '标记', '')
                         db.insert(0, '是否改派', reassignmentTypeName)
-                        db = db[['订单编号', '是否改派', '运单编号', '物流', '物流状态', '订单状态', '下单时间', '出库时间', '是否装箱', '装箱时间', '提货时间','上线时间','完成时间']]
+                        db = db[['订单编号', '是否改派', '运单编号', '物流', '物流状态', '订单状态', '下单时间', '出库时间', '是否装箱', '装箱时间', '提货时间','上线时间','完成时间', '标记']]
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
@@ -183,6 +184,9 @@ class QueryTwo(Settings, Settings_sso):
                         set a.`运单编号`= IF(b.`运单号` = '', NULL, b.`运单号`),
                             a.`订单状态`= IF(b.`订单状态` = '', NULL, b.`订单状态`),
                             a.`物流状态`= IF(b.`物流状态` = '', NULL, b.`物流状态`)
+                            -- a.`上线时间`= IF(a.`上线时间` IS NULL, IF(b.`上线时间` ="", NULL, b.`上线时间`), a.`上线时间`),
+                            -- a.`完成时间`= IF(a.`完成时间` IS NULL, b.`完成时间`, a.`完成时间`),
+                            -- a.`标记`= IF(b.`上线时间` <> "" or b.`完成时间` IS NOT NULL, '修改', '')
                 where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('查询耗时：', datetime.datetime.now() - start)

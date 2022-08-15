@@ -103,7 +103,7 @@ class QueryTwo(Settings, Settings_sso):
         print('******************起止时间：' + team + last_time + ' - ' + now_time + ' ******************')
         return last_time, now_time
 
-    def outport_getDeliveryList(self, timeStart, timeEnd):
+    def outport_getDeliveryList(self, timeStart, timeEnd,logisticsN_begin,logisticsN_end):
         rq = datetime.datetime.now().strftime('%m.%d')
         # self.getOrderList(timeStart, timeEnd)
         # self.getDeliveryList(timeStart, timeEnd)
@@ -167,7 +167,7 @@ class QueryTwo(Settings, Settings_sso):
                             WHERE d.最终状态 = '拒收'
                      ) s1
                     LEFT JOIN 拒收问题件 js ON s1.订单编号 =js.订单编号
-                    WHERE js.拒收问题件 <> '未联系上客户' AND js.具体原因 IS not NULL
+                    WHERE js.核实原因 <> '未联系上客户' AND js.具体原因 IS not NULL
                     GROUP BY 创建日期, 具体原因
                     WITH ROLLUP
                 ) s
@@ -178,7 +178,7 @@ class QueryTwo(Settings, Settings_sso):
                             WHERE d.最终状态 = '拒收'
                      ) s1
                      LEFT JOIN 拒收问题件 js ON s1.订单编号 =js.订单编号
-                     WHERE js.拒收问题件 <> '未联系上客户' AND js.具体原因 IS not NULL
+                     WHERE js.核实原因 <> '未联系上客户' AND js.具体原因 IS not NULL
                      GROUP BY 创建日期
                 ) ss ON s.创建日期 =ss.日期
                 WHERE 创建日期 IS NOT NULL
@@ -359,7 +359,7 @@ class QueryTwo(Settings, Settings_sso):
 						WITH ROLLUP
 				) s1
 				WHERE s1.币种 <> '合计'
-                ORDER BY 币种, 日期;'''.format(timeStart)
+                ORDER BY 币种, 年月, 日期;'''.format(timeStart)
         df12 = pd.read_sql_query(sql=sql, con=self.engine1)
         df121 = df12[(df12['币种'].str.contains('台币'))]
         df1211 = df121[["日期","周","签收单量","拒收单量","签收率","退款率", "上月签收单量","上月拒收单量","上月签收率","上月退款率",
@@ -378,7 +378,8 @@ class QueryTwo(Settings, Settings_sso):
                         IF(电话 = 0,NULL,电话) AS 电话,IF(客户回复再派量 = 0,NULL,客户回复再派量) AS 客户回复再派量,
                         concat(ROUND(IFNULL(物流再派签收 / 物流再派,0) * 100,2),'%') as 物流再派签收率,
                         concat(ROUND(IFNULL(物流3派签收 / 物流3派,0) * 100,2),'%') as 物流3派签收率,
-                        IF(问题件类型 = '客户不接电话' and 未派 <> 0,CONCAT(未派,'单处理时已完结'),IF(单量 >= 短信,"获取物流轨迹信息后，后台会排队处理；若30-40分钟内订单状态变为已完结，则不发送短信。",IF(单量 < 短信,"物流轨迹更新后， 根据派送问题类型的更改，会再次发送短信。", NULL))) 未派, 
+                 --       IF(问题件类型 = '客户不接电话' and 未派 <> 0,CONCAT(未派,'单处理时已完结'),IF(单量 >= 短信,"获取物流轨迹信息后，后台会排队处理；若30-40分钟内订单状态变为已完结，则不发送短信。",IF(单量 < 短信,"物流轨迹更新后， 根据派送问题类型的更改，会再次发送短信。", NULL))) 未派, 											
+                        IF(问题件类型 = '送达客户不在/客户长期不在' AND 创建日期 >='{1}' AND 创建日期 <='{2}','暂未处理。物流已2派或3派',IF(问题件类型 = '客户不接电话' and 未派 <> 0,CONCAT(未派,'单处理时已完结'),IF(单量 >= 短信,"获取物流轨迹信息后，后台会排队处理；若30-40分钟内订单状态变为已完结，则不发送短信。",IF(单量 < 短信,"物流轨迹更新后， 根据派送问题类型的更改，会再次发送短信。", NULL))))  未派, 
                         异常, 上月总单量, 上月签收单量, 上月拒收单量, 
                         concat(ROUND(IFNULL(上月签收单量 / 上月总单量,0) * 100,2),'%') as 上月签收率, 上月派送问题件单量,上月周
                 FROM ( SELECT s1.币种, s1.创建日期, s3.签收单量, s3.拒收单量, s3.总单量, 派送问题件单量, 问题件类型,
@@ -422,7 +423,7 @@ class QueryTwo(Settings, Settings_sso):
                         GROUP BY s1.币种, s1.创建日期, s1.问题件类型
                 ) s
                 ORDER BY s.币种, s.创建日期 , 
-                FIELD(s.问题件类型,'送至便利店','地址问题/客户要求更改派送时间或者地址','客户自取','客户不接电话','送达客户不在/客户长期不在','拒收','合计');'''.format(timeStart)
+                FIELD(s.问题件类型,'送至便利店','地址问题/客户要求更改派送时间或者地址','客户自取','客户不接电话','送达客户不在/客户长期不在','拒收','合计');'''.format(timeStart,logisticsN_begin,logisticsN_end)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         db2 = df[(df['币种'].str.contains('台币'))]
         db3 = df[(df['币种'].str.contains('港币'))]
@@ -444,7 +445,7 @@ class QueryTwo(Settings, Settings_sso):
         df55.rename(columns={'上月总单量': '完成单量', '上月派送问题件单量': '派送问题件单量'}, inplace=True)
 
         print('正在写入excel…………')
-        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况.xlsx'.format(rq)
+        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况98.xlsx'.format(rq)
         df0 = pd.DataFrame([])
         df0.to_excel(file_pathT, index=False)
         writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
@@ -890,14 +891,18 @@ if __name__ == '__main__':
             m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
 
             # timeStart, timeEnd = m.readInfo('派送问题件_导出')
-            m.outport_getDeliveryList('2022-07-01', '2022-08-10')
+            logisticsN_begin = '2022-07-11'                         # 送达客户不在/客户长期不在  物流轨迹查询时间
+            logisticsN_end = '2022-07-31'
+            m.outport_getDeliveryList('2022-07-01', '2022-08-14', logisticsN_begin, logisticsN_end)
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
     elif int(select) == 1:
         m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "", select)
         # timeStart, timeEnd = m.readInfo('派送问题件_跟进表')
         # m.getOrderList_T('2022-06-01', '2022-06-30')
-        m.outport_getDeliveryList('2022-07-01', '2022-07-31')
+        logisticsN_begin = '2022-07-11'                             # 送达客户不在/客户长期不在  物流轨迹查询时间
+        logisticsN_end = '2022-07-31'
+        m.outport_getDeliveryList('2022-07-01', '2022-08-11', logisticsN_begin, logisticsN_end)
         # m.getMessageLog('2022-07-01', '2022-07-15')
 
         
