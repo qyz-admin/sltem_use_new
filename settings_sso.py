@@ -2092,6 +2092,7 @@ class Settings_sso():
         print(db_data['订单编号'][0])
         orderId = list(db_data['订单编号'])
         max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+        print('查询压单:' + str(max_count))
         if max_count > 500:
             ord = "', '".join(orderId[0:500])
             df = self._updata_yadan(ord, data_df, data_df2)
@@ -2102,7 +2103,7 @@ class Settings_sso():
                 ord = "', '".join(orderId[n:n + 500])
                 data = self._updata_yadan(ord, data_df, data_df2)
                 print(data)
-                if data != None:
+                if data is not None and len(data) > 0:
                     dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
         else:
@@ -2195,7 +2196,7 @@ class Settings_sso():
                 ord = "', '".join(orderId[n:n + 500])
                 data = self._updata_chuku(ord, data_df, data_df2)
                 print(data)
-                if data != None:
+                if data is not None and len(data) > 0:
                     dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
         else:

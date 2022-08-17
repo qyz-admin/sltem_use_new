@@ -92,7 +92,7 @@ for dir in dirs:
 print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
-# print('---------------------------------- 数据库更新部分：--------------------------------')
+print('---------------------------------- 数据库更新部分：--------------------------------')
 m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息、
 
 # qu.EportOrder(team, month_last, month_yesterday, month_begin, '是0')     # 最近两个月的更新信息导出
