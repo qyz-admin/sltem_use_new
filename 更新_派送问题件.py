@@ -445,7 +445,7 @@ class QueryTwo(Settings, Settings_sso):
         df55.rename(columns={'上月总单量': '完成单量', '上月派送问题件单量': '派送问题件单量'}, inplace=True)
 
         print('正在写入excel…………')
-        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况98.xlsx'.format(rq)
+        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况.xlsx'.format(rq)
         df0 = pd.DataFrame([])
         df0.to_excel(file_pathT, index=False)
         writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
@@ -893,7 +893,7 @@ if __name__ == '__main__':
             # timeStart, timeEnd = m.readInfo('派送问题件_导出')
             logisticsN_begin = '2022-07-11'                         # 送达客户不在/客户长期不在  物流轨迹查询时间
             logisticsN_end = '2022-07-31'
-            m.outport_getDeliveryList('2022-07-01', '2022-08-16', logisticsN_begin, logisticsN_end)
+            m.outport_getDeliveryList('2022-07-01', '2022-08-17', logisticsN_begin, logisticsN_end)
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
     elif int(select) == 1:
