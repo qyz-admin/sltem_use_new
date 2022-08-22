@@ -251,7 +251,11 @@ class MysqlControl(Settings):
 
 
     def creatMyOrderSl(self, team, begin, end) :  # 最近五天的全部订单信息
-        match = {'gat': '"神龙家族-港澳台", "火凤凰-港澳台", "红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队", "金鹏家族-4组", "火凤凰-港台(繁体)", "神龙-低价", "神龙-主页运营1组", "神龙-主页运营", "神龙-运营1组", "神龙-主页运营", "Line运营","客服中心-港台","研发部-研发团队"',
+        match = {'gat': '"神龙家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "红杉家族-港澳台", "火凤凰-港澳台", "火凤凰-港台(繁体)", "金鹏家族-4组", "神龙-运营1组", "奥创队", "客服中心-港台","研发部-研发团队","Line运营", "神龙-主页运营", "翼虎家族-mercadolibre"',
+                 'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
+                 'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"'
+                 }
+        match2 = {'gat': '17, 24, 26, 78, 118, 132, 135, 138, 156, 161, 173, 179, 182, 209',
                  'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"'
                  }
@@ -493,7 +497,7 @@ class MysqlControl(Settings):
                             LEFT JOIN dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
                             LEFT JOIN dim_order_status os ON os.id = a.order_status
 							LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
-                    WHERE  a.rq = '{0}' AND a.rq <= '{1}' AND dim_area.name IN ({2});'''.format(last_month, yesterday, match[team])
+                    WHERE  a.rq = '{0}' AND a.rq <= '{1}' AND dim_area.id IN ({2});'''.format(last_month, yesterday, match2[team])
                 df = pd.read_sql_query(sql=sql, con=self.engine2)
             # sql = 'SELECT * FROM dim_order_status;'
             # df1 = pd.read_sql_query(sql=sql, con=self.engine1)

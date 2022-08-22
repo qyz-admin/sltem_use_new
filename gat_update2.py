@@ -6829,7 +6829,7 @@ class QueryUpdate(Settings):
             df0 = pd.read_sql_query(sql=sql, con=self.engine1)
             listT.append(df0)
             print('正在获取 周报表 数据内容…………')
-            sql = '''SELECT 日期31天,ss.问题订单,ss.正常出货,ss.删除订单,ss.实际签收,concat(ROUND(IFNULL(ss.删除订单/ss.问题订单,0) * 100,2),'%') as 取消占比,
+            sql = '''SELECT 日期31天,ss.问题订单,ss.正常出货,ss.删除订单,concat(ROUND(IFNULL(ss.删除订单/ss.问题订单,0) * 100,2),'%') as 取消占比,ss.实际签收, 
                             ss1.约派送,ss1.核实拒收,ss1.再派签收,ss2.挽回单数,ss2.未确认,ss2.退款单数,ss2.实际挽回单数,ss3.正常发货,ss3.取消订单,ss4.`联系量（有结果）`,ss4.挽单量,
                             ss4.张联系量 AS '张陈平-联系量（有结果）',ss4.张挽单量 AS '张陈平-挽单量',
                             ss4.蔡联系量 AS '蔡利英-联系量（有结果）',ss4.蔡挽单量 AS '蔡利英-挽单量',
@@ -6992,6 +6992,90 @@ class QueryUpdate(Settings):
                 print('运行失败：', str(Exception) + str(e))
             print('----已写入excel ')
 
+        if week.isoweekday() == 2 or week.isoweekday() == 5 or week.isoweekday() == '手动':
+            month = datetime.datetime.now().strftime('%Y%m')
+            time_bengin = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
+            time_end = ((datetime.datetime.now() - relativedelta(months=1)) - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
+            listT = []  # 查询sql的结果 存放池
+            print("正在获取 物流签收率（产品前50单）" + time_bengin + "-" + time_end + " 数据内容…………")
+            sql = '''SELECT IFNULL(s.家族,'合计') as 家族, 
+                            IFNULL(s.币种,'合计') as 币种, 
+                            '{0}' as 月份, 
+                            IFNULL(s.产品ID,'合计') as 产品ID, 
+                            IFNULL(s.产品名称,'合计') as 产品名称,
+                            IFNULL(s.物流方式,'合计') as 物流方式,
+                            s.总单量,
+                            SUM(s.签收) as 签收, 
+                            SUM(s.拒收) as 拒收, 
+                            SUM(s.已退货) as 已退货,  
+                            SUM(s.已完成) as 已完成, 
+                            SUM(s.总订单) as 总订单,
+                            concat(ROUND(IFNULL(SUM(s.签收) / SUM(s.已完成),NULL) * 100,2),'%') as 完成签收,
+                            concat(ROUND(IFNULL(SUM(s.签收) / SUM(s.总订单),NULL) * 100,2),'%') as 总计签收,
+                            concat(ROUND(IFNULL(SUM(s.已完成) / SUM(s.总订单),NULL) * 100,2),'%') as 完成占比,
+                            concat(ROUND(IFNULL(SUM(s.已退货) / SUM(s.总订单),NULL) * 100,2),'%') as 退货率,
+                            concat(ROUND(IFNULL(SUM(s.总订单) / s.总单量,NULL) * 100,2),'%') as 订单占比
+					FROM ( SELECT ss1.*,ss2.物流方式, ss2.总订单, ss2.签收, ss2.拒收, ss2.已退货, ss2.已完成
+						    FROM ( SELECT s1.币种,s1.家族,s1.年月,s1.产品ID,s1.产品名称, SUM(s1.总订单) as 总单量
+                                    FROM ( SELECT cx.币种,cx.家族,cx.年月,cx.产品ID,cx.产品名称, count(订单编号) as 总订单, IF(count(订单编号) >=100 ,"头部产品",IF(count(订单编号) < 50 ,"尾部产品","中间产品")) 产品类型
+                                            FROM (SELECT *, IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",
+															IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族
+                                                    FROM gat_zqsb cc where cc.是否改派 = '直发' AND cc.物流方式 <> '台湾-速派-711超商' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
+                                            ) cx
+                                                GROUP BY cx.`币种`,cx.`家族`, cx.`产品ID`
+                                    ) s1
+									WHERE s1.`产品类型` IN ("头部产品","中间产品")
+                                    GROUP BY s1.`家族`,s1.`币种`,  s1.`产品ID`
+								) ss1
+								LEFT JOIN 
+								( SELECT cx.币种,cx.家族,cx.年月,cx.产品ID, cx.物流方式, 
+                                        count(订单编号) as 总订单, 
+                                        SUM(IF(最终状态 = "已签收",1,0)) as 签收,
+                                        SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+                                        SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
+                                        SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成
+								    FROM (SELECT *, IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",
+													IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族
+											FROM gat_zqsb cc where cc.是否改派 = '直发' AND cc.物流方式 <> '台湾-速派-711超商' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
+								    ) cx
+								    GROUP BY cx.`币种`,cx.`家族`,  cx.`产品ID`, cx.`物流方式`
+                                ) ss2 ON ss1.币种 = ss2.币种 AND ss1.家族 = ss2.家族 AND ss1.产品ID = ss2.产品ID
+				    ) s
+				    GROUP BY s.家族, s.币种, s.产品ID, s.物流方式
+				    WITH ROLLUP
+				    HAVING s.币种 <> '合计';'''.format(month, time_bengin, time_end)  # 港台查询函数导出
+            df1 = pd.read_sql_query(sql=sql, con=self.engine1)
+            listT.append(df1)
+
+            print('正在写入excel…………')
+            today = datetime.date.today().strftime('%Y.%m.%d')
+            file_path = 'G:\\输出文件\\{} 物流签收率-头部产品.xlsx'.format(today)
+            sheet_name = ['查询']
+            df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+            df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+            book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            for i in range(len(listT)):
+                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+            if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+                del book['Sheet1']
+            writer.save()
+            writer.close()
+            try:
+                print('正在运行 物流头部产品签收率 宏…………')
+                app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
+                app.display_alerts = False
+                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+                wbsht1 = app.books.open(file_path)
+                wbsht.macro('物流头程产品签收率_月')()
+                wbsht1.save()
+                wbsht1.close()
+                wbsht.close()
+                app.quit()
+            except Exception as e:
+                print('运行失败：', str(Exception) + str(e))
+            print('----已写入excel ')
 
     def slrb_new(self, team, month_last, month_yesterday):  # 报表各团队近两个月的物流数据
         month_now = datetime.datetime.now().strftime('%Y-%m-%d')
@@ -9687,7 +9771,7 @@ if __name__ == '__main__':
     m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表、
     m.qsb_new(team, month_old)                                    # 获取-每日-报表
     m.EportOrderBook(team, month_last, month_yesterday)           # 导出-总的-签收
-    m.phone_report('handle')                                      # 获取电话核实日报表 周报表 handle=手动 自定义时间
+    m.phone_report('handle')                                      # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比）
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id
     # m.address_repot(team, month_last, month_yesterday)                       #  获取-地区签收率-报表

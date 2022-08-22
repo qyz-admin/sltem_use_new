@@ -1242,6 +1242,7 @@ class QueryTwo(Settings, Settings_sso):
             os.makedirs(mkpath + "\\导运单号&提货时间")
             os.makedirs(mkpath + "\\导状态")
             os.makedirs(mkpath + "\\签收率")
+            os.makedirs(mkpath + "\\物流签收率")
             os.makedirs(mkpath + "\\物流表")
             print('创建成功')
             file_path = mkpath + '\\导运单号&提货时间\\{} 龟山 无运单号.xlsx'.format(time_path.strftime('%m.%d'))

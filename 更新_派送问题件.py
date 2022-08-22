@@ -166,7 +166,11 @@ class QueryTwo(Settings, Settings_sso):
                             FROM d1_gat d
                             WHERE d.最终状态 = '拒收'
                      ) s1
-                    LEFT JOIN 拒收问题件 js ON s1.订单编号 =js.订单编号
+                    LEFT JOIN 
+                     (SELECT *
+						FROM 拒收问题件
+						WHERE id IN (SELECT MAX(id) FROM 拒收问题件 y WHERE y.处理时间 >= DATE_SUB(CURDATE(), INTERVAL 2 month) GROUP BY 订单编号) 
+					) js ON s1.订单编号 =js.订单编号
                     WHERE js.核实原因 <> '未联系上客户' AND js.具体原因 IS not NULL
                     GROUP BY 创建日期, 具体原因
                     WITH ROLLUP
@@ -177,7 +181,11 @@ class QueryTwo(Settings, Settings_sso):
                             FROM d1_gat d
                             WHERE d.最终状态 = '拒收'
                      ) s1
-                     LEFT JOIN 拒收问题件 js ON s1.订单编号 =js.订单编号
+                     LEFT JOIN 
+                    (SELECT *
+						FROM 拒收问题件
+						WHERE id IN (SELECT MAX(id) FROM 拒收问题件 y WHERE y.处理时间 >= DATE_SUB(CURDATE(), INTERVAL 2 month) GROUP BY 订单编号) 
+					)  js ON s1.订单编号 =js.订单编号
                      WHERE js.核实原因 <> '未联系上客户' AND js.具体原因 IS not NULL
                      GROUP BY 创建日期
                 ) ss ON s.创建日期 =ss.日期
@@ -893,7 +901,7 @@ if __name__ == '__main__':
             # timeStart, timeEnd = m.readInfo('派送问题件_导出')
             logisticsN_begin = '2022-07-11'                         # 送达客户不在/客户长期不在  物流轨迹查询时间
             logisticsN_end = '2022-07-31'
-            m.outport_getDeliveryList('2022-07-01', '2022-08-17', logisticsN_begin, logisticsN_end)
+            m.outport_getDeliveryList('2022-07-01', '2022-08-21', logisticsN_begin, logisticsN_end)
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
     elif int(select) == 1:
@@ -902,7 +910,7 @@ if __name__ == '__main__':
         # m.getOrderList_T('2022-06-01', '2022-06-30')
         logisticsN_begin = '2022-07-11'                             # 送达客户不在/客户长期不在  物流轨迹查询时间
         logisticsN_end = '2022-07-31'
-        m.outport_getDeliveryList('2022-07-01', '2022-08-11', logisticsN_begin, logisticsN_end)
+        m.outport_getDeliveryList('2022-07-01', '2022-08-17', logisticsN_begin, logisticsN_end)
         # m.getMessageLog('2022-07-01', '2022-07-15')
 
         
@@ -911,7 +919,7 @@ if __name__ == '__main__':
         m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "", select)
         # timeStart, timeEnd = m.readInfo('派送问题件_跟进表')
         # m.getOrderList_T('2022-06-01', '2022-06-30')
-        m.outport_List('2022-07-20', '2022-07-31')
+        m.outport_List('2022-07-20', '2022-08-17')
         # m.getMessageLog('2022-07-01', '2022-07-15')
 
 

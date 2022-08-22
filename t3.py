@@ -11,6 +11,13 @@ from gat_update2 import QueryUpdate
 import datetime
 from dateutil.relativedelta import relativedelta
 
+month = datetime.datetime.now().strftime('%Y%m')
+print(month)
+time_bengin = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
+print(time_bengin)
+time_end = ((datetime.datetime.now() - relativedelta(months=1)) - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
+print(time_end)
+
 start: datetime = datetime.datetime.now()
 team = 'gat'
 match1 = {'gat': '港台',
