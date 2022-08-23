@@ -105,7 +105,7 @@ print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
 if team == 'gat' and updata == '全部':
     print('---------------------------------- 单点更新部分：--------------------------------')
-    sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', '4e895eecf1953cdabede16c5908ebb32', '手0动')
+    sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', 'afb4ca4596473a059668d508ddbb8a18', '手动')
 
     # sso.readFormHost('gat', '导入')                       # 导入新增的订单 line运营  手动导入
     # for i in range((end - begin).days):  # 按天循环获取订单状态
