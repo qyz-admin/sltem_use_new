@@ -72,7 +72,7 @@ class QueryTwo(Settings, Settings_sso):
             filePath = os.path.join(path, dir)
             if dir[:2] != '~$':
                 print(filePath)
-                if '时长区间订单明细' in dir:
+                if '时长区间订单明细' in dir and '改派' not in dir:
                     team = 'gat_waybill_list'
                     reassignmentTypeName = '直发'
                 elif '改派时长区间订单明细' in dir:
@@ -102,25 +102,33 @@ class QueryTwo(Settings, Settings_sso):
                         db.rename(columns={'子单号': '运单编号'}, inplace=True)
                         # print(db.columns)
                         if '物流状态' not in db.columns:
-                            db.insert(0, '物流状态', '')
+                            db.insert(0, '物流状态', None)
                         if '末条时间' not in db.columns:
-                            db.insert(0, '末条时间', '')
+                            db.insert(0, '末条时间', None)
                         if '末条信息' not in db.columns:
-                            db.insert(0, '末条信息', '')
+                            db.insert(0, '末条信息', None)
                         if '下单时间' not in db.columns:
-                            db.insert(0, '下单时间', '')
+                            db.insert(0, '下单时间', None)
                             db['下单时间'] = db['核重时间'].copy()
                         if '核重时间' not in db.columns:
-                            db.insert(0, '核重时间', '')
+                            db.insert(0, '核重时间', None)
                             db['核重时间'] = db['下单时间'].copy()
                         # print(db.columns)
+                        # print(db)
                         db = db[['下单时间', '订单编号', '运单编号', '核重时间', '物流状态', '末条时间', '末条信息']]
-                        db.dropna(axis=0, how='any', inplace=True)  # 空值（缺失值），将空值所在的行/列删除后
+                        # db.dropna(axis=0, how='any', inplace=True)  # 空值（缺失值），将空值所在的行/列删除后
                     elif team == 'gat_waybill_list':
-                        db.insert(0, '运单编号', '')
-                        db.insert(0, '标记', '')
+                        db.insert(0, '运单编号', None)
+                        db.insert(0, '标记', None)
                         db.insert(0, '是否改派', reassignmentTypeName)
-                        db = db[['订单编号', '是否改派', '运单编号', '物流', '物流状态', '订单状态', '下单时间', '出库时间', '是否装箱', '装箱时间', '提货时间','上线时间','完成时间', '标记']]
+                        if reassignmentTypeName == '改派':
+                            db.insert(0, '是否装箱', None)
+                            db.insert(0, '装箱时间', None)
+                            db.insert(0, '提货时间', None)
+                        else:
+                            db.insert(0, '发货仓库', None)
+                            db.insert(0, '下架时间', None)
+                        db = db[['订单编号', '是否改派', '运单编号', '物流', '物流状态', '订单状态', '发货仓库', '下单时间', '下架时间', '出库时间', '是否装箱', '装箱时间', '提货时间','上线时间','完成时间', '标记']]
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
@@ -324,7 +332,7 @@ class QueryTwo(Settings, Settings_sso):
     def waybill_updata(self):
         today = datetime.date.today().strftime('%Y.%m.%d')
         listT = []  # 查询sql的结果 存放池
-        print('正在获取 订单跟进汇总……………………………………………………')
+        print('正在获取 直发 订单跟进汇总……………………………………………………')
         sql = '''SELECT IFNULL(物流未完成, '总计') 物流未完成,出库,提货,上线,完成,合计
                 FROM( SELECT IFNULL(物流未完成, '总计') 物流未完成,
                             sum(IF(节点类型 = '出库',1,0)) AS 出库,
@@ -338,7 +346,30 @@ class QueryTwo(Settings, Settings_sso):
 									IF(物流 LIKE '%天马%','台湾-天马-新竹&711',
 									IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹普货&特货',物流))) AS 物流未完成
                         FROM gat_waybill_list s
-                        WHERE s.`添加时间` = CURDATE()
+                        WHERE s.`添加时间` = CURDATE() AND s.`是否改派` = '直发'
+                    ) ss
+                    GROUP BY 物流未完成
+                    WITH ROLLUP
+                ) sss
+                GROUP BY 物流未完成
+                ORDER BY FIELD(物流未完成,'台湾-立邦普货头程-易速配尾程','台湾-速派-新竹&711超商', '台湾-天马-新竹&711','台湾-铱熙无敌-新竹普货&特货','总计');'''.format()
+        sql = '''SELECT IFNULL(物流未完成, '总计') 物流未完成,出库,提货,上线,完成,合计
+                FROM( SELECT IFNULL(物流未完成, '总计') 物流未完成,
+                            sum(IF(节点类型 = '出库',1,0)) AS 出库,
+                            sum(IF(节点类型 = '提货',1,0)) AS 提货,
+                            sum(IF(节点类型 = '上线' AND 最终状态 NOT IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) AS 上线,
+                            sum(IF(节点类型 = '完成' OR (节点类型 = '上线' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件")),1,0)) AS 完成,
+                            COUNT(订单编号) AS 合计
+                    FROM( SELECT s.*,z.最终状态,IF(s.出库时间 IS NULL,'出库',IF(s.提货时间 IS NULL,'提货',
+                                   IF(s.上线时间 IS NULL,'上线',IF(s.完成时间 IS NULL,'完成',s.完成时间)))) AS 节点类型,
+								   IF(s.物流 LIKE '%速派%','台湾-速派-新竹&711超商',
+								   IF(s.物流 LIKE '%天马%','台湾-天马-新竹&711',
+								   IF(s.物流 LIKE '%优美宇通%' or s.物流 LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹普货&特货',s.物流))) AS 物流未完成
+                        FROM (SELECT *
+                                FROM gat_waybill_list ss
+                                WHERE ss.`添加时间` = CURDATE() AND ss.`是否改派` = '直发'
+						) s
+						LEFT JOIN gat_zqsb z ON s.订单编号 = z.订单编号
                     ) ss
                     GROUP BY 物流未完成
                     WITH ROLLUP
@@ -348,7 +379,7 @@ class QueryTwo(Settings, Settings_sso):
         df0 = pd.read_sql_query(sql=sql, con=self.engine1)
         listT.append(df0)
 
-        print('正在获取 订单跟进明细……………………………………………………')
+        print('正在获取 直发 订单跟进明细……………………………………………………')
         sql = '''SELECT *,null 原因汇总
                 FROM( SELECT s1.*,单量,
 							IF(压单量 = 0,NULL,压单量) AS 是否压单,
@@ -363,7 +394,7 @@ class QueryTwo(Settings, Settings_sso):
                                         SUM(IF(节点类型 = '提货' AND 出库时间 >= TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 1 DAY)),1,0)) AS 今日提货量,
 										SUM(IF(订单状态 = '已删除',1,0)) AS 取消量,
 										SUM(IF(节点类型 = '上线' AND 物流出货时间 IS NULL,1,0)) AS 物流已提货待出货,
-										SUM(IF(节点类型 = '上线' AND 物流出货时间 IS NOT NULL AND 最终状态 <> '在途',1,0)) AS 物流已出货待上线,
+										SUM(IF(节点类型 = '上线' AND 物流出货时间 IS NOT NULL AND 最终状态 NOT IN ("已签收","拒收","已退货","理赔","自发头程丢件","在途"),1,0)) AS 物流已出货待上线,
 										SUM(IF(节点类型 = '上线' AND 最终状态 = '在途',1,0)) AS 物流已上线
                                 FROM( SELECT s.*,z.最终状态,z.出货时间 AS 物流出货时间,
                                             IF(s.出库时间 IS NULL,'出库',IF(s.提货时间 IS NULL,'提货',
@@ -371,9 +402,11 @@ class QueryTwo(Settings, Settings_sso):
 											IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',
 											IF(物流 LIKE '%天马%','台湾-天马-新竹&711',
 											IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹普货&特货',物流))) AS 物流未完成
-                                    FROM gat_waybill_list s
+                                    FROM (SELECT *
+                                            FROM gat_waybill_list sss
+                                            WHERE sss.`添加时间` = CURDATE() AND sss.`是否改派` = '直发'
+									) s
 									LEFT JOIN gat_zqsb z ON s.订单编号 = z.订单编号
-                                    WHERE s.`添加时间` = CURDATE()
                                 ) ss
                                 GROUP BY 物流未完成,节点类型
                     ) s2 ON s1.物流=s2.物流未完成 AND s1.节点类型=s2.节点类型
@@ -383,7 +416,7 @@ class QueryTwo(Settings, Settings_sso):
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
         listT.append(df1)
 
-        print('正在获取 订单跟进明细表…………………………………………')
+        print('正在获取 直发 订单跟进明细表…………………………………………')
         sql = '''SELECT ss.*,
 				        g.`下单时间` AS 物流下单时间, g.`核重时间` AS 物流核重时间, g.`物流状态` AS 物流核重状态, g.`末条时间` AS 物流末条时间, g.`末条信息` AS 物流末条信息,
 						z.出货时间 as 物流出货时间, z.上线时间 AS 物流上线时间, z.签收表物流状态, z.最终状态
@@ -391,7 +424,7 @@ class QueryTwo(Settings, Settings_sso):
 						IF(出库时间 IS NULL,'出库',IF(提货时间 IS NULL,'提货',IF(上线时间 IS NULL,'上线',IF(完成时间 IS NULL,'完成',完成时间)))) AS 节点类型,
 						IF(物流 LIKE '%速派%','台湾-速派-新竹&711超商',IF(物流 LIKE '%天马%','台湾-天马-新竹&711',IF(物流 LIKE '%优美宇通%' or 物流 LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹普货&特货',物流))) AS 物流未完成
 	            FROM gat_waybill_list s
-	            WHERE s.`添加时间` = CURDATE()
+	            WHERE s.`添加时间` = CURDATE() AND s.`是否改派` = '直发'
            ) ss
            LEFT JOIN gat_logisitis_googs g ON ss.订单编号 = g.订单编号
 		   LEFT JOIN gat_zqsb z ON ss.订单编号 = z.订单编号;'''.format()

@@ -885,7 +885,7 @@ if __name__ == '__main__':
         if int(select) == 11:
             timeStart, timeEnd = m.readInfo('物流问题件')
 
-        elif int(select) == 99:         # 查询更新-派送问题件
+        elif int(select) == 909:         # 查询更新-派送问题件
             timeStart, timeEnd = m.readInfo('派送问题件_订单完成单量&短信发送单量')
             # m.getOrderList_T('2022-07-25', '2022-07-26')
             m.getOrderList_T(timeStart, timeEnd)                      # 订单完成单量 更新
@@ -901,8 +901,16 @@ if __name__ == '__main__':
             # timeStart, timeEnd = m.readInfo('派送问题件_导出')
             logisticsN_begin = '2022-07-11'                         # 送达客户不在/客户长期不在  物流轨迹查询时间
             logisticsN_end = '2022-07-31'
-            m.outport_getDeliveryList('2022-07-01', '2022-08-22', logisticsN_begin, logisticsN_end)
+            m.outport_getDeliveryList('2022-07-01', '2022-08-24', logisticsN_begin, logisticsN_end)
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
+
+
+        elif int(select) == 99:         # 查询更新-派送问题件
+            # timeStart, timeEnd = m.readInfo('派送问题件_更新')
+            m.getDeliveryList('2022-04-01', '2022-04-30')
+            # m.getDeliveryList('2022-07-10', '2022-07-26')
+            # m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
+
 
     elif int(select) == 1:
         m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "", select)
@@ -913,7 +921,8 @@ if __name__ == '__main__':
         m.outport_getDeliveryList('2022-07-01', '2022-08-17', logisticsN_begin, logisticsN_end)
         # m.getMessageLog('2022-07-01', '2022-07-15')
 
-        
+
+
 
     elif int(select) == 2:
         m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "", select)
