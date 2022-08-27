@@ -93,7 +93,7 @@ print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
 print('---------------------------------- 数据库更新部分：--------------------------------')
-m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
+# m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
 
 # qu.EportOrder(team, month_last, month_yesterday, month_begin, '是0')     # 最近两个月的更新信息导出
 
@@ -105,7 +105,7 @@ print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
 if team == 'gat' and updata == '全部':
     print('---------------------------------- 单点更新部分：--------------------------------')
-    sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', '807ead1ce86d3629add6fad820e4da96', '手动')
+    sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', '8310f922259c37fdb6b0be3f36213ddd', '手动')
 
     # sso.readFormHost('gat', '导入')                       # 导入新增的订单 line运营  手动导入
     # for i in range((end - begin).days):  # 按天循环获取订单状态

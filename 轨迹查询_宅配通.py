@@ -156,11 +156,11 @@ class QueryTwo(Settings, Settings_sso):
                 'B1': '查詢'
                 }
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
-        soup = BeautifulSoup(req.text, 'lxml')      # 创建 beautifulsoup 对象
-        no = soup.input.get('value')
-        chk = soup.input.next_sibling.get('value')
-        print(no)
-        print(chk)
+        # soup = BeautifulSoup(req.text, 'lxml')      # 创建 beautifulsoup 对象
+        # no = soup.input.get('value')
+        # chk = soup.input.next_sibling.get('value')
+        # print(no)
+        # print(chk)
         print('----------获取验证值成功-------------')
 
         print(req)
@@ -236,8 +236,8 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     '''
-    m.readFormHost()
+    # m.readFormHost()
 
-    # m._SearchGoods('7532082106')
+    m._SearchGoods('7532082106')
 
     print('查询耗时：', datetime.datetime.now() - start)

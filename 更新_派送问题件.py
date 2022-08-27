@@ -107,6 +107,40 @@ class QueryTwo(Settings, Settings_sso):
         rq = datetime.datetime.now().strftime('%m.%d')
         # self.getOrderList(timeStart, timeEnd)
         # self.getDeliveryList(timeStart, timeEnd)
+        print('正在获取 派送问题件 各类型签收率…………')
+        month = (datetime.datetime.now()).strftime('%Y%m')
+        print(month)
+        print(type(month))
+        timeStart = (datetime.datetime.now()).strftime('%Y') + '-01-01'
+        timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        sql8 = '''SELECT s2.派送类型, s2.月份, s2.总订单,
+                        concat(ROUND(IFNULL(s2.签收 / s2.已完成,0) * 100,2),'%') as 完成签收,
+                        concat(ROUND(IFNULL(s2.签收退货 / s2.已完成,0) * 100,2),'%') as 完成签收退货,
+                        concat(ROUND(IFNULL(s2.签收 / s2.总订单,0) * 100,2),'%') as 总计签收,
+                        concat(ROUND(IFNULL(s2.已完成 / s2.总订单,0) * 100,2),'%') as 完成占比,
+                        concat(ROUND(IFNULL(s2.已退货 / s2.总订单,0) * 100,2),'%') as 退货率,
+                        concat(ROUND(IFNULL(s2.总订单 / ss2.单量,0) * 100,2),'%') as 订单占比,NULL 处理方式
+                FROM( SELECT 月份, 派送类型, COUNT(订单编号) AS 总订单,
+                                    SUM(IF(物流状态 = "已签收" OR 物流状态 = "已退货",1,0)) as 签收退货,
+                                    SUM(IF(物流状态 = "已签收",1,0)) as 签收,
+                                    SUM(IF(物流状态 = "拒收",1,0)) as 拒收,
+                                    SUM(IF(物流状态 = "已退货",1,0)) as 已退货,
+                                    SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成
+                    FROM (  SELECT *,EXTRACT(YEAR_MONTH FROM 创建日期) AS 月份, IF(派送问题 = '送至便利店' OR 派送问题 = '客户自取','送至便利店',IF(派送问题 = '客户长期不在' OR 派送问题 = '送达客户不在','送达客户不在',派送问题)) AS 派送类型
+                            FROM 派送问题件_跟进表 g
+                            WHERE g.`创建日期` >= '{0}'  AND g.`创建日期` <= '{1}' AND g.币种 ='台币'
+                    ) s1
+                    GROUP BY s1.月份, s1.派送类型
+                ) s2
+                LEFT JOIN (  SELECT 年月 AS 月份,  COUNT(订单编号) AS 单量
+                            FROM gat_zqsb g
+                            WHERE g.`日期` >= '{0}'  AND g.`日期` <= '{1}'  AND g.币种 ='台湾'
+                            GROUP BY 月份
+                ) ss2  ON s2.月份 = ss2.月份
+                ORDER BY 
+                FIELD(派送类型,'送至便利店','客户要求更改派送时间或者地址','客户不接电话','地址问题','送达客户不在','拒收','合计'),
+				月份, 总订单;'''.format(timeStart, timeEnd)
+        df8 = pd.read_sql_query(sql=sql8, con=self.engine1)
 
         print('正在获取excel内容…………')
         sql = '''SELECT *, IF(派送问题 LIKE "地址问题" OR 派送问题 LIKE "客户要求更改派送时间或者地址","地址问题/客户要求更改派送时间或者地址",派送问题) AS 问题件类型, 
@@ -381,7 +415,7 @@ class QueryTwo(Settings, Settings_sso):
                         "圆通签收单量","圆通拒收单量","圆通签收率","圆通退款率","上月圆通签收单量","上月圆通拒收单量","上月圆通签收率","上月圆通退款率"]].copy()
 
         print('正在获取跟进内容…………')
-        sql = '''SELECT 币种, 创建日期, CASE DATE_FORMAT(创建日期,'%w')	WHEN 1 THEN '星期一' WHEN 2 THEN '星期二' WHEN 3 THEN '星期三' WHEN 4 THEN '星期四' WHEN 5 THEN '星期五' WHEN 6 THEN '星期六' WHEN 0 THEN '星期日' END as 上月周,
+        sql = '''SELECT 币种, EXTRACT(YEAR_MONTH FROM 创建日期) AS 月份, 创建日期, CASE DATE_FORMAT(创建日期,'%w')	WHEN 1 THEN '星期一' WHEN 2 THEN '星期二' WHEN 3 THEN '星期三' WHEN 4 THEN '星期四' WHEN 5 THEN '星期五' WHEN 6 THEN '星期六' WHEN 0 THEN '星期日' END as 上月周,
                         总单量, 签收单量, 拒收单量, concat(ROUND(IFNULL(签收单量 / 总单量,0) * 100,2),'%') as 签收率, 派送问题件单量, 问题件类型,单量,短信,邮件,在线, 
                         IF(电话 = 0,NULL,电话) AS 电话,IF(客户回复再派量 = 0,NULL,客户回复再派量) AS 客户回复再派量,
                         concat(ROUND(IFNULL(物流再派签收 / 物流再派,0) * 100,2),'%') as 物流再派签收率,
@@ -434,7 +468,9 @@ class QueryTwo(Settings, Settings_sso):
                 FIELD(s.问题件类型,'送至便利店','地址问题/客户要求更改派送时间或者地址','客户自取','客户不接电话','送达客户不在/客户长期不在','拒收','合计');'''.format(timeStart,logisticsN_begin,logisticsN_end)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         db2 = df[(df['币种'].str.contains('台币'))]
+        # db22 = db2[(db2['月份'].str.contains("'" + month + "'"))]
         db3 = df[(df['币种'].str.contains('港币'))]
+        # db33 = db3[(db3['月份'].str.contains("'" + month + "'"))]
 
         print('正在获取趋势图数据…………')
         db2.to_sql('cp', con=self.engine1, index=False, if_exists='replace')
@@ -459,8 +495,10 @@ class QueryTwo(Settings, Settings_sso):
         writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
         book = load_workbook(file_pathT)
         writer.book = book
-        db2.drop(['币种', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='台湾', index=False)
-        db3.drop(['币种', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='香港', index=False)
+        db2.drop(['币种', '月份', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='台湾', index=False)
+        # db2.drop(['币种', '月份', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='台湾各月', index=False)
+        db3.drop(['币种', '月份', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='香港', index=False)
+        # db3.drop(['币种', '月份', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='香港各月', index=False)
         df1.to_excel(excel_writer=writer, sheet_name='明细', index=False)
         df11.to_excel(excel_writer=writer, sheet_name='拒收', index=False)
         df1211.to_excel(excel_writer=writer, sheet_name='台湾-物流', index=False)
@@ -473,6 +511,8 @@ class QueryTwo(Settings, Settings_sso):
         df53.to_excel(excel_writer=writer, sheet_name='同期签收率', index=False)
         df54.to_excel(excel_writer=writer, sheet_name='当日', index=False)
         df55.to_excel(excel_writer=writer, sheet_name='上月', index=False)
+        df8.to_excel(excel_writer=writer, sheet_name='问题类型 签收率', index=False)
+        df8.to_excel(excel_writer=writer, sheet_name='率', index=False)
         if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表 cp
             del book['Sheet1']
         writer.save()
@@ -875,7 +915,7 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 问题件 状态运行（一）-----------------------------------------
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     '''
-    select = 99
+    select = 1
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '78af361bbca0306ca227b15133e47e9b'
@@ -885,7 +925,7 @@ if __name__ == '__main__':
         if int(select) == 11:
             timeStart, timeEnd = m.readInfo('物流问题件')
 
-        elif int(select) == 909:         # 查询更新-派送问题件
+        elif int(select) == 99:         # 查询更新-派送问题件
             timeStart, timeEnd = m.readInfo('派送问题件_订单完成单量&短信发送单量')
             # m.getOrderList_T('2022-07-25', '2022-07-26')
             m.getOrderList_T(timeStart, timeEnd)                      # 订单完成单量 更新
@@ -901,11 +941,11 @@ if __name__ == '__main__':
             # timeStart, timeEnd = m.readInfo('派送问题件_导出')
             logisticsN_begin = '2022-07-11'                         # 送达客户不在/客户长期不在  物流轨迹查询时间
             logisticsN_end = '2022-07-31'
-            m.outport_getDeliveryList('2022-07-01', '2022-08-24', logisticsN_begin, logisticsN_end)
+            m.outport_getDeliveryList('2022-07-01', '2022-08-26', logisticsN_begin, logisticsN_end)
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
 
-        elif int(select) == 99:         # 查询更新-派送问题件
+        elif int(select) == 909:         # 查询更新-派送问题件
             # timeStart, timeEnd = m.readInfo('派送问题件_更新')
             m.getDeliveryList('2022-04-01', '2022-04-30')
             # m.getDeliveryList('2022-07-10', '2022-07-26')
@@ -918,7 +958,7 @@ if __name__ == '__main__':
         # m.getOrderList_T('2022-06-01', '2022-06-30')
         logisticsN_begin = '2022-07-11'                             # 送达客户不在/客户长期不在  物流轨迹查询时间
         logisticsN_end = '2022-07-31'
-        m.outport_getDeliveryList('2022-07-01', '2022-08-17', logisticsN_begin, logisticsN_end)
+        m.outport_getDeliveryList('2022-07-01', '2022-08-26', logisticsN_begin, logisticsN_end)
         # m.getMessageLog('2022-07-01', '2022-07-15')
 
 

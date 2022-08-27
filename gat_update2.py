@@ -6830,10 +6830,14 @@ class QueryUpdate(Settings):
             listT.append(df0)
             print('正在获取 周报表 数据内容…………')
             sql = '''SELECT 日期31天,ss.问题订单,ss.正常出货,ss.删除订单,concat(ROUND(IFNULL(ss.删除订单/ss.问题订单,0) * 100,2),'%') as 取消占比,ss.实际签收, 
-                            ss1.约派送,ss1.核实拒收,ss1.再派签收,ss2.挽回单数,ss2.未确认,ss2.退款单数,ss2.实际挽回单数,ss3.正常发货,ss3.取消订单,ss4.`联系量（有结果）`,ss4.挽单量,
+                            ss1.约派送,ss1.核实拒收 as 核实拒收原因,ss1.再派签收,ss2.挽回单数,ss2.未确认,ss2.退款单数,ss2.实际挽回单数,ss3.正常发货,ss3.取消订单,ss4.`联系量（有结果）`,ss4.挽单量,
                             ss4.张联系量 AS '张陈平-联系量（有结果）',ss4.张挽单量 AS '张陈平-挽单量',
                             ss4.蔡联系量 AS '蔡利英-联系量（有结果）',ss4.蔡挽单量 AS '蔡利英-挽单量',
-                            ss4.杨联系量 AS '杨嘉仪-联系量（有结果）',ss4.杨挽单量 AS '杨嘉仪-挽单量'
+                            ss4.杨联系量 AS '杨嘉仪-联系量（有结果）',ss4.杨挽单量 AS '杨嘉仪-挽单量',
+                            NULL 联系量,NULL 客户接听量,
+                            NULL '张陈平-联系量',NULL '张陈平-客户接听量',
+                            NULL '蔡利英-联系量',NULL '蔡利英-客户接听量',
+                            NULL '杨嘉仪-联系量',NULL '杨嘉仪-客户接听量'
                     FROM date
                     LEFT JOIN
                     (SELECT 日期 AS 系统问题,COUNT(订单编号) AS 问题订单,
@@ -6992,10 +6996,10 @@ class QueryUpdate(Settings):
                 print('运行失败：', str(Exception) + str(e))
             print('----已写入excel ')
 
-        if week.isoweekday() == 2 or week.isoweekday() == 5 or week.isoweekday() == '手动':
+        if week.isoweekday() == 2 or week.isoweekday() == 4 or week.isoweekday() == '手动':
             month = datetime.datetime.now().strftime('%Y%m')
-            time_bengin = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
-            time_end = ((datetime.datetime.now() - relativedelta(months=1)) - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
+            time_bengin = ((datetime.datetime.now() - relativedelta(months=1)) - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
+            time_end = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
             listT = []  # 查询sql的结果 存放池
             print("正在获取 物流签收率（产品前50单）" + time_bengin + "-" + time_end + " 数据内容…………")
             sql = '''SELECT IFNULL(s.家族,'合计') as 家族, 
@@ -7044,8 +7048,8 @@ class QueryUpdate(Settings):
 				    GROUP BY s.家族, s.币种, s.产品ID, s.物流方式
 				    WITH ROLLUP
 				    HAVING s.币种 <> '合计';'''.format(month, time_bengin, time_end)  # 港台查询函数导出
-            df1 = pd.read_sql_query(sql=sql, con=self.engine1)
-            listT.append(df1)
+            df5 = pd.read_sql_query(sql=sql, con=self.engine1)
+            listT.append(df5)
 
             print('正在写入excel…………')
             today = datetime.date.today().strftime('%Y.%m.%d')
@@ -7062,6 +7066,8 @@ class QueryUpdate(Settings):
                 del book['Sheet1']
             writer.save()
             writer.close()
+            new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\物流签收率\\{} {} 物流签收率-头部产品.xlsx'.format(today,match[team])
+            shutil.copyfile(file_path, new_path)     # copy到指定位置
             try:
                 print('正在运行 物流头部产品签收率 宏…………')
                 app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
@@ -9768,9 +9774,9 @@ if __name__ == '__main__':
     write = '本期'
     m.readFormHost(team, write, last_time)                            # 更新签收表---港澳台（一）
 
-    m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表、
-    m.qsb_new(team, month_old)                                    # 获取-每日-报表
-    m.EportOrderBook(team, month_last, month_yesterday)           # 导出-总的-签收
+    # m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
+    # m.qsb_new(team, month_old)                                    # 获取-每日-报表
+    # m.EportOrderBook(team, month_last, month_yesterday)           # 导出-总的-签收
     m.phone_report('handle')                                      # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比）
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id
