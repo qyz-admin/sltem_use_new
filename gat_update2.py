@@ -6693,6 +6693,8 @@ class QueryUpdate(Settings):
         match = {'gat': '港台'}
         week: datetime = datetime.datetime.now()
         if week.isoweekday() == 1 or week.isoweekday() == '手动':
+            week_time1 = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%m.%d')
+            week_time2 = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%m.%d')
             listT = []  # 查询sql的结果 存放池
             print('正在获取 日报表 数据内容…………')
             sql = '''SELECT 日期31天, ss.*, ss1.*, ss2.*, ss3.*, ss4.*
@@ -6831,9 +6833,9 @@ class QueryUpdate(Settings):
             print('正在获取 周报表 数据内容…………')
             sql = '''SELECT 日期31天,ss.问题订单,ss.正常出货,ss.删除订单,concat(ROUND(IFNULL(ss.删除订单/ss.问题订单,0) * 100,2),'%') as 取消占比,ss.实际签收, 
                             ss1.约派送,ss1.核实拒收 as 核实拒收原因,ss1.再派签收,ss2.挽回单数,ss2.未确认,ss2.退款单数,ss2.实际挽回单数,ss3.正常发货,ss3.取消订单,ss4.`联系量（有结果）`,ss4.挽单量,
-                            ss4.张联系量 AS '张陈平-联系量（有结果）',ss4.张挽单量 AS '张陈平-挽单量',
-                            ss4.蔡联系量 AS '蔡利英-联系量（有结果）',ss4.蔡挽单量 AS '蔡利英-挽单量',
-                            ss4.杨联系量 AS '杨嘉仪-联系量（有结果）',ss4.杨挽单量 AS '杨嘉仪-挽单量',
+                            ss4.张联系量 AS '张陈平-联系量(有结果)',ss4.张挽单量 AS '张陈平-挽单量',
+                            ss4.蔡联系量 AS '蔡利英-联系量(有结果)',ss4.蔡挽单量 AS '蔡利英-挽单量',
+                            ss4.杨联系量 AS '杨嘉仪-联系量(有结果)',ss4.杨挽单量 AS '杨嘉仪-挽单量',
                             NULL 联系量,NULL 客户接听量,
                             NULL '张陈平-联系量',NULL '张陈平-客户接听量',
                             NULL '蔡利英-联系量',NULL '蔡利英-客户接听量',
@@ -6968,7 +6970,7 @@ class QueryUpdate(Settings):
 
             print('正在写入excel…………')
             today = datetime.date.today().strftime('%Y.%m.%d')
-            file_path = 'G:\\输出文件\\{} 电话核实 日报表_周报表.xlsx'.format(today)
+            file_path = r'''G:\\输出文件\\台湾电话核实({0}-{1})周报表{2}.xlsx'''.format(week_time1, week_time2, today)
             sheet_name = ['日报表', '周报表']
             df0 = pd.DataFrame([])                                          # 创建空的dataframe数据框
             df0.to_excel(file_path, index=False)                            # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -9774,9 +9776,9 @@ if __name__ == '__main__':
     write = '本期'
     m.readFormHost(team, write, last_time)                            # 更新签收表---港澳台（一）
 
-    # m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
-    # m.qsb_new(team, month_old)                                    # 获取-每日-报表
-    # m.EportOrderBook(team, month_last, month_yesterday)           # 导出-总的-签收
+    m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
+    m.qsb_new(team, month_old)                                    # 获取-每日-报表
+    m.EportOrderBook(team, month_last, month_yesterday)           # 导出-总的-签收
     m.phone_report('handle')                                      # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比）
 
     # m.jushou()                                            #  拒收核实-查询需要的产品id

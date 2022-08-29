@@ -915,7 +915,7 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 问题件 状态运行（一）-----------------------------------------
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     '''
-    select = 1
+    select = 99
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '78af361bbca0306ca227b15133e47e9b'
@@ -941,7 +941,7 @@ if __name__ == '__main__':
             # timeStart, timeEnd = m.readInfo('派送问题件_导出')
             logisticsN_begin = '2022-07-11'                         # 送达客户不在/客户长期不在  物流轨迹查询时间
             logisticsN_end = '2022-07-31'
-            m.outport_getDeliveryList('2022-07-01', '2022-08-26', logisticsN_begin, logisticsN_end)
+            m.outport_getDeliveryList('2022-07-01', '2022-08-28', logisticsN_begin, logisticsN_end)
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
 
