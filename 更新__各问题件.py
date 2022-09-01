@@ -1443,7 +1443,7 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 已下架 状态运行（四）-----------------------------------------
     '''
     if int(select) == 99:
-        login_TmpCode = '04a98b23045b397b9a9cef05a4681009'
+        login_TmpCode = 'db194f4f627535bda8f5728816e33310'
         handle = '手0动'
         lw = QueryTwoLower('+86-18538110674', 'qyz04163510.', login_TmpCode,handle)
         start: datetime = datetime.datetime.now()

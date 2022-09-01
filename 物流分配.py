@@ -100,7 +100,7 @@ if __name__ == '__main__':
     '''
     print('开始：' + str(start))
     sched = BlockingScheduler()
-    sched.add_job(m.main, 'cron', hour=4, minute=20)
+    sched.add_job(m.main, 'cron', hour=23, minute=59)
     # sched.add_job(m.my_job2, 'interval', seconds=10, misfire_grace_time=10,id = 'my_job')
     sched.start()
     print('结束：' + str(datetime.datetime.now()))

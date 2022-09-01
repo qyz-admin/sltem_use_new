@@ -367,7 +367,7 @@ class QueryTwo(Settings, Settings_sso):
 								   IF(s.物流 LIKE '%优美宇通%' or s.物流 LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹普货&特货',s.物流))) AS 物流未完成
                         FROM (SELECT *
                                 FROM gat_waybill_list ss
-                                WHERE ss.`添加时间` = CURDATE() AND ss.`是否改派` = '直发'
+                                WHERE ss.`添加时间` = CURDATE() AND ss.`是否改派` = '直发' AND ss.`订单状态` <> '已删除'
 						) s
 						LEFT JOIN gat_zqsb z ON s.订单编号 = z.订单编号
                     ) ss

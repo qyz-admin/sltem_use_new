@@ -9762,15 +9762,15 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    if team == 'gat':
+    if team == 'gat0':
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
         month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
     else:
-        month_last = '2022-06-01'
-        month_old = '2022-06-01'        # 获取-每日-报表 开始的时间
-        month_yesterday = '2022-07-31'
+        month_last = '2022-07-01'
+        month_old = '2022-07-01'        # 获取-每日-报表 开始的时间
+        month_yesterday = '2022-08-31'
 
     last_time = '2021-01-01'
     write = '本期'

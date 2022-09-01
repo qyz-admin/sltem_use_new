@@ -486,7 +486,9 @@ class MysqlControl(Settings):
                             a.receipt_time 回款时间,
                             a.ip IP,
                             null 选品人,
-                            null 组合销售金额
+                            null 组合销售金额,
+                            null 姓名,
+                            null 地址
                     FROM gk_order a
                             LEFT JOIN dim_area ON dim_area.id = a.area_id
                             LEFT JOIN dim_payment ON dim_payment.id = a.payment_id

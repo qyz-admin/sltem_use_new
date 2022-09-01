@@ -340,7 +340,7 @@ class QueryTwoLower(Settings, Settings_sso):
             time_path: datetime = datetime.datetime.now()
             mkpath = r"F:\神龙签收率\(未发货) 直发-仓库-压单\\" + time_path.strftime('%m.%d')
             sql = '''SELECT s.订单编号,s.产品ID,s.产品名称,NULL SKU,NULL 产品规格,NULL 运单号,s.币种,s.团队,NULL 状态,s.反馈时间,s.压单原因,s.其他原因,	s.采购员,NULL 品类, s.入库时间,s.下单时间,s.是否下架,
-                            s.下架时间,s.记录时间, s1.处理结果,s1.处理时间,NULL 备注,  DATEDIFF(curdate(),入库时间) 压单天数, DATE_FORMAT(入库时间,'%Y-%m-%d') 入库,采购异常, 处理进度, 反馈内容
+                            s.下架时间,s.记录时间, s1.处理结果,s1.处理时间,NULL 备注,  DATEDIFF(curdate(),入库时间) 压单天数, DATE_FORMAT(入库时间,'%Y-%m-%d') 入库,采购异常, 处理进度, 详细处理时间,反馈内容
                     FROM ( SELECT * 
                             FROM 压单表 g
                             WHERE g.`记录时间` >= CURDATE() and g.是否下架 <> '已下架'
@@ -349,7 +349,7 @@ class QueryTwoLower(Settings, Settings_sso):
 							    FROM 压单表_已核实
 								WHERE id IN (SELECT MAX(id) FROM 压单表_已核实 y WHERE y.处理时间 >= DATE_SUB(CURDATE(), INTERVAL 2 month) GROUP BY 订单编号) 
 					) s1 ON s.订单编号 = s1.订单编号
-					LEFT JOIN (SELECT 订单编号 AS 采购异常, 处理结果 AS 处理进度, 反馈内容 FROM 采购异常 WHERE id IN (SELECT MAX(id) FROM 采购异常 GROUP BY 订单编号 ) ORDER BY id) s2 ON s.订单编号 = s2.采购异常
+					LEFT JOIN (SELECT 订单编号 AS 采购异常, 处理结果 AS 处理进度, 详细处理时间, 反馈内容 FROM 采购异常 WHERE id IN (SELECT MAX(id) FROM 采购异常 GROUP BY 订单编号 ) ORDER BY id) s2 ON s.订单编号 = s2.采购异常
 					ORDER BY 压单天数;'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             isExists = os.path.exists(mkpath)

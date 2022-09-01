@@ -1661,9 +1661,10 @@ class Settings_sso():
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        print(req.headers)
         # print(req)
 
-        # print('（3.2）加载： http://gwms-v3.giikin.cn/admin/index/index')
+        print('（3.2）加载： http://gwms-v3.giikin.cn/admin/index/index')
         url = 'http://gwms-v3.giikin.cn/admin/index/index'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': gimp}
