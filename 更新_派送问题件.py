@@ -103,14 +103,14 @@ class QueryTwo(Settings, Settings_sso):
         print('******************起止时间：' + team + last_time + ' - ' + now_time + ' ******************')
         return last_time, now_time
 
-    def outport_getDeliveryList(self, timeStart, timeEnd,logisticsN_begin,logisticsN_end):
+    def outport_getDeliveryList(self, timeStart, timeEnd, logisticsN_begin, logisticsN_end):
         rq = datetime.datetime.now().strftime('%m.%d')
         # self.getOrderList(timeStart, timeEnd)
         # self.getDeliveryList(timeStart, timeEnd)
         print('正在获取 派送问题件 各类型签收率…………')
         month = (datetime.datetime.now()).strftime('%Y%m')
         print(month)
-        print(type(month))
+        # print(type(month))
         timeStart = (datetime.datetime.now()).strftime('%Y') + '-01-01'
         timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         sql8 = '''SELECT s2.派送类型, s2.月份, s2.总订单,
@@ -162,7 +162,11 @@ class QueryTwo(Settings, Settings_sso):
 				            LEFT JOIN 物流问题件 ss2 ON ss1.订单编号 = ss2.订单编号
 				            WHERE ss1.处理人 <> ""
 		            ) s1
-		            LEFT JOIN 拒收问题件 s2 ON s1.订单编号 = s2.订单编号
+		            LEFT JOIN 
+		            (SELECT *
+						FROM 拒收问题件
+						WHERE id IN (SELECT MAX(id) FROM 拒收问题件 y WHERE y.处理时间 >= DATE_SUB(CURDATE(), INTERVAL 2 month) GROUP BY 订单编号) 
+					) s2 ON s1.订单编号 = s2.订单编号
                 ) s
                 WHERE s.回复类型= "回复" AND (s.`核实原因` IS NULL OR s.`核实原因`= "未联系上客户") AND s.物流状态 = '拒收';'''.format(timeStart)
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -284,7 +288,7 @@ class QueryTwo(Settings, Settings_sso):
                         GROUP BY 币种, 日期
 				) s1
                 ORDER BY 币种, 日期;'''.format(timeStart)
-        sql = '''SELECT 币种, 年月, 日期, 周,
+        sql = '''SELECT 币种, 年月 月份, 日期, 周,
                         全部签收 AS 签收单量, 全部拒收 拒收单量, 
                             concat(ROUND(IFNULL(全部签收 / 全部单量,0) * 100,2),'%') as 签收率,
                             concat(ROUND(IFNULL(全部退货 / 全部单量,0) * 100,2),'%') as 退款率,
@@ -400,17 +404,17 @@ class QueryTwo(Settings, Settings_sso):
                         GROUP BY 币种, 年月, 日期
 						WITH ROLLUP
 				) s1
-				WHERE s1.币种 <> '合计'
+				WHERE s1.年月 <> '合计'
                 ORDER BY 币种, 年月, 日期;'''.format(timeStart)
         df12 = pd.read_sql_query(sql=sql, con=self.engine1)
         df121 = df12[(df12['币种'].str.contains('台币'))]
-        df1211 = df121[["日期","周","签收单量","拒收单量","签收率","退款率", "上月签收单量","上月拒收单量","上月签收率","上月退款率",
+        df1211 = df121[["月份","日期","周","签收单量","拒收单量","签收率","退款率", "上月签收单量","上月拒收单量","上月签收率","上月退款率",
                         "速派签收单量","速派拒收单量","速派签收率","速派退款率", "上月速派签收单量","上月速派拒收单量","上月速派签收率","上月速派退款率",
                         "天马签收单量","天马拒收单量","天马签收率","天马退款率", "上月天马签收单量","上月天马拒收单量","上月天马签收率","上月天马退款率",
                         "协来运签收单量","协来运拒收单量","协来运签收率","协来运退款率", "上月协来运签收单量","上月协来运拒收单量","上月协来运签收率","上月协来运退款率",
                         "易速配签收单量","易速配拒收单量","易速配签收率","易速配退款率", "上月易速配签收单量","上月易速配拒收单量","上月易速配签收率","上月易速配退款率"]].copy()
         df122 = df12[(df12['币种'].str.contains('港币'))]
-        df1222 = df122[["日期","周","签收单量","拒收单量","签收率","退款率","上月签收单量","上月拒收单量","上月签收率","上月退款率",
+        df1222 = df122[["月份","日期","周","签收单量","拒收单量","签收率","退款率","上月签收单量","上月拒收单量","上月签收率","上月退款率",
                         "立邦签收单量","立邦拒收单量","立邦签收率","立邦退款率","上月立邦签收单量","上月立邦拒收单量","上月立邦签收率","上月立邦退款率",
                         "圆通签收单量","圆通拒收单量","圆通签收率","圆通退款率","上月圆通签收单量","上月圆通拒收单量","上月圆通签收率","上月圆通退款率"]].copy()
 
@@ -465,7 +469,7 @@ class QueryTwo(Settings, Settings_sso):
                         GROUP BY s1.币种, s1.创建日期, s1.问题件类型
                 ) s
                 ORDER BY s.币种, s.创建日期 , 
-                FIELD(s.问题件类型,'送至便利店','地址问题/客户要求更改派送时间或者地址','客户自取','客户不接电话','送达客户不在/客户长期不在','拒收','合计');'''.format(timeStart,logisticsN_begin,logisticsN_end)
+                FIELD(s.问题件类型,'送至便利店','地址问题/客户要求更改派送时间或者地址','客户自取','客户不接电话','送达客户不在/客户长期不在','拒收','合计');'''.format(timeStart, logisticsN_begin, logisticsN_end)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         db2 = df[(df['币种'].str.contains('台币'))]
         # db22 = db2[(db2['月份'].str.contains("'" + month + "'"))]
@@ -489,15 +493,15 @@ class QueryTwo(Settings, Settings_sso):
         df55.rename(columns={'上月总单量': '完成单量', '上月派送问题件单量': '派送问题件单量'}, inplace=True)
 
         print('正在写入excel…………')
-        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况.xlsx'.format(rq)
+        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况2.xlsx'.format(rq)
         df0 = pd.DataFrame([])
         df0.to_excel(file_pathT, index=False)
         writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
         book = load_workbook(file_pathT)
         writer.book = book
-        db2.drop(['币种', '月份', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='台湾', index=False)
+        db2.drop(['币种', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='台湾', index=False)
         # db2.drop(['币种', '月份', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='台湾各月', index=False)
-        db3.drop(['币种', '月份', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='香港', index=False)
+        db3.drop(['币种', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='香港', index=False)
         # db3.drop(['币种', '月份', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='香港各月', index=False)
         df1.to_excel(excel_writer=writer, sheet_name='明细', index=False)
         df11.to_excel(excel_writer=writer, sheet_name='拒收', index=False)
@@ -512,23 +516,22 @@ class QueryTwo(Settings, Settings_sso):
         df54.to_excel(excel_writer=writer, sheet_name='当日', index=False)
         df55.to_excel(excel_writer=writer, sheet_name='上月', index=False)
         df8.to_excel(excel_writer=writer, sheet_name='问题类型 签收率', index=False)
-        df8.to_excel(excel_writer=writer, sheet_name='率', index=False)
         if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表 cp
             del book['Sheet1']
         writer.save()
         writer.close()
         try:
             print('正在运行 派送问题件表 宏…………')
-            app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-            app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm')
-            wbsht1 = app.books.open(file_pathT)
-            wbsht.macro('派送问题件_修饰')()
-            wbsht1.save()
-            wbsht1.close()
-            wbsht.close()
-            app.quit()
-            app.quit()
+            # app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
+            # app.display_alerts = False
+            # wbsht = app.books.open('D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm')
+            # wbsht1 = app.books.open(file_pathT)
+            # wbsht.macro('派送问题件_修饰')()
+            # wbsht1.save()
+            # wbsht1.close()
+            # wbsht.close()
+            # app.quit()
+            # app.quit()
 
             # print('正在运行 派送问题件表 宏…………')
             # # 通过Win32的方式并不限制xls和xlsx（因为操作是wps在做）  https://wenku.baidu.com/view/3d298b06de36a32d7375a417866fb84ae45cc3ef.html
@@ -915,7 +918,7 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 问题件 状态运行（一）-----------------------------------------
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     '''
-    select = 99
+    select = 1
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '78af361bbca0306ca227b15133e47e9b'
@@ -941,7 +944,7 @@ if __name__ == '__main__':
             # timeStart, timeEnd = m.readInfo('派送问题件_导出')
             logisticsN_begin = '2022-07-11'                         # 送达客户不在/客户长期不在  物流轨迹查询时间
             logisticsN_end = '2022-07-31'
-            m.outport_getDeliveryList('2022-07-01', '2022-08-31', logisticsN_begin, logisticsN_end)
+            m.outport_getDeliveryList('2022-08-01', '2022-09-01', logisticsN_begin, logisticsN_end)
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
 
@@ -958,7 +961,7 @@ if __name__ == '__main__':
         # m.getOrderList_T('2022-06-01', '2022-06-30')
         logisticsN_begin = '2022-07-11'                             # 送达客户不在/客户长期不在  物流轨迹查询时间
         logisticsN_end = '2022-07-31'
-        m.outport_getDeliveryList('2022-07-01', '2022-08-26', logisticsN_begin, logisticsN_end)
+        m.outport_getDeliveryList('2022-08-01', '2022-09-01', logisticsN_begin, logisticsN_end)
         # m.getMessageLog('2022-07-01', '2022-07-15')
 
 

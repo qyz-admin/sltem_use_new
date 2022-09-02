@@ -6815,9 +6815,9 @@ class QueryUpdate(Settings):
                         SUM(IF(s.`再次克隆下单` IS NOT NULL,1,0)) AS 挽单量
             FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`
                         FROM (SELECT * 
-                                    FROM 拒收问题件 
-                                  WHERE id IN (SELECT MAX(id) FROM 拒收问题件 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号)	
-                                    ORDER BY id
+                                FROM 拒收问题件 
+                                WHERE 联系方式 = '电话' AND 币种 = '台币' AND id IN (SELECT MAX(id) FROM 拒收问题件 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号)	
+                                ORDER BY id
                             ) cg
                         LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
                         WHERE g.币种 = '台湾' 
@@ -6952,7 +6952,7 @@ class QueryUpdate(Settings):
                         FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`
                                 FROM (SELECT * 
                                         FROM 拒收问题件 
-                                        WHERE id IN (SELECT MAX(id) FROM 拒收问题件 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) GROUP BY 订单编号) 
+                                        WHERE 联系方式 = '电话' AND 币种 = '台币' AND id IN (SELECT MAX(id) FROM 拒收问题件 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) GROUP BY 订单编号) 
                                         ORDER BY id
                                     ) cg
                                 LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`

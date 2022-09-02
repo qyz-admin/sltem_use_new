@@ -211,7 +211,7 @@ class QueryTwo(Settings, Settings_sso):
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
             rq = pd.to_datetime(rq['处理时间'][0])
             last_time = (rq + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-            now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            now_time = (datetime.datetime.now() - datetime.timedelta(days=2)).strftime('%Y-%m-%d')
         print('******************起止时间：' + team + last_time + ' - ' + now_time + ' ******************')
         return last_time, now_time
 
@@ -957,7 +957,7 @@ class QueryTwo(Settings, Settings_sso):
         data = {'page': 1, 'pageSize': 500, 'orderPrefix': None, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
                 'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
-                'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': 99, 'finishTimeStart': None,
+                'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': -1, 'finishTimeStart': None,
                 'finishTimeEnd': None, 'traceTimeStart': timeStart + ' 00:00:00', 'traceTimeEnd': timeEnd + ' 23:59:59','newCloneNumber': None}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
         # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
@@ -975,6 +975,7 @@ class QueryTwo(Settings, Settings_sso):
                     # print(result['orderNumber'])
                     result['订单编号'] = result['orderNumber']
                     result['再次克隆下单'] = result['newCloneNumber']
+                    result['币种'] = result['currency']
                     result['跟进人'] = ''
                     result['时间'] = ''
                     result['内容'] = ''
@@ -1019,13 +1020,13 @@ class QueryTwo(Settings, Settings_sso):
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = df
-            dp = dp[['订单编号', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
-            dp.columns = ['订单编号', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果', '是否需要商品']
+            dp = dp[['订单编号', '币种', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
+            dp.columns = ['订单编号', '币种', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果', '是否需要商品']
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             df.to_excel('G:\\输出文件\\拒收问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO 拒收问题件(订单编号,再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果, 是否需要商品,记录时间)
-                    SELECT 订单编号,IF(再次克隆下单 = '',NULL,再次克隆下单) 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果,是否需要商品, NOW() 记录时间
+            sql = '''REPLACE INTO 拒收问题件(订单编号,币种,再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果, 是否需要商品,记录时间)
+                    SELECT 订单编号,币种, IF(再次克隆下单 = '',NULL,再次克隆下单) 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果,是否需要商品, NOW() 记录时间
                     FROM customer;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -1033,7 +1034,7 @@ class QueryTwo(Settings, Settings_sso):
             print('获取每日新增核实拒收表......')
             rq = datetime.datetime.now().strftime('%m.%d')
             sql = '''SELECT 处理时间,IF(团队 LIKE "%红杉%","红杉",IF(团队 LIKE "火凤凰%","火凤凰",IF(团队 LIKE "神龙家族%","神龙",IF(团队 LIKE "金狮%","金狮",IF(团队 LIKE "神龙-主页运营1组%","神龙主页运营",IF(团队 LIKE "金鹏%","小虎队",团队)))))) as 团队,
-                            js.订单编号,产品id,产品名称,下单时间,完结状态时间,电话号码,核实原因 as 问题类型,具体原因 as 核实原因,备注 as 具体原因,NULL 通话截图,NULL ID,再次克隆下单,NULL 备注,处理人
+                            js.订单编号,js.币种, 产品id,产品名称,下单时间,完结状态时间,电话号码,核实原因 as 问题类型,具体原因 as 核实原因,备注 as 具体原因,NULL 通话截图,NULL ID,再次克隆下单,NULL 备注,处理人
                     FROM (SELECT * FROM 拒收问题件 WHERE 记录时间 >= TIMESTAMP(CURDATE())) js
                     LEFT JOIN gat_order_list g ON js.订单编号= g.订单编号;'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -1058,7 +1059,7 @@ class QueryTwo(Settings, Settings_sso):
         data = {'page': n, 'pageSize': 500, 'orderPrefix': None, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
                 'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
-                'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': 99, 'finishTimeStart': None,
+                'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': -1, 'finishTimeStart': None,
                 'finishTimeEnd': None, 'traceTimeStart': timeStart + ' 00:00:00', 'traceTimeEnd': timeEnd + ' 23:59:59', 'newCloneNumber': None}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
         # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
@@ -1071,6 +1072,7 @@ class QueryTwo(Settings, Settings_sso):
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
                 result['订单编号'] = result['orderNumber']
                 result['再次克隆下单'] = result['newCloneNumber']
+                result['币种'] = result['currency']
                 result['跟进人'] = ''
                 result['时间'] = ''
                 result['内容'] = ''
@@ -1384,7 +1386,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 99
+    select = 909
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '3129878cee9537a6b68f48743902548e'
@@ -1407,7 +1409,7 @@ if __name__ == '__main__':
 
         timeStart, timeEnd = m.readInfo('拒收问题件')
         m.order_js_Query(timeStart, timeEnd)                                    # 查询更新-拒收问题件-·123456
-        # m.order_js_Query('2022-05-20', '2022-06-05')                          # 查询更新-拒收问题件-·123456
+        # m.order_js_Query('2022-08-01', '2022-08-31')                          # 查询更新-拒收问题件-·123456
 
         timeStart, timeEnd = m.readInfo('派送问题件')
         m.waybill_deliveryList(timeStart, timeEnd)                              # 查询更新-派送问题件、
@@ -1463,11 +1465,11 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    # handle = '手0动'
-    # login_TmpCode = '3129878cee9537a6b68f48743902548e'
-    # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
-    # start: datetime = datetime.datetime.now()
-    #
+    handle = '手0动'
+    login_TmpCode = '3129878cee9537a6b68f48743902548e'
+    m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
+    start: datetime = datetime.datetime.now()
+
     #
     # begin = datetime.date(2022, 5, 23)
     # end = datetime.date(2022, 5, 24)
@@ -1482,6 +1484,8 @@ if __name__ == '__main__':
     # m.waybill_deliveryList(timeStart, timeEnd)         # 查询更新-派送问题件
 
     # m.waybill_Query('2022-03-14', '2022-03-14')              # 查询更新-物流客诉件
+
+    m.order_js_Query('2022-06-01', '2022-06-30')
 
     # timeStart, timeEnd = m.readInfo('采购异常')
     # m.ssale_Query('2022-02-28', '2022-03-01')                    # 查询更新-采购问题件（一、简单查询）
