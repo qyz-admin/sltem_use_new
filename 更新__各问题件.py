@@ -210,8 +210,9 @@ class QueryTwo(Settings, Settings_sso):
             sql = '''SELECT DISTINCT 处理时间 FROM {0} d GROUP BY 处理时间 ORDER BY 处理时间 DESC'''.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
             rq = pd.to_datetime(rq['处理时间'][0])
-            last_time = (rq + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-            now_time = (datetime.datetime.now() - datetime.timedelta(days=2)).strftime('%Y-%m-%d')
+            last_time = (rq - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            # last_time = rq.strftime('%Y-%m-%d')
+            now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         print('******************起止时间：' + team + last_time + ' - ' + now_time + ' ******************')
         return last_time, now_time
 
@@ -1485,7 +1486,8 @@ if __name__ == '__main__':
 
     # m.waybill_Query('2022-03-14', '2022-03-14')              # 查询更新-物流客诉件
 
-    m.order_js_Query('2022-06-01', '2022-06-30')
+    # timeStart, timeEnd = m.readInfo('拒收问题件')
+    m.order_js_Query('2022-09-01', '2022-09-04')
 
     # timeStart, timeEnd = m.readInfo('采购异常')
     # m.ssale_Query('2022-02-28', '2022-03-01')                    # 查询更新-采购问题件（一、简单查询）

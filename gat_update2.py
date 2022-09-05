@@ -6813,7 +6813,7 @@ class QueryUpdate(Settings):
     (SELECT DATE(s.处理时间) AS 拒收问题件,
                         COUNT(订单编号) AS '联系量（有结果）',
                         SUM(IF(s.`再次克隆下单` IS NOT NULL,1,0)) AS 挽单量
-            FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`
+            FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`
                         FROM (SELECT * 
                                 FROM 拒收问题件 
                                 WHERE 联系方式 = '电话' AND 币种 = '台币' AND id IN (SELECT MAX(id) FROM 拒收问题件 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号)	
@@ -6949,7 +6949,7 @@ class QueryUpdate(Settings):
                             SUM(IF(处理人='蔡利英' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS 蔡挽单量,
                             SUM(IF(处理人='杨嘉仪',1,0)) AS 杨联系量,
                             SUM(IF(处理人='杨嘉仪' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS 杨挽单量
-                        FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`
+                        FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`
                                 FROM (SELECT * 
                                         FROM 拒收问题件 
                                         WHERE 联系方式 = '电话' AND 币种 = '台币' AND id IN (SELECT MAX(id) FROM 拒收问题件 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) GROUP BY 订单编号) 
@@ -9762,7 +9762,7 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    if team == 'gat0':
+    if team == 'gat':
         month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
