@@ -339,6 +339,7 @@ class QueryTwoLower(Settings, Settings_sso):
             print('正在获取 压单反馈 信息中......')
             time_path: datetime = datetime.datetime.now()
             mkpath = r"F:\神龙签收率\(未发货) 直发-仓库-压单\\" + time_path.strftime('%m.%d')
+            mkpath = r"F:\神龙签收率\(未发货) 直发-仓库-压单\\" + time_path.strftime('%m')
             sql = '''SELECT s.订单编号,s.产品ID,s.产品名称,NULL SKU,NULL 产品规格,NULL 运单号,s.币种,s.团队,NULL 状态,s.反馈时间,s.压单原因,s.其他原因,	s.采购员,NULL 品类, s.入库时间,s.下单时间,s.是否下架,
                             s.下架时间,s.记录时间, s1.处理结果,s1.处理时间,NULL 备注,  DATEDIFF(curdate(),入库时间) 压单天数, DATE_FORMAT(入库时间,'%Y-%m-%d') 入库,采购异常, 处理进度, 详细处理时间,反馈内容
                     FROM ( SELECT * 
@@ -357,7 +358,7 @@ class QueryTwoLower(Settings, Settings_sso):
                 os.makedirs(mkpath)
             else:
                 print(mkpath + ' 目录已存在')
-            file_path = mkpath + '\\压单反馈 {0}.xlsx'.format(rq)
+            file_path = mkpath + '月\\压单反馈 {0}.xlsx'.format(rq)
             df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
             print('输出成功......')
             print('*' * 50)

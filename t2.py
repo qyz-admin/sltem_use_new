@@ -26,7 +26,7 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
 '''
 # 初始化时间设置
 updata = '全部'           #  后台获取全部（两月）、部分更新（近五天）
-if team in ('gat0', 'slsc', 'sl_r9b'):
+if team in ('gat', 'slsc', 'sl_r9b'):
     # 更新时间
     timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
     data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
@@ -93,7 +93,7 @@ print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
 print('---------------------------------- 数据库更新部分：--------------------------------')
-# m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息、
+m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息、
 
 # qu.EportOrder(team, month_last, month_yesterday, month_begin, '是0')     # 最近两个月的更新信息导出
 

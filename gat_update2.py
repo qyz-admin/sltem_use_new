@@ -62,7 +62,7 @@ class QueryUpdate(Settings):
                                                                                     self.mysql2['datebase']))
 
     # 获取签收表内容---港澳台更新签收总表(一)
-    def readFormHost(self, team, write, last_time):
+    def readFormHost(self, team, write, last_time, up_time):
         start = datetime.datetime.now()
         path = r'D:\Users\Administrator\Desktop\需要用到的文件\数据库'
         dirs = os.listdir(path=path)
@@ -73,12 +73,12 @@ class QueryUpdate(Settings):
                 print(filePath)
                 if '需发货的改派订单' in dir or '需发货改派订单' in dir:
                     write = '需发货'
-                self.wbsheetHost(filePath, team, write, last_time)
+                self.wbsheetHost(filePath, team, write, last_time, up_time)
                 os.remove(filePath)
                 print('已清除上传文件…………')
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
-    def wbsheetHost(self, filePath, team, write, last_time):
+    def wbsheetHost(self, filePath, team, write, last_time, up_time):
         match2 = {'slgat': '神龙港台',
                   'slgat_hfh': '火凤凰港台',
                   'slgat_hs': '红杉港台',
@@ -110,6 +110,11 @@ class QueryUpdate(Settings):
                         print('++++正在导入更新：' + sht.name + ' 共：' + str(len(db)) + '行','sheet共：' + str(sht.used_range.last_cell.row) + '行')
                         db.to_sql('gat_update', con=self.engine1, index=False,if_exists='replace')  # 将返回的dateFrame导入数据库的临时表
                         self.online(team)
+                    elif write == '手动更新数据库':
+                        db = db[['订单编号', '运单号', '订单状态', '物流状态', '发货时间', '收货时间', '上线时间', '完成时间']]
+                        print('++++正在 手动更新数据库：' + sht.name + ' 共：' + str(len(db)) + '行','sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                        db.to_sql('gat_update', con=self.engine1, index=False,if_exists='replace')  # 将返回的dateFrame导入数据库的临时表
+                        self.up_gat_ztl(team, up_time)
                     print('++++----->>>' + sht.name + '：订单更新完成++++')
                 else:
                     print('----------数据为空导入失败：' + sht.name)
@@ -169,6 +174,7 @@ class QueryUpdate(Settings):
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
+
     # 更新-总表（修改已发货 使用）
     def online(self, team):
         try:
@@ -182,6 +188,39 @@ class QueryUpdate(Settings):
                                 set a.`系统订单状态`= '已发货',
                                     a.`最终状态`= '在途'
                     		    where a.`订单编号`= b.`订单编号`;'''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        except Exception as e:
+            print('更新失败：', str(Exception) + str(e))
+        print('更新成功…………')
+    # 手动更新-总表（修改已完结 使用）
+    def up_gat_ztl(self, team, up_time):
+        try:
+            print('正在更新单表中......')
+            sql = '''update gat_order_list a, gat_update b
+                        set a.`系统订单状态`= b.`订单状态`,
+                            a.`系统物流状态`= b.`物流状态`,
+                            a.`仓储扫描时间`= b.`发货时间`,
+                            a.`完结状态时间`= b.`完成时间`,
+                            a.`上线时间`= b.`上线时间`
+                    where a.`订单编号`= b.`订单编号`;'''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('正在更新总表中......')
+            sql = '''update gat_zqsb a, gat_update b
+                        set a.`系统订单状态`= b.`订单状态`,
+                            a.`系统物流状态`= b.`物流状态`,
+                            a.`最终状态`= b.`物流状态`,
+                            a.`仓储扫描时间`= b.`发货时间`,
+                            a.`完结状态时间`= b.`完成时间`,
+                            a.`上线时间`= b.`上线时间`
+                    where a.`订单编号`= b.`订单编号`;'''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('正在更新历史总表中......')
+            sql = '''update qsb_gat a, gat_update b
+                        set a.`最终状态`= b.`物流状态`,
+                            a.`仓储扫描时间`= b.`发货时间`,
+                            a.`完结状态时间`= b.`完成时间`,
+                            a.`上线时间`= b.`上线时间`
+                    where a.`订单编号`= b.`订单编号` AND a.`记录时间` = {0};'''.format(up_time)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
@@ -9762,30 +9801,43 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    if team == 'gat':
-        month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-        month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-        # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
-        month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
-    else:
-        month_last = '2022-07-01'
-        month_old = '2022-07-01'        # 获取-每日-报表 开始的时间
-        month_yesterday = '2022-08-31'
+    select = 99
+    if int(select) == 99:
+        if team == 'gat':
+            month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+            month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+            # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
+            month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
+        else:
+            month_last = '2022-07-01'
+            month_old = '2022-07-01'  # 获取-每日-报表 开始的时间
+            month_yesterday = '2022-08-31'
 
-    last_time = '2021-01-01'
-    write = '本期'
-    m.readFormHost(team, write, last_time)                            # 更新签收表---港澳台（一）
+        last_time = '2021-01-01'
+        up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期
+        write = '本期'
+        m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
 
-    m.gat_new(team, month_last, month_yesterday)                  # 获取-签收率-报表
-    m.qsb_new(team, month_old)                                    # 获取-每日-报表
-    m.EportOrderBook(team, month_last, month_yesterday)           # 导出-总的-签收
-    m.phone_report('handle')                                      # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比）
+        m.gat_new(team, month_last, month_yesterday)  # 获取-签收率-报表
+        m.qsb_new(team, month_old)  # 获取-每日-报表
+        m.EportOrderBook(team, month_last, month_yesterday)  # 导出-总的-签收
+        m.phone_report('handle')  # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比）
 
-    # m.jushou()                                            #  拒收核实-查询需要的产品id
-    # m.address_repot(team, month_last, month_yesterday)                       #  获取-地区签收率-报表
+    elif int(select) == 88:
+        # m.jushou()                                            #  拒收核实-查询需要的产品id
+        # m.address_repot(team, month_last, month_yesterday)                       #  获取-地区签收率-报表
 
-     # 停用备用使用
-    # m.EportOrder(team)       #  导出需要更新的签收表
-    # m.qsb_report(team, '2021-06-26', '2021-05-26')
+        # 停用备用使用
+        # m.EportOrder(team)       #  导出需要更新的签收表
+        # m.qsb_report(team, '2021-06-26', '2021-05-26')
+        pass
+
+    elif int(select) == 1:
+        last_time = '2021-01-01'
+        up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期
+        write = '手动更新数据库'
+        m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
+
+
     print('耗时：', datetime.datetime.now() - start)
     # win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)

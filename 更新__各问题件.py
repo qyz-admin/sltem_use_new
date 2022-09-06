@@ -1387,7 +1387,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 909
+    select = 99
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '3129878cee9537a6b68f48743902548e'
@@ -1466,10 +1466,10 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    handle = '手0动'
-    login_TmpCode = '3129878cee9537a6b68f48743902548e'
-    m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
-    start: datetime = datetime.datetime.now()
+    # handle = '手0动'
+    # login_TmpCode = '3129878cee9537a6b68f48743902548e'
+    # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
+    # start: datetime = datetime.datetime.now()
 
     #
     # begin = datetime.date(2022, 5, 23)
@@ -1487,7 +1487,7 @@ if __name__ == '__main__':
     # m.waybill_Query('2022-03-14', '2022-03-14')              # 查询更新-物流客诉件
 
     # timeStart, timeEnd = m.readInfo('拒收问题件')
-    m.order_js_Query('2022-09-01', '2022-09-04')
+    # m.order_js_Query('2022-09-01', '2022-09-04')
 
     # timeStart, timeEnd = m.readInfo('采购异常')
     # m.ssale_Query('2022-02-28', '2022-03-01')                    # 查询更新-采购问题件（一、简单查询）

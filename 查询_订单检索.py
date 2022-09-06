@@ -165,6 +165,7 @@ class QueryOrder(Settings, Settings_sso):
                     print('----不需查询：' + sht.name)
             wb.close()
         app.quit()
+
     def wbsheetHost_pople(self, filePath, team, searchType):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
@@ -173,38 +174,47 @@ class QueryOrder(Settings, Settings_sso):
             wb = app.books.open(filePath, update_links=False, read_only=True)
             for sht in wb.sheets:
                 if sht.api.Visible == -1:
+                    db = None
+                    tem = None
                     try:
-                        db = None
                         db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                         print(db.columns)
                         # db = db[['订单编号']]
-                        columns_value = list(db.columns)                             # 获取数据的标题名，转为列表
-                        if '订单号' in columns_value:
-                            db.rename(columns={'订单号': '订单编号'}, inplace=True)
-                            # db = db[['订单号']]
-                        # if '订单编号' in column_val:
-                        #     db = db[['订单编号']]
-                        for column_val in columns_value:
-                            if '订单编号' != column_val:
-                                db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
-                        db.dropna(axis=0, how='any', inplace=True)                  # 空值（缺失值），将空值所在的行/列删除后
+                        if searchType == '订单号':
+                            tem = '订单编号'
+                            columns_value = list(db.columns)                             # 获取数据的标题名，转为列表
+                            if '订单号' in columns_value:
+                                db.rename(columns={'订单号': '订单编号'}, inplace=True)
+                            for column_val in columns_value:
+                                if '订单编号' != column_val:
+                                    db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
+                        elif searchType == '运单号':
+                            tem = '运单编号'
+                            columns_value = list(db.columns)                            # 获取数据的标题名，转为列表
+                            if '运单号' in columns_value:
+                                db.rename(columns={'运单号': '运单编号'}, inplace=True)
+                            for column_val in columns_value:
+                                if '运单编号' != column_val:
+                                    db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
+
+                        db.dropna(axis=0, how='any', inplace=True)                      # 空值（缺失值），将空值所在的行/列删除后
                     except Exception as e:
                         print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                     if db is not None and len(db) > 0:
                         # print(db)
                         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
                         print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
-                        orderId = list(db['订单编号'])
+                        orderId = list(db[tem])
                         max_count = len(orderId)                                    # 使用len()获取列表的长度，上节学的
-                        if max_count > 10:
-                            ord = ', '.join(orderId[0:10])
+                        if max_count > 90:
+                            ord = ','.join(orderId[0:90])
                             df = self.orderInfo_pople(ord, searchType)
                             # print(df)
                             dlist = []
                             n = 0
-                            while n < max_count-10:                                # 这里用到了一个while循环，穿越过来的
-                                n = n + 10
-                                ord = ','.join(orderId[n:n + 10])
+                            while n < max_count-90:                                # 这里用到了一个while循环，穿越过来的
+                                n = n + 90
+                                ord = ','.join(orderId[n:n + 90])
                                 data = self.orderInfo_pople(ord, searchType)
                                 dlist.append(data)
                             print('正在写入......')
@@ -227,6 +237,7 @@ class QueryOrder(Settings, Settings_sso):
                     print('----不需查询：' + sht.name)
             wb.close()
         app.quit()
+
     def wbsheetHost_iphone(self, filePath, team, searchType, timeStart, timeEnd):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
@@ -539,6 +550,7 @@ class QueryOrder(Settings, Settings_sso):
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         return df
+
     # 一、订单——客服查询（新后台的获取）
     def orderInfo_pople(self, ord, searchType):  # 进入订单检索界面
         print('+++正在查询订单信息中')
@@ -2209,7 +2221,7 @@ class QueryOrder(Settings, Settings_sso):
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
-    m = QueryOrder('+86-18538110674', 'qyz04163510.', '202900d829aa38ccbab4fcd676fe1cae', '手动')
+    m = QueryOrder('+86-18538110674', 'qyz04163510.', '202900d829aa38ccbab4fcd676fe1cae', '手0动')
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
@@ -2222,23 +2234,29 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 2                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
         searchType = '订单号'
-        # searchType = '运单号'
         pople_Query = '订单检索'                # 客服查询；订单检索
         m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd')        # 导入；，更新--->>数据更新切换
 
     elif int(select) == 2:
+        print("1-->>> 正在按运单号查询+++")
+        team = 'gat'
+        searchType = '运单号'
+        pople_Query = '客服查询'  # 客服查询；订单检索
+        m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd')  # 导入；，更新--->>数据更新切换
+
+    elif int(select) == 3:
         print("2-->>> 正在按时间查询+++")
         timeStart = '2022-03-01'
         timeEnd = '2022-03-01'
         areaId = ''
         m.order_TimeQuery(timeStart, timeEnd, areaId)
 
-    if int(select) == 3:
+    if int(select) == 4:
         print("1-->>> 正在按电话查询+++")
         team = 'gat'
         searchType = '电话'
