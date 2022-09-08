@@ -559,8 +559,8 @@ class QueryOrder(Settings, Settings_sso):
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
         data = {'page': 1, 'pageSize': 10,
-                'orderNumberFuzzy': None,
-                'shipUsername': None,
+                'orderPrefix': None,
+                'shippingNumber': None,
                 'phone': None,
                 'email': None,
                 'ip': None
@@ -571,6 +571,7 @@ class QueryOrder(Settings, Settings_sso):
         elif searchType == '运单号':
             data.update({'order_number': None,
                          'shippingNumber': ord})
+        print(data)
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
@@ -1581,9 +1582,9 @@ class QueryOrder(Settings, Settings_sso):
         # 4、对请求的数据进行json封装
         sendData = json.dumps(data)  # 将字典类型数据转化为json格式
         sendData = sendData.encode("utf-8")  # python3的Request要求data为byte类型
-        r = requests.post(url, headers=headers, data=json.dumps(data))
-        req = json.loads(r.text)  # json类型数据转换为dict字典
-        print(req['errmsg'])
+        # r = requests.post(url, headers=headers, data=json.dumps(data))
+        # req = json.loads(r.text)  # json类型数据转换为dict字典
+        # print(req['errmsg'])
 
 
     # 删除订单的  分析导出 测试

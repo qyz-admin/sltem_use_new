@@ -493,7 +493,7 @@ class QueryTwo(Settings, Settings_sso):
         df55.rename(columns={'上月总单量': '完成单量', '上月派送问题件单量': '派送问题件单量'}, inplace=True)
 
         print('正在写入excel…………')
-        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况2.xlsx'.format(rq)
+        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况.xlsx'.format(rq)
         df0 = pd.DataFrame([])
         df0.to_excel(file_pathT, index=False)
         writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
@@ -522,16 +522,16 @@ class QueryTwo(Settings, Settings_sso):
         writer.close()
         try:
             print('正在运行 派送问题件表 宏…………')
-            # app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-            # app.display_alerts = False
-            # wbsht = app.books.open('D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm')
-            # wbsht1 = app.books.open(file_pathT)
-            # wbsht.macro('派送问题件_修饰')()
-            # wbsht1.save()
-            # wbsht1.close()
-            # wbsht.close()
-            # app.quit()
-            # app.quit()
+            app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
+            app.display_alerts = False
+            wbsht = app.books.open('D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm')
+            wbsht1 = app.books.open(file_pathT)
+            wbsht.macro('派送问题件_修饰')()
+            wbsht1.save()
+            wbsht1.close()
+            wbsht.close()
+            app.quit()
+            app.quit()
 
             # print('正在运行 派送问题件表 宏…………')
             # # 通过Win32的方式并不限制xls和xlsx（因为操作是wps在做）  https://wenku.baidu.com/view/3d298b06de36a32d7375a417866fb84ae45cc3ef.html
@@ -944,7 +944,7 @@ if __name__ == '__main__':
             # timeStart, timeEnd = m.readInfo('派送问题件_导出')
             logisticsN_begin = '2022-07-11'                         # 送达客户不在/客户长期不在  物流轨迹查询时间
             logisticsN_end = '2022-07-31'
-            m.outport_getDeliveryList('2022-07-01', '2022-09-05', logisticsN_begin, logisticsN_end)
+            m.outport_getDeliveryList('2022-08-01', '2022-09-06', logisticsN_begin, logisticsN_end)
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
 
