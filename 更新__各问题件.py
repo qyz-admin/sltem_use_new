@@ -1451,7 +1451,7 @@ if __name__ == '__main__':
         lw = QueryTwoLower('+86-18538110674', 'qyz04163510.', login_TmpCode,handle)
         start: datetime = datetime.datetime.now()
 
-        # lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 已下架       更新； 自动时 输入的时间无效；切为不自动时，有效
+        lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 已下架       更新； 自动时 输入的时间无效；切为不自动时，有效
 
         lw.readFile(1)                                        # 上传每日压单核实结果
         lw.order_spec()                                       # 压单         更新；压单反馈  （备注（压单核实是否需要））

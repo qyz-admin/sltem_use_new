@@ -39,7 +39,7 @@ class QueryOrder(Settings, Settings_sso):
             self.sso__online_handle(login_TmpCode)
             print(11)
         else:
-            print(11)
+            # print(11)
             self.sso__online_auto()
 
         # self.sso__online_handle(login_TmpCode)
@@ -1582,9 +1582,9 @@ class QueryOrder(Settings, Settings_sso):
         # 4、对请求的数据进行json封装
         sendData = json.dumps(data)  # 将字典类型数据转化为json格式
         sendData = sendData.encode("utf-8")  # python3的Request要求data为byte类型
-        # r = requests.post(url, headers=headers, data=json.dumps(data))
-        # req = json.loads(r.text)  # json类型数据转换为dict字典
-        # print(req['errmsg'])
+        r = requests.post(url, headers=headers, data=json.dumps(data))
+        req = json.loads(r.text)  # json类型数据转换为dict字典
+        print(req['errmsg'])
 
 
     # 删除订单的  分析导出 测试
@@ -2235,7 +2235,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 2                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'

@@ -220,7 +220,7 @@ class QueryUpdate(Settings):
                             a.`仓储扫描时间`= b.`发货时间`,
                             a.`完结状态时间`= b.`完成时间`,
                             a.`上线时间`= b.`上线时间`
-                    where a.`订单编号`= b.`订单编号` AND a.`记录时间` = {0};'''.format(up_time)
+                    where a.`订单编号`= b.`订单编号` AND a.`记录时间` = '{0}';'''.format(up_time)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
@@ -9834,7 +9834,7 @@ if __name__ == '__main__':
 
     elif int(select) == 1:
         last_time = '2021-01-01'
-        up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期
+        up_time = '2022-09-09'                      # 手动更新数据库 --历史总表的记录日期
         write = '手动更新数据库'
         m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
 

@@ -339,7 +339,7 @@ class QueryTwoLower(Settings, Settings_sso):
             print('正在获取 压单反馈 信息中......')
             time_path: datetime = datetime.datetime.now()
             mkpath = r"F:\神龙签收率\(未发货) 直发-仓库-压单\\" + time_path.strftime('%m.%d')
-            mkpath = r"F:\神龙签收率\(未发货) 直发-仓库-压单\\" + time_path.strftime('%m')
+            mkpath = r"F:\神龙签收率\(未发货) 直发-仓库-压单\\" + time_path.strftime('%m') + '月'
             sql = '''SELECT s.订单编号,s.产品ID,s.产品名称,NULL SKU,NULL 产品规格,NULL 运单号,s.币种,s.团队,NULL 状态,s.反馈时间,s.压单原因,s.其他原因,	s.采购员,NULL 品类, s.入库时间,s.下单时间,s.是否下架,
                             s.下架时间,s.记录时间, s1.处理结果,s1.处理时间,NULL 备注,  DATEDIFF(curdate(),入库时间) 压单天数, DATE_FORMAT(入库时间,'%Y-%m-%d') 入库,采购异常, 处理进度, 详细处理时间,反馈内容
                     FROM ( SELECT * 
@@ -358,7 +358,7 @@ class QueryTwoLower(Settings, Settings_sso):
                 os.makedirs(mkpath)
             else:
                 print(mkpath + ' 目录已存在')
-            file_path = mkpath + '月\\压单反馈 {0}.xlsx'.format(rq)
+            file_path = mkpath + '\\压单反馈 {0}.xlsx'.format(rq)
             df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
             print('输出成功......')
             print('*' * 50)
@@ -537,25 +537,25 @@ class QueryTwoLower(Settings, Settings_sso):
             data.to_excel('G:\\输出文件\\已下架 {0} {1}-{2}.xlsx'.format(tem_name, type_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')
             # self.stockcompose_upload()
             # print('补充退货单号成功......')
-
-            print('获取每日新增 龟山备货 表......')
-            rq = datetime.datetime.now().strftime('%m.%d')
-            sql = '''SELECT CURDATE() '序號(無用途)',NULL '訂單號長度限制: 20碼請勿使用中文）', 收货人 AS '收件人姓名(必填)長度限制: 20碼', 收货地址 AS '收件人地址(必填)中文限制: 50字', 
-                            联系电话 AS '收件人電話長度限制: 15碼',商品名称 AS '託運備註中文限制: 50字', NULL '(商品別編號)勿填', 购买数量 AS '商品數量(必填)(限數字)', NULL '才積重量限數字', 
-                            订单金额 AS '代收貨款限數字',NULL '指定配送日期YYYYMMDD範例: 20140220    ->2月20號', NULL '指定配送時間範例:   1   (上午 -> 09~13) 2   (下午 -> 13~17)3   (晚上 -> 17~20)',
-			                订单编号 , 商品规格, 产品id AS '产品ID', NULL '原运单号', 团队,下架时间,统计时间
-                    FROM 已下架表 yx
-                    WHERE yx.记录时间 >= TIMESTAMP(CURDATE()) AND yx.物流渠道 = '龟山备货' AND yx.`新运单号` IS NULL;'''
-            df = pd.read_sql_query(sql=sql, con=self.engine1)
-            if df is not None and len(df) > 0:
-                df.to_excel('G:\\输出文件\\{} 龟山备货.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-                print('获取成功......')
-            else:
-                print('****** 今日无新增龟山备货数据！！！')
-
         else:
             print('****** 没有新增的改派订单！！！')
             return None
+
+        print('获取每日新增 龟山备货 表......')
+        rq = datetime.datetime.now().strftime('%m.%d')
+        sql = '''SELECT CURDATE() '序號(無用途)',NULL '訂單號長度限制: 20碼請勿使用中文）', 收货人 AS '收件人姓名(必填)長度限制: 20碼', 收货地址 AS '收件人地址(必填)中文限制: 50字', 
+                                联系电话 AS '收件人電話長度限制: 15碼',商品名称 AS '託運備註中文限制: 50字', NULL '(商品別編號)勿填', 购买数量 AS '商品數量(必填)(限數字)', NULL '才積重量限數字', 
+                                订单金额 AS '代收貨款限數字',NULL '指定配送日期YYYYMMDD範例: 20140220    ->2月20號', NULL '指定配送時間範例:   1   (上午 -> 09~13) 2   (下午 -> 13~17)3   (晚上 -> 17~20)',
+                                订单编号 , 商品规格, 产品id AS '产品ID', NULL '原运单号', 团队,下架时间,统计时间
+                        FROM 已下架表 yx
+                        WHERE yx.记录时间 >= TIMESTAMP(CURDATE()) AND yx.物流渠道 = '龟山备货' AND yx.`新运单号` IS NULL;'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        if df is not None and len(df) > 0:
+            df.to_excel('G:\\输出文件\\{} 龟山备货.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            print('获取成功......')
+        else:
+            print('****** 今日无新增龟山备货数据！！！')
+
         print('*' * 50)
 
     # 进入 组合库存界面  补充已下架的退货单号  （仓储的获取）（二）'qyz1404039293@163.com'
