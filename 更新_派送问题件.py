@@ -944,7 +944,7 @@ if __name__ == '__main__':
             # timeStart, timeEnd = m.readInfo('派送问题件_导出')
             logisticsN_begin = '2022-07-11'                         # 送达客户不在/客户长期不在  物流轨迹查询时间
             logisticsN_end = '2022-07-31'
-            m.outport_getDeliveryList('2022-08-01', '2022-09-12', logisticsN_begin, logisticsN_end)
+            m.outport_getDeliveryList('2022-08-01', '2022-09-13', logisticsN_begin, logisticsN_end)
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
 
@@ -961,7 +961,7 @@ if __name__ == '__main__':
         # m.getOrderList_T('2022-06-01', '2022-06-30')
         logisticsN_begin = '2022-07-11'                             # 送达客户不在/客户长期不在  物流轨迹查询时间
         logisticsN_end = '2022-07-31'
-        m.outport_getDeliveryList('2022-08-01', '2022-09-08', logisticsN_begin, logisticsN_end)
+        m.outport_getDeliveryList('2022-08-01', '2022-09-13', logisticsN_begin, logisticsN_end)
         # m.getMessageLog('2022-07-01', '2022-07-15')
 
 

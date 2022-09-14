@@ -772,7 +772,7 @@ class QueryUpdate(Settings):
                                 SUM(`价格RMB`) as 总计金额,
                                 SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
                             FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族
+                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族
                                 FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                             ) cx
                             GROUP BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`是否改派`, cx.`物流方式`
@@ -783,7 +783,7 @@ class QueryUpdate(Settings):
                 ) s2
                 GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`是否改派`, s2.`物流方式` 
                 HAVING s2.年月 <> '合计'
-    ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','神龙主页运营','小虎队','红杉','金狮','合计'),
+    ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
             FIELD(s2.`币种`,'台湾','香港','合计'),
             s2.`年月`,
             FIELD(s2.`是否改派`,'改派','直发','合计'),
@@ -868,13 +868,13 @@ class QueryUpdate(Settings):
                                 SUM(`价格RMB`) as 总计金额,
                                 SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
                             FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族
+                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族
                                     FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
                             ) cx
                             LEFT JOIN 
 							    (SELECT 币种,家族,年月,物流方式,count(订单编号) as 总订单量, count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货单量, SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成单量
                                 FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                         FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
                                     ) dg  
 								    GROUP BY dg.币种,dg.家族,dg.年月
@@ -887,7 +887,7 @@ class QueryUpdate(Settings):
                     ) s2 
                     GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`是否改派`, s2.`物流方式`, s2.`旬`
                     HAVING s2.是否改派 <> '合计'
-        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','神龙主页运营','小虎队','红杉','金狮','合计'),
+        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                 FIELD(s2.`币种`,'台湾','香港','合计'),
                 s2.`年月`,
                 FIELD(s2.`是否改派`,'改派','直发','合计'),
@@ -964,13 +964,13 @@ class QueryUpdate(Settings):
                                     SUM(`价格RMB`) as 总计金额,
                                     SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
                                 FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                         FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
                                 ) cx
                                 LEFT JOIN 
 							        (SELECT 币种,家族,年月,物流方式,count(订单编号) as 总订单量, count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货单量, SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成单量
                                     FROM (SELECT *,
-                                                IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                                IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                             FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
                                         ) dg  
 								        GROUP BY dg.币种,dg.家族,dg.年月
@@ -981,7 +981,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.`家族`,s1.`币种`, s1.`年月`, s1.`父级分类`, s1.`旬`
                         with rollup
                 ) s2 HAVING s2.年月 <> '合计'
-            ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','神龙主页运营','小虎队','红杉','金狮','合计'),
+            ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                     FIELD(s2.`币种`,'台湾','香港','合计'),
                     s2.`年月`,
                     FIELD(s2.父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','合计' ),
@@ -1053,13 +1053,13 @@ class QueryUpdate(Settings):
                                 SUM(`价格RMB`) as 总计金额,
                                 SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
                             FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                 FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
                             ) cx
                             LEFT JOIN 
 							    (SELECT 币种,家族,年月,物流方式,count(订单编号) as 总订单量, count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货单量, SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成单量
                                 FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                         FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
                                     ) dg  
 								    GROUP BY dg.币种,dg.家族,dg.年月
@@ -1070,7 +1070,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.`家族`,s1.`币种`, s1.`年月`, s1.`父级分类`, s1.`二级分类`, s1.`旬`
                         with rollup
                 ) s2 HAVING s2.年月 <> '合计'
-        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','神龙主页运营','小虎队','红杉','金狮','合计'),
+        ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                 FIELD(s2.`币种`,'台湾','香港','合计'),
                 s2.`年月`,
                 FIELD(s2.父级分类, '居家百货', '电子电器', '服饰', '医药保健', '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','合计' ),
@@ -1422,7 +1422,7 @@ class QueryUpdate(Settings):
 								SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 = "已退货",1,0)) as 铱熙无敌改派已退货,
 								SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌改派已完成
 				            FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                 FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                             ) cx WHERE cx.`币种` = '台湾'
                             GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
@@ -1430,7 +1430,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                         WITH ROLLUP 
                 ) s HAVING s.月份 != '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','神龙主页运营','小虎队','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`产品id`,'合计'),
@@ -1776,7 +1776,7 @@ class QueryUpdate(Settings):
                                 SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 = "已退货",1,0)) as 铱熙无敌改派已退货,
                                 SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌改派已完成
 				        FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                 FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                         ) cx WHERE cx.`币种` = '台湾'
                     GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
@@ -1784,7 +1784,7 @@ class QueryUpdate(Settings):
                 GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                 WITH ROLLUP 
             ) s HAVING s.旬 != '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','神龙主页运营','小虎队','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -1956,7 +1956,7 @@ class QueryUpdate(Settings):
 								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 = "已退货",1,0)) as 易速配改派已退货,
 								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配改派已完成
 				            FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                 FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                             ) cx WHERE cx.`币种` = '香港'
                             GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
@@ -1964,7 +1964,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                         WITH ROLLUP 
                     ) s HAVING s.月份 != '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','神龙主页运营','小虎队','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`产品id`,'合计'),
@@ -2137,7 +2137,7 @@ class QueryUpdate(Settings):
 								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 = "已退货",1,0)) as 易速配改派已退货,
 								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配改派已完成
 				        FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                 FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                         ) cx WHERE cx.`币种` = '香港'
                         GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
@@ -2145,7 +2145,7 @@ class QueryUpdate(Settings):
                     GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                     WITH ROLLUP 
             ) s HAVING s.旬 <> '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','神龙主页运营','小虎队','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -2492,7 +2492,7 @@ class QueryUpdate(Settings):
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 = "已退货",1,0)) as 铱熙无敌改派已退货,
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌改派已完成
         				            FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                         FROM {0}_zqsb cc where cc.`是否改派` = '直发' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                                     ) cx WHERE cx.`币种` = '台湾'
                                     GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
@@ -2500,7 +2500,7 @@ class QueryUpdate(Settings):
                                 GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                 WITH ROLLUP 
                         ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','神龙主页运营','小虎队','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
@@ -2846,7 +2846,7 @@ class QueryUpdate(Settings):
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 = "已退货",1,0)) as 铱熙无敌改派已退货,
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌改派已完成
         				        FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                     FROM {0}_zqsb cc where  cc.`是否改派` = '直发' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                                 ) cx WHERE cx.`币种` = '台湾'
                             GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
@@ -2854,7 +2854,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                         WITH ROLLUP 
                     ) s HAVING s.旬 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','神龙主页运营','小虎队','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -3201,7 +3201,7 @@ class QueryUpdate(Settings):
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 = "已退货",1,0)) as 铱熙无敌改派已退货,
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌改派已完成
         				            FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                         FROM {0}_zqsb cc where cc.`是否改派` = '改派' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                                     ) cx WHERE cx.`币种` = '台湾'
                                     GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
@@ -3209,7 +3209,7 @@ class QueryUpdate(Settings):
                                 GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                 WITH ROLLUP 
                         ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','神龙主页运营','小虎队','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
@@ -3555,7 +3555,7 @@ class QueryUpdate(Settings):
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 = "已退货",1,0)) as 铱熙无敌改派已退货,
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌改派已完成
         				        FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                     FROM {0}_zqsb cc where  cc.`是否改派` = '改派' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                                 ) cx WHERE cx.`币种` = '台湾'
                             GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
@@ -3563,7 +3563,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                         WITH ROLLUP 
                     ) s HAVING s.旬 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙运营1组','Line运营','神龙主页运营','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -3735,7 +3735,7 @@ class QueryUpdate(Settings):
         								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 = "已退货",1,0)) as 易速配改派已退货,
         								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配改派已完成
         				            FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                         FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.`是否改派` = '直发' AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                                     ) cx WHERE cx.`币种` = '香港'
                                     GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
@@ -3743,7 +3743,7 @@ class QueryUpdate(Settings):
                                 GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                 WITH ROLLUP 
                             ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙运营1组','Line运营','神龙主页运营','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
@@ -3916,7 +3916,7 @@ class QueryUpdate(Settings):
         								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 = "已退货",1,0)) as 易速配改派已退货,
         								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配改派已完成
         				        FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                         FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.`是否改派` = '直发' AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                                 ) cx WHERE cx.`币种` = '香港'
                                 GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
@@ -3924,7 +3924,7 @@ class QueryUpdate(Settings):
                             GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                             WITH ROLLUP 
                     ) s HAVING s.旬 <> '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙运营1组','Line运营','神龙主页运营','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -4081,7 +4081,7 @@ class QueryUpdate(Settings):
         								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 = "已退货",1,0)) as 易速配改派已退货,
         								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配改派已完成
         				            FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                         FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.`是否改派` = '改派' AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                                     ) cx WHERE cx.`币种` = '香港'
                                     GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
@@ -4089,7 +4089,7 @@ class QueryUpdate(Settings):
                                 GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                 WITH ROLLUP 
                             ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙运营1组','Line运营','神龙主页运营','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
@@ -4247,7 +4247,7 @@ class QueryUpdate(Settings):
         								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 = "已退货",1,0)) as 易速配改派已退货,
         								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配改派已完成
         				        FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                         FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.`是否改派` = '改派' AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                                 ) cx WHERE cx.`币种` = '香港'
                                 GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
@@ -4255,7 +4255,7 @@ class QueryUpdate(Settings):
                             GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                             WITH ROLLUP 
                     ) s HAVING s.旬 <> '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙运营1组','Line运营','神龙主页运营','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -4502,13 +4502,13 @@ class QueryUpdate(Settings):
                                 SUM(IF(`是否改派` = '改派' AND 最终状态 = "拒收",1,0)) as 改派拒收,
                                 SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 改派完成,
                                 SUM(IF(`是否改派` = '改派',1,0)) as 改派总订单
-                            FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                            FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                     FROM gat_zqsb cc
                                     where cc.日期 >= '{0}' and cc.`运单编号` is not null AND cc.团队 NOT IN ({2})
                             ) cx	
 							LEFT JOIN 
 							(SELECT 年月,币种,家族,count(订单编号) as 总订单量
-								FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+								FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
 										FROM gat_order_list cc 
 										WHERE  cc.日期 = DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND cc.团队 NOT IN ({2})
 								) dg  
@@ -5336,14 +5336,14 @@ class QueryUpdate(Settings):
                                 concat(ROUND(SUM(IF(`是否改派` = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) / SUM(IF(`是否改派` = '改派',1,0)) * 100,2),'%') as 改派完成占比,
                                 concat(ROUND(SUM(IF(`是否改派` = '改派',1,0)) / 改派总单量 * 100,2),'%') as 改派品类占比
                         FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                 FROM gat_zqsb cc
                                 where cc.`运单编号` is not null AND cc.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")
                             ) cx 
                         LEFT JOIN 
         					(SELECT 币种,家族,年月,count(订单编号) as 总订单量,SUM(IF(`是否改派`= '直发',1,0)) as 直发总单量,SUM(IF(`是否改派` = '改派',1,0)) as 改派总单量
         					FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                     FROM gat_zqsb cc 
         							WHERE cc.`运单编号` is not null AND cc.团队 NOT IN ("红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营")
         						) dg  GROUP BY dg.币种,dg.家族,dg.年月
@@ -5489,7 +5489,7 @@ class QueryUpdate(Settings):
                                     SUM(`价格RMB`) as 总计金额,
                                     SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
                                 FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族
+                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族
                                     FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                                 ) cx
                                 GROUP BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`是否改派`, cx.`省洲`
@@ -6635,7 +6635,7 @@ class QueryUpdate(Settings):
 						                        SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
 						                        SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
 						                        SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成		
-		                                FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族
+		                                FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族
                                             FROM gat_zqsb cc 
 					                        WHERE cc.年月 >=  DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') AND cc.`币种` = '台湾' AND cc.`运单编号` is not null
 		                                ) cx
@@ -6645,7 +6645,7 @@ class QueryUpdate(Settings):
                                     WITH ROLLUP 
                                 ) s 
                                 HAVING s.月份 != '合计' AND s.产品id != '合计' AND s.`拒收` >= '1'
-                                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙运营1组','Line运营','神龙主页运营','红杉','金狮','合计'),
+                                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                                 FIELD(s.`地区`,'台湾','香港','合计'),
                                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'),'合计'),
                                 FIELD(s.`产品id`,'合计'),
@@ -6685,7 +6685,7 @@ class QueryUpdate(Settings):
 						                        SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
 						                        SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
 						                        SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成		
-		                                FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族
+		                                FROM (SELECT *,IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族
                                             FROM gat_zqsb cc 
 					                        WHERE cc.年月 >=  DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') AND cc.`币种` = '台湾' AND cc.`运单编号` is not null
 		                                ) cx
@@ -6695,7 +6695,7 @@ class QueryUpdate(Settings):
                                     WITH ROLLUP 
                                 ) s 
                                 HAVING s.月份 != '合计' AND s.产品id != '合计' AND s.`拒收` >= '1'
-                                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙运营1组','Line运营','神龙主页运营','红杉','金狮','合计'),
+                                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                                 FIELD(s.`地区`,'台湾','香港','合计'),
                                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'),'合计'),
                                 FIELD(s.`产品id`,'合计'),
@@ -7224,7 +7224,7 @@ class QueryUpdate(Settings):
                                 SUM(`价格RMB`) as 总计金额,
                                 SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
                             FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                 FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                             ) cx
                             GROUP BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`是否改派`, cx.`物流方式`
@@ -7320,13 +7320,13 @@ class QueryUpdate(Settings):
                                 SUM(`价格RMB`) as 总计金额,
                                 SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
                             FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                     FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
                             ) cx
                             LEFT JOIN 
 							    (SELECT 币种,家族,年月,物流方式,count(订单编号) as 总订单量, count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货单量, SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成单量
                                 FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                         FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
                                     ) dg  
 								    GROUP BY dg.币种,dg.家族,dg.年月
@@ -7415,13 +7415,13 @@ class QueryUpdate(Settings):
                                     SUM(`价格RMB`) as 总计金额,
                                     SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
                                 FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                         FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
                                 ) cx
                                 LEFT JOIN 
 							        (SELECT 币种,家族,年月,物流方式,count(订单编号) as 总订单量, count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货单量, SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成单量
                                     FROM (SELECT *,
-                                                IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                                IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                             FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
                                         ) dg  
 								        GROUP BY dg.币种,dg.家族,dg.年月
@@ -7504,13 +7504,13 @@ class QueryUpdate(Settings):
                                 SUM(`价格RMB`) as 总计金额,
                                 SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
                             FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                 FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
                             ) cx
                             LEFT JOIN 
 							    (SELECT 币种,家族,年月,物流方式,count(订单编号) as 总订单量, count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货单量, SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成单量
                                 FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                         FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
                                     ) dg  
 								    GROUP BY dg.币种,dg.家族,dg.年月
@@ -7828,7 +7828,7 @@ class QueryUpdate(Settings):
 								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰改派已退货,
 								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰改派已完成
 				            FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                 FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                             ) cx WHERE cx.`币种` = '台湾'
                             GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
@@ -7836,7 +7836,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                         WITH ROLLUP 
                 ) s HAVING s.月份 != '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙运营1组','Line运营','神龙主页运营','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`产品id`,'合计'),
@@ -8137,7 +8137,7 @@ class QueryUpdate(Settings):
 								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰改派已退货,
 								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰改派已完成
 				        FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                 FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                         ) cx WHERE cx.`币种` = '台湾'
                     GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
@@ -8145,7 +8145,7 @@ class QueryUpdate(Settings):
                 GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                 WITH ROLLUP 
             ) s HAVING s.旬 != '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙运营1组','Line运营','神龙主页运营','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -8287,7 +8287,7 @@ class QueryUpdate(Settings):
 								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 = "已退货",1,0)) as 易速配改派已退货,
 								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配改派已完成
 				            FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                 FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                             ) cx WHERE cx.`币种` = '香港'
                             GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
@@ -8295,7 +8295,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                         WITH ROLLUP 
                     ) s HAVING s.月份 != '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙运营1组','Line运营','神龙主页运营','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`产品id`,'合计'),
@@ -8438,7 +8438,7 @@ class QueryUpdate(Settings):
 								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 = "已退货",1,0)) as 易速配改派已退货,
 								SUM(IF(cx.物流方式 = "香港-易速配-改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 易速配改派已完成
 				        FROM (SELECT *,
-                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                 FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                         ) cx WHERE cx.`币种` = '香港'
                         GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
@@ -8446,7 +8446,7 @@ class QueryUpdate(Settings):
                     GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                     WITH ROLLUP 
             ) s HAVING s.旬 <> '合计'
-        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙运营1组','Line运营','神龙主页运营','红杉','金狮','合计'),
+        ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -8748,7 +8748,7 @@ class QueryUpdate(Settings):
         								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰改派已退货,
         								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰改派已完成
         				            FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                         FROM {0}_zqsb cc where cc.`是否改派` = '直发' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                                     ) cx WHERE cx.`币种` = '台湾'
                                     GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
@@ -8756,7 +8756,7 @@ class QueryUpdate(Settings):
                                 GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                 WITH ROLLUP 
                         ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙运营1组','Line运营','神龙主页运营','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
@@ -9057,7 +9057,7 @@ class QueryUpdate(Settings):
         								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰改派已退货,
         								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰改派已完成
         				        FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                     FROM {0}_zqsb cc where  cc.`是否改派` = '直发' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                                 ) cx WHERE cx.`币种` = '台湾'
                             GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
@@ -9065,7 +9065,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                         WITH ROLLUP 
                     ) s HAVING s.旬 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙运营1组','Line运营','神龙主页运营','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
@@ -9367,7 +9367,7 @@ class QueryUpdate(Settings):
         								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰改派已退货,
         								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰改派已完成
         				            FROM (SELECT *,
-                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                            IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                         FROM {0}_zqsb cc where cc.`是否改派` = '改派' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                                     ) cx WHERE cx.`币种` = '台湾'
                                     GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
@@ -9375,7 +9375,7 @@ class QueryUpdate(Settings):
                                 GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                 WITH ROLLUP 
                         ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙运营1组','Line运营','神龙主页运营','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
@@ -9676,7 +9676,7 @@ class QueryUpdate(Settings):
         								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 = "已退货",1,0)) as 天马顺丰改派已退货,
         								SUM(IF(cx.物流方式 = "天马顺丰" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 天马顺丰改派已完成
         				        FROM (SELECT *,
-                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",cc.团队))))))) as 家族 
+                                        IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
                                     FROM {0}_zqsb cc where  cc.`是否改派` = '改派' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
                                 ) cx WHERE cx.`币种` = '台湾'
                             GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
@@ -9684,7 +9684,7 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                         WITH ROLLUP 
                     ) s HAVING s.旬 != '合计'
-                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','小虎队','神龙运营1组','Line运营','神龙主页运营','红杉','金狮','合计'),
+                ORDER BY FIELD(s.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
