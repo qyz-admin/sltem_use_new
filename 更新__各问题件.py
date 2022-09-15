@@ -990,7 +990,7 @@ class QueryTwo(Settings, Settings_sso):
                             resval = res.split(':')[0]
                             if '跟进人' in resval:
                                 result['跟进人'] = (res.split('跟进人:')[1]).strip()  # 跟进人
-                            if '时间' in resval:
+                            if '时间' in resval and '跟进' not in resval:
                                 result['时间'] = (res.split('时间:')[1]).strip()  # 跟进人
                             if '内容' in resval:
                                 result['内容'] = (res.split('内容:')[1]).strip()  # 跟进人
@@ -1021,11 +1021,11 @@ class QueryTwo(Settings, Settings_sso):
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = df
+            dp.to_excel('G:\\输出文件\\拒收问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp = dp[['订单编号', '币种', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
             dp.columns = ['订单编号', '币种', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果', '是否需要商品']
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            df.to_excel('G:\\输出文件\\拒收问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO 拒收问题件(订单编号,币种,再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果, 是否需要商品,记录时间)
                     SELECT 订单编号,币种, IF(再次克隆下单 = '',NULL,再次克隆下单) 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果,是否需要商品, NOW() 记录时间
                     FROM customer;'''
@@ -1087,7 +1087,7 @@ class QueryTwo(Settings, Settings_sso):
                         resval = res.split(':')[0]
                         if '跟进人' in resval:
                             result['跟进人'] = (res.split('跟进人:')[1]).strip()  # 跟进人
-                        if '时间' in resval:
+                        if '时间' in resval and '跟进' not in resval:
                             result['时间'] = (res.split('时间:')[1]).strip()  # 跟进人
                         if '内容' in resval:
                             result['内容'] = (res.split('内容:')[1]).strip()  # 跟进人
@@ -1487,7 +1487,7 @@ if __name__ == '__main__':
     # m.waybill_Query('2022-03-14', '2022-03-14')              # 查询更新-物流客诉件
 
     # timeStart, timeEnd = m.readInfo('拒收问题件')
-    # m.order_js_Query('2022-09-01', '2022-09-04')
+    # m.order_js_Query('2022-09-12', '2022-09-14')
 
     # timeStart, timeEnd = m.readInfo('采购异常')
     # m.ssale_Query('2022-02-28', '2022-03-01')                    # 查询更新-采购问题件（一、简单查询）

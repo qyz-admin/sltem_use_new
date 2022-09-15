@@ -4379,7 +4379,7 @@ class QueryUpdate(Settings):
     def qsb_new(self, team, month_last):  # 报表各团队近两个月的物流数据
         month_now = datetime.datetime.now().strftime('%Y-%m-%d')
         match = {'gat': '港台-每日'}
-        not_team = '"红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营","神龙-主页运营"'
+        not_team = '"红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营","神龙-主页运营","金蝉家族","奥创队"'
         # if team == 'ga9t':
         #     month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         #     month_now = datetime.datetime.now().strftime('%Y-%m-%d')
@@ -9816,6 +9816,7 @@ if __name__ == '__main__':
         last_time = '2021-01-01'
         up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期
         write = '本期'
+        # write = '手动更新数据库'
         m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
 
         m.gat_new(team, month_last, month_yesterday)  # 获取-签收率-报表
