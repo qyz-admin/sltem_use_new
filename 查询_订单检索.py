@@ -735,8 +735,8 @@ class QueryOrder(Settings, Settings_sso):
 
 
     # 二、时间-查询更新（新后台的获取 line运营）
-    def order_TimeQuery(self, timeStart, timeEnd, areaId):  # 进入订单检索界面
-        print('+++正在查询订单信息中')
+    def order_TimeQuery(self, timeStart, timeEnd, areaId, query):  # 进入订单检索界面
+        print('+++正在查询订单信息中起止： ' + timeStart + ':' + timeEnd)
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'origin': 'https: // gimp.giikin.com',
@@ -772,6 +772,17 @@ class QueryOrder(Settings, Settings_sso):
                     'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
                     'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
                     'timeStart': timeStart + '00:00:00', 'timeEnd': timeEnd + '23:59:59'}
+        if query == '下单时间':
+            data.update({'timeStart': timeStart + '00:00:00',
+                         'timeEnd': timeEnd + '23:59:59',
+                         'finishTimeStart': None,
+                         'finishTimeEnd': None})
+        elif query == '完成时间':
+            data.update({'timeStart': None,
+                         'timeEnd': None,
+                         'finishTimeStart': timeStart + '00:00:00',
+                         'finishTimeEnd': timeEnd + '23:59:59'})
+
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
@@ -839,7 +850,7 @@ class QueryOrder(Settings, Settings_sso):
                         'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime',
                         'finishTime', 'refundTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer',
                         'autoVerify', 'autoVerifyTip', 'cloneUser', 'isClone', 'warehouse', 'smsStatus', 'logisticsControl',
-                        'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName', 'update_time']]
+                        'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName',  'update_time']]
                 df.columns = ['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '拉黑率', '电话长度',
                               '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
                               '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
@@ -858,7 +869,7 @@ class QueryOrder(Settings, Settings_sso):
             while n < in_count:  # 这里用到了一个while循环，穿越过来的
                 print('剩余查询次数' + str(in_count - n))
                 n = n + 1
-                data = self._timeQuery(timeStart, timeEnd, n, areaId)
+                data = self._timeQuery(timeStart, timeEnd, n, areaId, query)
                 dlist.append(data)
             print('正在写入......')
             dp = df.append(dlist, ignore_index=True)
@@ -966,7 +977,7 @@ class QueryOrder(Settings, Settings_sso):
             print('无信息+++')
 
     # 订单检索 时间查询的公用函数
-    def _timeQuery(self, timeStart, timeEnd, n, areaId):  # 进入订单检索界面
+    def _timeQuery(self, timeStart, timeEnd, n, areaId, query):  # 进入订单检索界面
         # print('......正在查询信息中......')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
@@ -1003,6 +1014,16 @@ class QueryOrder(Settings, Settings_sso):
                     'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
                     'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
                     'timeStart': timeStart + '00:00:00', 'timeEnd': timeEnd + '23:59:59'}
+        if query == '下单时间':
+            data.update({'timeStart': timeStart + '00:00:00',
+                         'timeEnd': timeEnd + '23:59:59',
+                         'finishTimeStart': None,
+                         'finishTimeEnd': None})
+        elif query == '完成时间':
+            data.update({'timeStart': None,
+                         'timeEnd': None,
+                         'finishTimeStart': timeStart + '00:00:00',
+                         'finishTimeEnd': timeEnd + '23:59:59'})
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
@@ -1065,12 +1086,12 @@ class QueryOrder(Settings, Settings_sso):
                            'shipInfo.shipAddress', 'amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime','logisticsName', 'dpeStyle',
                            'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName', 'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime',
                            'finishTime', 'refundTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer', 'autoVerify', 'autoVerifyTip', 'cloneUser', 'isClone', 'warehouse', 'smsStatus',
-                           'logisticsControl', 'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName', 'update_time']]
+                           'logisticsControl', 'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName','update_time']]
                 df.columns = ['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '拉黑率', '电话长度',
                               '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
                               '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
                               '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
-                              '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间']
+                              '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型',  '更新时间']
         except Exception as e:
             print('------查询为空')
         print('******本批次查询成功')
@@ -2235,7 +2256,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 33                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
@@ -2251,11 +2272,20 @@ if __name__ == '__main__':
         m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd')  # 导入；，更新--->>数据更新切换
 
     elif int(select) == 3:
-        print("2-->>> 正在按时间查询+++")
+        print("2-->>> 正在按下单时间查询+++")
         timeStart = '2022-03-01'
         timeEnd = '2022-03-01'
         areaId = ''
-        m.order_TimeQuery(timeStart, timeEnd, areaId)
+        query = '下单时间'
+        m.order_TimeQuery(timeStart, timeEnd, areaId, query)
+
+    elif int(select) == 33:
+        print("2-->>> 正在按完成时间查询+++")
+        timeStart = '2022-09-15'
+        timeEnd = '2022-09-15'
+        areaId = ''
+        query = '完成时间'
+        m.order_TimeQuery(timeStart, timeEnd, areaId, query)
 
     if int(select) == 4:
         print("1-->>> 正在按电话查询+++")
