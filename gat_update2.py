@@ -4596,7 +4596,7 @@ class QueryUpdate(Settings):
                 ) ss			
                 ORDER BY 月份 DESC,
                         FIELD( 地区, '台湾', '香港', '总计' ),
-                        FIELD( 家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
+                        FIELD( 家族, '神龙','火凤凰','小虎队','神龙运营1组','金蝉家族','奥创队','红杉','金狮', '总计' ),
                         总单量 DESC;'''.format(team, not_team)
         df10 = pd.read_sql_query(sql=sql10, con=self.engine1)
         listT.append(df10)
@@ -4641,7 +4641,7 @@ class QueryUpdate(Settings):
                 ) ss				
                 ORDER BY 月份 DESC,旬,
                         FIELD( 地区, '台湾', '香港', '总计' ),
-                        FIELD( 家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
+                        FIELD( 家族, '神龙','火凤凰','小虎队','神龙运营1组','金蝉家族','奥创队','红杉','金狮', '总计' ),
                         总单量 DESC;'''.format(team, not_team)
         df11 = pd.read_sql_query(sql=sql11, con=self.engine1)
         listT.append(df11)
@@ -4703,7 +4703,7 @@ class QueryUpdate(Settings):
             ) ss
 			ORDER BY 月份 DESC,
                     FIELD( 地区, '台湾', '香港', '总计' ),
-                    FIELD( 家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
+                    FIELD( 家族, '神龙','火凤凰','小虎队','神龙运营1组','金蝉家族','奥创队','红杉','金狮', '总计' ),
                     FIELD( 父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
                     总单量 DESC;'''.format(month_last, team, not_team)
         df20 = pd.read_sql_query(sql=sql20, con=self.engine1)
@@ -4752,7 +4752,7 @@ class QueryUpdate(Settings):
 			                    DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 6 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 7 MONTH),'%Y%m'), '总计' ),
                             FIELD(地区, '台湾', '香港', '总计' ),
                             FIELD(是否改派, '直发', '改派', '总计' ),
-                            FIELD(家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
+                            FIELD(家族, '神龙','火凤凰','小虎队','神龙运营1组','金蝉家族','奥创队','红杉','金狮', '总计' ),
                             FIELD(物流方式, '台湾-大黄蜂普货头程-森鸿尾程','台湾-大黄蜂普货头程-易速配尾程', '台湾-立邦普货头程-森鸿尾程','台湾-易速配-TW海快','台湾-铱熙无敌-新竹','台湾-立邦普货头程-易速配尾程', 
                                             '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
                                             '香港-圆通', '香港-立邦-顺丰','香港-易速配-顺丰','香港-易速配-顺丰YC', '香港-森鸿-SH渠道','香港-森鸿-顺丰渠道',
@@ -4802,7 +4802,7 @@ class QueryUpdate(Settings):
             ) ss
             ORDER BY 月份 DESC,
                     FIELD(地区, '台湾', '香港', '总计' ),
-                    FIELD(家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
+                    FIELD(家族, '神龙','火凤凰','小虎队','神龙运营1组','金蝉家族','奥创队','红杉','金狮', '总计' ),
                     FIELD(平台, 'google', 'facebook', 'line', 'native',  'Criteo', 'tiktok', 'yahoo','facebookpage','recommend','postsaleclone','recomm','shangwutong','总计' ),
                     总单量 DESC;'''.format(month_last, team, not_team)
         df30 = pd.read_sql_query(sql=sql30, con=self.engine1)
@@ -4849,7 +4849,7 @@ class QueryUpdate(Settings):
             ORDER BY 月份 DESC,
                     FIELD(地区, '台湾', '香港', '总计' ),
                     FIELD(平台, 'google', 'facebook', 'line', 'native',  'Criteo', 'tiktok', 'yahoo','facebookpage','recommend','postsaleclone','recomm','shangwutong','总计' ),
-                    FIELD(家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
+                    FIELD(家族, '神龙','火凤凰','小虎队','神龙运营1组','金蝉家族','奥创队','红杉','金狮', '总计' ),
                     总单量 DESC;'''.format(month_last, team,not_team)
         df31 = pd.read_sql_query(sql=sql31, con=self.engine1)
         listT.append(df31)
@@ -4896,7 +4896,7 @@ class QueryUpdate(Settings):
             ORDER BY 月份 DESC,
                     FIELD(地区, '台湾', '香港', '总计' ),
                     FIELD(父级分类, '居家百货', '电子电器', '服饰', '医药保健', '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
-                    FIELD(家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
+                    FIELD(家族, '神龙','火凤凰','小虎队','神龙运营1组','金蝉家族','奥创队','红杉','金狮', '总计' ),
                     总单量 DESC;'''.format(month_last, team,not_team)
         df40 = pd.read_sql_query(sql=sql40, con=self.engine1)
         listT.append(df40)
@@ -4948,7 +4948,7 @@ class QueryUpdate(Settings):
                                 '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
                                 '香港-圆通', '香港-立邦-顺丰','香港-易速配-顺丰','香港-易速配-顺丰YC', '香港-森鸿-SH渠道','香港-森鸿-顺丰渠道',
                                 '龟山','森鸿','速派','速派宅配通','天马顺丰','天马新竹','香港-圆通-改派','香港-立邦-改派','香港-森鸿-改派','香港-易速配-改派','合计' ),
-                    FIELD(家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
+                    FIELD(家族, '神龙','火凤凰','小虎队','神龙运营1组','金蝉家族','奥创队','红杉','金狮', '总计' ),
                     总单量 DESC;'''.format(month_last, team, not_team)
         df41 = pd.read_sql_query(sql=sql41, con=self.engine1)
         listT.append(df41)
@@ -5353,7 +5353,7 @@ class QueryUpdate(Settings):
                     ) s
                     ORDER BY 月份 DESC,
                             FIELD( 地区, '台湾', '香港', '总计' ),
-                            FIELD( s.家族, '神龙','火凤凰','小虎队','神龙运营1组','红杉','金狮', '总计' ),
+                            FIELD( s.家族, '神龙','火凤凰','小虎队','神龙运营1组','金蝉家族','奥创队','红杉','金狮', '总计' ),
                             FIELD( s.父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','总计' ),
                             FIELD( s.二级分类, '厨房用品', '日用百货', '布艺家纺', '宠物用品',  '户外运动', '汽车用品', '手表手环','影音娱乐','电脑外设','手机外设',
                                                 '家用电器', '个护电器','上衣', '下装',  '内衣', '套装', '裙子','配饰','母婴服饰','保健食品','护理护具', 
@@ -6732,8 +6732,8 @@ class QueryUpdate(Settings):
         match = {'gat': '港台'}
         week: datetime = datetime.datetime.now()
         if week.isoweekday() == 1 or week.isoweekday() == '手动':
-            week_time1 = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%m.%d')
-            week_time2 = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%m.%d')
+            week_time1 = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%m.%d')
+            week_time2 = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%m.%d')
             listT = []  # 查询sql的结果 存放池
             print('正在获取 日报表 数据内容…………')
             sql = '''SELECT 日期31天, ss.*, ss1.*, ss2.*, ss3.*, ss4.*

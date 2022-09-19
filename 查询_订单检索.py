@@ -880,7 +880,7 @@ class QueryOrder(Settings, Settings_sso):
             print('查询已导出+++')
 
     # 二、时间-查询更新（新后台的获取 全部 & 昨日订单删除分析）
-    def order_TimeQueryT(self, timeStart, timeEnd, areaId, select):  # 进入订单检索界面
+    def order_TimeQueryT(self, timeStart, timeEnd, areaId, select, query):  # 进入订单检索界面
         print('+++正在查询 ' + timeStart + ' 到 ' + timeEnd + ' 号订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
@@ -936,7 +936,7 @@ class QueryOrder(Settings, Settings_sso):
             n = 1
             while n <= in_count:  # 这里用到了一个while循环，穿越过来的
                 print('查询第 ' + str(n) + ' 页中，剩余次数' + str(in_count - n))
-                data = self._timeQuery(timeStart, timeEnd, n, areaId)
+                data = self._timeQuery(timeStart, timeEnd, n, areaId, query)
                 dlist.append(data)
                 n = n + 1
             print('正在写入......')
