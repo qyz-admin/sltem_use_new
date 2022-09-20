@@ -2163,7 +2163,7 @@ class Query_sso_updata(Settings):
             # print('正在写入缓存中......')
             dp = dp[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'shipInfo.shipName', 'shipInfo.shipAddress','wayBillNumber','saleId', 'saleProduct', 'productId','spec','quantity', 'orderStatus',
                      'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime','transferTime', 'onlineTime', 'deliveryTime','finishTime','stateTime', 'logisticsUpdateTime', 'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName',
-                     'dpeStyle', 'amount', 'payType','weight', 'autoVerify','delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks', 'auto_VerifyTip', 'order_count', 'order_qs', 'order_js']]
+                     'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks', 'auto_VerifyTip', 'order_count', 'order_qs', 'order_js']]
             print(dp)
             # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
             # dp.to_excel('H:\\桌面\\需要用到的文件\\\输出文件\\派送问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
@@ -2179,6 +2179,7 @@ class Query_sso_updata(Settings):
                                     h.orderStatus 系统订单状态,
                                     IF(h.`logisticsStatus` in ('发货中'), null, h.`logisticsStatus`) 系统物流状态,
                                     IF(h.`reassignmentTypeName` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
+                                    TRIM(h.payType) 付款方式,
                                     TRIM(h.logisticsName) 物流方式,
                                     dim_trans_way.simple_name 物流名称,
                                     IF(h.`dpeStyle` = 'P 普通货', 'P', IF(h.`dpeStyle` = 'T 特殊货', 'T', h.`dpeStyle`)) 货物类型,
@@ -2227,6 +2228,7 @@ class Query_sso_updata(Settings):
                                        a.`系统订单状态`= IF(b.`系统订单状态` = '', NULL, b.`系统订单状态`),
                                        a.`系统物流状态`= IF(b.`系统物流状态` = '', NULL, b.`系统物流状态`),
                                        a.`是否改派`= b.`是否改派`,
+                                       a.`付款方式`= IF(b.`付款方式` = '',NULL, b.`付款方式`),
                                        a.`物流方式`= IF(b.`物流方式` = '',NULL, b.`物流方式`),
                                        a.`物流名称`= IF(b.`物流名称` = '', NULL, b.`物流名称`),
                                        a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),

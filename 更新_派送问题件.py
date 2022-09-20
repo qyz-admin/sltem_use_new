@@ -493,7 +493,7 @@ class QueryTwo(Settings, Settings_sso):
         df55.rename(columns={'上月总单量': '完成单量', '上月派送问题件单量': '派送问题件单量'}, inplace=True)
 
         print('正在写入excel…………')
-        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况.xlsx'.format(rq)
+        file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况0.xlsx'.format(rq)
         df0 = pd.DataFrame([])
         df0.to_excel(file_pathT, index=False)
         writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
@@ -522,16 +522,17 @@ class QueryTwo(Settings, Settings_sso):
         writer.close()
         try:
             print('正在运行 派送问题件表 宏…………')
-            app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-            app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm')
-            wbsht1 = app.books.open(file_pathT)
-            wbsht.macro('派送问题件_修饰')()
-            wbsht1.save()
-            wbsht1.close()
-            wbsht.close()
-            app.quit()
-            app.quit()
+            # app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
+            # app.display_alerts = False
+            # wbsht = app.books.open('D:/Users/Administrator/Desktop/slgat_签收计算(ver5.24).xlsm')
+            # wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            # wbsht1 = app.books.open(file_pathT)
+            # wbsht.macro('派送问题件_修饰')()
+            # wbsht1.save()
+            # wbsht1.close()
+            # wbsht.close()
+            # app.quit()
+            # app.quit()
 
             # print('正在运行 派送问题件表 宏…………')
             # # 通过Win32的方式并不限制xls和xlsx（因为操作是wps在做）  https://wenku.baidu.com/view/3d298b06de36a32d7375a417866fb84ae45cc3ef.html
@@ -591,15 +592,15 @@ class QueryTwo(Settings, Settings_sso):
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = df
-            dp = dp[['order_number',  'currency', 'addtime', 'create_time', 'finishtime', 'lastQuestionName', 'orderStatus', 'logisticsStatus',
+            dp = dp[['order_number',  'currency', 'ship_phone', 'addtime', 'create_time', 'finishtime', 'lastQuestionName', 'orderStatus', 'logisticsStatus',
                      'reassignmentTypeName', 'logisticsName',  'questionAddtime', 'userName', 'traceName', 'traceTime', 'content','failNum']]
-            dp.columns = ['订单编号', '币种', '下单时间', '创建时间', '完成时间', '派送问题', '订单状态', '物流状态',
+            dp.columns = ['订单编号', '币种', '联系电话', '下单时间', '创建时间', '完成时间', '派送问题', '订单状态', '物流状态',
                           '订单类型', '物流渠道',  '派送问题首次时间', '处理人', '处理记录', '处理时间', '备注', '派送次数']
             print('正在写入......')
             dp.to_sql('cache_info', con=self.engine1, index=False, if_exists='replace')
             # dp.to_excel('G:\\输出文件\\派送问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO 派送问题件_跟进表(订单编号,币种, 下单时间,完成时间,订单状态,物流状态,订单类型,物流渠道, 创建日期, 创建时间, 派送问题, 派送问题首次时间, 派送次数,处理人, 处理记录, 处理时间,备注, 记录时间) 
-                    SELECT 订单编号,币种, 下单时间,完成时间,订单状态,物流状态,订单类型,物流渠道, DATE_FORMAT(创建时间,'%Y-%m-%d') 创建日期, 创建时间, 派送问题, 派送问题首次时间, 派送次数, 处理人, 处理记录, IF(处理时间 = '',NULL,处理时间) 处理时间,备注,NOW() 记录时间 
+            sql = '''REPLACE INTO 派送问题件_跟进表(订单编号,币种, 联系电话, 下单时间,完成时间,订单状态,物流状态,订单类型,物流渠道, 创建日期, 创建时间, 派送问题, 派送问题首次时间, 派送次数,处理人, 处理记录, 处理时间,备注, 记录时间) 
+                    SELECT 订单编号,币种, 联系电话, 下单时间,完成时间,订单状态,物流状态,订单类型,物流渠道, DATE_FORMAT(创建时间,'%Y-%m-%d') 创建日期, 创建时间, 派送问题, 派送问题首次时间, 派送次数, 处理人, 处理记录, IF(处理时间 = '',NULL,处理时间) 处理时间,备注,NOW() 记录时间 
                     FROM cache_info;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -918,7 +919,7 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 问题件 状态运行（一）-----------------------------------------
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     '''
-    select = 99
+    select = 1
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '78af361bbca0306ca227b15133e47e9b'
