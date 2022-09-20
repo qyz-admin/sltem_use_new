@@ -170,7 +170,14 @@ class QueryTwo(Settings, Settings_sso):
                 'ctl00$ContentFrame$b13ca230fd18402cad0febf14d8a11bc': code,
                 'ctl00$ContentFrame$Button1': '查詢'
                 }
-        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+
+        proxy = '39.105.167.0:37467'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+
+        # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+
         soup = BeautifulSoup(req.text, 'lxml')      # 创建 beautifulsoup 对象
         no = soup.input.get('value')
         chk = soup.input.next_sibling.get('value')
@@ -189,7 +196,12 @@ class QueryTwo(Settings, Settings_sso):
         data = {'no': no,
                 'chk': chk
                 }
-        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+
+        proxy = '39.105.167.0:37467'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         # print(req)
         # print('----------数据获取返回成功-----------')
         rq = BeautifulSoup(req.text, 'lxml')
