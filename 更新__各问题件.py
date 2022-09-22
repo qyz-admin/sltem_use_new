@@ -219,7 +219,7 @@ class QueryTwo(Settings, Settings_sso):
     # 查询更新（新后台的获取-物流问题件）
     def waybill_InfoQuery(self, timeStart, timeEnd):  # 进入订单检索界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        print('+++正在查询信息中')
+        print('+++正在查询信息中---物流问题件')
         url = r'https://gimp.giikin.com/service?service=gorder.customerQuestion&action=getCustomerComplaintList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
@@ -301,18 +301,19 @@ class QueryTwo(Settings, Settings_sso):
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = df
+            dp.to_excel('G:\\输出文件\\物流问题件-查询2{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp = dp[['order_number',  'currency', 'ship_phone', 'amount', 'customer_name', 'customer_mobile', 'arrived_address', 'arrived_time', 'create_time', 'dealStatus', 'dealContent',
-                     'deal_time', 'result_reson', 'result_info', 'questionType', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus',
-                     'gift_reissue_order_number', 'update_time']]
+                     'deal_time', 'dealTime', 'result_reson', 'result_info', 'questionType', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus', 'operatorName','contact',
+                     'gift_reissue_order_number',  'addtime','update_time']]
             dp.columns = ['订单编号', '币种', '联系电话', '订单金额', '客户姓名', '客户电话', '客户地址', '送达时间', '导入时间', '最新处理状态', '最新处理结果',
-                          '处理时间', '拒收原因', '具体原因', '问题类型状态', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态',
-                          '赠品补发订单编号', '更新时间']
-            dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞|张陈平', na=False))]
+                          '处理时间', '处理日期时间', '拒收原因', '具体原因', '问题类型状态', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态', '导入人', '联系方式',
+                          '赠品补发订单编号', '下单时间', '更新时间']
+            # dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞|张陈平', na=False))]
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO 物流问题件(处理时间,物流反馈时间,处理人,订单编号, 联系电话, 处理结果, 拒收原因, 币种, 记录时间) 
-                    SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号, 联系电话,IF(最新处理结果 = '',问题类型状态,最新处理结果) AS 处理结果, 拒收原因, 币种, NOW() 记录时间 
+            sql = '''REPLACE INTO 物流问题件(订单编号, 下单时间, 联系电话, 币种, 问题类型, 物流反馈时间, 导入人,处理时间, 处理日期时间, 处理人, 联系方式,  处理结果,拒收原因, 记录时间) 
+                    SELECT 订单编号, 下单时间, 联系电话, 币种, 问题类型, 导入时间 AS 物流反馈时间, 导入人,处理时间, 处理日期时间, 处理人, 联系方式, IF(最新处理结果 = '',问题类型状态,最新处理结果) AS 处理结果,拒收原因, NOW() 记录时间 
                     FROM customer;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -1026,19 +1027,19 @@ class QueryTwo(Settings, Settings_sso):
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             sql = '''REPLACE INTO 拒收问题件(订单编号,币种,订单总量, 拒收量, 签收量, 下单时间, 完成时间, 电话, 联系电话, ip, 新单克隆人, 新单订单状态, 新单物流状态, 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果, 是否需要商品,记录时间)
-                    SELECT 订单编号,币种, 订单总量, 拒收量, 签收量, 下单时间, 完成时间, 电话, 联系电话, ip,新单克隆人, 新单订单状态, 新单物流状态,  IF(再次克隆下单 = '',NULL,再次克隆下单) 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果,是否需要商品, NOW() 记录时间
+                    SELECT 订单编号,币种, 订单总量, 拒收量, 签收量, 下单时间, 完成时间, IF(电话 LIKE "852%",RIGHT(电话,LENGTH(电话)-3),IF(电话 LIKE "886%",RIGHT(电话,LENGTH(电话)-3),电话)) 电话, 联系电话, ip,新单克隆人, 新单订单状态, 新单物流状态,  IF(再次克隆下单 = '',NULL,再次克隆下单) 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果,是否需要商品, NOW() 记录时间
                     FROM customer;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
 
-            print('获取每日新增核实拒收表......')
-            rq = datetime.datetime.now().strftime('%m.%d')
+            # print('获取每日新增核实拒收表......')
+            # rq = datetime.datetime.now().strftime('%m.%d')
             sql = '''SELECT 处理时间,IF(团队 LIKE "%红杉%","红杉",IF(团队 LIKE "火凤凰%","火凤凰",IF(团队 LIKE "神龙家族%","神龙",IF(团队 LIKE "金狮%","金狮",IF(团队 LIKE "神龙-主页运营1组%","神龙主页运营",IF(团队 LIKE "金鹏%","小虎队",团队)))))) as 团队,
                             js.订单编号,js.币种, 产品id,产品名称, js.下单时间,完结状态时间,电话号码,核实原因 as 问题类型,具体原因 as 核实原因,备注 as 具体原因,NULL 通话截图,NULL ID,再次克隆下单,NULL 备注,处理人
                     FROM (SELECT * FROM 拒收问题件 WHERE 记录时间 >= TIMESTAMP(CURDATE())) js
                     LEFT JOIN gat_order_list g ON js.订单编号= g.订单编号;'''
-            df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_excel('F:\\神龙签收率\\(订   单) 拒收原因-核实\\(上传)订单客户反馈-核实原因 & 再次克隆下单汇总\\{} 需核实拒收-每日上传 - 副本.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            # df = pd.read_sql_query(sql=sql, con=self.engine1)
+            # df.to_excel('F:\\神龙签收率\\(订   单) 拒收原因-核实\\(上传)订单客户反馈-核实原因 & 再次克隆下单汇总\\{} 需核实拒收-每日上传 - 副本.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
 
             # df = df[['订单编号', '核实原因', '具体原因', '产品id']]
             # df.columns = ['订单编号', '客户反馈', '具体原因', '产品ID']
@@ -1385,26 +1386,26 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 99
+    select = 909
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '3129878cee9537a6b68f48743902548e'
         m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
         start: datetime = datetime.datetime.now()
 
-        # timeStart, timeEnd = m.readInfo('物流问题件')
-        # m.waybill_InfoQuery('2021-12-01', '2021-12-01')             # 查询更新-物流问题件
-        # m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
-        # # m.waybill_InfoQuery('2022-05-20', '2022-06-05')           # 查询更新-物流问题件
-        #
-        # timeStart, timeEnd = m.readInfo('物流客诉件')
-        # m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
-        # # m.waybill_Query('2022-05-20', '2022-06-05')               # 查询更新-物流客诉件
-        #
-        # timeStart, timeEnd = m.readInfo('退换货表')
-        # for team in [1, 2]:
-        #     m.orderReturnList_Query(team, timeStart, timeEnd)                   # 查询更新-退换货
-        #     # m.orderReturnList_Query(team, '2022-05-20', '2022-06-05')         # 查询更新-退换货
+        timeStart, timeEnd = m.readInfo('物流问题件')
+        m.waybill_InfoQuery('2021-12-01', '2021-12-01')             # 查询更新-物流问题件
+        m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
+        # m.waybill_InfoQuery('2022-05-20', '2022-06-05')           # 查询更新-物流问题件
+
+        timeStart, timeEnd = m.readInfo('物流客诉件')
+        m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
+        # m.waybill_Query('2022-05-20', '2022-06-05')               # 查询更新-物流客诉件
+
+        timeStart, timeEnd = m.readInfo('退换货表')
+        for team in [1, 2]:
+            m.orderReturnList_Query(team, timeStart, timeEnd)                   # 查询更新-退换货
+            # m.orderReturnList_Query(team, '2022-05-20', '2022-06-05')         # 查询更新-退换货
 
         timeStart, timeEnd = m.readInfo('拒收问题件')
         m.order_js_Query(timeStart, timeEnd)                                    # 查询更新-拒收问题件-·123456
@@ -1465,10 +1466,10 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    # handle = '手0动'
-    # login_TmpCode = '3129878cee9537a6b68f48743902548e'
-    # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
-    # start: datetime = datetime.datetime.now()
+    handle = '手0动'
+    login_TmpCode = '3129878cee9537a6b68f48743902548e'
+    m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
+    start: datetime = datetime.datetime.now()
 
     #
     # begin = datetime.date(2022, 5, 23)
@@ -1476,7 +1477,7 @@ if __name__ == '__main__':
     # m.order_check(begin, end)
 
     # timeStart, timeEnd = m.readInfo('物流问题件')
-    # m.waybill_InfoQuery('2021-12-01', '2021-12-01')  # 查询更新-物流问题件
+    m.waybill_InfoQuery('2022-09-19', '2022-09-22')  # 查询更新-物流问题件
     # m.waybill_InfoQuery('2022-07-01', '2022-08-03')  # 查询更新-物流问题件
 
 

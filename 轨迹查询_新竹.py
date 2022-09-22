@@ -150,6 +150,7 @@ class QueryTwo(Settings, Settings_sso):
         #2、构建一下请求头部
         r_header = {"Content-Type": "application/x-www-form-urlencoded",
                     "Charset": "UTF-8",
+                    "Accept-Language": "zh-CN,zh;q=0.9",
                     'Host': 'www.hct.com.tw',
                     'Origin': 'https://www.hct.com.tw',
                     'Referer': 'https://www.hct.com.tw/search/searchgoods_n.aspx',
@@ -184,9 +185,11 @@ class QueryTwo(Settings, Settings_sso):
         # print(chk)
         # print('----------获取验证值成功-------------')
 
+        # time.sleep(1)
         url = "https://www.hct.com.tw/search/SearchGoods.aspx"   #url为机器人的webhook
         r_header = {"Content-Type": "application/x-www-form-urlencoded",
                     "Charset": "UTF-8",
+                    "Accept-Language": "zh-CN,zh;q=0.9",
                     'Host': 'www.hct.com.tw',
                     'Origin': 'https://www.hct.com.tw',
                     'Referer': 'https://www.hct.com.tw/search/searchgoods_n.aspx',
