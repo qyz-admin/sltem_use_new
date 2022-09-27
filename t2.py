@@ -38,13 +38,13 @@ if team in ('ga0t', 'slsc', 'sl_r9b'):
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    data_begin = datetime.date(2022, 7, 1)  # 数据库更新
-    begin = datetime.date(2022, 7, 1)      # 单点更新
-    end = datetime.date(2022, 8, 1)
+    data_begin = datetime.date(2022, 8, 24)  # 数据库更新
+    begin = datetime.date(2022, 8, 24)      # 单点更新
+    end = datetime.date(2022, 9, 27)
     # 导出时间
-    month_last = '2022-07-01'
-    month_yesterday = '2022-08-01'
-    month_begin = '2022-06-01'
+    month_last = '2022-08-01'
+    month_yesterday = '2022-09-26'
+    month_begin = '2022-07-01'
 print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 导出      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
@@ -105,7 +105,7 @@ print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
 if team == 'gat' and updata == '全部':
     print('---------------------------------- 单点更新部分：--------------------------------')
-    sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', '521eb5d8416b3186ac686d37f123b254', '手0动')
+    sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', '77999c2203a632e8bd2a66d286b83c20', '手0动')
 
     # sso.readFormHost('gat', '导入')                       # 导入新增的订单 line运营  手动导入
     # for i in range((end - begin).days):  # 按天循环获取订单状态

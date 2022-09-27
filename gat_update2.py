@@ -309,7 +309,7 @@ class QueryUpdate(Settings):
                 print(' ****** 没有要补充的信息; ****** ')
             else:
                 print('！！！ 请再次补充缺少的数据中！！！')
-                lw = QueryTwoT('+86-18538110674', 'qyz04163510.',"","手动")
+                lw = QueryTwoT('+86-18538110674', 'qyz04163510.',"e3e4ceaef6fd326cafa231d9c35b18f4","手0动")
                 lw.productInfo('gat_order_list', ordersDict)
 
         if team in ('gat'):
@@ -670,7 +670,7 @@ class QueryUpdate(Settings):
             print('今日  无需获取 同产品各团队对比 的数据！！！')
 
     # 新版签收率-报表(自己看的) - 单量计算
-    def gat_new(self, team, month_last, month_yesterday):  # 报表各团队近两个月的物流数据
+    def gat_new(self, team, month_last, month_yesterday, currency):  # 报表各团队近两个月的物流数据
         month_now = datetime.datetime.now().strftime('%Y-%m-%d')
         match = {'gat': '港台'}
         emailAdd = {'台湾': 'giikinliujun@163.com',
@@ -773,7 +773,7 @@ class QueryUpdate(Settings):
                                 SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
                             FROM (SELECT *,
                                     IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族
-                                FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
+                                FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.付款方式 in ({3})
                             ) cx
                             GROUP BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`是否改派`, cx.`物流方式`
                             ORDER BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`是否改派` DESC,总订单 DESC
@@ -791,7 +791,7 @@ class QueryUpdate(Settings):
                                 '台湾-森鸿-新竹-自发头程', '台湾-速派-711超商', '台湾-速派-新竹','台湾-天马-新竹','台湾-天马-顺丰','台湾-天马-黑猫','台湾-易速配-新竹',
                                 '香港-圆通', '香港-立邦-顺丰','香港-易速配-顺丰','香港-易速配-顺丰YC', '香港-森鸿-SH渠道','香港-森鸿-顺丰渠道',
                                 '龟山','森鸿','速派', '速派宅配通','天马顺丰','天马新竹','香港-圆通-改派','香港-立邦-改派','香港-森鸿-改派','香港-易速配-改派','合计' ),
-            s2.总订单 DESC;'''.format(team, month_last, month_yesterday)
+            s2.总订单 DESC;'''.format(team, month_last, month_yesterday, currency)
         df0 = pd.read_sql_query(sql=sql0, con=self.engine1)
         listT.append(df0)
         # 物流分旬
@@ -869,13 +869,13 @@ class QueryUpdate(Settings):
                                 SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
                             FROM (SELECT *,
                                         IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族
-                                    FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
+                                    FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发' AND cc.付款方式 in ({3})
                             ) cx
                             LEFT JOIN 
 							    (SELECT 币种,家族,年月,物流方式,count(订单编号) as 总订单量, count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货单量, SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成单量
                                 FROM (SELECT *,
                                             IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
-                                        FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
+                                        FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发' AND cc.付款方式 in ({3})
                                     ) dg  
 								    GROUP BY dg.币种,dg.家族,dg.年月
                             ) cx2 ON cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族 AND  cx.年月 = cx2.年月
@@ -896,7 +896,7 @@ class QueryUpdate(Settings):
                                 '香港-圆通', '香港-立邦-顺丰','香港-易速配-顺丰','香港-易速配-顺丰YC', '香港-森鸿-SH渠道','香港-森鸿-顺丰渠道',
                                 '龟山','森鸿','速派','速派宅配通','天马顺丰','天马新竹','香港-圆通-改派','香港-立邦-改派','香港-森鸿-改派','香港-易速配-改派','合计' ),
                 FIELD(s2.`旬`,'上旬','中旬','下旬','合计'),
-                s2.总订单 DESC;'''.format(team, month_last, month_yesterday)
+                s2.总订单 DESC;'''.format(team, month_last, month_yesterday, currency)
         df11 = pd.read_sql_query(sql=sql11, con=self.engine1)
         listT.append(df11)
 
@@ -965,13 +965,13 @@ class QueryUpdate(Settings):
                                     SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
                                 FROM (SELECT *,
                                             IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
-                                        FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
+                                        FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发' AND cc.付款方式 in ({3})
                                 ) cx
                                 LEFT JOIN 
 							        (SELECT 币种,家族,年月,物流方式,count(订单编号) as 总订单量, count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货单量, SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成单量
                                     FROM (SELECT *,
                                                 IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
-                                            FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
+                                            FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发' AND cc.付款方式 in ({3})
                                         ) dg  
 								        GROUP BY dg.币种,dg.家族,dg.年月
                                 ) cx2 ON cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族 AND  cx.年月 = cx2.年月
@@ -986,7 +986,7 @@ class QueryUpdate(Settings):
                     s2.`年月`,
                     FIELD(s2.父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','合计' ),
                     FIELD(s2.`旬`,'上旬','中旬','下旬','合计'),
-                    s2.总订单 DESC;'''.format(team, month_last, month_yesterday)
+                    s2.总订单 DESC;'''.format(team, month_last, month_yesterday, currency)
         df12 = pd.read_sql_query(sql=sql12, con=self.engine1)
         listT.append(df12)
         # 二级分旬
@@ -1054,13 +1054,13 @@ class QueryUpdate(Settings):
                                 SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
                             FROM (SELECT *,
                                     IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
-                                FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
+                                FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发' AND cc.付款方式 in ({3})
                             ) cx
                             LEFT JOIN 
 							    (SELECT 币种,家族,年月,物流方式,count(订单编号) as 总订单量, count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货单量, SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成单量
                                 FROM (SELECT *,
                                             IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
-                                        FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发'
+                                        FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.`是否改派` = '直发' AND cc.付款方式 in ({3})
                                     ) dg  
 								    GROUP BY dg.币种,dg.家族,dg.年月
                             ) cx2 ON cx.币种 = cx2.币种 AND  cx.家族 = cx2.家族 AND  cx.年月 = cx2.年月
@@ -1080,7 +1080,7 @@ class QueryUpdate(Settings):
                             ,'单肩包','手机外设','电脑外设','成人保健','套装','靴子','手表手环','行李箱包','户外运动'
                             ,'玩具','手表','宠物用品','合计' ),
                 FIELD(s2.`旬`,'上旬','中旬','下旬','合计'),
-                s2.总订单 DESC;'''.format(team, month_last, month_yesterday)
+                s2.总订单 DESC;'''.format(team, month_last, month_yesterday, currency)
         df13 = pd.read_sql_query(sql=sql13, con=self.engine1)
         listT.append(df13)
 
@@ -1423,7 +1423,7 @@ class QueryUpdate(Settings):
 								SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌改派已完成
 				            FROM (SELECT *,
                                     IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
-                                FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
+                                FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.付款方式 in ({3})
                             ) cx WHERE cx.`币种` = '台湾'
                             GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
                         ) s1
@@ -1434,7 +1434,7 @@ class QueryUpdate(Settings):
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`产品id`,'合计'),
-                s.总订单 DESC;'''.format(team, month_last, month_yesterday)
+                s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency)
         df14 = pd.read_sql_query(sql=sql14, con=self.engine1)
         listT.append(df14)
         # 产品分旬 台湾
@@ -6871,14 +6871,10 @@ class QueryUpdate(Settings):
             listT.append(df0)
             print('正在获取 周报表 数据内容…………')
             sql = '''SELECT 日期31天,ss.问题订单,ss.正常出货,ss.删除订单,concat(ROUND(IFNULL(ss.删除订单/ss.问题订单,0) * 100,2),'%') as 取消占比,ss.实际签收, 
-                            ss1.约派送,ss1.核实拒收 as 核实拒收原因,ss1.再派签收,ss2.挽回单数,ss2.未确认,ss2.退款单数,ss2.实际挽回单数,ss3.正常发货,ss3.取消订单,ss4.`联系量（有结果）`,ss4.挽单量,
-                            ss4.张联系量 AS '张陈平-联系量(有结果)',ss4.张挽单量 AS '张陈平-挽单量',
-                            ss4.蔡联系量 AS '蔡利英-联系量(有结果)',ss4.蔡挽单量 AS '蔡利英-挽单量',
-                            ss4.杨联系量 AS '杨嘉仪-联系量(有结果)',ss4.杨挽单量 AS '杨嘉仪-挽单量',
-                            NULL 联系量,NULL 客户接听量,
-                            NULL '张陈平-联系量',NULL '张陈平-客户接听量',
-                            NULL '蔡利英-联系量',NULL '蔡利英-客户接听量',
-                            NULL '杨嘉仪-联系量',NULL '杨嘉仪-客户接听量'
+                            ss1.约派送,ss1.核实拒收 as 核实拒收原因,ss1.再派签收,ss2.挽回单数,ss2.未确认,ss2.退款单数,ss2.实际挽回单数,ss3.正常发货,ss3.取消订单,
+							ss5.客言需要, ss5.客言取消, ss5.未接听, ss4.`联系量（有结果）`,ss4.挽单量,  ss4.张联系量 AS '张陈平-联系量(有结果)',ss4.张挽单量 AS '张陈平-挽单量',
+                            ss4.蔡联系量 AS '蔡利英-联系量(有结果)',ss4.蔡挽单量 AS '蔡利英-挽单量', ss4.杨联系量 AS '杨嘉仪-联系量(有结果)',ss4.杨挽单量 AS '杨嘉仪-挽单量',  NULL 联系量,NULL 客户接听量,
+                            NULL '张陈平-联系量',NULL '张陈平-客户接听量', NULL '蔡利英-联系量',NULL '蔡利英-客户接听量', NULL '杨嘉仪-联系量',NULL '杨嘉仪-客户接听量'
                     FROM date
                     LEFT JOIN
                     (SELECT 日期 AS 系统问题,COUNT(订单编号) AS 问题订单,
@@ -6896,7 +6892,7 @@ class QueryUpdate(Settings):
                     (SELECT ww.* ,物流问题总量, 约派送, 核实拒收, 再派签收, 未接听, 无效号码
                         FROM (SELECT 处理时间 AS 物流问题, COUNT(订单编号) AS 物流问题联系量
                                 FROM 物流问题件 cg
-                                WHERE cg.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) AND cg.币种 = '台币'
+                                WHERE cg.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) AND cg.币种 = '台币' AND cg.`问题类型` NOT IN ('订单压单（giikin内部专用）','订单追踪（giikin内部专用）')
                                 GROUP BY 处理时间
                                 ORDER BY 处理时间
                         ) ww
@@ -6910,7 +6906,8 @@ class QueryUpdate(Settings):
                         FROM (SELECT wt.*, g.`系统订单状态`, g.`系统物流状态`, g.`完结状态`
                                 FROM (SELECT * 
                                         FROM 物流问题件 
-                                        WHERE id IN (SELECT MAX(id) FROM 物流问题件 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) GROUP BY 订单编号) 
+                                        WHERE id IN (SELECT MAX(id) FROM 物流问题件 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) 
+																						AND w.`问题类型` NOT IN ('订单压单（giikin内部专用）','订单追踪（giikin内部专用）')GROUP BY 订单编号) 
                                         ORDER BY id
                                 ) wt 
                             LEFT JOIN gat_order_list g ON  wt.`订单编号` = g.`订单编号`
@@ -7001,6 +6998,34 @@ class QueryUpdate(Settings):
                         GROUP BY DATE(s.处理时间) 
                         ORDER BY DATE(s.处理时间) 
                     ) ss4 ON  date.`日期31天` = EXTRACT(day FROM ss4.`拒收问题件`)
+					LEFT JOIN
+					(SELECT ww.* ,压单核实总量, 客言需要, 客言取消, 未接听
+                        FROM (SELECT 处理时间 AS 压单核实, COUNT(订单编号) AS 压单核实联系量
+                                FROM 物流问题件 cg
+                                WHERE cg.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) 
+																	AND cg.币种 = '台币' AND cg.`问题类型` IN ('订单压单（giikin内部专用）','订单追踪（giikin内部专用）')
+                                GROUP BY 处理时间
+                                ORDER BY 处理时间
+                        ) ww
+                        LEFT JOIN 
+                        (SELECT 处理时间 AS 压单核实, COUNT(订单编号) AS 压单核实总量,
+                                SUM(IF(ks.`处理结果` LIKE '%需要%' AND ks.`处理结果` NOT LIKE '%不%' or ks.`处理结果` LIKE '%等货%' or ks.`处理结果` LIKE '%修改%',1,0)) AS 客言需要,
+                                SUM(IF(ks.`处理结果` LIKE '%取消%' or ks.`处理结果` LIKE '%无订购%',1,0)) AS 客言取消,
+                                SUM(IF(ks.`处理结果` LIKE '%无人接听%' or ks.`处理结果` LIKE '%无人%接听%' or ks.`处理结果` LIKE '%无效%' or ks.`处理结果` LIKE '%挂断%' or ks.`处理结果` LIKE '%未说话%' or ks.`处理结果` LIKE '%无效%',1,0)) AS 未接听
+                        FROM (SELECT wt.*, g.`系统订单状态`, g.`系统物流状态`, g.`完结状态`
+                                FROM (SELECT * 
+                                        FROM 物流问题件 
+                                        WHERE id IN (SELECT MAX(id) FROM 物流问题件 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) 
+																						AND w.`问题类型` IN ('订单压单（giikin内部专用）','订单追踪（giikin内部专用）')GROUP BY 订单编号) 
+                                        ORDER BY id
+                                ) wt 
+                            LEFT JOIN gat_order_list g ON  wt.`订单编号` = g.`订单编号`
+                            WHERE wt.币种 = '台币'
+                        ) ks
+                        GROUP BY ks.处理时间
+                        ORDER BY 处理时间
+                        ) ww2  ON ww.`压单核实` = ww2.`压单核实`
+                    ) ss5 on date.`日期31天` = EXTRACT(day FROM ss5.`压单核实`)
                     WHERE ss.系统问题 IS NOT NULL
                     GROUP BY 日期31天
                     ORDER BY 系统问题;'''.format()  # 港台查询函数导出
@@ -9819,7 +9844,9 @@ if __name__ == '__main__':
         # write = '手动更新数据库'
         m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
 
-        m.gat_new(team, month_last, month_yesterday)  # 获取-签收率-报表
+        # currency = '货到付款'
+        currency = '"货到付款","货到付款（含税）","Pacypay信用卡支付【波兰】","钱海支付","gleepay","AsiaBill信用卡支付","Asiabill信用卡直接支付","Asiabill信用卡2.5方支付","Asiabill2.5方支付","paypal快捷支付","Cropay信用卡支付","空中云汇直连信用卡"'
+        m.gat_new(team, month_last, month_yesterday, currency)  # 获取-签收率-报表
         m.qsb_new(team, month_old)  # 获取-每日-报表
         m.EportOrderBook(team, month_last, month_yesterday)  # 导出-总的-签收
         m.phone_report('handle')  # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比）

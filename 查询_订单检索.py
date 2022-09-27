@@ -964,6 +964,9 @@ class QueryOrder(Settings, Settings_sso):
                     db0.insert(0, '删除人', '')
                     db0.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
                     # 更新删除订单的原因
+                    sql = '''DELETE FROM `cache` gt WHERE gt.`订单编号` IN (SELECT * FROM gat_地址邮编错误);'''.format(team)
+                    pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
                     self.del_people()
                     self.del_order_day()
                     sql = '''SELECT * FROM {0};'''.format('cache')
@@ -1584,7 +1587,7 @@ class QueryOrder(Settings, Settings_sso):
                 # },
                 "text": {
                     # 要发送的内容【支持markdown】【！注意：content内容要包含机器人自定义关键字，不然消息不会发送出去，这个案例中是test字段】
-                    "content": 'TEST神龙 - 火凤凰 昨日订单删除分析' + '\n' +
+                    "content": '神龙 - 火凤凰 昨日台湾订单 删除分析' + '\n' +
                                sl_tem + sl_tem_lh + sl_tem_ey + sl_tem_cf + '\n' +
                                hfh_tem + hfh_tem_lh + hfh_tem_ey + hfh_tem_cf + '\n' +
                                sl_Black + sl_Black_iphone + sl_Black_ip + '\n' +

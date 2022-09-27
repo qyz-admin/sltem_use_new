@@ -19,6 +19,8 @@ from settings import Settings
 from emailControl import EmailControl
 from multiprocessing.dummy import Pool
 
+from random import randint
+
 # -*- coding:utf-8 -*-
 class QueryTwo(Settings, Settings_sso):
     def __init__(self, userMobile, password):
@@ -141,6 +143,12 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
 
     def _SearchGoods(self,wayBillNumber):
+        # 生成随机的User-Agent
+        USER_AGENTS = [ "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Mobile Safari/537.36",
+                        "User-Agent:Mozilla/5.0"
+        ]
+        random_agent = USER_AGENTS[randint(0, len(USER_AGENTS) - 1)]
+
         #0、获取验证码
         code = ''
         for i in range(4):
@@ -154,7 +162,7 @@ class QueryTwo(Settings, Settings_sso):
                     'Host': 'www.hct.com.tw',
                     'Origin': 'https://www.hct.com.tw',
                     'Referer': 'https://www.hct.com.tw/search/searchgoods_n.aspx',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36'
+                    'User-Agent': random_agent
                     }
         #3、构建请求数据
         data = {'__VIEWSTATE': 'HmTo9prl6CO4ytnFMzgfgTsdbJ5MSx7l5gm0chzu2Wx+HKF1cFyEPs1OAwLWOlymmInrgTgSPdY75BwFB3qB0JDXY02XSC14LXp/dC4hZBrHB66Fe5CxoJng7cw=',
@@ -175,8 +183,9 @@ class QueryTwo(Settings, Settings_sso):
         proxy = '39.105.167.0:37467'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+        # print(req.headers)
 
         soup = BeautifulSoup(req.text, 'lxml')      # 创建 beautifulsoup 对象
         no = soup.input.get('value')
@@ -193,7 +202,7 @@ class QueryTwo(Settings, Settings_sso):
                     'Host': 'www.hct.com.tw',
                     'Origin': 'https://www.hct.com.tw',
                     'Referer': 'https://www.hct.com.tw/search/searchgoods_n.aspx',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36'
+                    'User-Agent': random_agent
                     }
         data = {'no': no,
                 'chk': chk
@@ -202,8 +211,8 @@ class QueryTwo(Settings, Settings_sso):
         proxy = '39.105.167.0:37467'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
 
         # print(req)
         # print('----------数据获取返回成功-----------')

@@ -1478,7 +1478,7 @@ class Query_sso_updata(Settings):
             				        数量,
             				        h.联系电话 电话号码,
             				        h.运单号 运单编号,
-            				        IF(h.物流渠道 LIKE "台湾-天马-711" AND LENGTH(h.运单号)=20, CONCAT(861,RIGHT(h.运单号,8)), IF((h.logisticsName LIKE "台湾-速派-新竹改派" or h.logisticsName LIKE "台湾-易速配-新竹改派") AND (h.运单号 LIKE "A%" OR h.运单号 LIKE "B%"),RIGHT(h.运单号,LENGTH(h.运单号)-1),UPPER(h.运单号))) 查件单号,
+            				        IF(h.物流渠道 LIKE "台湾-天马-711" AND LENGTH(h.运单号)=20, CONCAT(861,RIGHT(h.运单号,8)), IF((h.物流渠道 LIKE "台湾-速派-新竹改派" or h.物流渠道 LIKE "台湾-易速配-新竹改派") AND (h.运单号 LIKE "A%" OR h.运单号 LIKE "B%"),RIGHT(h.运单号,LENGTH(h.运单号)-1),UPPER(h.运单号))) 查件单号,
             				        h.订单状态 系统订单状态,
             				        IF(h.`物流状态` in ('发货中'), null, h.`物流状态`) 系统物流状态,
             				        IF(h.`订单类型` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
@@ -1515,9 +1515,9 @@ class Query_sso_updata(Settings):
             				        IF(h.审单类型 like '%自动审单%','是','否') 审单类型,
             				        h.审单类型 审单类型明细,
             				        h.拉黑率,
-            				        h.订单配送总量,
-            				        h.签收量,
-            				        h.拒收量,
+            				        null 订单配送总量,
+            				        null 签收量,
+            				        null 拒收量,
             				        h.删除原因,
             				        null 删除时间,
             				        h.问题原因,
@@ -2146,7 +2146,9 @@ class Query_sso_updata(Settings):
         req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)          # json类型数据转换为dict字典
+        # print(req)
         max_count = req['data']['count']    # 获取 请求订单量
+        # print(max_count)
         if max_count != 0 and max_count != []:
             print('++++++' + begin + ' 总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
             print('*' * 50)
@@ -2163,7 +2165,8 @@ class Query_sso_updata(Settings):
             # print('正在写入缓存中......')
             dp = dp[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'shipInfo.shipName', 'shipInfo.shipAddress','wayBillNumber','saleId', 'saleProduct', 'productId','spec','quantity', 'orderStatus',
                      'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime','transferTime', 'onlineTime', 'deliveryTime','finishTime','stateTime', 'logisticsUpdateTime', 'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName',
-                     'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks', 'auto_VerifyTip', 'order_count', 'order_qs', 'order_js']]
+                     'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks', 'auto_VerifyTip',
+                     'percentInfo.arriveCount', 'percentInfo.orderCount', 'percentInfo.rejectCount']]
             print(dp)
             # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
             # dp.to_excel('H:\\桌面\\需要用到的文件\\\输出文件\\派送问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
@@ -2195,13 +2198,13 @@ class Query_sso_updata(Settings):
                                     h.logisticsUpdateTime 物流更新时间,
                                     h.stateTime 状态时间,
                                     h.`weight` 包裹重量,
-                                       h.`shipInfo.shipState` 省洲,
+                                    h.`shipInfo.shipState` 省洲,
                                     h.`spec` 规格中文,
                                     h.`autoVerify` 审单类型,
                                     h.`auto_VerifyTip` 拉黑率,
-                                    h.`order_count` 订单配送总量,
-                                    h.`order_qs` 签收量,
-                                    h.`order_js` 拒收量,
+                                    h.`percentInfo.orderCount` 订单配送总量,
+                                    h.`percentInfo.arriveCount` 签收量,
+                                    h.`percentInfo.rejectCount` 拒收量,
                                     h.`delReason` 删除原因,
                                     h.`delTime` 删除时间,
                                     h.`questionReason` 问题原因,
@@ -2291,7 +2294,8 @@ class Query_sso_updata(Settings):
         try:
             for result in req['data']['list']:
                 # print(result['orderNumber'])
-                # print(result['specs'])
+                # if result['orderNumber'] == 'NR209160833054866' or result['orderNumber'] == 'GT209252247507204':
+                    # print(result)
                 # 添加新的字典键-值对，为下面的重新赋值用
                 # 添加新的字典键-值对，为下面的重新赋值用
                 if result['specs'] != []:
@@ -2312,9 +2316,6 @@ class Query_sso_updata(Settings):
                     result['spec'] = ''
                     result['chooser'] = ''
                 result['auto_VerifyTip'] = ''
-                result['order_count'] = ''
-                result['order_qs'] = ''
-                result['order_js'] = ''
                 if result['autoVerifyTip'] == "":
                     result['auto_VerifyTip'] = '0.00%'
                 else:
@@ -2322,25 +2323,19 @@ class Query_sso_updata(Settings):
                         result['auto_VerifyTip'] = '0.00%'
                     else:
                         if '拉黑率问题' not in result['autoVerifyTip']:
-                            t2 = result['autoVerifyTip'].split('拉黑率')[1]
-                            for tt2 in t2:
-                                if '%' in tt2:
-                                    result['auto_VerifyTip'] = t2.split('%')[0] + '%'
-                            # t2 = result['autoVerifyTip'].split(',拉黑率')[1]
-                            # result['auto_VerifyTip'] = t2.split('%;')[0] + '%'  ：26,：0,
+                            if '拉黑率' not in result['autoVerifyTip']:
+                                result['auto_VerifyTip'] = '0.00%'
+                            else:
+                                t2 = result['autoVerifyTip'].split('拉黑率')[1]
+                                for tt2 in t2:
+                                    if '%' in tt2:
+                                        result['auto_VerifyTip'] = t2.split('%')[0] + '%'
+                                # t2 = result['autoVerifyTip'].split(',拉黑率')[1]
+                                # result['auto_VerifyTip'] = t2.split('%;')[0] + '%'  ：26,：0,
                         elif '拉黑率问题' in result['autoVerifyTip']:
                             t2 = result['autoVerifyTip'].split('拒收订单量：')[1]
                             t2 = t2.split('%')[0]
                             result['auto_VerifyTip'] = t2.split('拉黑率')[1] + '%'
-                    if '订单配送总量：' in result['autoVerifyTip']:
-                        t4 = result['autoVerifyTip'].split('订单配送总量：')[1]
-                        result['order_count'] = t4.split(',')[0]
-                    if '送达订单量：' in result['autoVerifyTip']:
-                        t4 = result['autoVerifyTip'].split('送达订单量：')[1]
-                        result['order_qs'] = t4.split(',')[0]
-                    if '拒收订单量：' in result['autoVerifyTip']:
-                        t4 = result['autoVerifyTip'].split('拒收订单量：')[1]
-                        result['order_js'] = t4.split(',')[0]
                 quest = ''
                 for re in result['questionReason']:
                     quest = quest + ';' + re
@@ -2355,6 +2350,7 @@ class Query_sso_updata(Settings):
                 result['autoVerify'] = auto
                 ordersDict.append(result)
             data = pd.json_normalize(ordersDict)
+            # print(data)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e) + begin)
         # print('*************************查询成功***********************************')

@@ -260,7 +260,7 @@ class MysqlControl(Settings):
                  'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"'
                  }
         # 12-1月的
-        # if team in ('slsc', 'gat', 'sl_rb'):
+        # if team in ('slsc', 'gat', 'sl_rb'): 182 138 118 132
         #     # 获取日期时间
         #     sql = 'SELECT MAX(`日期`) 日期 FROM {0}_order_list;'.format(team)
         #     rq = pd.read_sql_query(sql=sql, con=self.engine1)
