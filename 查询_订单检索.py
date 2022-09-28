@@ -964,7 +964,7 @@ class QueryOrder(Settings, Settings_sso):
                     db0.insert(0, '删除人', '')
                     db0.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
                     # 更新删除订单的原因
-                    sql = '''DELETE FROM `cache` gt WHERE gt.`订单编号` IN (SELECT * FROM gat_地址邮编错误);'''.format(team)
+                    sql = '''DELETE FROM `cache` gt WHERE gt.`订单编号` IN (SELECT * FROM gat_地址邮编错误);'''
                     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
                     self.del_people()
