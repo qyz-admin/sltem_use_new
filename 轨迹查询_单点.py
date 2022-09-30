@@ -185,7 +185,7 @@ class QueryTwo(Settings, Settings_sso):
 
     #  查询运单轨迹-按订单查询（一）
     def _order_online(self, ord, isReal):  # 进入订单检索界面
-        print('+++正在实时_搜索轨迹信息中')
+        print('+++实时_搜索轨迹信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getLogisticsTrace'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -259,7 +259,7 @@ class QueryTwo(Settings, Settings_sso):
             return data
     # 物流轨迹数据库
     def _order_online_data(self, ord, isReal):  # 进入订单检索界面
-        print('+++正在_搜索轨迹信息中')
+        print('+++数据库_搜索轨迹信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getLogisticsTrace'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',

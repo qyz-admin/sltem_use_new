@@ -2259,7 +2259,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 33                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 4                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
@@ -2276,8 +2276,8 @@ if __name__ == '__main__':
 
     elif int(select) == 3:
         print("2-->>> 正在按下单时间查询+++")
-        timeStart = '2022-03-01'
-        timeEnd = '2022-03-01'
+        timeStart = '2022-08-01'
+        timeEnd = '2022-09-01'
         areaId = ''
         query = '下单时间'
         m.order_TimeQuery(timeStart, timeEnd, areaId, query)
@@ -2296,7 +2296,7 @@ if __name__ == '__main__':
         searchType = '电话'
         pople_Query = '电话检索'                # 电话查询；订单检索
         timeStart = '2022-08-01 00:00:00'
-        timeEnd = '2022-08-31 23:59:59'
+        timeEnd = '2022-09-30 23:59:59'
         m.readFormHost(team, searchType, pople_Query, timeStart, timeEnd)
 
     elif int(select) == 9:

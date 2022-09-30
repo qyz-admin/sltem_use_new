@@ -18,6 +18,7 @@ from sqlalchemy import create_engine
 from settings import Settings
 from emailControl import EmailControl
 from multiprocessing.dummy import Pool
+from fake_user_agent import user_agent   # 用fake_useragent模块来设置一个请求头，用来进行伪装成浏览器
 
 from random import randint
 
@@ -145,7 +146,8 @@ class QueryTwo(Settings, Settings_sso):
     def _SearchGoods(self,wayBillNumber):
         # 生成随机的User-Agent
         USER_AGENTS = [ "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Mobile Safari/537.36",
-                        "User-Agent:Mozilla/5.0"
+                        "User-Agent:Mozilla/5.0",
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
         ]
         random_agent = USER_AGENTS[randint(0, len(USER_AGENTS) - 1)]
 
@@ -156,14 +158,26 @@ class QueryTwo(Settings, Settings_sso):
         #1、构建url
         url = "https://www.hct.com.tw/search/searchgoods_n.aspx"   #url为机器人的webhook
         #2、构建一下请求头部
-        r_header = {"Content-Type": "application/x-www-form-urlencoded",
-                    "Charset": "UTF-8",
+        r_header = {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
+                    "Accept-Encoding": "gzip, deflate, br",
                     "Accept-Language": "zh-CN,zh;q=0.9",
-                    'Host': 'www.hct.com.tw',
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "Content-Length": '92',
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Host": "www.hct.com.tw",
                     'Origin': 'https://www.hct.com.tw',
-                    'Referer': 'https://www.hct.com.tw/search/searchgoods_n.aspx',
-                    'User-Agent': random_agent
+                    "Pragma": "no-cache",
+                    "Referer": "https://www.hct.com.tw/search/searchgoods_n.aspx",
+                    "Sec-Fetch-Mode": "navigate",
+                    "Sec-Fetch-Site": "same-origin",
+                    "Sec-Fetch-User": "?1",
+                    "Upgrade-Insecure-Requests": '1',
+                    "Charset": "UTF-8",
+                    # "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
+                    "User-Agent": user_agent()
                     }
+
         #3、构建请求数据
         data = {'__VIEWSTATE': 'HmTo9prl6CO4ytnFMzgfgTsdbJ5MSx7l5gm0chzu2Wx+HKF1cFyEPs1OAwLWOlymmInrgTgSPdY75BwFB3qB0JDXY02XSC14LXp/dC4hZBrHB66Fe5CxoJng7cw=',
                 'ctl00$ContentFrame$txtpKey': wayBillNumber,
@@ -180,7 +194,7 @@ class QueryTwo(Settings, Settings_sso):
                 'ctl00$ContentFrame$Button1': '查詢'
                 }
 
-        proxy = '39.105.167.0:37467'  # 使用代理服务器
+        proxy = '47.242.154.178:37466'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -196,19 +210,30 @@ class QueryTwo(Settings, Settings_sso):
 
         # time.sleep(1)
         url = "https://www.hct.com.tw/search/SearchGoods.aspx"   #url为机器人的webhook
-        r_header = {"Content-Type": "application/x-www-form-urlencoded",
-                    "Charset": "UTF-8",
+        r_header = {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
+                    "Accept-Encoding": "gzip, deflate, br",
                     "Accept-Language": "zh-CN,zh;q=0.9",
-                    'Host': 'www.hct.com.tw',
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "Content-Length": '92',
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Host": "www.hct.com.tw",
                     'Origin': 'https://www.hct.com.tw',
-                    'Referer': 'https://www.hct.com.tw/search/searchgoods_n.aspx',
-                    'User-Agent': random_agent
+                    "Pragma": "no-cache",
+                    "Referer": "https://www.hct.com.tw/search/searchgoods_n.aspx",
+                    "Sec-Fetch-Mode": "navigate",
+                    "Sec-Fetch-Site": "same-origin",
+                    "Sec-Fetch-User": "?1",
+                    "Upgrade-Insecure-Requests": '1',
+                    "Charset": "UTF-8",
+                    # "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
+                    "User-Agent": user_agent()
                     }
         data = {'no': no,
                 'chk': chk
                 }
 
-        proxy = '39.105.167.0:37467'  # 使用代理服务器
+        proxy = '47.242.154.178:37466'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)

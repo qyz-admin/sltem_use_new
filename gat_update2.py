@@ -1777,7 +1777,7 @@ class QueryUpdate(Settings):
                                 SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌改派已完成
 				        FROM (SELECT *,
                                     IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
-                                FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
+                                FROM {0}_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.付款方式 in ({3})
                         ) cx WHERE cx.`币种` = '台湾'
                     GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
                     ) s1
@@ -1789,7 +1789,7 @@ class QueryUpdate(Settings):
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
                 FIELD(s.`产品id`,'合计'),
-                s.总订单 DESC;'''.format(team, month_last, month_yesterday)
+                s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency)
         df15 = pd.read_sql_query(sql=sql15, con=self.engine1)
         listT.append(df15)
 
@@ -2493,7 +2493,7 @@ class QueryUpdate(Settings):
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌改派已完成
         				            FROM (SELECT *,
                                             IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
-                                        FROM {0}_zqsb cc where cc.`是否改派` = '直发' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
+                                        FROM {0}_zqsb cc where cc.`是否改派` = '直发' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.付款方式 in ({3})
                                     ) cx WHERE cx.`币种` = '台湾'
                                     GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
                                 ) s1
@@ -2504,7 +2504,7 @@ class QueryUpdate(Settings):
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday)
+                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency)
         df18 = pd.read_sql_query(sql=sql18, con=self.engine1)
         listT.append(df18)
         # 产品分旬_直发 台湾
@@ -2847,7 +2847,7 @@ class QueryUpdate(Settings):
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌改派已完成
         				        FROM (SELECT *,
                                         IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
-                                    FROM {0}_zqsb cc where  cc.`是否改派` = '直发' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
+                                    FROM {0}_zqsb cc where  cc.`是否改派` = '直发' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.付款方式 in ({3})
                                 ) cx WHERE cx.`币种` = '台湾'
                             GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
                             ) s1
@@ -2859,7 +2859,7 @@ class QueryUpdate(Settings):
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
                         FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday)
+                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency)
         df19 = pd.read_sql_query(sql=sql19, con=self.engine1)
         listT.append(df19)
 
@@ -3202,7 +3202,7 @@ class QueryUpdate(Settings):
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌改派已完成
         				            FROM (SELECT *,
                                             IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
-                                        FROM {0}_zqsb cc where cc.`是否改派` = '改派' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
+                                        FROM {0}_zqsb cc where cc.`是否改派` = '改派' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.付款方式 in ({3})
                                     ) cx WHERE cx.`币种` = '台湾'
                                     GROUP BY cx.家族,cx.币种,cx.年月,cx.产品id
                                 ) s1
@@ -3213,7 +3213,7 @@ class QueryUpdate(Settings):
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday)
+                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency)
         df20 = pd.read_sql_query(sql=sql20, con=self.engine1)
         listT.append(df20)
         # 产品分旬_改派 台湾
@@ -3556,7 +3556,7 @@ class QueryUpdate(Settings):
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-新竹改派" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌改派已完成
         				        FROM (SELECT *,
                                         IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族 
-                                    FROM {0}_zqsb cc where  cc.`是否改派` = '改派' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
+                                    FROM {0}_zqsb cc where  cc.`是否改派` = '改派' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.付款方式 in ({3})
                                 ) cx WHERE cx.`币种` = '台湾'
                             GROUP BY cx.家族,cx.币种,cx.年月,cx.旬,cx.产品id
                             ) s1
@@ -3568,7 +3568,7 @@ class QueryUpdate(Settings):
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
                         FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday)
+                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency)
         df21 = pd.read_sql_query(sql=sql21, con=self.engine1)
         listT.append(df21)
 
@@ -4267,7 +4267,11 @@ class QueryUpdate(Settings):
         today = datetime.date.today().strftime('%Y.%m.%d')
         sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品分旬台湾', '产品整月香港', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾']
         print('正在将物流品类写入excel…………')
-        file_path = 'G:\\输出文件\\{} {} 物流品类-签收率.xlsx'.format(today, match[team])
+
+        if currency == '在线付款':
+            file_path = 'G:\\输出文件\\{} {} 物流品类-签收率-在线.xlsx'.format(today, match[team])
+        else:
+            file_path = 'G:\\输出文件\\{} {} 物流品类-签收率.xlsx'.format(today, match[team])
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
