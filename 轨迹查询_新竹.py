@@ -134,6 +134,8 @@ class QueryTwo(Settings, Settings_sso):
                 data = self._SearchGoods(ord)
                 if data is not None and len(data) > 0:
                     dlist.append(data)
+                # print('暂停5秒')
+                # time.sleep(15)
             dp = df.append(dlist, ignore_index=True)
             # dp.dropna(axis=0, how='any', inplace=True)
         else:
@@ -151,6 +153,13 @@ class QueryTwo(Settings, Settings_sso):
         ]
         random_agent = USER_AGENTS[randint(0, len(USER_AGENTS) - 1)]
 
+        # 使用代理服务器
+        proxy_list = ['47.242.154.178:37466', '47.242.154.178:37467', '47.242.154.178:37468', '47.242.154.178:37469', '47.242.154.178:37460',
+                 '39.105.167.0:37466', '39.105.167.0:37467', '39.105.167.0:37468', '39.105.167.0:37469', '39.105.167.0:37460',
+                 '47.242.154.178:46566', '47.242.85.200:46566', '47.242.85.200:46565',
+                 '39.105.167.0:17467']
+        proxy = random.choice(proxy_list)
+
         #0、获取验证码
         code = ''
         for i in range(4):
@@ -162,12 +171,14 @@ class QueryTwo(Settings, Settings_sso):
                     "Accept-Encoding": "gzip, deflate, br",
                     "Accept-Language": "zh-CN,zh;q=0.9",
                     "Cache-Control": "no-cache",
-                    "Connection": "keep-alive",
+                    # "Connection": "keep-alive",
+                    "Connection": "close",
                     "Content-Length": '92',
                     "Content-Type": "application/x-www-form-urlencoded",
                     "Host": "www.hct.com.tw",
                     'Origin': 'https://www.hct.com.tw',
-                    "Pragma": "no-cache",
+                    # "Pragma": "no-cache",
+                    "Pragma": "1",
                     "Referer": "https://www.hct.com.tw/search/searchgoods_n.aspx",
                     "Sec-Fetch-Mode": "navigate",
                     "Sec-Fetch-Site": "same-origin",
@@ -176,6 +187,7 @@ class QueryTwo(Settings, Settings_sso):
                     "Charset": "UTF-8",
                     # "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
                     "User-Agent": user_agent()
+                    # "User-Agent": random.choice(user_agent_list)
                     }
 
         #3、构建请求数据
@@ -194,11 +206,20 @@ class QueryTwo(Settings, Settings_sso):
                 'ctl00$ContentFrame$Button1': '查詢'
                 }
 
-        proxy = '47.242.154.178:37466'  # 使用代理服务器
+        # proxy = '47.242.154.178:37466'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+
+        # 检测代理ip是否使用
+        rq_ip = requests.get('http://httpbin.org/ip', proxies=proxies, timeout=3)
+        # rq_ip = json.loads(rq_ip.text)
+        # print('代理ip(一)：' + rq_ip['origin'])
+
+        # 使用代理ip发送请求
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+        # req = self.session.post(url=url, headers=r_header, data=data, verify=False)
+        # req = requests.post(url=url, headers=r_header, data=data, verify=False)
         # print(req.headers)
 
         soup = BeautifulSoup(req.text, 'lxml')      # 创建 beautifulsoup 对象
@@ -214,12 +235,14 @@ class QueryTwo(Settings, Settings_sso):
                     "Accept-Encoding": "gzip, deflate, br",
                     "Accept-Language": "zh-CN,zh;q=0.9",
                     "Cache-Control": "no-cache",
-                    "Connection": "keep-alive",
+                    # "Connection": "keep-alive",
+                    "Connection": "close",
                     "Content-Length": '92',
                     "Content-Type": "application/x-www-form-urlencoded",
                     "Host": "www.hct.com.tw",
                     'Origin': 'https://www.hct.com.tw',
-                    "Pragma": "no-cache",
+                    # "Pragma": "no-cache",
+                    "Pragma": "1",
                     "Referer": "https://www.hct.com.tw/search/searchgoods_n.aspx",
                     "Sec-Fetch-Mode": "navigate",
                     "Sec-Fetch-Site": "same-origin",
@@ -228,16 +251,26 @@ class QueryTwo(Settings, Settings_sso):
                     "Charset": "UTF-8",
                     # "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
                     "User-Agent": user_agent()
+                    # "User-Agent": random.choice(user_agent_list)
                     }
         data = {'no': no,
                 'chk': chk
                 }
 
-        proxy = '47.242.154.178:37466'  # 使用代理服务器
+        # proxy = '47.242.154.178:37466'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+
+        # 检测代理ip是否使用
+        rq_ip = requests.get('http://httpbin.org/ip', proxies=proxies, timeout=3)
+        # rq_ip = json.loads(rq_ip.text)
+        # print('代理ip(二)：' + rq_ip['origin'])
+
+        # 使用代理ip发送请求
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+        # req = self.session.post(url=url, headers=r_header, data=data, verify=False)
+        # req = requests.post(url=url, headers=r_header, data=data, verify=False)
 
         # print(req)
         # print('----------数据获取返回成功-----------')

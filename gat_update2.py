@@ -299,12 +299,13 @@ class QueryUpdate(Settings):
                 print('更新完成+++')
 
             print('正在综合检查 父级分类、产品id 为空的信息---')
-            sql = '''SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
+            sql = '''SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`,sl.`父级分类`,sl.`二级分类`,sl.`三级分类`
                     FROM gat_order_list sl
                     WHERE sl.`日期`>= '{1}'
                         AND (sl.`父级分类` IS NULL or sl.`父级分类`= '' OR sl.`产品名称` IS NULL or sl.`产品名称`= '')
                         AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'));'''.format(team, month_begin)
             ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+            ordersDict.to_sql('tem_product_cp', con=self.engine1, index=False, if_exists='replace')
             if ordersDict.empty:
                 print(' ****** 没有要补充的信息; ****** ')
             else:
@@ -9838,9 +9839,9 @@ if __name__ == '__main__':
             # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
         else:
-            month_last = '2022-07-01'
-            month_old = '2022-07-01'  # 获取-每日-报表 开始的时间
-            month_yesterday = '2022-08-31'
+            month_last = '2022-08-01'
+            month_old = '2022-08-01'  # 获取-每日-报表 开始的时间
+            month_yesterday = '2022-09-30'
 
         last_time = '2021-01-01'
         up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期

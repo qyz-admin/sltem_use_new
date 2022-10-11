@@ -123,7 +123,7 @@ class QueryTwo(Settings, Settings_sso):
         else:
             dp = None
         print(dp)
-        dp.to_excel('G:\\输出文件\\新竹快递-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+        dp.to_excel('G:\\输出文件\\新竹17track-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         print('查询已导出+++')
         print('*' * 50)
 
@@ -133,48 +133,55 @@ class QueryTwo(Settings, Settings_sso):
         for i in range(4):
             code += str(random.randint(0, 9))
         #1、构建url
-        url = "https://www.hct.com.tw/search/searchgoods_n.aspx"   #url为机器人的webhook
+        url = "https://www.17track.net/zh-cn"   #url为机器人的webhook
         #2、构建一下请求头部
-        r_header = {"Content-Type": "application/x-www-form-urlencoded",
-                    "Charset": "UTF-8",
-                    'Host': 'www.hct.com.tw',
-                    'Origin': 'https://www.hct.com.tw',
-                    'Referer': 'https://www.hct.com.tw/search/searchgoods_n.aspx',
+        r_header = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
+                    'accept-encoding': 'gzip, deflate, br',
+                    'accept-language': 'zh-CN,zh;q=0.9',
+                    'Origin': 'https://t.17track.net',
+                    'Referer': 'https://features.17track.net/zh-cn/carriersettlein',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36'
+                    }
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        print(req)
+        print(req.headers)
+        # print(req.text)
+        print(88)
+
+
+
+
+
+        #1、构建url
+        url = "https://t.17track.net/track/restapi"   #url为机器人的webhook
+        #2、构建一下请求头部
+        r_header = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    "accept": "application/json, text/javascript, */*; q=0.01",
+                    'accept-encoding': 'gzip, deflate, br',
+                    'accept-language': 'zh-CN,zh;q=0.9',
+                    'Host': 'https://t.17track.net',
+                    'Origin': 'https://t.17track.net',
+                    'Referer': 'https://t.17track.net/zh-cn?v=2',
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36'
                     }
         #3、构建请求数据
-        data = {'__VIEWSTATE': 'HmTo9prl6CO4ytnFMzgfgTsdbJ5MSx7l5gm0chzu2Wx+HKF1cFyEPs1OAwLWOlymmInrgTgSPdY75BwFB3qB0JDXY02XSC14LXp/dC4hZBrHB66Fe5CxoJng7cw=',
-                'ctl00$ContentFrame$txtpKey': wayBillNumber,
-                'ctl00$ContentFrame$txtpKey2': '',
-                'ctl00$ContentFrame$txtpKey3': '',
-                'ctl00$ContentFrame$txtpKey4': '',
-                'ctl00$ContentFrame$txtpKey5': '',
-                'ctl00$ContentFrame$txtpKey6': '',
-                'ctl00$ContentFrame$txtpKey7': '',
-                'ctl00$ContentFrame$txtpKey8': '',
-                'ctl00$ContentFrame$txtpKey9': '',
-                'ctl00$ContentFrame$txtpKey10': '',
-                'ctl00$ContentFrame$b13ca230fd18402cad0febf14d8a11bc': code,
-                'ctl00$ContentFrame$Button1': '查詢'
+        data = {'data': [{'num': '8555614292',
+                          'fc': '190466',
+                          'sc': '0'
+                 }],
+                'guid': '60a84fa9cf024ba2b509cc309ae6e9f4',
+                'timeZoneOffset': '-480'
                 }
-        # 使用代理服务器
-        proxy_list = ['47.242.154.178:37466', '47.242.154.178:37467', '47.242.154.178:37468', '47.242.154.178:37469', '47.242.154.178:37460',
-                 '39.105.167.0:37466', '39.105.167.0:37467', '39.105.167.0:37468', '39.105.167.0:37469', '39.105.167.0:37460',
-                 '47.242.154.178:46566', '47.242.85.200:46566', '47.242.85.200:46565',
-                 '39.105.167.0:17467']
-        proxy = random.choice(proxy_list)
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+        print(data)
+        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+        print(req)
         soup = BeautifulSoup(req.text, 'lxml')      # 创建 beautifulsoup 对象
-        no = soup.input.get('value')
-        chk = soup.input.next_sibling.get('value')
-        # print(no)
-        # print(chk)
-        # print('----------获取验证值成功-------------')
+        print(req)
+        print(soup)
+        print('----------获取验证值成功-------------')
 
-        url = "https://www.hct.com.tw/search/SearchGoods.aspx"   #url为机器人的webhook
+        url = "https://t.17track.net/track/restapi"   #url为机器人的webhook
         r_header = {"Content-Type": "application/x-www-form-urlencoded",
                     "Charset": "UTF-8",
                     'Host': 'www.hct.com.tw',
@@ -182,13 +189,9 @@ class QueryTwo(Settings, Settings_sso):
                     'Referer': 'https://www.hct.com.tw/search/searchgoods_n.aspx',
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36'
                     }
-        data = {'no': no,
-                'chk': chk
-                }
-        proxy = '47.242.154.178:37466'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # data = {'no': no,
+        #         'chk': chk
+        #         }
         # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         # print(req)
         # print('----------数据获取返回成功-----------')
@@ -288,38 +291,6 @@ class QueryTwo(Settings, Settings_sso):
 
         # return data
 
-
-    def TW_SearchGoodsT(self):
-        url = "https://www.hct.com.tw/search/SearchGoods.aspx"
-        #2、构建一下请求头部
-        r_header = {"Content-Type": "application/x-www-form-urlencoded",
-                    "Charset": "UTF-8",
-                    'Host': 'www.hct.com.tw',
-                    'Origin': 'https://www.hct.com.tw',
-                    'Referer': 'https://www.hct.com.tw/search/SearchGoods.aspx',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36'
-                    }
-        #3、构建请求数据
-        data = {'commandid': 'Search0007',
-                'x1': 116894531,
-                'y1': 22055096,
-                'x2': 124837646,
-                'y2': 26588527
-                }
-        req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False)
-        print(req)
-        print("*" * 50)
-        print(req.text)
-        soup = BeautifulSoup(req.text, 'lxml')      # 创建 beautifulsoup 对象
-
-        print("*" * 50)
-        print(soup)
-        no = soup.input.get('value')
-        chk = soup.input.next_sibling.get('value')
-        # print(no)
-
-        # return data
-
 if __name__ == '__main__':
     m = QueryTwo('+86-18538110674', 'qyz04163510')
     start: datetime = datetime.datetime.now()
@@ -327,7 +298,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     '''
     # m.readFormHost()
-    m.TW_SearchGoodsT()
+    m._SearchGoods('8555379070')
 
     # m._SearchGoods('7532082106')
 

@@ -470,6 +470,7 @@ class QueryTwoLower(Settings, Settings_sso):
                     self._order_lower_info(match2[tem], 2, timeStart, timeEnd, tem, '组合库存')
         print('查询耗时：', datetime.datetime.now() - start)
     # 进入 已下架 界面
+
     def _order_lower_info(self, tem, tem_type, timeStart, timeEnd, tem_name, type_name):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         # print('+++正在查询信息中')
@@ -478,6 +479,75 @@ class QueryTwoLower(Settings, Settings_sso):
                     'origin': 'http://gwms-v3.giikin.cn',
                     'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
         data = {'page': 1, 'limit': 500, 'startDate': timeStart + ' 09:00:00', 'endDate':  timeEnd + ' 23:59:59', 'selectStr': '1=1 and ob.whid = ' + str(tem) + ' and ob.stock_type = ' + str(tem_type)}
+        proxy = '47.75.114.218:10020'  # 使用代理服务器
+        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print(req.text)
+        # print(json.loads(f'"{req.text}"'))
+        # req = req.text.encode('utf-8').decode("unicode_escape")
+        # print('+++已成功发送请求......')              # 转码使用
+        req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
+        # print(req)
+        max_count = req['data']
+        max_count2 = req['count']
+        if max_count != []:
+            if max_count2 > 500:
+                in_count = math.ceil(max_count2/500)
+                dlist = []
+                df = pd.DataFrame([])
+                n = 1
+                while n <= in_count:  # 这里用到了一个while循环，穿越过来的
+                    data = self._order_lower_infoT(n, tem, tem_type, timeStart, timeEnd, tem_name, type_name)
+                    dlist.append(data)
+                    print('剩余查询次数' + str(in_count - n))
+                    n = n + 1
+                dp = df.append(dlist, ignore_index=True)
+            else:
+                dp = self._order_lower_infoT(1, tem, tem_type, timeStart, timeEnd, tem_name, type_name)
+            # dp = pd.json_normalize(ordersDict)
+            # data = dp[['order_number', 'addtime', 'billno', 'old_billno', 'goods_id', 'product_name', 'intime', 'whid', 'waill_name', 'currency_id', 'area_id', 'product_spec', 'quantity', 'ship_name', 'ship_address', 'ship_phone', 'amount', 'userId', 'in_sqs', 'count_time']]
+            # data.columns = ['订单编号', '下单时间', '新运单号', '原运单号', '产品id', '商品名称', '下架时间', '仓库', '物流渠道', '币种', '团队', '商品规格', '购买数量', '收货人', '收货地址', '联系电话', '订单金额', '下架人', '获取单号结果', '统计时间']
+            print(dp)
+            print('>>>' + tem_name + '-' + type_name + ' <<< 查询完结！！！')
+            dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            sql = '''REPLACE INTO 已下架表(订单编号,下单时间,新运单号,查件单号,原运单号, 退货单号,产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种, 团队,商品规格, 购买数量, 收货人, 收货地址, 联系电话,订单金额,下架人,获取单号结果,统计时间,记录时间)
+                    SELECT 订单编号,下单时间,新运单号, IF(仓库 LIKE "%天马%" AND LENGTH(新运单号) = 20, CONCAT(861, RIGHT(新运单号, 8)), IF((仓库 LIKE "%速派%" or 仓库 LIKE "%易速配%") AND (新运单号 LIKE "A%" OR 新运单号 LIKE "B%"), RIGHT(新运单号, LENGTH(新运单号) - 1), UPPER(新运单号))) 查件单号,
+                           原运单号,NULL 退货单号, 产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种, 团队, 商品规格, 购买数量, 收货人, 收货地址, 联系电话, 订单金额,下架人,获取单号结果,统计时间,NOW() 记录时间
+                    FROM customer'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('写入成功......')
+            dp.to_excel('G:\\输出文件\\已下架 {0} {1}-{2}.xlsx'.format(tem_name, type_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            # self.stockcompose_upload()
+            # print('补充退货单号成功......')
+        else:
+            print('****** 没有新增的改派订单！！！')
+            return None
+
+        print('获取每日新增 龟山备货 表......')
+        rq = datetime.datetime.now().strftime('%m.%d')
+        sql = '''SELECT CURDATE() '序號(無用途)',NULL '訂單號長度限制: 20碼請勿使用中文）', 收货人 AS '收件人姓名(必填)長度限制: 20碼', 收货地址 AS '收件人地址(必填)中文限制: 50字', 
+                                联系电话 AS '收件人電話長度限制: 15碼',商品名称 AS '託運備註中文限制: 50字', NULL '(商品別編號)勿填', 购买数量 AS '商品數量(必填)(限數字)', NULL '才積重量限數字', 
+                                订单金额 AS '代收貨款限數字',NULL '指定配送日期YYYYMMDD範例: 20140220    ->2月20號', NULL '指定配送時間範例:   1   (上午 -> 09~13) 2   (下午 -> 13~17)3   (晚上 -> 17~20)',
+                                订单编号 , 商品规格, 产品id AS '产品ID', NULL '原运单号', 团队,下架时间,统计时间
+                        FROM 已下架表 yx
+                        WHERE yx.记录时间 >= TIMESTAMP(CURDATE()) AND yx.物流渠道 = '龟山备货' AND yx.`新运单号` IS NULL;'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        if df is not None and len(df) > 0:
+            df.to_excel('G:\\输出文件\\{} 龟山备货.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            print('获取成功......')
+        else:
+            print('****** 今日无新增龟山备货数据！！！')
+
+        print('*' * 50)
+    def _order_lower_infoT(self, n, tem, tem_type, timeStart, timeEnd, tem_name, type_name):
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        # print('+++正在查询信息中')
+        url = r'http://gwms-v3.giikin.cn/order/order/shelves'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'http://gwms-v3.giikin.cn',
+                    'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
+        data = {'page': n, 'limit': 500, 'startDate': timeStart + ' 09:00:00', 'endDate':  timeEnd + ' 23:59:59', 'selectStr': '1=1 and ob.whid = ' + str(tem) + ' and ob.stock_type = ' + str(tem_type)}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
         # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -534,38 +604,13 @@ class QueryTwoLower(Settings, Settings_sso):
             data = pd.json_normalize(ordersDict)
             data = data[['order_number', 'addtime', 'billno', 'old_billno', 'goods_id', 'product_name', 'intime', 'whid', 'waill_name', 'currency_id', 'area_id', 'product_spec', 'quantity', 'ship_name', 'ship_address', 'ship_phone', 'amount', 'userId', 'in_sqs', 'count_time']]
             data.columns = ['订单编号', '下单时间', '新运单号', '原运单号', '产品id', '商品名称', '下架时间', '仓库', '物流渠道', '币种', '团队', '商品规格', '购买数量', '收货人', '收货地址', '联系电话', '订单金额', '下架人', '获取单号结果', '统计时间']
-            print(data)
-            print('>>>' + tem_name + '-' + type_name + ' <<< 查询完结！！！')
-            data.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO 已下架表(订单编号,下单时间,新运单号,查件单号,原运单号, 退货单号,产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种, 团队,商品规格, 购买数量, 收货人, 收货地址, 联系电话,订单金额,下架人,获取单号结果,统计时间,记录时间)
-                    SELECT 订单编号,下单时间,新运单号, IF(仓库 LIKE "%天马%" AND LENGTH(新运单号) = 20, CONCAT(861, RIGHT(新运单号, 8)), IF((仓库 LIKE "%速派%" or 仓库 LIKE "%易速配%") AND (新运单号 LIKE "A%" OR 新运单号 LIKE "B%"), RIGHT(新运单号, LENGTH(新运单号) - 1), UPPER(新运单号))) 查件单号,
-                           原运单号,NULL 退货单号, 产品id, 商品名称, 下架时间, 仓库, 物流渠道,币种, 团队, 商品规格, 购买数量, 收货人, 收货地址, 联系电话, 订单金额,下架人,获取单号结果,统计时间,NOW() 记录时间
-                    FROM customer'''
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-            print('写入成功......')
-            data.to_excel('G:\\输出文件\\已下架 {0} {1}-{2}.xlsx'.format(tem_name, type_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            # self.stockcompose_upload()
-            # print('补充退货单号成功......')
+            # print(data)
         else:
             print('****** 没有新增的改派订单！！！')
-            return None
-
-        print('获取每日新增 龟山备货 表......')
-        rq = datetime.datetime.now().strftime('%m.%d')
-        sql = '''SELECT CURDATE() '序號(無用途)',NULL '訂單號長度限制: 20碼請勿使用中文）', 收货人 AS '收件人姓名(必填)長度限制: 20碼', 收货地址 AS '收件人地址(必填)中文限制: 50字', 
-                                联系电话 AS '收件人電話長度限制: 15碼',商品名称 AS '託運備註中文限制: 50字', NULL '(商品別編號)勿填', 购买数量 AS '商品數量(必填)(限數字)', NULL '才積重量限數字', 
-                                订单金额 AS '代收貨款限數字',NULL '指定配送日期YYYYMMDD範例: 20140220    ->2月20號', NULL '指定配送時間範例:   1   (上午 -> 09~13) 2   (下午 -> 13~17)3   (晚上 -> 17~20)',
-                                订单编号 , 商品规格, 产品id AS '产品ID', NULL '原运单号', 团队,下架时间,统计时间
-                        FROM 已下架表 yx
-                        WHERE yx.记录时间 >= TIMESTAMP(CURDATE()) AND yx.物流渠道 = '龟山备货' AND yx.`新运单号` IS NULL;'''
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        if df is not None and len(df) > 0:
-            df.to_excel('G:\\输出文件\\{} 龟山备货.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            print('获取成功......')
-        else:
-            print('****** 今日无新增龟山备货数据！！！')
-
+            data = None
         print('*' * 50)
+        return data
+
 
     # 进入 组合库存界面  补充已下架的退货单号  （仓储的获取）（二）'qyz1404039293@163.com'
     def stockcompose_upload(self):
@@ -1158,8 +1203,8 @@ if __name__ == '__main__':
 
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
-    # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
-    select = 3
+    m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
+    select = 5
     if select == 1:
         m.readFile(select)            # 上传每日压单核实结果
         m.order_spec()                # 压单反馈  （备注（压单核实是否需要））

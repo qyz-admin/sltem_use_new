@@ -312,8 +312,8 @@ class QueryTwo(Settings, Settings_sso):
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO 物流问题件(订单编号, 下单时间, 联系电话, 币种, 问题类型, 物流反馈时间, 导入人,处理时间, 处理日期时间, 处理人, 联系方式,  处理结果,拒收原因, 记录时间) 
-                    SELECT 订单编号, 下单时间, 联系电话, 币种, 问题类型, 导入时间 AS 物流反馈时间, 导入人,处理时间, 处理日期时间, 处理人, 联系方式, IF(最新处理结果 = '',问题类型状态,最新处理结果) AS 处理结果,拒收原因, NOW() 记录时间 
+            sql = '''REPLACE INTO 物流问题件(订单编号, 下单时间, 联系电话, 币种, 问题类型, 物流反馈时间, 导入人,处理时间, 处理日期时间, 处理人, 联系方式,  处理结果,拒收原因, 克隆订单编号, 记录时间) 
+                    SELECT 订单编号, 下单时间, 联系电话, 币种, 问题类型, 导入时间 AS 物流反馈时间, 导入人,处理时间, 处理日期时间, 处理人, 联系方式, IF(最新处理结果 = '',问题类型状态,最新处理结果) AS 处理结果,拒收原因, 赠品补发订单编号 AS 克隆订单编号, NOW() 记录时间 
                     FROM customer;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -1386,7 +1386,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 909
+    select = 99
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '3129878cee9537a6b68f48743902548e'
@@ -1445,7 +1445,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 已下架 状态运行（四）-----------------------------------------
     '''
-    if int(select) == 909:
+    if int(select) == 99:
         login_TmpCode = 'db194f4f627535bda8f5728816e33310'
         handle = '手0动'
         lw = QueryTwoLower('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
@@ -1453,8 +1453,8 @@ if __name__ == '__main__':
 
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 已下架       更新； 自动时 输入的时间无效；切为不自动时，有效
 
-        # lw.readFile(1)                                        # 上传每日压单核实结果
-        # lw.order_spec()                                       # 压单         更新；压单反馈  （备注（压单核实是否需要））
+        lw.readFile(1)                                        # 上传每日压单核实结果
+        lw.order_spec()                                       # 压单         更新；压单反馈  （备注（压单核实是否需要））
 
         # lw.stockcompose_upload()                              # 获取 桃园仓重出、
         # lw.get_take_delivery_no()                             # 头程物流跟踪 更新； 获取最近10天的信息

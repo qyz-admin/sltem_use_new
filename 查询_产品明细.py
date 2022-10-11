@@ -317,12 +317,20 @@ class QueryTwoT(Settings, Settings_sso):
             dp = df.append(dlist, ignore_index=True)
             dp.to_sql('tem_product', con=self.engine1, index=False, if_exists='replace')
             print('更新中......')
-            sql = '''update {1} a, tem_product b
+            sql = '''update tem_product_cp a, tem_product b
                     set a.`产品名称`= IF(b.`name` = '', a.`产品名称`, b.`name`),
                         a.`父级分类`= IF(b.`cate_id` = '', a.`父级分类`, b.`cate_id`),
-                    a.`二级分类`= IF(b.`second_cate_id` = '', a.`二级分类`, b.`second_cate_id`),
-                    a.`三级分类`= IF(b.`third_cate_id` = '', a.`三级分类`, b.`third_cate_id`)
-                  where a.日期>= '{0}' AND a.`产品id`= b.`id`;'''.format(month_begin, team)
+                        a.`二级分类`= IF(b.`second_cate_id` = '', a.`二级分类`, b.`second_cate_id`),
+                        a.`三级分类`= IF(b.`third_cate_id` = '', a.`三级分类`, b.`third_cate_id`)
+                  where a.`产品id`= b.`id`;'''.format(month_begin, team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
+            sql = '''update {1} a, tem_product_cp b
+                    set a.`产品名称`= IF(b.`产品名称` = '', a.`产品名称`, b.`产品名称`),
+                        a.`父级分类`= IF(b.`父级分类` = '', a.`父级分类`, b.`父级分类`),
+                        a.`二级分类`= IF(b.`二级分类` = '', a.`二级分类`, b.`二级分类`),
+                        a.`三级分类`= IF(b.`三级分类` = '', a.`三级分类`, b.`三级分类`)
+                  where a.`订单编号`= b.`订单编号`;'''.format(month_begin, team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('共有 ' + str(len(dp)) + '条 成功更新+++++++')
 
