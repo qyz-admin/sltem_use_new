@@ -80,6 +80,8 @@ class QueryTwoLower(Settings, Settings_sso):
             path = r'F:\神龙签收率\(未发货) 直发-仓库-压单\每日压单核实汇总'
         elif select == 2:
             path = r'D:\Users\Administrator\Desktop\需要用到的文件\B导入头程提货单号'
+        elif select == 4:
+            path = r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -107,6 +109,8 @@ class QueryTwoLower(Settings, Settings_sso):
                     else:
                         tem = '立邦国际'
                     self._readFile_select(filePath, rq, tem)                # 工作表的   头程物流  信息
+                elif select == 4:
+                    self._readFile_Yixiwudi(filePath)  # 工作表的   头程物流  信息
                 excel = win32.gencache.EnsureDispatch('Excel.Application')
                 wb = excel.Workbooks.Open(filePath)
                 file_path = os.path.join(path, "~$ " + dir)
@@ -115,6 +119,7 @@ class QueryTwoLower(Settings, Settings_sso):
                 excel.Application.Quit()
                 os.remove(filePath)
         print('处理耗时：', datetime.datetime.now() - start)
+
     # 工作表的   压单   信息
     def _readFile(self, filePath, rq):
         fileType = os.path.splitext(filePath)[1]
@@ -285,6 +290,88 @@ class QueryTwoLower(Settings, Settings_sso):
             val_time = val_time.strftime("%Y-%m-%d %H:%M:%S")
         return val_time
 
+    # 工作表的   协来运截单换渠道
+    def _readFile_Yixiwudi(self, filePath):
+        fileType = os.path.splitext(filePath)[1]
+        app = xlwings.App(visible=False, add_book=False)
+        app.display_alerts = False
+        if 'xls' in fileType:
+            wb = app.books.open(filePath, update_links=False, read_only=True)
+            for sht in wb.sheets:
+                try:
+                    db = None
+                    db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
+                    # print(db.columns)
+                    if '运单编号' in db.columns:
+                        db.rename(columns={'运单编号': '运单号'}, inplace=True)
+                    elif '查件单号' in db.columns:
+                        db.rename(columns={'查件单号': '运单号'}, inplace=True)
+                    elif '运单号' in db.columns:
+                        db.rename(columns={'运单号': '运单号'}, inplace=True)
+                    elif '物流单号' in db.columns:
+                        db.rename(columns={'物流单号': '运单号'}, inplace=True)
+                    db = db[['运单号']]
+                except Exception as e:
+                    print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
+                if db is not None and len(db) > 0:
+                    print('++++正在查询：' + sht.name + '表； 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                    orderId = list(db['运单号'])
+                    max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+                    if max_count > 0:
+                        df = pd.DataFrame([])  # 创建空的dataframe数据框
+                        dlist = []
+                        for ord in orderId:
+                            print(ord)
+                            data = self._SearchGoods(ord)
+                            if data is not None and len(data) > 0:
+                                dlist.append(data)
+                        dp = df.append(dlist, ignore_index=True)
+                    else:
+                        dp = None
+                    print(dp)
+                    dp.to_excel('G:\\输出文件\\新竹快递-查询{}.xlsx'.format(rq), sheet_name='查询', index=False,engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+                    print('查询已导出+++')
+                    print('*' * 50)
+                    print('++++成功导入：' + sht.name + '--->>>到压单表')
+                else:
+                    print('----------数据为空导入失败：' + sht.name)
+            wb.close()
+        app.quit()
+    def _order_spec_Yixiwudi(self, ord):  # 进入压单检索界面
+        timeStart = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+        timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
+        print('+++正在查询订单信息中')
+        url = r'http://gwms-v3.giikin.cn/order/order/search'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'http://gwms-v3.giikin.cn',
+                    'Referer': 'http://gwms-v3.giikin.cn/order/order/search'}
+        data = {'page': 1,
+                'limit': 20,
+                'startDate': timeStart + ' 00:00:00',
+                'endDate': timeEnd + ' 23:59:59',
+                'selectStr': '1=1 and oc.billno=' + ord}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
+        max_count = req['count']
+        if max_count != [] or max_count != 0:
+            ordersdict = []
+            try:
+                for result in req['data']:
+                    ordersdict.append(result)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            data = pd.json_normalize(ordersdict)
+            # print(data)
+        else:
+            data = None
+            print('****** 没有信息！！！')
+        return data
+
 
 
     # 进入 压单反馈 界面 （仓储的获取）
@@ -407,6 +494,7 @@ class QueryTwoLower(Settings, Settings_sso):
             data = None
             print('****** 没有信息！！！')
         return data
+
 
 
     # 进入 已下架 界面  （仓储的获取）（一）
@@ -1204,7 +1292,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
-    select = 5
+    select = 4
     if select == 1:
         m.readFile(select)            # 上传每日压单核实结果
         m.order_spec()                # 压单反馈  （备注（压单核实是否需要））
@@ -1217,6 +1305,7 @@ if __name__ == '__main__':
         m.stockcompose_upload()
 
     elif select == 4:
+        m.readFile(select)  # 上传每日压单核实结果
         pass
         # m.get_take_delivery_no()
         # m.readFile(select)

@@ -92,29 +92,21 @@ class MysqlControl(Settings):
 											WHERE gat_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
 											);'''
         print('正在清除港澳台-总表的可能删除了的订单…………')
-        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        sql = '''DELETE FROM slsc_zqsb
-                        WHERE slsc_zqsb.`订单编号` IN (SELECT 订单编号
-        											FROM slsc_order_list 
-        											WHERE slsc_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
-        											);'''
-        print('正在清除品牌-总表的可能删除了的订单…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        # sql = '''DELETE FROM slsc_zqsb
+        #                 WHERE slsc_zqsb.`订单编号` IN (SELECT 订单编号
+        # 											FROM slsc_order_list
+        # 											WHERE slsc_order_list.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+        # 											);'''
+        # print('正在清除品牌-总表的可能删除了的订单…………')
+        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
-        (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1))
-        yy = int((datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y'))
-        mm = int((datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%m'))
-        dd = int((datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%d'))
-        begin = datetime.date(yy, mm, dd)
-        # begin = datetime.date(2017, 9, 25)
-        # begin = datetime.date(2021, 6, 15)
-        print(begin)
-        yy2 = int(datetime.datetime.now().strftime('%Y'))
-        mm2 = int(datetime.datetime.now().strftime('%m'))
-        dd2 = int(datetime.datetime.now().strftime('%d'))
-        end = datetime.date(yy2, mm2, dd2)
-        # end = datetime.date(2021, 6, 17)
-        print(end)
+        # 更新时间
+        timeStart = (datetime.datetime.now() - relativedelta(months=10))
+        data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
+        begin = data_begin
+        end = datetime.datetime.now().date()
+
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
             month_last = str(day)
@@ -132,7 +124,7 @@ class MysqlControl(Settings):
 				            gs.`status`,
 				            id sale_id
 		            FROM gk_sale gs
-		            WHERE gs.rq = '{0}';'''.format(month_last)
+		            WHERE gs.uptime = '{0}';'''.format(month_last)
             print('正在获取 ' + month_last + ' 号以后的产品详情…………')
             df = pd.read_sql_query(sql=sql, con=self.engine2)
             print('正在写入产品缓存中…………')

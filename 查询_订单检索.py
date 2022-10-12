@@ -558,7 +558,7 @@ class QueryOrder(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
-        data = {'page': 1, 'pageSize': 10,
+        data = {'page': 1, 'pageSize': 90,
                 'orderPrefix': None,
                 'shippingNumber': None,
                 'phone': None,
@@ -571,7 +571,7 @@ class QueryOrder(Settings, Settings_sso):
         elif searchType == '运单号':
             data.update({'order_number': None,
                          'shippingNumber': ord})
-        print(data)
+        # print(data)
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
@@ -2270,8 +2270,8 @@ if __name__ == '__main__':
     elif int(select) == 2:
         print("1-->>> 正在按运单号查询+++")
         team = 'gat'
-        searchType = '运单号'
-        pople_Query = '客服查询'  # 客服查询；订单检索
+        searchType = '订单号'
+        pople_Query = '客服查询'  # 客服查询；订单检索 运单号
         m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd')  # 导入；，更新--->>数据更新切换
 
     elif int(select) == 3:
