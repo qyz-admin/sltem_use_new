@@ -214,12 +214,12 @@ class QueryTwo(Settings, Settings_sso):
 
         # 检测代理ip是否使用
         rq_ip = requests.get('http://httpbin.org/ip', proxies=proxies, timeout=3)
-        # rq_ip = json.loads(rq_ip.text)
-        # print('代理ip(一)：' + rq_ip['origin'])
+        rq_ip = json.loads(rq_ip.text)
+        print('代理ip(一)：' + rq_ip['origin'])
 
         # 使用代理ip发送请求
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         # req = self.session.post(url=url, headers=r_header, data=data, verify=False)
         # req = requests.post(url=url, headers=r_header, data=data, verify=False)
         # print(req.headers)
@@ -269,8 +269,8 @@ class QueryTwo(Settings, Settings_sso):
         # print('代理ip(二)：' + rq_ip['origin'])
 
         # 使用代理ip发送请求
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         # req = self.session.post(url=url, headers=r_header, data=data, verify=False)
         # req = requests.post(url=url, headers=r_header, data=data, verify=False)
 

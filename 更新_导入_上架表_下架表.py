@@ -503,7 +503,7 @@ if __name__ == '__main__':
     start: datetime = datetime.datetime.now()
     '''
     # -----------------------------------------------查询状态运行（一）-----------------------------------------
-    # 1、 点到表上传 team = 'gat_logisitis_googs'；2、上架表上传；；3、订单跟进上传 team = 'gat_waybill_list'--->>数据更新切换
+    # 1、 点到表上传 team = 'gat_logisitis_googs';2、上架表上传;3、订单跟进上传 team = 'gat_waybill_list'--->>数据更新切换
     '''
 
     select = 2
