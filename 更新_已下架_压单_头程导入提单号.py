@@ -1084,7 +1084,7 @@ class QueryTwoLower(Settings, Settings_sso):
     # 创建每日文件
     def bulid_file(self):
         print('正在生成每日新文件夹......')
-        time_path: datetime = datetime.datetime.now() + datetime.timedelta(days=1)
+        time_path: datetime = datetime.datetime.now()
         mkpath = "F:\\神龙签收率\\" + time_path.strftime('%m.%d')
         isExists = os.path.exists(mkpath)
         if not isExists:
@@ -1094,9 +1094,11 @@ class QueryTwoLower(Settings, Settings_sso):
             os.makedirs(mkpath + "\\导运单号&提货时间")
             os.makedirs(mkpath + "\\导状态")
             os.makedirs(mkpath + "\\签收率")
+            os.makedirs(mkpath + "\\物流签收率")
             os.makedirs(mkpath + "\\物流表")
             print('创建成功')
             file_path = mkpath + '\\导运单号&提货时间\\{} 龟山 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path1 = mkpath + '\\导运单号&提货时间\\{} 圆通 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
             file_path2 = mkpath + '\\导运单号&提货时间\\{} 立邦 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
             file_path3 = mkpath + '\\导运单号&提货时间\\{} 天马 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
             file_path4 = mkpath + '\\导运单号&提货时间\\{} 速派 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
@@ -1104,6 +1106,7 @@ class QueryTwoLower(Settings, Settings_sso):
             file_path50 = mkpath + '\\导运单号&提货时间\\{} 协来运特货 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
             df = pd.DataFrame([['', '']], columns=['订单编号', '物流单号'])
             df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel(file_path1, sheet_name='查询', index=False, engine='xlsxwriter')
             df.to_excel(file_path2, sheet_name='查询', index=False, engine='xlsxwriter')
             df.to_excel(file_path3, sheet_name='查询', index=False, engine='xlsxwriter')
             df.to_excel(file_path4, sheet_name='查询', index=False, engine='xlsxwriter')

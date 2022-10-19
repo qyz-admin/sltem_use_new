@@ -105,7 +105,8 @@ class MysqlControl(Settings):
         timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m-%d')
         timeStart = (datetime.datetime.now() - datetime.timedelta(days=15)).strftime('%Y-%m-%d')
         begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
-        end = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime('%Y-%m-%d').date()
+        timeEnd = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        end = datetime.datetime.strptime(timeEnd, '%Y-%m-%d').date()
 
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
@@ -2836,52 +2837,117 @@ class MysqlControl(Settings):
         #             emailAdd[team])
         # self.d.sl_tem_costT(match2[team], match[team])
 
+    # 创建每日文件
+    def bulid_file(self):
+        print('正在生成每日新文件夹......')
+        time_path: datetime = datetime.datetime.now()
+        mkpath = "F:\\神龙签收率\\" + time_path.strftime('%m.%d')
+        isExists = os.path.exists(mkpath)
+        if not isExists:
+            os.makedirs(mkpath)
+            os.makedirs(mkpath + "\\产品签收率")
+            os.makedirs(mkpath + "\\产品签收率\\直发&改派")
+            os.makedirs(mkpath + "\\导运单号&提货时间")
+            os.makedirs(mkpath + "\\导状态")
+            os.makedirs(mkpath + "\\签收率")
+            os.makedirs(mkpath + "\\物流签收率")
+            os.makedirs(mkpath + "\\物流表")
+            print('创建成功')
+            file_path = mkpath + '\\导运单号&提货时间\\{} 龟山 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path1 = mkpath + '\\导运单号&提货时间\\{} 圆通 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path2 = mkpath + '\\导运单号&提货时间\\{} 立邦 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path3 = mkpath + '\\导运单号&提货时间\\{} 天马 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path4 = mkpath + '\\导运单号&提货时间\\{} 速派 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path5 = mkpath + '\\导运单号&提货时间\\{} 协来运普货 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path50 = mkpath + '\\导运单号&提货时间\\{} 协来运特货 无运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            df = pd.DataFrame([['', '']], columns=['订单编号', '物流单号'])
+            df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel(file_path1, sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel(file_path2, sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel(file_path3, sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel(file_path4, sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel(file_path5, sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel(file_path50, sheet_name='查询', index=False, engine='xlsxwriter')
+
+            file_path31 = mkpath + '\\导运单号&提货时间\\{} 天马 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path32 = mkpath + '\\导运单号&提货时间\\{} 协来运 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path33 = mkpath + '\\导运单号&提货时间\\{} 立邦 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path34 = mkpath + '\\导运单号&提货时间\\{} 速派 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path35 = mkpath + '\\导运单号&提货时间\\{} 龟山 换新运单号.xlsx'.format(time_path.strftime('%m.%d'))
+            df2 = pd.DataFrame([['', '', '']], columns=['订单编号', '旧运单号', '新运单号'])
+            df2.to_excel(file_path31, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path32, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path33, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path34, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path35, sheet_name='查询', index=False, engine='xlsxwriter')
+
+            file_path91 = mkpath + '\\导运单号&提货时间\\{} 导入提货时间 龟山.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path92 = mkpath + '\\导运单号&提货时间\\{} 导入提货时间 天马.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path93 = mkpath + '\\导运单号&提货时间\\{} 导入提货时间 速派.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path94 = mkpath + '\\导运单号&提货时间\\{} 导入提货时间 协来运.xlsx'.format(time_path.strftime('%m.%d'))
+            file_path95 = mkpath + '\\导运单号&提货时间\\{} 导入提货时间 立邦.xlsx'.format(time_path.strftime('%m.%d'))
+            df2 = pd.DataFrame([['', '', '']], columns=['订单号', '物流单号', '提货时间'])
+            df2.to_excel(file_path91, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path92, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path93, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path94, sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel(file_path95, sheet_name='查询', index=False, engine='xlsxwriter')
+            print('创建文件')
+        else:
+            print(mkpath + ' 目录已存在')
+        print('*' * 50)
+
 
 if __name__ == '__main__':
     #  messagebox.showinfo("提示！！！", "当前查询已完成--->>> 请前往（ 输出文件 ）查看")200
     m = MysqlControl()
     start = datetime.datetime.now()
 
-    # 更新产品id的列表
-    m.update_gk_product()
-    m.update_gk_sign_rate()
-    # m.qsb_report('gat')
+    select = 1
+    if select == 1:
+        # 创建每日文件
+        m.bulid_file()
 
-    # 测试物流时效
-    # team = 'sltg'
-    # m.data_wl(team)
-    # for team in ['slgat', 'slgat_hfh', 'slgat_hs','slrb', 'slrb_jl', 'sltg', 'slxmt', 'slxmt_hfh']:
-    # for team in ['slgat_hs']:
-    #     m.data_wl(team)
+    elif select == 2:
+        # 更新产品id的列表
+        m.update_gk_product()
+        m.update_gk_sign_rate()
+        # m.qsb_report('gat')
+        # 测试物流时效
+        # team = 'sltg'
+        # m.data_wl(team)
+        # for team in ['slgat', 'slgat_hfh', 'slgat_hs','slrb', 'slrb_jl', 'sltg', 'slxmt', 'slxmt_hfh']:
+        # for team in ['slgat_hs']:
+        #     m.data_wl(team)
 
-    # -----------------------------------------暂停使用-------------------------------
-    # m.qsb_wl('gat')
-    # m.qsb_wl2('gat')
+        # -----------------------------------------暂停使用-------------------------------
+        # m.qsb_wl('gat')
+        # m.qsb_wl2('gat')
 
 
-    # for team in ['slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:  # 无运单号查询200
-    #     m.noWaybillNumber(team)
-    #
-    # match = {'SG': '新加坡',
-    #          'MY': '马来西亚',
-    #          'PH': '菲律宾',
-    #          'JP': '日本'}
-    # match = {'HK': '香港',
-    #          'TW': '台湾'}
-    # for team in match.keys():  # 产品花费表200
-    #     if team == 'JP':
-    #         m.orderCost(team)
-    #     elif team in ('HK', 'TW'):
-    #         m.orderCost(team)
-    #         m.orderCostHFH(team)
-    #     else:
-    #         m.orderCost(team)
-    #         m.orderCostHFH(team)
-    #         m.orderCostT(team)
+        # for team in ['slrb', 'slxmt', 'slxmt_t', 'slxmt_hfh']:  # 无运单号查询200
+        #     m.noWaybillNumber(team)
+        #
+        # match = {'SG': '新加坡',
+        #          'MY': '马来西亚',
+        #          'PH': '菲律宾',
+        #          'JP': '日本'}
+        # match = {'HK': '香港',
+        #          'TW': '台湾'}
+        # for team in match.keys():  # 产品花费表200
+        #     if team == 'JP':
+        #         m.orderCost(team)
+        #     elif team in ('HK', 'TW'):
+        #         m.orderCost(team)
+        #         m.orderCostHFH(team)
+        #     else:
+        #         m.orderCost(team)
+        #         m.orderCostHFH(team)
+        #         m.orderCostT(team)
 
-    # sm = SltemMonitoring()  # 成本查询
-    # for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾']:
-    #     sm.costWaybill(team)
+        # sm = SltemMonitoring()  # 成本查询
+        # for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾']:
+        #     sm.costWaybill(team)
     print('耗时：', datetime.datetime.now() - start)
     win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)
 
