@@ -2243,6 +2243,137 @@ class QueryOrder(Settings, Settings_sso):
         # writer2.close()
         # print()
 
+    # 进入订单检索界面     促单查询
+    def order_track_Query(self):
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        if (datetime.datetime.now()).strftime('%d') == 1:
+            timeStart = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        else:
+            timeStart = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
+            timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        print('+++正在查询 促单订单 信息中：' + str(timeStart) + " *** " + str(timeEnd))
+
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'page': 1, 'pageSize': 500, 'orderPrefix': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None,'isClone': None,
+                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None,  'reassignmentType': None, 'lowerstatus': None, 'warehouse': None,
+                'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None, 'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None,
+                'volumeEnd': None, 'volumeStart': None, 'chooser_id': None, 'service_id': -1, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None,
+                'shipState': None, 'weightStart': None,'weightEnd': None,  'estimateWeightStart': None,  'estimateWeightEnd': None, 'order': None, 'sortField': None,
+                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None,
+                'timeStart': timeStart, 'timeEnd': timeEnd}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        max_count = req['data']['count']
+        print('共...' + str(max_count) + '...单量')
+        if max_count != 0:
+            df = pd.DataFrame([])
+            n = 1
+            if max_count > 500:
+                in_count = math.ceil(max_count / 500)
+                dlist = []
+                while n <= in_count:  # 这里用到了一个while循环，穿越过来的
+                    data = self._order_track_Query(timeStart, timeEnd, n)
+                    dlist.append(data)
+                    n = n + 1
+                    print('剩余查询次数' + str(in_count - n))
+                dp = df.append(dlist, ignore_index=True)
+            else:
+                dp = self._order_track_Query(timeStart, timeEnd, n)
+            dp = data[['orderNumber', 'currency', 'addTime', 'orderStatus', 'logisticsStatus', 'service', 'cloneUser']]
+            dp.columns = ['订单编号', '币种', '下单时间', '订单状态', '物流状态', '代下单客服', '克隆人']
+            dp.to_excel('G:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+
+        print('++++++本批次查询成功+++++++')
+        print('*' * 50)
+    def _order_track_Query(self, timeStart, timeEnd, n):
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'page': n, 'pageSize': 500, 'orderPrefix': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None,'isClone': None,
+                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None,  'reassignmentType': None, 'lowerstatus': None, 'warehouse': None,
+                'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None, 'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None,
+                'volumeEnd': None, 'volumeStart': None, 'chooser_id': None, 'service_id': -1, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None,
+                'shipState': None, 'weightStart': None,'weightEnd': None,  'estimateWeightStart': None,  'estimateWeightEnd': None, 'order': None, 'sortField': None,
+                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None,
+                'timeStart': timeStart, 'timeEnd': timeEnd}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        ordersdict = []
+        # print('正在处理json数据转化为dataframe…………')
+        try:
+            for result in req['data']['list']:
+                result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
+                result['saleName'] = 0
+                result['productId'] = 0
+                result['saleProduct'] = 0
+                result['spec'] = 0
+                result['chooser'] = 0
+                result['saleId'] = result['specs'][0]['saleId']
+                result['saleName'] = result['specs'][0]['saleName']
+                result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+                result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
+                result['spec'] = result['specs'][0]['spec']
+                result['chooser'] = result['specs'][0]['chooser']
+                quest = ''
+                for re in result['questionReason']:
+                    quest = quest + ';' + re
+                result['questionReason'] = quest
+                delr = ''
+                for re in result['delReason']:
+                    delr = delr + ';' + re
+                result['delReason'] = delr
+                auto = ''
+                for re in result['autoVerify']:
+                    auto = auto + ';' + re
+                result['autoVerify'] = auto
+
+                result['auto_VerifyTip'] = ''
+                result['auto_VerifyTip_zl'] = ''
+                result['auto_VerifyTip_qs'] = ''
+                result['auto_VerifyTip_js'] = ''
+                if result['autoVerifyTip'] == "":
+                    result['auto_VerifyTip'] = '0.00%'
+                else:
+                    if '未读到拉黑表记录' in result['autoVerifyTip']:
+                        result['auto_VerifyTip'] = '0.00%'
+                    else:
+                        t3 = result['autoVerifyTip']
+                        result['auto_VerifyTip_zl'] = (t3.split('订单配送总量：')[1]).split(',')[0]
+                        result['auto_VerifyTip_qs'] = (t3.split('送达订单量：')[1]).split(',')[0]
+                        result['auto_VerifyTip_js'] = (t3.split('拒收订单量：')[1]).split(',')[0]
+                        if '拉黑率问题' not in result['autoVerifyTip']:
+                            t2 = result['autoVerifyTip'].split(',拉黑率')[1]
+                            result['auto_VerifyTip'] = t2.split('%;')[0] + '%'
+                        else:
+                            t2 = result['autoVerifyTip'].split('拒收订单量：')[1]
+                            t2 = t2.split('%;')[0]
+                            result['auto_VerifyTip'] = t2.split('拉黑率')[1] + '%'
+                ordersdict.append(result)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        df = pd.json_normalize(ordersdict)
+        print('++++++本批次查询成功+++++++')
+        print('*' * 50)
+        return df
+
+
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
@@ -2259,7 +2390,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 5                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
@@ -2290,7 +2421,7 @@ if __name__ == '__main__':
         query = '完成时间'
         m.order_TimeQuery(timeStart, timeEnd, areaId, query)
 
-    if int(select) == 4:
+    elif int(select) == 4:
         print("1-->>> 正在按电话查询+++")
         team = 'gat'
         searchType = '电话'
@@ -2298,6 +2429,10 @@ if __name__ == '__main__':
         timeStart = '2022-08-01 00:00:00'
         timeEnd = '2022-09-30 23:59:59'
         m.readFormHost(team, searchType, pople_Query, timeStart, timeEnd)
+
+    # 促单查询；订单检索
+    elif int(select) == 5:
+        m.order_track_Query()
 
     elif int(select) == 9:
         m.del_order_day()
