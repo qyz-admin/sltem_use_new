@@ -2243,15 +2243,18 @@ class QueryOrder(Settings, Settings_sso):
         # writer2.close()
         # print()
 
-    # 进入订单检索界面     促单查询
-    def order_track_Query(self):
+    def order_track_Query(self, hanlde, timeStart, timeEnd):    # 进入订单检索界面     促单查询
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        if (datetime.datetime.now()).strftime('%d') == 1:
-            timeStart = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-            timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        if hanlde == '自动':
+            if (datetime.datetime.now()).strftime('%d') == 1:
+                timeStart = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+                timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            else:
+                timeStart = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
+                timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         else:
-            timeStart = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
-            timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            timeStart = timeStart
+            timeEnd = timeEnd
         print('+++正在查询 促单订单 信息中：' + str(timeStart) + " *** " + str(timeEnd))
 
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
@@ -2276,6 +2279,7 @@ class QueryOrder(Settings, Settings_sso):
         print('共...' + str(max_count) + '...单量')
         if max_count != 0:
             df = pd.DataFrame([])
+            dp = None
             n = 1
             if max_count > 500:
                 in_count = math.ceil(max_count / 500)
@@ -2283,14 +2287,23 @@ class QueryOrder(Settings, Settings_sso):
                 while n <= in_count:  # 这里用到了一个while循环，穿越过来的
                     data = self._order_track_Query(timeStart, timeEnd, n)
                     dlist.append(data)
-                    n = n + 1
                     print('剩余查询次数' + str(in_count - n))
+                    n = n + 1
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = self._order_track_Query(timeStart, timeEnd, n)
             dp = data[['orderNumber', 'currency', 'addTime', 'orderStatus', 'logisticsStatus', 'service', 'cloneUser']]
             dp.columns = ['订单编号', '币种', '下单时间', '订单状态', '物流状态', '代下单客服', '克隆人']
-            dp.to_excel('G:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+            sql = '''SELECT 代下单客服, COUNT(订单编号)
+                    FROM ( SELECT *
+                            FROM `cache` s
+                            WHERE (s.克隆人 IS NULL OR s.克隆人 = "") AND s.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核")
+                    ) ss
+                    GROUP BY 代下单客服
+                    ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','张陈平','蔡利英','杨嘉仪');'''
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            df.to_excel('G:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
 
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
@@ -2432,7 +2445,10 @@ if __name__ == '__main__':
 
     # 促单查询；订单检索
     elif int(select) == 5:
-        m.order_track_Query()
+        hanlde = '自动'
+        timeStart = '2022-09-19'
+        timeEnd = '2022-09-19'
+        m.order_track_Query(hanlde, timeStart, timeEnd)
 
     elif int(select) == 9:
         m.del_order_day()

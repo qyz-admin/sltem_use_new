@@ -508,6 +508,8 @@ class MysqlControl(Settings):
             # 这一句会报错,需要修改my.ini文件中的[mysqld]段中的"max_allowed_packet = 1024M"
             try:
                 df.to_sql('sl_order', con=self.engine1, index=False, if_exists='replace')
+                rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+                df.to_excel('G:\\输出文件\\数据库查验\\数据库文件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
                 sql = 'REPLACE INTO {}_order_list SELECT *, NOW() 记录时间 FROM sl_order; '.format(team)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             except Exception as e:

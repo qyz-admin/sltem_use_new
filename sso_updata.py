@@ -2221,6 +2221,10 @@ class Query_sso_updata(Settings):
                                        LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = TRIM(h.logisticsName);'''.format('gat_order_list')
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             df.to_sql('d1_cpy_cp', con=self.engine1, index=False, if_exists='replace')
+
+            rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+            df.to_excel('G:\\输出文件\\单点查验\\单点文件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False,  engine='xlsxwriter')
+
             print('正在更新表总表中......')
             sql = '''update {0} a, d1_cpy_cp b
                                    set a.`币种`= b.`币种`,

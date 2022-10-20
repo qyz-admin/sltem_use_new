@@ -1434,6 +1434,11 @@ if __name__ == '__main__':
         time_now = time_yesterday
         js.order_TimeQueryT(time_yesterday,time_now, '',  '检查头程直发渠道|删单原因', query)   # 检查头程直发渠道|删单原0因
 
+        hanlde = '自动'
+        timeStart = '2022-09-19'
+        timeEnd = '2022-09-19'
+        js.order_track_Query(hanlde, timeStart, timeEnd)  # 促单查询；订单检索
+
     '''
     # -----------------------------------------------自动获取 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------
     '''
