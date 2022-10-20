@@ -11,6 +11,7 @@ import sys
 from queue import Queue
 from dateutil.relativedelta import relativedelta
 from threading import Thread #  使用 threading 模块创建线程
+from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 import pandas.io.formats.excel
 import win32api,win32con
 import math
@@ -2252,9 +2253,6 @@ class QueryOrder(Settings, Settings_sso):
             else:
                 timeStart = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
                 timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        else:
-            timeStart = timeStart
-            timeEnd = timeEnd
         print('+++正在查询 促单订单 信息中：' + str(timeStart) + " *** " + str(timeEnd))
 
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
@@ -2279,10 +2277,10 @@ class QueryOrder(Settings, Settings_sso):
         print('共...' + str(max_count) + '...单量')
         if max_count != 0:
             df = pd.DataFrame([])
-            dp = None
             n = 1
             if max_count > 500:
                 in_count = math.ceil(max_count / 500)
+                print(in_count)
                 dlist = []
                 while n <= in_count:  # 这里用到了一个while循环，穿越过来的
                     data = self._order_track_Query(timeStart, timeEnd, n)
@@ -2292,18 +2290,43 @@ class QueryOrder(Settings, Settings_sso):
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = self._order_track_Query(timeStart, timeEnd, n)
-            dp = data[['orderNumber', 'currency', 'addTime', 'orderStatus', 'logisticsStatus', 'service', 'cloneUser']]
+            dp = dp[['orderNumber', 'currency', 'addTime', 'orderStatus', 'logisticsStatus', 'service', 'cloneUser']]
             dp.columns = ['订单编号', '币种', '下单时间', '订单状态', '物流状态', '代下单客服', '克隆人']
             dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
-            sql = '''SELECT 代下单客服, COUNT(订单编号)
+
+            listT = []
+            sql2 = '''SELECT 代下单客服, COUNT(订单编号)
                     FROM ( SELECT *
                             FROM `cache` s
                             WHERE (s.克隆人 IS NULL OR s.克隆人 = "") AND s.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核")
                     ) ss
                     GROUP BY 代下单客服
                     ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','张陈平','蔡利英','杨嘉仪');'''
-            df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_excel('G:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
+            listT.append(df2)
+            sql3 = '''SELECT 代下单客服, COUNT(订单编号)
+                    FROM ( SELECT *
+                            FROM `cache` s
+                            WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                    ) ss
+                    GROUP BY 代下单客服
+                    ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','张陈平','蔡利英','杨嘉仪','曹玉婉','刘君','齐元章');'''
+            df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
+            listT.append(df3)
+
+            file_path = 'G:\\输出文件\\促单查询 {}.xlsx'.format(rq)
+            df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+            df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+            book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            listT[0].to_excel(excel_writer=writer, sheet_name='有效单量', index=False)
+            listT[1].to_excel(excel_writer=writer, sheet_name='总下单量', index=False)
+            if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+                del book['Sheet1']
+            writer.save()
+            writer.close()
+            # df.to_excel('G:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='有效单量', index=False, engine='xlsxwriter')
 
         print('++++++本批次查询成功+++++++')
         print('*' * 50)

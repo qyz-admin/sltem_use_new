@@ -9870,7 +9870,7 @@ if __name__ == '__main__':
 
     elif int(select) == 1:
         last_time = '2021-01-01'
-        up_time = '2022-09-09'                      # 手动更新数据库 --历史总表的记录日期
+        up_time = '2022-10-20'                      # 手动更新数据库 --历史总表的记录日期
         write = '手动更新数据库'
         m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
 

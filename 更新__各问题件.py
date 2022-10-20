@@ -1363,6 +1363,99 @@ class QueryTwo(Settings, Settings_sso):
         return tem
 
 
+    # 工单列表
+    def getOrderCollectionList(self, timeStart, timeEnd):  # 进入订单检索界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('+++正在查询信息中---工单列表......')
+        url = r'https://gimp.giikin.com/service?service=gorder.orderCollection&action=getOrderCollectionList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/workOrderCenter'}
+        data = {'page': 1, 'pageSize': 500, 'order_number': None, 'waybill_number': None,
+                'plate_status': None, 'do_status': None, 'collection_type': None,
+                'addtime[]': timeStart + ' 00:00:00&addtime[]=' + timeEnd + ' 23:59:59',
+                'intime[]': timeStart + ' 00:00:00&intime[]=' + timeEnd + ' 23:59:59'
+                }
+
+        proxy = '47.75.114.218:10020'  # 使用代理服务器
+        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        max_count = req['data']['count']
+        print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+        print('*' * 50)
+        if max_count != 0:
+            n = 1
+            if max_count > 1000:
+                in_count = math.ceil(max_count/1000)
+                df = pd.DataFrame([])
+                dlist = []
+                while n <= in_count:
+                    data = self._getOrderCollectionList(timeStart, timeEnd, n)
+                    dlist.append(data)
+                    print('剩余查询次数' + str(in_count - n))
+                    n = n + 1
+                dp = df.append(dlist, ignore_index=True)
+            else:
+                dp = self._getOrderCollectionList(timeStart, timeEnd, n)
+            dp.to_excel('G:\\输出文件\\物流问题件-查询2{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            # dp = dp[['order_number',  'currency', 'ship_phone', 'amount', 'customer_name', 'customer_mobile', 'arrived_address', 'arrived_time', 'create_time', 'dealStatus', 'dealContent',
+            #          'deal_time', 'dealTime', 'result_reson', 'result_info', 'questionType', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus', 'operatorName','contact',
+            #          'gift_reissue_order_number',  'addtime','update_time']]
+            # dp.columns = ['订单编号', '币种', '联系电话', '订单金额', '客户姓名', '客户电话', '客户地址', '送达时间', '导入时间', '最新处理状态', '最新处理结果',
+            #               '处理时间', '处理日期时间', '拒收原因', '具体原因', '问题类型状态', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态', '导入人', '联系方式',
+            #               '赠品补发订单编号', '下单时间', '更新时间']
+            # dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞|张陈平', na=False))]
+            print('正在写入......')
+            dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            dp.to_excel('G:\\输出文件\\物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            sql = '''REPLACE INTO 物流问题件(订单编号, 下单时间, 联系电话, 币种, 问题类型, 物流反馈时间, 导入人,处理时间, 处理日期时间, 处理人, 联系方式,  处理结果,拒收原因, 克隆订单编号, 记录时间) 
+                    SELECT 订单编号, 下单时间, 联系电话, 币种, 问题类型, 导入时间 AS 物流反馈时间, 导入人,处理时间, 处理日期时间, 处理人, 联系方式, IF(最新处理结果 = '',问题类型状态,最新处理结果) AS 处理结果,拒收原因, 赠品补发订单编号 AS 克隆订单编号, NOW() 记录时间 
+                    FROM customer;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('写入成功......')
+        else:
+            print('没有需要获取的信息！！！')
+            return
+        print('*' * 50)
+    def _getOrderCollectionList(self, timeStart, timeEnd, n):  # 进入物流问题件界面
+        print('+++正在查询第 ' + str(n) + ' 页信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.orderCollection&action=getOrderCollectionList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/workOrderCenter'}
+        data = {'page': n, 'pageSize': 1000, 'order_number': None, 'waybill_number': None,
+                'plate_status': None, 'do_status': None, 'collection_type': None,
+                'addtime[]': timeStart + ' 00:00:00&addtime[]=' + timeEnd + ' 23:59:59',
+                'intime[]': timeStart + ' 00:00:00&intime[]=' + timeEnd + ' 23:59:59'
+                }
+        proxy = '47.75.114.218:10020'  # 使用代理服务器
+        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        max_count = req['data']['count']
+        ordersDict = []
+        if max_count > 0:
+            try:
+                for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
+                    print(result)
+                    print(11)
+                    print(result['order_number'])
+                    ordersDict.append(result.copy())
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            data = pd.json_normalize(ordersDict)
+        else:
+            data = None
+        print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
+        print('*' * 50)
+        return data
+
+
 if __name__ == '__main__':
     start: datetime = datetime.datetime.now()
     '''
