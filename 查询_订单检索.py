@@ -2468,9 +2468,9 @@ if __name__ == '__main__':
 
     # 促单查询；订单检索
     elif int(select) == 5:
-        hanlde = '自动'
-        timeStart = '2022-09-19'
-        timeEnd = '2022-09-19'
+        hanlde = '自0动'
+        timeStart = '2022-10-20'
+        timeEnd = '2022-10-20'
         m.order_track_Query(hanlde, timeStart, timeEnd)
 
     elif int(select) == 9:

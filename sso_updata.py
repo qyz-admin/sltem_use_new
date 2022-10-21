@@ -2222,8 +2222,8 @@ class Query_sso_updata(Settings):
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             df.to_sql('d1_cpy_cp', con=self.engine1, index=False, if_exists='replace')
 
-            rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-            df.to_excel('G:\\输出文件\\单点查验\\单点文件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False,  engine='xlsxwriter')
+            # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+            # df.to_excel('G:\\输出文件\\单点查验\\单点文件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False,  engine='xlsxwriter')
 
             print('正在更新表总表中......')
             sql = '''update {0} a, d1_cpy_cp b
