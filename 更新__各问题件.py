@@ -1234,6 +1234,10 @@ class QueryTwo(Settings, Settings_sso):
 
     def bulid_file(self):
         print('正在生成每日新文件夹......')
+        file_path = r'F:\\神龙签收率\\B促单指标\\{0} 日统计.xlsx'.format(datetime.datetime.now().strftime('%m.%d'))
+        df = pd.DataFrame([])
+        df.to_excel(file_path, sheet_name='日统计', index=False, engine='xlsxwriter')
+
         time_path: datetime = datetime.datetime.now()
         mkpath = "F:\\神龙签收率\\" + time_path.strftime('%m.%d')
         isExists = os.path.exists(mkpath)

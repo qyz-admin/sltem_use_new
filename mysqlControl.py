@@ -432,7 +432,7 @@ class MysqlControl(Settings):
                             a.logistics_type 货物类型,
                             IF(a.low_price=0,'否','是') 是否低价,
                             a.sale_id 商品id,
-                            a.product_id 产品id,
+                            gk_sale.product_id 产品id,
              		        gk_sale.product_name 产品名称,
                             dim_cate.ppname 父级分类,
                             dim_cate.pname 二级分类,
@@ -487,12 +487,12 @@ class MysqlControl(Settings):
                             LEFT JOIN dim_payment ON dim_payment.id = a.payment_id
 	                        LEFT JOIN gk_sale ON gk_sale.id = a.sale_id
                             LEFT JOIN dim_trans_way ON dim_trans_way.id = a.logistics_id
-                            LEFT JOIN dim_cate ON dim_cate.id = a.third_cate_id
+                            LEFT JOIN dim_cate ON dim_cate.id = gk_sale.third_cate_id
                             LEFT JOIN intervals ON intervals.id = a.intervals
                             LEFT JOIN dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
                             LEFT JOIN dim_order_status os ON os.id = a.order_status
 							LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
-                    WHERE  a.rq = '{0}' AND a.rq <= '{1}' AND dim_area.id IN ({2});'''.format(last_month, yesterday, match2[team])
+                    WHERE  a.rq = '{0}' AND dim_area.id IN ({1});'''.format(last_month, match2[team])
                 df = pd.read_sql_query(sql=sql, con=self.engine2)
             # sql = 'SELECT * FROM dim_order_status;'
             # df1 = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -508,8 +508,10 @@ class MysqlControl(Settings):
             # 这一句会报错,需要修改my.ini文件中的[mysqld]段中的"max_allowed_packet = 1024M"
             try:
                 df.to_sql('sl_order', con=self.engine1, index=False, if_exists='replace')
+
                 # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
                 # df.to_excel('G:\\输出文件\\数据库查验\\数据库文件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+
                 sql = 'REPLACE INTO {}_order_list SELECT *, NOW() 记录时间 FROM sl_order; '.format(team)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             except Exception as e:
@@ -2842,6 +2844,11 @@ class MysqlControl(Settings):
     # 创建每日文件
     def bulid_file(self):
         print('正在生成每日新文件夹......')
+        file_path = r'F:\\神龙签收率\\B促单指标\\{0} 日统计.xlsx'.format(datetime.datetime.now().strftime('%m.%d'))
+        df = pd.DataFrame([])
+        df.to_excel(file_path, sheet_name='日统计', index=False, engine='xlsxwriter')
+
+
         time_path: datetime = datetime.datetime.now()
         mkpath = "F:\\神龙签收率\\" + time_path.strftime('%m.%d')
         isExists = os.path.exists(mkpath)

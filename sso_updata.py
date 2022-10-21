@@ -2213,6 +2213,9 @@ class Query_sso_updata(Settings):
                                     h.`cloneUser` 克隆人,
                                     h.`chooser` 选品人,
                                     h.`logisticsRemarks` 物流状态注释,
+                                    dim_cate.`ppname` 父级分类,
+                                    dim_cate.`pname` 二级分类,
+                                    dim_cate.`name` 三级分类,
                                     h.`shipInfo.shipName` 姓名,
                                     h.`shipInfo.shipAddress` 地址
                                    FROM d1_cpy h
@@ -2263,6 +2266,9 @@ class Query_sso_updata(Settings):
                                        a.`下单人`= IF(b.`下单人` = '', NULL,  b.`下单人`),
                                        a.`克隆人`= IF(b.`克隆人` = '', NULL,  b.`克隆人`),
                                        a.`选品人`= IF(b.`选品人` = '', NULL,  b.`选品人`),
+                                       a.`父级分类`= IF(a.`父级分类` IS NULL, IF(b.`父级分类` = '', NULL,  b.`父级分类`),  a.`父级分类`),
+                                       a.`二级分类`= IF(a.`二级分类` IS NULL, IF(b.`二级分类` = '', NULL,  b.`二级分类`),  a.`二级分类`),
+                                       a.`三级分类`= IF(a.`三级分类` IS NULL, IF(b.`三级分类` = '', NULL,  b.`三级分类`),  a.`三级分类`),
                                        a.`姓名`= IF(b.`姓名` = '', NULL,  b.`姓名`),
                                        a.`地址`= IF(b.`地址` = '', NULL,  b.`地址`)
                            where a.`订单编号`=b.`订单编号`;'''.format('gat_order_list')
