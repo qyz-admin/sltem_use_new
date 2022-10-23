@@ -97,6 +97,9 @@ class QueryTwo(Settings, Settings_sso):
                     db = None
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                     if team == 'gat_logisitis_googs':
+                        columns = list(db.columns)
+                        if '承运单号' in columns and '子单号' in columns :
+                            db.drop(labels=['子单号'], axis=1, inplace=True)  # 天马的去掉多余的承运单号
                         db.rename(columns={'订单号': '订单编号'}, inplace=True)
                         db.rename(columns={'承运单号': '运单编号'}, inplace=True)
                         db.rename(columns={'子单号': '运单编号'}, inplace=True)
