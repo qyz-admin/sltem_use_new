@@ -2469,8 +2469,11 @@ if __name__ == '__main__':
     # 促单查询；订单检索
     elif int(select) == 5:
         hanlde = '自0动'
-        timeStart = '2022-10-25'
-        timeEnd = '2022-10-25'
+        # timeStart = '2022-10-25'
+        # timeEnd = '2022-10-25'
+
+        timeStart = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         m.order_track_Query(hanlde, timeStart, timeEnd)
 
     elif int(select) == 9:
