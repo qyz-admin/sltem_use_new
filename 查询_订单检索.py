@@ -2426,7 +2426,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 5                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
@@ -2469,8 +2469,8 @@ if __name__ == '__main__':
     # 促单查询；订单检索
     elif int(select) == 5:
         hanlde = '自0动'
-        timeStart = '2022-10-21'
-        timeEnd = '2022-10-21'
+        timeStart = '2022-10-25'
+        timeEnd = '2022-10-25'
         m.order_track_Query(hanlde, timeStart, timeEnd)
 
     elif int(select) == 9:
