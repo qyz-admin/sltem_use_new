@@ -1234,9 +1234,9 @@ class QueryTwo(Settings, Settings_sso):
 
     def bulid_file(self):
         print('正在生成每日新文件夹......')
-        file_path = r'F:\\神龙签收率\\B促单指标\\{0} 日统计.xlsx'.format(datetime.datetime.now().strftime('%m.%d'))
-        df = pd.DataFrame([])
-        df.to_excel(file_path, sheet_name='日统计', index=False, engine='xlsxwriter')
+        # file_path = r'F:\\神龙签收率\\B促单指标\\{0} 日统计.xlsx'.format(datetime.datetime.now().strftime('%m.%d'))
+        # df = pd.DataFrame([])
+        # df.to_excel(file_path, sheet_name='日统计', index=False, engine='xlsxwriter')
 
         time_path: datetime = datetime.datetime.now()
         mkpath = "F:\\神龙签收率\\" + time_path.strftime('%m.%d')
@@ -1524,9 +1524,12 @@ if __name__ == '__main__':
         # m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
         # m.sale_Query_info(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                   # 查询更新-采购问题件(二、补充查询)
 
-        timeStart = '2022-09-01'
+        # timeStart = '2022-09-01'
         # timeEnd = '2022-10-23'
-        m.getOrderCollectionList(timeStart, '2022-10-25')  # 工单列表-物流客诉件
+        time_Start = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
+        time_End = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        print('派送问题件，导出时间》》》 ' + time_Start + "---" + time_End)
+        m.getOrderCollectionList(time_Start, time_End)  # 工单列表-物流客诉件
         print('查询耗时：', datetime.datetime.now() - start)
     '''
     # -----------------------------------------------自动获取 昨日头程直发渠道的订单明细 状态运行（二）-----------------------------------------

@@ -2844,9 +2844,9 @@ class MysqlControl(Settings):
     # 创建每日文件
     def bulid_file(self):
         print('正在生成每日新文件夹......')
-        file_path = r'F:\\神龙签收率\\B促单指标\\{0} 日统计.xlsx'.format(datetime.datetime.now().strftime('%m.%d'))
-        df = pd.DataFrame([])
-        df.to_excel(file_path, sheet_name='日统计', index=False, engine='xlsxwriter')
+        # file_path = r'F:\\神龙签收率\\B促单指标\\{0} 日统计.xlsx'.format(datetime.datetime.now().strftime('%m.%d'))
+        # df = pd.DataFrame([])
+        # df.to_excel(file_path, sheet_name='日统计', index=False, engine='xlsxwriter')
 
 
         time_path: datetime = datetime.datetime.now()
@@ -2958,5 +2958,5 @@ if __name__ == '__main__':
         # for team in ['菲律宾', '新加坡', '马来西亚', '日本', '香港', '台湾']:
         #     sm.costWaybill(team)
     print('耗时：', datetime.datetime.now() - start)
-    win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)
+    # win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)
 

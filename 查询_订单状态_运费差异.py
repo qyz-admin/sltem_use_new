@@ -588,8 +588,8 @@ if __name__ == '__main__':
 
 
     elif int(select) == 4:
-        m.readFormHost('查询运费')
-        m.trans_way_cost_new(team)  # 同产品下的规格运费查询
+        # m.readFormHost('查询运费')
+        # m.trans_way_cost_new(team)  # 同产品下的规格运费查询
         
         if week.isoweekday() == 2 or week.isoweekday() == 4:
             upload = '查询-运单号'    # 获取在途未上线 催促的

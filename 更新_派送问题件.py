@@ -950,6 +950,7 @@ if __name__ == '__main__':
             # timeEnd = '2022-10-25'
             timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
             timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            print('派送问题件，导出时间》》》 ' + timeStart +  "---" + timeEnd)
             m.outport_getDeliveryList('2022-09-01', timeEnd, logisticsN_begin, logisticsN_end)
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 

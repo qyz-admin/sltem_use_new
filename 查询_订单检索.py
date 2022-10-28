@@ -2295,7 +2295,7 @@ class QueryOrder(Settings, Settings_sso):
             dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
 
             listT = []
-            sql2 = '''SELECT 代下单客服, COUNT(订单编号)
+            sql2 = '''SELECT 代下单客服, COUNT(订单编号) as 有效转化单量
                     FROM ( SELECT *
                             FROM `cache` s
                             WHERE (s.克隆人 IS NULL OR s.克隆人 = "") AND s.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核")
@@ -2304,7 +2304,7 @@ class QueryOrder(Settings, Settings_sso):
                     ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','张陈平','蔡利英','杨嘉仪');'''
             df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
             listT.append(df2)
-            sql3 = '''SELECT 代下单客服, COUNT(订单编号)
+            sql3 = '''SELECT 代下单客服, COUNT(订单编号) as 总代下单量
                     FROM ( SELECT *
                             FROM `cache` s
                             WHERE s.克隆人 IS NULL OR s.克隆人 = ""
@@ -2474,6 +2474,7 @@ if __name__ == '__main__':
 
         timeStart = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        print(timeStart +  "---" + timeEnd)
         m.order_track_Query(hanlde, timeStart, timeEnd)
 
     elif int(select) == 9:
