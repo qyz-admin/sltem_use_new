@@ -38,13 +38,13 @@ if team in ('ga0t', 'slsc', 'sl_r9b'):
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    data_begin = datetime.date(2022, 1, 1)  # 数据库更新
-    begin = datetime.date(2022, 1, 1)      # 单点更新
-    end = datetime.date(2022, 3, 1)
+    data_begin = datetime.date(2022, 9, 1)  # 数据库更新
+    begin = datetime.date(2022, 9, 1)      # 单点更新
+    end = datetime.date(2022, 11, 7)
     # 导出时间
-    month_last = '2022-01-01'
-    month_yesterday = '2022-03-01'
-    month_begin = '2022-01-01'
+    month_last = '2022-09-01'
+    month_yesterday = '2022-11-07'
+    month_begin = '2022-08-01'
 print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 导出      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')

@@ -2314,12 +2314,26 @@ class QueryOrder(Settings, Settings_sso):
             df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
             listT.append(df3)
 
+            sql4 = '''SELECT EXTRACT(DAY FROM 下单时间) AS 天, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 日期, 代下单客服, COUNT(订单编号) as 总代下单量,
+							SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量
+                    FROM ( SELECT *
+                            FROM `cache_copy1` s
+                            WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                    ) ss1
+                    GROUP BY 天, 代下单客服
+                    WITH ROLLUP 
+                    ORDER BY 天,
+					FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
+            df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
+            listT.append(df4)
+
             file_path = 'G:\\输出文件\\促单查询 {}.xlsx'.format(rq)
             df0 = pd.DataFrame([])  # 创建空的dataframe数据框
             df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
             writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
             book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
             writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            listT[2].to_excel(excel_writer=writer, sheet_name='汇总', index=False)
             listT[0].to_excel(excel_writer=writer, sheet_name='有效单量', index=False)
             listT[1].to_excel(excel_writer=writer, sheet_name='总下单量', index=False)
             if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
@@ -2426,7 +2440,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 5                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
@@ -2462,8 +2476,8 @@ if __name__ == '__main__':
         team = 'gat'
         searchType = '电话'
         pople_Query = '电话检索'                # 电话查询；订单检索
-        timeStart = '2022-08-01 00:00:00'
-        timeEnd = '2022-09-30 23:59:59'
+        timeStart = '2022-09-01 00:00:00'
+        timeEnd = '2022-10-31 23:59:59'
         m.readFormHost(team, searchType, pople_Query, timeStart, timeEnd)
 
     # 促单查询；订单检索

@@ -179,6 +179,8 @@ class ExcelControl():
         needDrop = []
         columns = list(df.columns)
         # print(columns)
+        if '协来运-新竹' in shtName:
+            df.drop(labels=['單號'], axis=1, inplace=True)
         if '圓通-轉單表' in shtName:
             df.insert(0, '订单编号', '')  # 圆通直发
             # df.drop(labels=['發貨日期'], axis=1, inplace=True)  # 圆通改派
