@@ -426,8 +426,8 @@ class QueryTwoLower(Settings, Settings_sso):
             dp = dp[(dp['币种'].str.contains('港币|台币', na=False))]
             # print(dp)
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO 压单表(订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, 下架时间,记录时间) 
-                    SELECT 订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, IF(下架时间 = '',NULL,下架时间) 下架时间, NOW() 记录时间
+            sql = '''REPLACE INTO 压单表(订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, 下架时间, 品类, 记录时间) 
+                    SELECT 订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, IF(下架时间 = '',NULL,下架时间) 下架时间, 品类, NOW() 记录时间
                     FROM customer'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('共有 ' + str(len(dp)) + '条 成功写入数据库+++++++')
@@ -436,7 +436,7 @@ class QueryTwoLower(Settings, Settings_sso):
             time_path: datetime = datetime.datetime.now()
             mkpath = r"F:\神龙签收率\(未发货) 直发-仓库-压单\\" + time_path.strftime('%m.%d')
             mkpath = r"F:\神龙签收率\(未发货) 直发-仓库-压单\\" + time_path.strftime('%m') + '月'
-            sql = '''SELECT s.订单编号,s.产品ID,s.产品名称,NULL SKU,NULL 产品规格,NULL 运单号,s.币种,s.团队,NULL 状态,s.反馈时间,s.压单原因,s.其他原因,	s.采购员,NULL 品类, s.入库时间,s.下单时间,s.是否下架,
+            sql = '''SELECT s.订单编号,s.产品ID,s.产品名称,NULL SKU,NULL 产品规格,NULL 运单号,s.币种,s.团队,NULL 状态,s.反馈时间,s.压单原因,s.其他原因,	s.采购员, 品类, s.入库时间,s.下单时间,s.是否下架,
                             s.下架时间,s.记录时间, s1.处理结果,s1.处理时间,NULL 备注,  DATEDIFF(curdate(),入库时间) 压单天数, DATE_FORMAT(入库时间,'%Y-%m-%d') 入库,采购异常, 处理进度, 详细处理时间,反馈内容
                     FROM ( SELECT * 
                             FROM 压单表 g

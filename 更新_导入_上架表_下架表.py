@@ -140,7 +140,7 @@ class Updata_return_bill(Settings, Settings_sso):
                         db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                         # db = pd.read_excel(filePath, sheet_name=sht.name)
                         if tem_data == '协来运':
-                            db.dropna(axis=0, how='any', inplace=True, subset = ['配編'])  # 空值（缺失值），将空值所在的行/列删除后
+                            db.dropna(axis=0, how='any', inplace=True, subset=['配編'])  # 空值（缺失值），将空值所在的行/列删除后
 
                         if tem_data == '速派':
                             if team == 'gat_return_bill':   # 上架表

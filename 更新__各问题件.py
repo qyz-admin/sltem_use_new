@@ -206,6 +206,12 @@ class QueryTwo(Settings, Settings_sso):
             rq = pd.to_datetime(rq['派送问题首次时间'][0])
             last_time = rq.strftime('%Y-%m-%d')
             now_time = (datetime.datetime.now()).strftime('%Y-%m-%d')
+        elif team == '压单表_已核实':
+            sql = '''SELECT DISTINCT 处理时间 FROM {0} d GROUP BY 处理时间 ORDER BY 处理时间 DESC'''.format(team)
+            rq = pd.read_sql_query(sql=sql, con=self.engine1)
+            rq = pd.to_datetime(rq['处理时间'][0])
+            last_time = (rq + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            now_time = (datetime.datetime.now()).strftime('%Y-%m-%d')
         else:
             sql = '''SELECT DISTINCT 处理时间 FROM {0} d GROUP BY 处理时间 ORDER BY 处理时间 DESC'''.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -368,6 +374,130 @@ class QueryTwo(Settings, Settings_sso):
                             else:
                                 result['traceUserName'] = ''
                             ordersDict.append(result.copy())
+                else:
+                    result['deal_time'] = ''
+                    result['result_reson'] = ''
+                    result['result_info'] = ''
+                    if '拒收' in result['dealContent']:
+                        if len(result['dealContent'].split()) > 2:
+                            result['result_info'] = result['dealContent'].split()[2]
+                        if len(result['dealContent'].split()) > 1:
+                            result['result_reson'] = result['dealContent'].split()[1]
+                        result['dealContent'] = result['dealContent'].split()[0]
+                    if result['traceRecord'] != '' or result['traceRecord'] != []:
+                        result['deal_time'] = result['traceRecord'].split()[0]
+                    if result['traceUserName'] != '' or result['traceUserName'] != []:
+                        result['traceUserName'] = result['traceUserName'].replace('客服：', '')
+                    result['dealContent'] = result['dealContent'].strip()
+                    ordersDict.append(result.copy())
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        data = pd.json_normalize(ordersDict)
+        print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
+        print('*' * 50)
+        return data
+
+    # 查询更新（新后台的获取-物流问题件- 压单核实）
+    def waybill_InfoQuery_yadan(self, timeStart, timeEnd):  # 进入订单检索界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('+++正在查询信息中---压单核实')
+        url = r'https://gimp.giikin.com/service?service=gorder.customerQuestion&action=getCustomerComplaintList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/customerQuestion'}
+        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'gift_reissue_order_number': None, 'is_gift_reissue': None, 'order_trace_id': None,
+                'question_type': 111, 'critical': None, 'read_status': None, 'operator_type': None, 'operator': None, 'create_time': None,
+                'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'is_collection': None, 'logistics_status': None, 'user_id': None,
+                'page': 1, 'pageSize': 90}
+        proxy = '47.75.114.218:10020'  # 使用代理服务器
+        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        max_count = req['data']['count']
+        print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+        print('*' * 50)
+        if max_count != 0:
+            n = 1
+            if max_count > 90:
+                in_count = math.ceil(max_count/90)
+                df = pd.DataFrame([])
+                dlist = []
+                while n <= in_count:  # 这里用到了一个while循环，穿越过来的
+                    data = self._waybillInfoQuery_yadan(timeStart, timeEnd, n)
+                    dlist.append(data)
+                    print('剩余查询次数' + str(in_count - n))
+                    n = n + 1
+                dp = df.append(dlist, ignore_index=True)
+            else:
+                dp = self._waybillInfoQuery(timeStart, timeEnd, n)
+            print(dp)
+            dp.to_excel('G:\\输出文件\\压单核实表-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp = dp[['order_number',  'deal_time', 'dealContent', 'traceUserName']]
+            dp.columns = ['订单编号', '处理时间', '处理结果', '处理人']
+            print('正在写入......')
+            dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            sql = '''REPLACE INTO 压单表_已核实_info(订单编号, 处理时间, 处理结果, 处理人, 记录时间) 
+                    SELECT 订单编号, 处理时间, 处理结果, 处理人, NOW() 记录时间 
+                    FROM customer;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('写入成功......')
+        else:
+            print('没有需要获取的信息！！！')
+            return
+        print('*' * 50)
+    def _waybillInfoQuery_yadan(self, timeStart, timeEnd, n):  # 进入物流问题件界面
+        print('+++正在查询第 ' + str(n) + ' 页信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.customerQuestion&action=getCustomerComplaintList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/customerQuestion'}
+        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'gift_reissue_order_number': None, 'is_gift_reissue': None, 'order_trace_id': None,
+                'question_type': 111, 'critical': None, 'read_status': None, 'operator_type': None, 'operator': None, 'create_time': None,
+                'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'is_collection': None, 'logistics_status': None, 'user_id': None,
+                'page': n, 'pageSize': 90}
+        proxy = '47.75.114.218:10020'  # 使用代理服务器
+        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        ordersDict = []
+        try:
+            for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
+                result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
+                result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
+                if ';' in result['traceRecord']:
+                    trace_record = result['traceRecord'].split(";")
+
+                    # for record in trace_record:
+                    # print(result['order_number'])
+                    # print(trace_record)
+                    # print(len(trace_record))
+
+                    record = trace_record[len(trace_record)-1]
+                    result['result_reson'] = ''
+                    result['result_info'] = ''
+                    result['dealContent'] = ''
+                    if record.split("#处理结果：")[1] != '':
+                        result['deal_time'] = record.split()[0]
+
+                        rec = record.split("#处理结果：")[1]
+                        if len(rec.split()) > 2:
+                            result['result_info'] = rec.split()[2]        # 客诉原因
+                        if len(rec.split()) > 1:
+                            result['result_reson'] = rec.split()[1]     # 处理内容
+                        result['dealContent'] = rec.split()[0]            # 最新处理结果
+                        rec_name = record.split("#处理结果：")[0]
+                        if len(rec_name.split()) > 1:
+                            if (rec_name.split())[2] != '' and (rec_name.split())[2] != []:
+                                if '客服' in (rec_name.split())[2]:
+                                    result['traceUserName'] = ((rec_name.split())[2]).split("(客服)")[0]
+                                else:
+                                    result['traceUserName'] = (rec_name.split())[2]
+                        else:
+                            result['traceUserName'] = ''
+                        ordersDict.append(result.copy())
                 else:
                     result['deal_time'] = ''
                     result['result_reson'] = ''
@@ -1500,6 +1630,9 @@ if __name__ == '__main__':
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
         # m.waybill_InfoQuery('2022-05-20', '2022-06-05')           # 查询更新-物流问题件
 
+        # timeStart, timeEnd = m.readInfo('压单表_已核实')
+        # m.waybill_InfoQuery_yadan(timeStart, timeEnd)             # 查询更新-物流问题件 - 压单核实
+
         timeStart, timeEnd = m.readInfo('物流客诉件')
         m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
         # m.waybill_Query('2022-05-20', '2022-06-05')               # 查询更新-物流客诉件
@@ -1584,6 +1717,10 @@ if __name__ == '__main__':
     # login_TmpCode = '3129878cee9537a6b68f48743902548e'
     # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
     # start: datetime = datetime.datetime.now()
+    #
+    # timeStart, timeEnd = m.readInfo('压单表_已核实')
+    # m.waybill_InfoQuery_yadan(timeStart, timeEnd)  # 查询更新-物流问题件 - 压单核实
+    # m.waybill_InfoQuery_yadan('2022-11-09', '2022-11-09')  # 查询更新-物流问题件 - 压单核实
 
     #
     # begin = datetime.date(2022, 5, 23)

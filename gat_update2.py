@@ -228,7 +228,7 @@ class QueryUpdate(Settings):
 
 
     #  导出需要更新的签收表---港澳台(二)
-    def EportOrder(self, team, month_last, month_yesterday, month_begin, check):
+    def EportOrder(self, team, month_last, month_yesterday, month_begin, check, export):
         match = {'gat': '港台',
                  'slsc': '品牌'}
         emailAdd = {'gat': 'giikinliujun@163.com',
@@ -353,15 +353,16 @@ class QueryUpdate(Settings):
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             print('正在写入---' + match[team] + ' ---临时缓存…………')  # 备用临时缓存表
             df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
-            print('正在写入excel…………')
-            df = df[['日期', '团队', '币种', '订单编号', '电话号码', '运单编号', '出货时间', '物流状态', '物流状态代码', '状态时间', '上线时间',
-                     '系统订单状态', '系统物流状态', '最终状态', '是否改派', '物流方式', '物流名称', '签收表物流状态', '付款方式', '产品id', '产品名称',
-                     '父级分类', '二级分类', '下单时间', '审核时间', '仓储扫描时间', '完结状态时间']]
-            old_path = 'G:\\输出文件\\{} {} 更新-签收表.xlsx'.format(today, match[team])
-            df.to_excel(old_path, sheet_name=match[team], index=False)
-            new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\{} {} 更新-签收表.xlsx'.format(today,match[team])
-            shutil.copyfile(old_path, new_path)     # copy到指定位置
-            print('----已写入excel; 并复制到指定文件夹中')
+            if export == '导表':
+                print('正在写入excel…………')
+                df = df[['日期', '团队', '币种', '订单编号', '电话号码', '运单编号', '出货时间', '物流状态', '物流状态代码', '状态时间', '上线时间',
+                         '系统订单状态', '系统物流状态', '最终状态', '是否改派', '物流方式', '物流名称', '签收表物流状态', '付款方式', '产品id', '产品名称',
+                         '父级分类', '二级分类', '下单时间', '审核时间', '仓储扫描时间', '完结状态时间']]
+                old_path = 'G:\\输出文件\\{} {} 更新-签收表.xlsx'.format(today, match[team])
+                df.to_excel(old_path, sheet_name=match[team], index=False)
+                new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\{} {} 更新-签收表.xlsx'.format(today,match[team])
+                shutil.copyfile(old_path, new_path)     # copy到指定位置
+                print('----已写入excel; 并复制到指定文件夹中')
 
         sql = '''DELETE FROM d1_gat gt WHERE gt.`订单编号` IN (SELECT 订单编号 FROM gat_易速配退运);'''
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)

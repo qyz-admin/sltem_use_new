@@ -385,6 +385,9 @@ class ExcelControl():
             if '转寄表' in shtName:                          # 添加上线时间  立邦 改派
                 df.insert(0, '上线时间', '')
                 df['上线时间'] = df['出货时间'].copy()
+            if '立邦-明细' in shtName:                          # 添加上线时间  立邦 改派
+                df.insert(0, '上线时间', '')
+                df['上线时间'] = df['出货时间'].copy()
             if '月明细' in shtName:                          # 添加上线时间  易速配
                 df.insert(0, '上线时间', '')
                 df['上线时间'] = df['清关时间'].copy()
