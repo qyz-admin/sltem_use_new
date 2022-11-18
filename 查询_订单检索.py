@@ -2470,8 +2470,8 @@ if __name__ == '__main__':
 
     elif int(select) == 3:
         print("2-->>> 正在按下单时间查询+++")
-        timeStart = '2022-08-01'
-        timeEnd = '2022-09-01'
+        timeStart = '2022-10-01'
+        timeEnd = '2022-11-14'
         areaId = ''
         query = '下单时间'
         m.order_TimeQuery(timeStart, timeEnd, areaId, query)

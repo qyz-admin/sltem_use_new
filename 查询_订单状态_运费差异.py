@@ -519,7 +519,8 @@ class QueryUpdate(Settings):
                         LEFT JOIN gat_wl_data b ON c.`运单编号` = b.`运单编号`
                         LEFT JOIN gat_logisitis_match g ON b.物流状态 = g.签收表物流状态
                 ) s
-                WHERE 最终状态 NOT IN ('拒收','已签收');'''.format()
+                WHERE 最终状态 NOT IN ('拒收','已签收')
+                ORDER BY 发货时间;'''.format()
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入excel…………')
         file_pathT = 'G:\\输出文件\\{0} 在途未上线-总表.xlsx'.format(rq)
@@ -588,8 +589,8 @@ if __name__ == '__main__':
 
 
     elif int(select) == 4:
-        # m.readFormHost('查询运费')
-        # m.trans_way_cost_new(team)  # 同产品下的规格运费查询
+        m.readFormHost('查询运费')
+        m.trans_way_cost_new(team)  # 同产品下的规格运费查询
         
         if week.isoweekday() == 2 or week.isoweekday() == 4:
             upload = '查询-运单号'    # 获取在途未上线 催促的

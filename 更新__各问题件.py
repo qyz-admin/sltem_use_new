@@ -1630,8 +1630,8 @@ if __name__ == '__main__':
         m.waybill_InfoQuery(timeStart, timeEnd)                     # 查询更新-物流问题件
         # m.waybill_InfoQuery('2022-05-20', '2022-06-05')           # 查询更新-物流问题件
 
-        # timeStart, timeEnd = m.readInfo('压单表_已核实')
-        # m.waybill_InfoQuery_yadan(timeStart, timeEnd)             # 查询更新-物流问题件 - 压单核实
+        timeStart, timeEnd = m.readInfo('压单表_已核实')
+        m.waybill_InfoQuery_yadan(timeStart, timeEnd)             # 查询更新-物流问题件 - 压单核实
 
         timeStart, timeEnd = m.readInfo('物流客诉件')
         m.waybill_Query(timeStart, timeEnd)                         # 查询更新-物流客诉件
@@ -1723,9 +1723,9 @@ if __name__ == '__main__':
     # m.waybill_InfoQuery_yadan('2022-11-09', '2022-11-09')  # 查询更新-物流问题件 - 压单核实
 
     #
-    # begin = datetime.date(2022, 5, 23)
-    # end = datetime.date(2022, 5, 24)
-    # m.order_check(begin, end)
+    # begin = datetime.date(2022, 10, 1)
+    # end = datetime.date(2022, 11, 1)
+    # m.order_check(begin, end)                 # 检查昨日订单是否有重复的
 
     # timeStart, timeEnd = m.readInfo('物流问题件')
     # m.waybill_InfoQuery('2022-09-19', '2022-09-22')  # 查询更新-物流问题件

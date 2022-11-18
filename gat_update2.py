@@ -74,7 +74,7 @@ class QueryUpdate(Settings):
                 if '需发货的改派订单' in dir or '需发货改派订单' in dir:
                     write = '需发货'
                 self.wbsheetHost(filePath, team, write, last_time, up_time)
-                os.remove(filePath)
+                # os.remove(filePath)
                 print('已清除上传文件…………')
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
@@ -91,8 +91,8 @@ class QueryUpdate(Settings):
         if 'xls' in fileType:
             wb = app.books.open(filePath, update_links=False, read_only=True)
             for sht in wb.sheets:
+                db = None
                 try:
-                    db = None
                     db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
@@ -115,6 +115,21 @@ class QueryUpdate(Settings):
                         print('++++正在 手动更新数据库：' + sht.name + ' 共：' + str(len(db)) + '行','sheet共：' + str(sht.used_range.last_cell.row) + '行')
                         db.to_sql('gat_update', con=self.engine1, index=False,if_exists='replace')  # 将返回的dateFrame导入数据库的临时表
                         self.up_gat_ztl(team, up_time)
+                    elif write == '在线支付':
+                        pay = ''
+                        if 'Payment_list' in filePath:
+                            if '交易清单' in sht.name:
+                                pay = '交易清单'
+                                db.rename(columns={'订单号': '订单编号'}, inplace=True)
+                                db = db[['订单编号', '交易币种', '交易金额', '交易状态', '交易创建时间', '退款金额', '支付方式']]
+                                self.online_paly(pay, db)
+                        elif '线付退款记录' in filePath:
+                            pay = '线付退款记录'
+                            db.rename(columns={'订单号': '订单编号'}, inplace=True)
+                            # db['日期'] = pd.to_datetime(db['日期'])
+                            # print(db['日期'])
+                            db = db[['订单编号', '是否退款', '日期', '退款类型', '原因', '具体原因', '是否扣手续费']]
+                            self.online_paly(pay, db)
                     print('++++----->>>' + sht.name + '：订单更新完成++++')
                 else:
                     print('----------数据为空导入失败：' + sht.name)
@@ -225,6 +240,50 @@ class QueryUpdate(Settings):
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
+
+
+    # 在线支付情况
+    def online_paly(self, pay, db):
+        print('正在写入......')
+        db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+        if pay == '交易清单':
+            sql = '''SELECT 订单编号, 交易币种, 交易金额, 交易状态, left(交易创建时间,LENGTH(交易创建时间)-8) AS 交易创建时间, 退款金额, 支付方式, NULL 是否退款, NULL 日期, NULL 退款类型, NULL 原因, NULL 具体原因, NULL 是否扣手续费
+                    FROM customer;'''
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            df.to_sql('customer_cp', con=self.engine1, index=False, if_exists='replace')
+            columns = list(df.columns)
+            columns = ','.join(columns)
+            sql = 'REPLACE INTO 交易清单({0}, 记录时间) SELECT *, NOW() 记录时间 FROM customer_cp ORDER BY 订单编号, 交易创建时间; '.format(columns)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        elif pay == '线付退款记录':
+            sql = '''update 交易清单 a, customer b
+                    set a.`是否退款`=b.`是否退款`,
+                        a.`日期`=b.`日期`,
+                        a.`退款类型`=b.`退款类型` ,
+                        a.`原因`=b.`原因`,
+                        a.`具体原因`=b.`具体原因`,
+                        a.`是否扣手续费`=b.`是否扣手续费`
+                    where a.`订单编号`=b.`订单编号`;'''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        print('写入成功......')
+    def _online_paly(self):
+        print('正在写入......')
+        db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+        if pay == '交易清单':
+            sql = '''REPLACE INTO 交易清单(订单编号, 交易币种, 交易金额, 交易状态, 交易创建时间, 退款金额, 支付方式, 是否退款, 日期, 退款类型, 原因, 具体原因, 是否扣手续费, 记录时间) 
+                                    SELECT 订单编号, 交易币种, 交易金额, 交易状态, 交易创建时间, 退款金额, 支付方式, 是否退款, 日期, 退款类型, 原因, 具体原因, 是否扣手续费, NOW() 记录时间 
+                    FROM customer;'''
+        elif pay == '线付退款记录':
+            sql = '''update 线付退款记录 a, customer b
+                    set a.`是否退款`=b.`是否退款`,
+                        a.`日期`=b.`日期`,
+                        a.`退款类型`=b.`退款类型` ,
+                        a.`原因`=b.`原因`,
+                        a.`具体原因`=b.`具体原因`,
+                        a.`是否扣手续费`=b.`是否扣手续费`
+                    where a.`订单编号`=b.`订单编号`;'''.format(team)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        print('写入成功......')
 
 
     #  导出需要更新的签收表---港澳台(二)
@@ -675,7 +734,7 @@ class QueryUpdate(Settings):
             print('今日  无需获取 同产品各团队对比 的数据！！！')
 
     # 新版签收率-报表(自己看的) - 单量计算
-    def gat_new(self, team, month_last, month_yesterday, currency):  # 报表各团队近两个月的物流数据
+    def gat_new(self, team, month_last, month_yesterday, currency_id):  # 报表各团队近两个月的物流数据
         month_now = datetime.datetime.now().strftime('%Y-%m-%d')
         match = {'gat': '港台'}
         emailAdd = {'台湾': 'giikinliujun@163.com',
@@ -687,6 +746,12 @@ class QueryUpdate(Settings):
         # else:
         #     month_last = '2021-08-01'
         #     month_yesterday = '2021-09-30'
+        if currency_id == '全部付款':
+            currency = '"货到付款","货到付款（含税）","Pacypay信用卡支付【波兰】","钱海支付","gleepay","AsiaBill信用卡支付","Asiabill信用卡直接支付","Asiabill信用卡2.5方支付","Asiabill2.5方支付","paypal快捷支付","Cropay信用卡支付","空中云汇直连信用卡"'
+        elif currency_id == '货到付款':
+            currency = '"货到付款","货到付款（含税）"'
+        elif currency_id == '在线付款':
+            currency = '"Pacypay信用卡支付【波兰】","钱海支付","gleepay","AsiaBill信用卡支付","Asiabill信用卡直接支付","Asiabill信用卡2.5方支付","Asiabill2.5方支付","paypal快捷支付","Cropay信用卡支付","空中云汇直连信用卡"'
         print(month_last)
         print(month_yesterday)
         sql = '''UPDATE gat_zqsb d
@@ -4273,10 +4338,12 @@ class QueryUpdate(Settings):
         sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品分旬台湾', '产品整月香港', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾']
         print('正在将物流品类写入excel…………')
 
-        if currency == '在线付款':
-            file_path = 'G:\\输出文件\\{} {} 物流品类-签收率-在线.xlsx'.format(today, match[team])
-        else:
+        if currency_id == '全部付款':
             file_path = 'G:\\输出文件\\{} {} 物流品类-签收率.xlsx'.format(today, match[team])
+        elif currency_id == '货到付款':
+            file_path = 'G:\\输出文件\\{} {} 物流品类-签收率-COD.xlsx'.format(today, match[team])
+        elif currency_id == '在线付款':
+            file_path = 'G:\\输出文件\\{} {} 物流品类-签收率-在线.xlsx'.format(today, match[team])
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
@@ -4309,7 +4376,12 @@ class QueryUpdate(Settings):
         print('----已写入excel; 并复制到指定文件夹中')
 
         print('正在将品类分旬写入excel…………')
-        file_path = 'G:\\输出文件\\{} {} 品类分旬-签收率.xlsx'.format(today, match[team])
+        if currency_id == '全部付款':
+            file_path = 'G:\\输出文件\\{} {} 品类分旬-签收率.xlsx'.format(today, match[team])
+        elif currency_id == '货到付款':
+            file_path = 'G:\\输出文件\\{} {} 品类分旬-签收率-COD.xlsx'.format(today, match[team])
+        elif currency_id == '在线付款':
+            file_path = 'G:\\输出文件\\{} {} 品类分旬-签收率-在线.xlsx'.format(today, match[team])
         sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品整月香港', '产品分旬台湾', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾']
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -4341,7 +4413,12 @@ class QueryUpdate(Settings):
         print('----已写入excel; 并复制到指定文件夹中')
 
         print('正在将产品写入excel…………')
-        file_path = 'G:\\输出文件\\{} {} 产品明细-签收率.xlsx'.format(today, match[team])
+        if currency_id == '全部付款':
+            file_path = 'G:\\输出文件\\{} {} 产品明细-签收率.xlsx'.format(today, match[team])
+        elif currency_id == '货到付款':
+            file_path = 'G:\\输出文件\\{} {} 产品明细-签收率-COD.xlsx'.format(today, match[team])
+        elif currency_id == '在线付款':
+            file_path = 'G:\\输出文件\\{} {} 产品明细-签收率-在线.xlsx'.format(today, match[team])
         sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾','产品分旬台湾',  '产品整月香港', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾', '产品月_直发香港', '产品旬_直发香港', '产品月_改派香港', '产品旬_改派香港']
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -9835,7 +9912,7 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    select = 99
+    select = 2
     if int(select) == 99:
         if team == 'gat':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
@@ -9853,12 +9930,14 @@ if __name__ == '__main__':
         # write = '手动更新数据库'
         m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
 
-        # currency = '货到付款'
-        currency = '"货到付款","货到付款（含税）","Pacypay信用卡支付【波兰】","钱海支付","gleepay","AsiaBill信用卡支付","Asiabill信用卡直接支付","Asiabill信用卡2.5方支付","Asiabill2.5方支付","paypal快捷支付","Cropay信用卡支付","空中云汇直连信用卡"'
-        m.gat_new(team, month_last, month_yesterday, currency)  # 获取-签收率-报表
-        m.qsb_new(team, month_old)  # 获取-每日-报表
-        m.EportOrderBook(team, month_last, month_yesterday)  # 导出-总的-签收
-        m.phone_report('handle')  # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比）
+        currency_id = '全部付款'
+        m.gat_new(team, month_last, month_yesterday, currency_id)      # 获取-货到付款& 在线付款 签收率-报表
+        m.qsb_new(team, month_old)                                  # 获取-每日-报表
+        m.EportOrderBook(team, month_last, month_yesterday)         # 导出-总的-签收
+        m.phone_report('handle')                                    # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比）
+
+        # currency_id = '在线付款'
+        # m.gat_new(team, month_last, month_yesterday, currency_id)  # 获取-在线付款 签收率-报表
 
     elif int(select) == 88:
         # m.jushou()                                            #  拒收核实-查询需要的产品id
@@ -9866,7 +9945,7 @@ if __name__ == '__main__':
 
         # 停用备用使用
         # m.EportOrder(team)       #  导出需要更新的签收表
-        # m.qsb_report(team, '2021-06-26', '2021-05-26')
+        m.qsb_report(team, '2021-06-26', '2021-05-26')
         pass
 
     elif int(select) == 1:
@@ -9874,6 +9953,12 @@ if __name__ == '__main__':
         up_time = '2022-10-20'                      # 手动更新数据库 --历史总表的记录日期
         write = '手动更新数据库'
         m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
+
+    elif int(select) == 2:
+        last_time = '2021-01-01'
+        up_time = '2022-10-20'
+        write = '在线支付'
+        m.readFormHost(team, write, last_time, up_time)  # 在线支付情况---港澳台（一）
 
 
     print('耗时：', datetime.datetime.now() - start)
