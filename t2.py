@@ -95,7 +95,7 @@ print('导入耗时：', datetime.datetime.now() - start)
 print('---------------------------------- 数据库更新部分：--------------------------------')
 m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息、
 
-# qu.EportOrder(team, month_last, month_yesterday, month_begin, '是', '不导表')     # 最近两个月的更新信息导出
+# qu.EportOrder(team, month_last, month_yesterday, month_begin, '是', '导表')     # 最近两个月的更新信息导出
 
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''

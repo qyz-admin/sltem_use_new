@@ -122,6 +122,7 @@ class QueryUpdate(Settings):
                                 pay = '交易清单'
                                 db.rename(columns={'订单号': '订单编号'}, inplace=True)
                                 db = db[['订单编号', '交易币种', '交易金额', '交易状态', '交易创建时间', '退款金额', '支付方式']]
+                                print(db)
                                 self.online_paly(pay, db)
                         elif '线付退款记录' in filePath:
                             pay = '线付退款记录'
@@ -129,6 +130,7 @@ class QueryUpdate(Settings):
                             # db['日期'] = pd.to_datetime(db['日期'])
                             # print(db['日期'])
                             db = db[['订单编号', '是否退款', '日期', '退款类型', '原因', '具体原因', '是否扣手续费']]
+                            print(db)
                             self.online_paly(pay, db)
                     print('++++----->>>' + sht.name + '：订单更新完成++++')
                 else:
@@ -245,18 +247,18 @@ class QueryUpdate(Settings):
     # 在线支付情况
     def online_paly(self, pay, db):
         print('正在写入......')
-        db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+        db.to_sql('线付缓存', con=self.engine1, index=False, if_exists='replace')
         if pay == '交易清单':
             sql = '''SELECT 订单编号, 交易币种, 交易金额, 交易状态, left(交易创建时间,LENGTH(交易创建时间)-8) AS 交易创建时间, 退款金额, 支付方式, NULL 是否退款, NULL 日期, NULL 退款类型, NULL 原因, NULL 具体原因, NULL 是否扣手续费
-                    FROM customer;'''
+                    FROM 线付缓存;'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_sql('customer_cp', con=self.engine1, index=False, if_exists='replace')
+            df.to_sql('线付缓存_cache', con=self.engine1, index=False, if_exists='replace')
             columns = list(df.columns)
             columns = ','.join(columns)
-            sql = 'REPLACE INTO 交易清单({0}, 记录时间) SELECT *, NOW() 记录时间 FROM customer_cp ORDER BY 订单编号, 交易创建时间; '.format(columns)
+            sql = 'REPLACE INTO 交易清单({0}, 记录时间) SELECT *, NOW() 记录时间 FROM 线付缓存_cache ORDER BY 订单编号, 交易创建时间; '.format(columns)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        elif pay == '线付退款记录':
-            sql = '''update 交易清单 a, customer b
+        elif pay == '线付退款记录':                                      
+            sql = '''update 交易清单 a, 线付缓存 b
                     set a.`是否退款`=b.`是否退款`,
                         a.`日期`=b.`日期`,
                         a.`退款类型`=b.`退款类型` ,

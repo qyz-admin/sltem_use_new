@@ -103,6 +103,8 @@ class QueryTwo(Settings, Settings_sso):
                         #         tem = column_val
                         if '运单编号' in db.columns:
                             tem = '运单编号'
+                        if '回执单号' in db.columns:
+                            tem = '回执单号'
                         elif '查件单号' in db.columns:
                             tem = '查件单号'
                         elif '运单号' in db.columns:

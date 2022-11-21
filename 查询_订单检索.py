@@ -2489,8 +2489,8 @@ if __name__ == '__main__':
         team = 'gat'
         searchType = '电话'
         pople_Query = '电话检索'                # 电话查询；订单检索
-        timeStart = '2022-09-01 00:00:00'
-        timeEnd = '2022-10-31 23:59:59'
+        timeStart = '2022-10-01 00:00:00'
+        timeEnd = '2022-11-19 23:59:59'
         m.readFormHost(team, searchType, pople_Query, timeStart, timeEnd)
 
     # 促单查询；订单检索
