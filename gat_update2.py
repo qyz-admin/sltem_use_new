@@ -74,7 +74,7 @@ class QueryUpdate(Settings):
                 if '需发货的改派订单' in dir or '需发货改派订单' in dir:
                     write = '需发货'
                 self.wbsheetHost(filePath, team, write, last_time, up_time)
-                # os.remove(filePath)
+                os.remove(filePath)
                 print('已清除上传文件…………')
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
@@ -123,15 +123,17 @@ class QueryUpdate(Settings):
                                 db.rename(columns={'订单号': '订单编号'}, inplace=True)
                                 db = db[['订单编号', '交易币种', '交易金额', '交易状态', '交易创建时间', '退款金额', '支付方式']]
                                 print(db)
-                                self.online_paly(pay, db)
+                                self._online_paly(pay, db)
                         elif '线付退款记录' in filePath:
+                            # print(db.columns)
                             pay = '线付退款记录'
                             db.rename(columns={'订单号': '订单编号'}, inplace=True)
-                            # db['日期'] = pd.to_datetime(db['日期'])
-                            # print(db['日期'])
+                            db.rename(columns={'''是否扣手续费
+（-横杆分割金额）''': '是否扣手续费'}, inplace=True)
+                            # print(db.columns)
                             db = db[['订单编号', '是否退款', '日期', '退款类型', '原因', '具体原因', '是否扣手续费']]
                             print(db)
-                            self.online_paly(pay, db)
+                            self._online_paly(pay, db)
                     print('++++----->>>' + sht.name + '：订单更新完成++++')
                 else:
                     print('----------数据为空导入失败：' + sht.name)
@@ -245,7 +247,7 @@ class QueryUpdate(Settings):
 
 
     # 在线支付情况
-    def online_paly(self, pay, db):
+    def _online_paly(self, pay, db):
         print('正在写入......')
         db.to_sql('线付缓存', con=self.engine1, index=False, if_exists='replace')
         if pay == '交易清单':
@@ -259,32 +261,124 @@ class QueryUpdate(Settings):
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         elif pay == '线付退款记录':                                      
             sql = '''update 交易清单 a, 线付缓存 b
-                    set a.`是否退款`=b.`是否退款`,
-                        a.`日期`=b.`日期`,
-                        a.`退款类型`=b.`退款类型` ,
-                        a.`原因`=b.`原因`,
-                        a.`具体原因`=b.`具体原因`,
-                        a.`是否扣手续费`=b.`是否扣手续费`
+                    set a.`是否退款`= b.`是否退款`,
+                        a.`日期`= b.`日期`,
+                        a.`退款类型`= b.`退款类型` ,
+                        a.`原因`= b.`原因`,
+                        a.`具体原因`= b.`具体原因`,
+                        a.`是否扣手续费`= SUBSTRING_INDEX(b.`是否扣手续费`,'-',-1)
                     where a.`订单编号`=b.`订单编号`;'''.format(team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('写入成功......')
-    def _online_paly(self):
-        print('正在写入......')
-        db.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-        if pay == '交易清单':
-            sql = '''REPLACE INTO 交易清单(订单编号, 交易币种, 交易金额, 交易状态, 交易创建时间, 退款金额, 支付方式, 是否退款, 日期, 退款类型, 原因, 具体原因, 是否扣手续费, 记录时间) 
-                                    SELECT 订单编号, 交易币种, 交易金额, 交易状态, 交易创建时间, 退款金额, 支付方式, 是否退款, 日期, 退款类型, 原因, 具体原因, 是否扣手续费, NOW() 记录时间 
-                    FROM customer;'''
-        elif pay == '线付退款记录':
-            sql = '''update 线付退款记录 a, customer b
-                    set a.`是否退款`=b.`是否退款`,
-                        a.`日期`=b.`日期`,
-                        a.`退款类型`=b.`退款类型` ,
-                        a.`原因`=b.`原因`,
-                        a.`具体原因`=b.`具体原因`,
-                        a.`是否扣手续费`=b.`是否扣手续费`
-                    where a.`订单编号`=b.`订单编号`;'''.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+    # 在线支付情况  写入
+    def online_paly(self):
+        print('单点更新订单状态中')
+        sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', '77999c2203a632e8bd2a66d286b83c20', '手0动')
+        time_online = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01  00:00:00'
+        sql = '''SELECT 订单编号  FROM {0} sl WHERE sl.`交易创建时间` >= '{1}';'''.format('交易清单', time_online)
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        print(ordersDict['订单编号'][0])
+        orderId = list(ordersDict['订单编号'])
+        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+        n = 0
+        while n < max_count:  # 这里用到了一个while循环，穿越过来的
+            ord = ', '.join(orderId[n:n + 500])
+            n = n + 500
+            sso.orderInfoQuery(ord)
+        print('更新耗时：', datetime.datetime.now() - start)
+
+        print('正在获取 线付月数据......')
+        sql = '''SELECT IFNULL(团队,'合计') 团队, 
+                        IFNULL(币种,'合计') 币种, 
+                        IFNULL(月份,'合计') 月份, 
+                        IFNULL(支付成功,'合计') 支付成功, 
+                        IF(取消退款=0,NULL,取消退款) 取消退款, 
+                        IF(退货退款=0,NULL,退货退款) 退货退款, 
+                        IF(拒付=0,NULL,拒付) 拒付, 
+                        IF(支付失败=0,NULL,支付失败) 支付失败, 
+                        IF(已创建=0,NULL,已创建) 已创建, 
+                        总计, 
+                        有效订单量, 
+                        concat(ROUND(IFNULL(拒付 / (支付成功+取消退款+退货退款+拒付),0) * 100,2),'%') 拒付率, 
+                        concat(ROUND(IFNULL((支付成功+取消退款+退货退款+拒付) / 总计,0) * 100,2),'%') 支付成功率, 
+                        concat(ROUND(IFNULL(在线有效订单量 / 有效订单量,0) * 100,2),'%') 线付占比
+                FROM ( SELECT 团队, 币种, 月份,
+                                SUM(IF(交易最终状态 = "成功",1,0)) as 支付成功,
+                                SUM(IF(交易最终状态 = "取消退款",1,0)) as 取消退款,
+                                SUM(IF(交易最终状态 = "退货退款",1,0)) as 退货退款,
+                                SUM(IF(交易最终状态 = "拒付",1,0)) as 拒付,
+                                SUM(IF(交易最终状态 = "失败",1,0)) as 支付失败,
+                                SUM(IF(交易最终状态 = "已创建",1,0)) as 已创建,
+                                COUNT(订单编号) AS 总计,
+                                SUM(IF(系统订单状态 NOT IN ('已删除','未支付', '支付失败'),1,0)) AS 有效订单量,
+                                SUM(IF(系统订单状态 NOT IN ('已删除','未支付', '支付失败') AND 付款方式 NOT LIKE '%货到付款%',1,0)) AS 在线有效订单量
+                    FROM ( SELECT s1.*,s2.`币种`, s2.`系统订单状态`, s2.`系统物流状态`,  s2.`付款方式`, s2.`团队`, 
+                                   IF(ISNULL(退款类型), 交易状态,IF(退款类型 = '退款不取件',IF(退款金额 / 交易金额 >=0.2,'退货退款','退款不取件'),IF(系统订单状态 = '已删除', IF(退款类型 = "退货退款",'取消退款',退款类型), IF(退款类型 = "取消退款", '退货退款', 退款类型))))	AS 交易最终状态
+                            FROM  ( SELECT *, DATE_FORMAT(交易创建时间,'%Y%m') AS 月份
+                                    FROM 交易清单 
+                                    WHERE id IN (SELECT MAX(id) FROM 交易清单 GROUP BY 订单编号 ) 
+                                    ORDER BY id
+                            ) s1 
+                            LEFT JOIN (SELECT * FROM gat_order_list g WHERE g.年月 >= '202209') s2 ON s1.订单编号= s2.订单编号
+                    ) ss
+                GROUP BY 团队, 币种, 月份
+                WITH ROLLUP
+                ) s;'''
+        df1 = pd.read_sql_query(sql=sql, con=self.engine1)
+
+        print('正在获取 线付每天数据......')
+        sql = '''SELECT IFNULL(团队,'合计') 团队, 
+                        IFNULL(币种,'合计') 币种, 
+                        IFNULL(交易日期,'合计') 交易日期, 
+                        IFNULL(支付成功,'合计') 支付成功, 
+                        IF(取消退款=0,NULL,取消退款) 取消退款, 
+                        IF(退货退款=0,NULL,退货退款) 退货退款, 
+                        IF(拒付=0,NULL,拒付) 拒付, 
+                        IF(支付失败=0,NULL,支付失败) 支付失败, 
+                        IF(已创建=0,NULL,已创建) 已创建, 
+                        总计, 
+                        有效订单量, 
+                        concat(ROUND(IFNULL(拒付 / (支付成功+取消退款+退货退款+拒付),0) * 100,2),'%') 拒付率, 
+                        concat(ROUND(IFNULL((支付成功+取消退款+退货退款+拒付) / 总计,0) * 100,2),'%') 支付成功率, 
+                        concat(ROUND(IFNULL(在线有效订单量 / 有效订单量,0) * 100,2),'%') 线付占比
+                FROM ( SELECT 团队, 币种, 交易日期,
+                                SUM(IF(交易最终状态 = "成功",1,0)) as 支付成功,
+                                SUM(IF(交易最终状态 = "取消退款",1,0)) as 取消退款,
+                                SUM(IF(交易最终状态 = "退货退款",1,0)) as 退货退款,
+                                SUM(IF(交易最终状态 = "拒付",1,0)) as 拒付,
+                                SUM(IF(交易最终状态 = "失败",1,0)) as 支付失败,
+                                SUM(IF(交易最终状态 = "已创建",1,0)) as 已创建,
+                                COUNT(订单编号) AS 总计,
+                                SUM(IF(系统订单状态 NOT IN ('已删除','未支付', '支付失败'),1,0)) AS 有效订单量,
+                                SUM(IF(系统订单状态 NOT IN ('已删除','未支付', '支付失败') AND 付款方式 NOT LIKE '%货到付款%',1,0)) AS 在线有效订单量
+                    FROM ( SELECT s1.*,s2.`币种`, s2.`系统订单状态`, s2.`系统物流状态`,  s2.`付款方式`, s2.`团队`, 
+                                   IF(ISNULL(退款类型), 交易状态,IF(退款类型 = '退款不取件',IF(退款金额 / 交易金额 >=0.2,'退货退款','退款不取件'),IF(系统订单状态 = '已删除', IF(退款类型 = "退货退款",'取消退款',退款类型), IF(退款类型 = "取消退款", '退货退款', 退款类型))))	AS 交易最终状态
+                            FROM  ( SELECT *, DATE_FORMAT(交易创建时间,'%Y-%m-%d') AS 交易日期
+                                    FROM 交易清单 
+                                    WHERE id IN (SELECT MAX(id) FROM 交易清单 GROUP BY 订单编号 ) 
+                                    ORDER BY id
+                            ) s1 
+                            LEFT JOIN (SELECT * FROM gat_order_list g WHERE g.年月 >= '202209') s2 ON s1.订单编号= s2.订单编号
+                    ) ss
+                GROUP BY 团队, 币种, 交易日期
+                WITH ROLLUP
+                ) s;'''
+        df2 = pd.read_sql_query(sql=sql, con=self.engine1)
+
+        today = datetime.date.today().strftime('%Y.%m.%d')
+        file_path = 'G:\\输出文件\\\\{} 线付月数据.xlsx'.format(today)
+        writer2 = pd.ExcelWriter(file_path, engine='openpyxl')
+        df1.to_excel(writer2, index=False, startrow=1)     # 月数据
+        df2.to_excel(writer2, index=False, startcol=16)    # 天数据
+        writer2.save()
+        writer2.close()
+
+        # wb = load_workbook(file_path)
+        # sheet = wb.get_sheet_by_name("Sheet1")
+        # sheet = wb["Sheet1"]
+        # sheet.column_dimensions['A'].width = 15.82
+        # sheet.column_dimensions['B'].width = 8.38
+        # wb.save(file_path)
         print('写入成功......')
 
 
@@ -757,24 +851,30 @@ class QueryUpdate(Settings):
         print(month_last)
         print(month_yesterday)
         sql = '''UPDATE gat_zqsb d
-                        SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', IF(d.`物流方式` LIKE '%优美宇通%' or d.`物流方式` LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹', d.`物流方式`)) )
-                        WHERE d.`是否改派` ='直发';'''
+                SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', 
+                                IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', 
+                                IF(d.`物流方式` LIKE '%优美宇通%' or d.`物流方式` LIKE '%铱熙无敌-新竹%','台湾-铱熙无敌-新竹', 
+                                IF(d.`物流方式` LIKE '%铱熙无敌-黑猫%','台湾-铱熙无敌-黑猫', 
+                                IF(d.`物流方式` LIKE '%铱熙无敌-711%','台湾-铱熙无敌-711超商', d.`物流方式`)))) )
+                WHERE d.`是否改派` ='直发';'''
         print('正在修改-直发的物流渠道…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         sql = '''UPDATE gat_zqsb d
-                        SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
-                                        IF(d.`物流方式` LIKE '香港-立邦%','香港-立邦-改派',
-            							IF(d.`物流方式` LIKE '香港-易速配%','香港-易速配-改派',
-            							IF(d.`物流方式` LIKE '台湾-立邦普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-大黄蜂普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-森鸿-新竹%','森鸿',
-            							IF(d.`物流方式` LIKE '台湾-天马-顺丰%','天马顺丰',
-            							IF(d.`物流方式` LIKE '台湾-天马-新竹%' OR d.`物流方式` LIKE '台湾-天马-711%','天马新竹',
-            							IF(d.`物流方式` LIKE '台湾-天马-黑猫%','天马黑猫',
-            							IF(d.`物流方式` LIKE '台湾-易速配-龟山%' OR d.`物流方式` LIKE '台湾-易速配-新竹%' OR d.`物流方式` LIKE '新易速配-台湾-改派%' OR d.`物流方式` = '易速配','龟山',
-            							IF(d.`物流方式` LIKE '台湾-速派-新竹%' OR d.`物流方式` LIKE '台湾-速派-711超商%','速派',
-            							IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', 
-            							IF(d.`物流方式` LIKE '台湾-优美宇通-新竹改派%','台湾-铱熙无敌-新竹改派', 
-            							IF(d.`物流方式` LIKE '香港-圆通%','香港-圆通-改派', IF(d.`物流方式` LIKE '台湾-速派宅配通%','速派宅配通', d.`物流方式`))))))  )  )  )  )  )  )  )
-                        WHERE d.`是否改派` ='改派';'''
+                SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
+                                IF(d.`物流方式` LIKE '香港-立邦%','香港-立邦-改派',
+                                IF(d.`物流方式` LIKE '香港-易速配%','香港-易速配-改派',
+                                IF(d.`物流方式` LIKE '台湾-立邦普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-大黄蜂普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-森鸿-新竹%','森鸿',
+                                IF(d.`物流方式` LIKE '台湾-天马-顺丰%','天马顺丰',
+                                IF(d.`物流方式` LIKE '台湾-天马-新竹%' OR d.`物流方式` LIKE '台湾-天马-711%','天马新竹',
+                                IF(d.`物流方式` LIKE '台湾-天马-黑猫%','天马黑猫',
+                                IF(d.`物流方式` LIKE '台湾-易速配-龟山%' OR d.`物流方式` LIKE '台湾-易速配-新竹%' OR d.`物流方式` LIKE '新易速配-台湾-改派%' OR d.`物流方式` = '易速配','龟山',
+                                IF(d.`物流方式` LIKE '台湾-速派-新竹%' OR d.`物流方式` LIKE '台湾-速派-711超商%','速派新竹',
+                                IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', 
+                                IF(d.`物流方式` LIKE '台湾-优美宇通-新竹改派%','台湾-铱熙无敌-新竹改派', 
+                                IF(d.`物流方式` LIKE '香港-圆通%','香港-圆通-改派', 
+                                IF(d.`物流方式` LIKE '台湾-速派宅配通%','速派宅配通', 
+                                IF(d.`物流方式` LIKE '台湾-速派-黑猫%','速派黑猫', d.`物流方式`)))))))  )  )  )  )  )  )  )
+                WHERE d.`是否改派` ='改派';'''
         print('正在修改-改派的物流渠道…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
@@ -4490,26 +4590,30 @@ class QueryUpdate(Settings):
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
         sql = '''UPDATE gat_zqsb d
-                        SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', 
-                                                IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', 
-                                                IF(d.`物流方式` LIKE '%优美宇通%' or d.`物流方式` LIKE '%铱熙无敌%','台湾-铱熙无敌-新竹', d.`物流方式`)) )
-                        WHERE d.`是否改派` ='直发';'''
+                SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', 
+                                IF(d.`物流方式` LIKE '台湾-天马-711%','台湾-天马-新竹', 
+                                IF(d.`物流方式` LIKE '%优美宇通%' or d.`物流方式` LIKE '%铱熙无敌-新竹%','台湾-铱熙无敌-新竹', 
+                                IF(d.`物流方式` LIKE '%铱熙无敌-黑猫%','台湾-铱熙无敌-黑猫', 
+                                IF(d.`物流方式` LIKE '%铱熙无敌-711%','台湾-铱熙无敌-711超商', d.`物流方式`)))) )
+                WHERE d.`是否改派` ='直发';'''
         print('正在修改-直发的物流渠道…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         sql = '''UPDATE gat_zqsb d
-                        SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
-                                        IF(d.`物流方式` LIKE '香港-立邦%','香港-立邦-改派',
-            							IF(d.`物流方式` LIKE '香港-易速配%','香港-易速配-改派',
-            							IF(d.`物流方式` LIKE '台湾-立邦普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-大黄蜂普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-森鸿-新竹%','森鸿',
-            							IF(d.`物流方式` LIKE '台湾-天马-顺丰%','天马顺丰',
-            							IF(d.`物流方式` LIKE '台湾-天马-新竹%' OR d.`物流方式` LIKE '台湾-天马-711%','天马新竹',
-            							IF(d.`物流方式` LIKE '台湾-天马-黑猫%','天马黑猫',
-            							IF(d.`物流方式` LIKE '台湾-易速配-龟山%' OR d.`物流方式` LIKE '台湾-易速配-新竹%' OR d.`物流方式` LIKE '新易速配-台湾-改派%' OR d.`物流方式` = '易速配','龟山',
-            							IF(d.`物流方式` LIKE '台湾-速派-新竹%' OR d.`物流方式` LIKE '台湾-速派-711超商%','速派',
-            							IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', 
-            							IF(d.`物流方式` LIKE '台湾-优美宇通-新竹改派%','台湾-铱熙无敌-新竹改派', 
-            							IF(d.`物流方式` LIKE '香港-圆通%','香港-圆通-改派', IF(d.`物流方式` LIKE '台湾-速派宅配通%','速派宅配通', d.`物流方式`))))))  )  )  )  )  )  )  )
-                        WHERE d.`是否改派` ='改派';'''
+                SET d.`物流方式`= IF(d.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
+                                IF(d.`物流方式` LIKE '香港-立邦%','香港-立邦-改派',
+                                IF(d.`物流方式` LIKE '香港-易速配%','香港-易速配-改派',
+                                IF(d.`物流方式` LIKE '台湾-立邦普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-大黄蜂普货头程-森鸿尾程%' OR d.`物流方式` LIKE '台湾-森鸿-新竹%','森鸿',
+                                IF(d.`物流方式` LIKE '台湾-天马-顺丰%','天马顺丰',
+                                IF(d.`物流方式` LIKE '台湾-天马-新竹%' OR d.`物流方式` LIKE '台湾-天马-711%','天马新竹',
+                                IF(d.`物流方式` LIKE '台湾-天马-黑猫%','天马黑猫',
+                                IF(d.`物流方式` LIKE '台湾-易速配-龟山%' OR d.`物流方式` LIKE '台湾-易速配-新竹%' OR d.`物流方式` LIKE '新易速配-台湾-改派%' OR d.`物流方式` = '易速配','龟山',
+                                IF(d.`物流方式` LIKE '台湾-速派-新竹%' OR d.`物流方式` LIKE '台湾-速派-711超商%','速派新竹',
+                                IF(d.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%' OR d.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%','龟山', 
+                                IF(d.`物流方式` LIKE '台湾-优美宇通-新竹改派%','台湾-铱熙无敌-新竹改派', 
+                                IF(d.`物流方式` LIKE '香港-圆通%','香港-圆通-改派', 
+                                IF(d.`物流方式` LIKE '台湾-速派宅配通%','速派宅配通', 
+                                IF(d.`物流方式` LIKE '台湾-速派-黑猫%','速派黑猫', d.`物流方式`)))))))  )  )  )  )  )  )  )
+                WHERE d.`是否改派` ='改派';'''
         print('正在修改-改派的物流渠道…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
@@ -9960,7 +10064,8 @@ if __name__ == '__main__':
         last_time = '2021-01-01'
         up_time = '2022-10-20'
         write = '在线支付'
-        m.readFormHost(team, write, last_time, up_time)  # 在线支付情况---港澳台（一）
+        m.readFormHost(team, write, last_time, up_time)  # 在线支付 读表---港澳台（一）
+        m.online_paly()                                  # 在线支付 获取
 
 
     print('耗时：', datetime.datetime.now() - start)

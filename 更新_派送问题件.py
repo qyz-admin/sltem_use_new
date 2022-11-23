@@ -835,7 +835,7 @@ class QueryTwo(Settings, Settings_sso):
         begin = begin.date()
         end = datetime.datetime.strptime(timeEnd, '%Y-%m-%d')
         end = (end + datetime.timedelta(days=1)).date()
-        print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
+        print('台币：正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
         # currencyId = [13, 6]            # 6 是港币；13 是台币
         template_id = ['90,89,88', '49,73,77', '50,72,78']
         match = {'90,89,88': '客户自取', '49,73,77': '地址问题/客户要求更改派送时间或者地址', '50,72,78': '送至便利店'}
@@ -851,6 +851,33 @@ class QueryTwo(Settings, Settings_sso):
                 res = {}
                 count = self._getMessageLog(id, day_time, day_time)
                 res['币种'] = '台币'
+                res['日期'] = day_time
+                res['短信模板'] = match[id]
+                res['发送量'] = count
+                dict.append(res)
+            data = pd.json_normalize(dict)
+            print(data)
+            dlist.append(data)
+        dp = df.append(dlist, ignore_index=True)
+        dp.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
+        sql = '''REPLACE INTO 派送问题件_跟进表_message(币种,日期,短信模板,发送量)  SELECT * FROM cache_cp;'''
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
+        print('港币：正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
+        template_id = ['84,85', '82,87', '151']
+        match = {'84,85': '预约送达时间', '82,87': '送达客户不在', '151': '客户自取'}
+        # match2 = {2: '已签收', 3: '拒收'}
+        dlist = []
+        df = pd.DataFrame([])
+        for i in range((end - begin).days):  # 按天循环获取订单状态
+            day = begin + datetime.timedelta(days=i)
+            day_time = str(day)
+            dict = []
+            for id in template_id:
+                print('+++正在查询： ' + day_time + match[id] + ' 短信发送量')
+                res = {}
+                count = self._getMessageLog(id, day_time, day_time)
+                res['币种'] = '港币'
                 res['日期'] = day_time
                 res['短信模板'] = match[id]
                 res['发送量'] = count
