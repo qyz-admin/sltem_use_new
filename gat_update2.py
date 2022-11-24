@@ -21,6 +21,8 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, \
 from 查询_产品明细 import QueryTwoT
 
 from mysqlControl import MysqlControl
+from sso_updata import Query_sso_updata
+
 # -*- coding:utf-8 -*-
 class QueryUpdate(Settings):
     def __init__(self):
