@@ -122,18 +122,14 @@ class QueryUpdate(Settings):
                         if 'Payment_list' in filePath:
                             if '交易清单' in sht.name:
                                 pay = '交易清单'
-                                db.rename(columns={'订单号': '订单编号'}, inplace=True)
-                                db = db[['订单编号', '交易币种', '交易金额', '交易状态', '交易创建时间', '退款金额', '支付方式']]
+                                db.rename(columns={'订单号': '订单编号', '退款金额': '交易退款金额'}, inplace=True)
+                                db = db[['订单编号', '交易币种', '交易金额', '交易状态', '交易创建时间', '交易退款金额', '支付方式']]
                                 print(db)
                                 self._online_paly(pay, db)
                         elif '线付退款记录' in filePath:
                             # print(db.columns)
                             pay = '线付退款记录'
-                            db.rename(columns={'订单号': '订单编号'}, inplace=True)
-                            db.rename(columns={'''是否扣手续费
-（-横杆分割金额）''': '是否扣手续费'}, inplace=True)
-                            # print(db.columns)
-                            db = db[['订单编号', '是否退款', '日期', '退款类型', '原因', '具体原因', '是否扣手续费']]
+                            db = db[['订单编号', '退款时间', '退款原因', '详细原因', '具体原因', '退款金额', '订单金额', '剩余金额', '申请退款人']]
                             print(db)
                             self._online_paly(pay, db)
                     print('++++----->>>' + sht.name + '：订单更新完成++++')
@@ -253,7 +249,8 @@ class QueryUpdate(Settings):
         print('正在写入......')
         db.to_sql('线付缓存', con=self.engine1, index=False, if_exists='replace')
         if pay == '交易清单':
-            sql = '''SELECT 订单编号, 交易币种, 交易金额, 交易状态, left(交易创建时间,LENGTH(交易创建时间)-8) AS 交易创建时间, 退款金额, 支付方式, NULL 是否退款, NULL 日期, NULL 退款类型, NULL 原因, NULL 具体原因, NULL 是否扣手续费
+            sql = '''SELECT 订单编号, 交易币种, 交易金额, 交易状态, left(交易创建时间,LENGTH(交易创建时间)-8) AS 交易创建时间, 交易退款金额, 支付方式, 
+                            NULL 退款时间, NULL 退款原因, NULL 详细原因, NULL 具体原因, IF(交易退款金额 IS NOT NULL AND 交易退款金额 <> '','已退款',NULL) 是否退款, NULL 退款金额, NULL 订单金额, NULL 剩余金额, NULL 申请退款人
                     FROM 线付缓存;'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             df.to_sql('线付缓存_cache', con=self.engine1, index=False, if_exists='replace')
@@ -263,20 +260,23 @@ class QueryUpdate(Settings):
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         elif pay == '线付退款记录':                                      
             sql = '''update 交易清单 a, 线付缓存 b
-                    set a.`是否退款`= b.`是否退款`,
-                        a.`日期`= b.`日期`,
-                        a.`退款类型`= b.`退款类型` ,
-                        a.`原因`= b.`原因`,
+                    set a.`退款时间`= b.`退款时间`,
+                        a.`退款原因`= b.`退款原因`,
+                        a.`详细原因`= b.`详细原因` ,
                         a.`具体原因`= b.`具体原因`,
-                        a.`是否扣手续费`= SUBSTRING_INDEX(b.`是否扣手续费`,'-',-1)
+                        a.`退款金额`= b.`退款金额`,
+                        a.`订单金额`= b.`订单金额`,
+                        a.`剩余金额`= b.`剩余金额`,
+                        a.`申请退款人`= b.`申请退款人`
                     where a.`订单编号`=b.`订单编号`;'''.format(team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('写入成功......')
     # 在线支付情况  写入
     def online_paly(self):
-        print('单点更新订单状态中')
+        print('+++单点更新订单状态中......')
         sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', '77999c2203a632e8bd2a66d286b83c20', '手0动')
         time_online = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01  00:00:00'
+        time_online2 = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y%m')
         sql = '''SELECT 订单编号  FROM {0} sl WHERE sl.`交易创建时间` >= '{1}';'''.format('交易清单', time_online)
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
         print(ordersDict['订单编号'][0])
@@ -315,7 +315,7 @@ class QueryUpdate(Settings):
                                 SUM(IF(系统订单状态 NOT IN ('已删除','未支付', '支付失败'),1,0)) AS 有效订单量,
                                 SUM(IF(系统订单状态 NOT IN ('已删除','未支付', '支付失败') AND 付款方式 NOT LIKE '%货到付款%',1,0)) AS 在线有效订单量
                     FROM ( SELECT s1.*,s2.`币种`, s2.`系统订单状态`, s2.`系统物流状态`,  s2.`付款方式`, s2.`团队`, 
-                                   IF(ISNULL(退款类型), 交易状态,IF(退款类型 = '退款不取件',IF(退款金额 / 交易金额 >=0.2,'退货退款','退款不取件'),IF(系统订单状态 = '已删除', IF(退款类型 = "退货退款",'取消退款',退款类型), IF(退款类型 = "取消退款", '退货退款', 退款类型))))	AS 交易最终状态
+                                   IF(ISNULL(退款原因), 交易状态,IF(退款原因 = '退款不取件',IF(退款金额 / 交易金额 >=0.2,'退货退款','退款不取件'),IF(系统订单状态 = '已删除', IF(退款原因 = "退货退款",'取消退款',退款原因), IF(退款原因 = "取消退款", '退货退款', 退款原因))))	AS 交易最终状态
                             FROM  ( SELECT *, DATE_FORMAT(交易创建时间,'%Y%m') AS 月份
                                     FROM 交易清单 
                                     WHERE id IN (SELECT MAX(id) FROM 交易清单 GROUP BY 订单编号 ) 
@@ -326,6 +326,47 @@ class QueryUpdate(Settings):
                 GROUP BY 团队, 币种, 月份
                 WITH ROLLUP
                 ) s;'''
+        sql = '''SELECT IFNULL(s.团队,'合计') 团队, 
+                        IFNULL(s.币种,'合计') 币种, 
+                        IFNULL(s.月份,'合计') 月份, 
+                        IF(SUM(支付成功)=0,NULL,SUM(支付成功)) 支付成功, 
+                        IF(SUM(取消退款)=0,NULL,SUM(取消退款)) 取消退款, 
+                        IF(SUM(退货退款)=0,NULL,SUM(退货退款)) 退货退款, 
+                        IF(SUM(拒付)=0,NULL,SUM(拒付)) 拒付, 
+                        IF(SUM(支付失败)=0,NULL,SUM(支付失败)) 支付失败, 
+                        IF(SUM(已创建)=0,NULL,SUM(已创建)) 已创建, 
+                        SUM(总计) 总计,
+                        SUM(有效订单量) 有效订单量, 
+                        concat(ROUND(IFNULL(SUM(拒付) / (SUM(支付成功)+SUM(取消退款)+SUM(退货退款)+SUM(拒付)),0) * 100,2),'%') 拒付率, 
+                        concat(ROUND(IFNULL((SUM(支付成功)+SUM(取消退款)+SUM(退货退款)+SUM(拒付)) / 总计,0) * 100,2),'%') 支付成功率, 
+                        concat(ROUND(IFNULL(SUM(在线有效订单量) / SUM(有效订单量) ,0) * 100,2),'%') 线付占比
+                FROM ( SELECT ss.团队, ss.币种, ss.月份,
+                                SUM(IF(交易最终状态 = "成功",1,0)) as 支付成功,
+                                SUM(IF(交易最终状态 = "取消退款",1,0)) as 取消退款,
+                                SUM(IF(交易最终状态 = "退货退款",1,0)) as 退货退款,
+                                SUM(IF(交易最终状态 = "拒付",1,0)) as 拒付,
+                                SUM(IF(交易最终状态 = "失败",1,0)) as 支付失败,
+                                SUM(IF(交易最终状态 = "已创建",1,0)) as 已创建,
+                                COUNT(订单编号) AS 总计,
+                                SUM(IF(系统订单状态 NOT IN ('已删除','未支付', '支付失败') AND 付款方式 NOT LIKE '%货到付款%',1,0)) AS 在线有效订单量
+                    FROM ( SELECT s1.*,s2.`币种`, s2.`系统订单状态`, s2.`系统物流状态`,  s2.`付款方式`, s2.`团队`, 
+                                   IF(ISNULL(退款原因), 交易状态,IF(退款原因 = '退款不取件',IF(退款金额 / 交易金额 >=0.2,'退货退款','退款不取件'),IF(系统订单状态 = '已删除', IF(退款原因 = "退货退款",'取消退款',退款原因), IF(退款原因 = "取消退款", '退货退款', 退款原因))))	AS 交易最终状态
+                            FROM  ( SELECT *, DATE_FORMAT(交易创建时间,'%Y%m') AS 月份
+                                    FROM 交易清单 
+                                    WHERE id IN (SELECT MAX(id) FROM 交易清单 GROUP BY 订单编号 ) 
+                                    ORDER BY id
+                            ) s1 
+                            LEFT JOIN (SELECT * FROM gat_order_list g WHERE g.年月 >= '{0}') s2 ON s1.订单编号= s2.订单编号
+                    ) ss
+                    GROUP BY 团队, 币种, 月份
+                ) s
+                LEFT JOIN (	SELECT 团队, 币种, 年月, SUM(IF(g.`系统订单状态` NOT IN ('已删除','未支付', '支付失败'),1,0)) AS 有效订单量
+                            FROM gat_order_list g 
+                            WHERE g.年月 >= '{0}' 
+                            GROUP BY 团队, 币种, 年月
+                ) ss2 ON s.团队 =ss2.团队 AND s.币种 =ss2.币种 AND s.月份 =ss2.年月
+                GROUP BY s.团队, s.币种, s.月份
+                WITH ROLLUP;'''.format(time_online2)
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
 
         print('正在获取 线付每天数据......')
@@ -354,7 +395,7 @@ class QueryUpdate(Settings):
                                 SUM(IF(系统订单状态 NOT IN ('已删除','未支付', '支付失败'),1,0)) AS 有效订单量,
                                 SUM(IF(系统订单状态 NOT IN ('已删除','未支付', '支付失败') AND 付款方式 NOT LIKE '%货到付款%',1,0)) AS 在线有效订单量
                     FROM ( SELECT s1.*,s2.`币种`, s2.`系统订单状态`, s2.`系统物流状态`,  s2.`付款方式`, s2.`团队`, 
-                                   IF(ISNULL(退款类型), 交易状态,IF(退款类型 = '退款不取件',IF(退款金额 / 交易金额 >=0.2,'退货退款','退款不取件'),IF(系统订单状态 = '已删除', IF(退款类型 = "退货退款",'取消退款',退款类型), IF(退款类型 = "取消退款", '退货退款', 退款类型))))	AS 交易最终状态
+                                   IF(ISNULL(退款原因), 交易状态,IF(退款原因 = '退款不取件',IF(退款金额 / 交易金额 >=0.2,'退货退款','退款不取件'),IF(系统订单状态 = '已删除', IF(退款原因 = "退货退款",'取消退款',退款原因), IF(退款原因 = "取消退款", '退货退款', 退款原因))))	AS 交易最终状态
                             FROM  ( SELECT *, DATE_FORMAT(交易创建时间,'%Y-%m-%d') AS 交易日期
                                     FROM 交易清单 
                                     WHERE id IN (SELECT MAX(id) FROM 交易清单 GROUP BY 订单编号 ) 
@@ -365,6 +406,47 @@ class QueryUpdate(Settings):
                 GROUP BY 团队, 币种, 交易日期
                 WITH ROLLUP
                 ) s;'''
+        sql = '''SELECT IFNULL(s.团队,'合计') 团队, 
+                        IFNULL(s.币种,'合计') 币种, 
+                        IFNULL(s.交易日期,'合计') 交易日期, 
+                        IF(SUM(支付成功)=0,NULL,SUM(支付成功)) 支付成功, 
+                        IF(SUM(取消退款)=0,NULL,SUM(取消退款)) 取消退款, 
+                        IF(SUM(退货退款)=0,NULL,SUM(退货退款)) 退货退款, 
+                        IF(SUM(拒付)=0,NULL,SUM(拒付)) 拒付, 
+                        IF(SUM(支付失败)=0,NULL,SUM(支付失败)) 支付失败, 
+                        IF(SUM(已创建)=0,NULL,SUM(已创建)) 已创建, 
+                        SUM(总计) 总计,
+                        SUM(有效订单量) 有效订单量, 
+                        concat(ROUND(IFNULL(SUM(拒付) / (SUM(支付成功)+SUM(取消退款)+SUM(退货退款)+SUM(拒付)),0) * 100,2),'%') 拒付率, 
+                        concat(ROUND(IFNULL((SUM(支付成功)+SUM(取消退款)+SUM(退货退款)+SUM(拒付)) / 总计,0) * 100,2),'%') 支付成功率, 
+                        concat(ROUND(IFNULL(SUM(在线有效订单量) / SUM(有效订单量) ,0) * 100,2),'%') 线付占比
+                FROM ( SELECT ss.团队, ss.币种, ss.交易日期,
+                                SUM(IF(交易最终状态 = "成功",1,0)) as 支付成功,
+                                SUM(IF(交易最终状态 = "取消退款",1,0)) as 取消退款,
+                                SUM(IF(交易最终状态 = "退货退款",1,0)) as 退货退款,
+                                SUM(IF(交易最终状态 = "拒付",1,0)) as 拒付,
+                                SUM(IF(交易最终状态 = "失败",1,0)) as 支付失败,
+                                SUM(IF(交易最终状态 = "已创建",1,0)) as 已创建,
+                                COUNT(订单编号) AS 总计,
+                                SUM(IF(系统订单状态 NOT IN ('已删除','未支付', '支付失败') AND 付款方式 NOT LIKE '%货到付款%',1,0)) AS 在线有效订单量
+                    FROM ( SELECT s1.*,s2.`币种`, s2.`系统订单状态`, s2.`系统物流状态`,  s2.`付款方式`, s2.`团队`, 
+                                   IF(ISNULL(退款原因), 交易状态,IF(退款原因 = '退款不取件',IF(退款金额 / 交易金额 >=0.2,'退货退款','退款不取件'),IF(系统订单状态 = '已删除', IF(退款原因 = "退货退款",'取消退款',退款原因), IF(退款原因 = "取消退款", '退货退款', 退款原因))))	AS 交易最终状态
+                            FROM  ( SELECT *, DATE_FORMAT(交易创建时间,'%Y-%m-%d') AS 交易日期
+                                    FROM 交易清单 
+                                    WHERE id IN (SELECT MAX(id) FROM 交易清单 GROUP BY 订单编号 ) 
+                                    ORDER BY id
+                            ) s1 
+                            LEFT JOIN (SELECT * FROM gat_order_list g WHERE g.年月 >= '{0}') s2 ON s1.订单编号= s2.订单编号
+                    ) ss
+                    GROUP BY 团队, 币种, 交易日期
+                ) s
+                LEFT JOIN (	SELECT 团队, 币种, 日期, SUM(IF(g.`系统订单状态` NOT IN ('已删除','未支付', '支付失败'),1,0)) AS 有效订单量
+                            FROM gat_order_list g 
+                            WHERE g.年月 >= '{0}' 
+                            GROUP BY 团队, 币种, 日期
+                ) ss2 ON s.团队 =ss2.团队 AND s.币种 =ss2.币种 AND s.交易日期 =ss2.日期
+                GROUP BY s.团队, s.币种, s.交易日期
+                WITH ROLLUP;'''.format(time_online2)
         df2 = pd.read_sql_query(sql=sql, con=self.engine1)
 
         today = datetime.date.today().strftime('%Y.%m.%d')
