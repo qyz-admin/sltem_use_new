@@ -1285,6 +1285,58 @@ class QueryTwoLower(Settings, Settings_sso):
         else:
             print('头程物流 更新失败！！！')
 
+    # 驳回发货-改派使用
+    def delivery_rejectDelivery(self):
+        print(datetime.datetime.now())
+        rq = datetime.datetime.now().strftime('%Y-%m-%d')
+        file_data = input('驳回发货:  请输入 运单编号,多个以逗号分割:  ')
+        # file_data ='7464302731,7464320043,7464314104'
+        if ',' in file_data:  # 定义一行数据
+            dlist = file_data.split(',')
+        else:
+            dlist = [file_data]
+        ordersdict = []
+        if len(dlist) > 40:
+            n = 0
+            while n < len(dlist) - 40:  # 这里用到了一个while循环，穿越过来的
+                n = n + 40
+                dl = dlist[n:n + 40]    # 分批查询
+                print(n)
+                for d in dl:
+                    result = self._delivery_rejectDelivery(d)
+                    ordersdict.append(result)
+                print('暂停30秒')
+                time.sleep(30)             # 暂停30秒
+        else:
+            for d in dlist:
+                result = self._delivery_rejectDelivery(d)
+                ordersdict.append(result)
+        df = pd.json_normalize(ordersdict)
+        df.to_excel('G:\\输出文件\\{0} 驳回发货-查询.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        print('写入完成++++++')
+
+    def _delivery_rejectDelivery(self, waybill):
+        print('+++正在驳回中')
+        url = r'http://gwms-v3.giikin.cn/order/delivery/rejectDelivery'
+        r_header = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+            'Host': 'gwms-v3.giikin.cn',
+            'origin': 'http://gwms-v3.giikin.cn',
+            'Referer': 'http://gwms-v3.giikin.cn/order/delivery/rejectdelivery'}
+        data = {'orderno': waybill}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print(req)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
+        print(req)
+        print(req['comment'])
+        ordersdict = {}
+        ordersdict[str(waybill)] = req['comment']
+        return ordersdict
 
 if __name__ == '__main__':
     m = QueryTwoLower('+86-18538110674', 'qyz04163510.','1dd6113668f83ab5b79797b87b8bcc41','手0动')
@@ -1294,7 +1346,7 @@ if __name__ == '__main__':
 
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
-    m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
+    # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
     select = 4
     if select == 1:
         m.readFile(select)            # 上传每日压单核实结果
@@ -1308,6 +1360,9 @@ if __name__ == '__main__':
         m.stockcompose_upload()
 
     elif select == 4:
+        m.delivery_rejectDelivery()     # 驳回发货-改派使用
+
+    elif select == 5:
         m.readFile(select)  # 上传每日压单核实结果
         pass
         # m.get_take_delivery_no()

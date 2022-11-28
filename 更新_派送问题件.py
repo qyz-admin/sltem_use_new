@@ -27,7 +27,7 @@ from settings_sso import Settings_sso
 from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
-from 更新_已下架_压单_头程导入提单号 import QueryTwoLower
+from 更新_已下架_压单_驳回发货_头程导入提单号 import QueryTwoLower
 from 查询_订单检索 import QueryOrder
 
 # -*- coding:utf-8 -*-
