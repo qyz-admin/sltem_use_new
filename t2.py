@@ -26,7 +26,7 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
 '''
 # 初始化时间设置
 updata = '全部'           #  后台获取全部（两月）、部分更新（近五天）
-if team in ('ga0t', 'slsc', 'sl_r9b'):
+if team in ('gat', 'slsc', 'sl_r9b'):
     # 更新时间
     timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
     data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
@@ -40,10 +40,10 @@ else:
     # 更新时间
     data_begin = datetime.date(2022, 8, 20)  # 数据库更新
     begin = datetime.date(2022, 11, 21)      # 单点更新
-    end = datetime.date(2022, 11, 28)
+    end = datetime.date(2022, 11, 29)
     # 导出时间
     month_last = '2022-10-01'
-    month_yesterday = '2022-11-28'
+    month_yesterday = '2022-11-29'
     month_begin = '2022-09-01'
 print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
@@ -93,7 +93,7 @@ print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
 print('---------------------------------- 数据库更新部分：--------------------------------')
-# m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息、
+m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息、
 
 # qu.EportOrder(team, month_last, month_yesterday, month_begin, '是', '导0表')     # 最近两个月的更新信息导出
 

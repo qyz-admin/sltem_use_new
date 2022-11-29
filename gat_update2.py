@@ -4651,7 +4651,7 @@ class QueryUpdate(Settings):
     def qsb_new(self, team, month_last):  # 报表各团队近两个月的物流数据
         month_now = datetime.datetime.now().strftime('%Y-%m-%d')
         match = {'gat': '港台-每日'}
-        not_team = '"红杉家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营","神龙-主页运营","金蝉家族1组","金蝉家族2组","奥创队"'
+        not_team = '"红杉家族-港澳台", "APP运营", "红杉家族-港澳台2", "金狮-港澳台", "金鹏家族-小虎队","Line运营","神龙-主页运营","金蝉家族1组","金蝉家族2组","奥创队"'
         # if team == 'ga9t':
         #     month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
         #     month_now = datetime.datetime.now().strftime('%Y-%m-%d')
