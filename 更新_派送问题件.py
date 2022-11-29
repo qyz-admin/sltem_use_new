@@ -155,7 +155,7 @@ class QueryTwo(Settings, Settings_sso):
                                             SUM(IF(物流状态 = "拒收",1,0)) as 拒收,
                                             SUM(IF(物流状态 = "已退货",1,0)) as 已退货,
                                             SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成
-                            FROM (  SELECT *,EXTRACT(YEAR_MONTH FROM 创建日期) AS 月份, IF(派送问题 = '送至便利店' OR 派送问题 = '客户自取','送至便利店',IF(派送问题 = '客户长期不在' OR 派送问题 = '送达客户不在','送达客户不在',派送问题)) AS 派送类型
+                            FROM (  SELECT *,EXTRACT(YEAR_MONTH FROM 创建日期) AS 月份,  IF(派送问题 = '客户长期不在' OR 派送问题 = '送达客户不在','送达客户不在',派送问题) AS 派送类型
                                     FROM 派送问题件_跟进表 g
                                     WHERE g.`创建日期` >= '{0}'  AND g.`创建日期` <= '{1}' AND g.币种 ='港币'
                             ) s1
@@ -167,7 +167,7 @@ class QueryTwo(Settings, Settings_sso):
                                     GROUP BY 月份
                         ) ss2  ON s2.月份 = ss2.月份
                         ORDER BY 
-                        FIELD(派送类型,'送至便利店','客户要求更改派送时间或者地址','客户不接电话','地址问题','送达客户不在','拒收','合计'),
+                        FIELD(派送类型,'预约送达时间','客户要求更改派送时间或者地址','送达客户不在','客户自取','客户不接电话','地址问题','合计'),
         				月份, 总订单;'''.format(timeStart, timeEnd)
         df81 = pd.read_sql_query(sql=sql81, con=self.engine1)
 

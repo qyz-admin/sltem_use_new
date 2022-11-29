@@ -434,14 +434,16 @@ class QueryTwo(Settings, Settings_sso):
                 dp = self._waybillInfoQuery(timeStart, timeEnd, n)
             print(dp)
             dp.to_excel('G:\\输出文件\\压单核实表-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp = dp[(dp['questionTypeName'].str.contains('订单压单（giikin内部专用）'))]
             dp = dp[['order_number',  'deal_time', 'dealContent', 'traceUserName']]
             dp.columns = ['订单编号', '处理时间', '处理结果', '处理人']
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO 压单表_已核实_info(订单编号, 处理时间, 处理结果, 处理人, 记录时间) 
+            sql = '''REPLACE INTO 压单表_已核实_info_copy1(订单编号, 处理时间, 处理结果, 处理人, 记录时间) 
                     SELECT 订单编号, 处理时间, 处理结果, 处理人, NOW() 记录时间 
                     FROM customer;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            dp.to_excel('G:\\输出文件\\压单核实表-2查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             print('写入成功......')
         else:
             print('没有需要获取的信息！！！')
@@ -1717,7 +1719,7 @@ if __name__ == '__main__':
     # login_TmpCode = '3129878cee9537a6b68f48743902548e'
     # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
     # start: datetime = datetime.datetime.now()
-    #
+    # #
     # timeStart, timeEnd = m.readInfo('压单表_已核实')
     # m.waybill_InfoQuery_yadan(timeStart, timeEnd)  # 查询更新-物流问题件 - 压单核实
     # m.waybill_InfoQuery_yadan('2022-11-09', '2022-11-09')  # 查询更新-物流问题件 - 压单核实
