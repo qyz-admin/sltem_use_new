@@ -439,7 +439,7 @@ class QueryTwo(Settings, Settings_sso):
             dp.columns = ['订单编号', '处理时间', '处理结果', '处理人']
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO 压单表_已核实_info_copy1(订单编号, 处理时间, 处理结果, 处理人, 记录时间) 
+            sql = '''REPLACE INTO 压单表_已核实_info(订单编号, 处理时间, 处理结果, 处理人, 记录时间) 
                     SELECT 订单编号, 处理时间, 处理结果, 处理人, NOW() 记录时间 
                     FROM customer;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
