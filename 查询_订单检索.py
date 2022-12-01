@@ -2490,17 +2490,17 @@ if __name__ == '__main__':
         searchType = '电话'
         pople_Query = '电话检索'                # 电话查询；订单检索
         timeStart = '2022-10-01 00:00:00'
-        timeEnd = '2022-11-19 23:59:59'
+        timeEnd = '2022-11-30 23:59:59'
         m.readFormHost(team, searchType, pople_Query, timeStart, timeEnd)
 
     # 促单查询；订单检索
     elif int(select) == 5:
         hanlde = '自0动'
-        # timeStart = '2022-10-25'
-        # timeEnd = '2022-10-25'
+        timeStart = '2022-11-01'
+        timeEnd = '2022-11-30'
 
-        timeStart = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        # timeStart = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        # timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         print(timeStart + "---" + timeEnd)
         m.order_track_Query(hanlde, timeStart, timeEnd)
 

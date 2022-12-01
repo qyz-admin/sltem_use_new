@@ -10104,15 +10104,15 @@ if __name__ == '__main__':
     '''
     select = 99
     if int(select) == 99:
-        if team == 'gat':
+        if team == 'g0at':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
         else:
-            month_last = '2022-09-01'
-            month_old = '2022-09-01'  # 获取-每日-报表 开始的时间
-            month_yesterday = '2022-10-31'
+            month_last = '2022-10-01'
+            month_old = '2022-10-01'  # 获取-每日-报表 开始的时间
+            month_yesterday = '2022-11-30'
 
         last_time = '2021-01-01'
         up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期
