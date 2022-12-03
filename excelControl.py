@@ -141,7 +141,7 @@ class ExcelControl():
                           '上线时间': [False, ['''上线时间
 （即货交地派时间）''', '上线时间', '新竹上线时间', '到港日期'], ['货交地派时间']],
                           '原运单号': [False, ['原单号', '原單號', '原始顺丰订单号'], []]},
-                'gat': {'出货时间': [True, ['出货日期', '出货时间', '核重时间', '出库日期', '重出日期', '安排日期', '转寄安排日期', '發貨日期', '出貨日期',
+                'gat': {'出货时间': [True, ['出货日期', '出货时间', '核重时间', '出库日期', '重出日期', '安排日期', '转寄安排日期', '發貨日期', '出貨日期', '資料日期',
                                         '收件日期', '业务日期', '出库时间', '发货日期', '下单时间'], []],
                         '订单编号': [True, ['订单编号', '订单号', '订单号码', '客户单号', '客人订单号', '内部单号', '原始订单号', '運單號碼',
                                         '件號', '件号'], []],
@@ -179,8 +179,9 @@ class ExcelControl():
         needDrop = []
         columns = list(df.columns)
         # print(columns)
-        if '协来运-新竹' in shtName:
-            df.drop(labels=['單號'], axis=1, inplace=True)
+        if '协来运-新竹' in shtName or '协来运-黑貓' in shtName or '协来运-重出' in shtName:
+            if '單號' in df.columns:
+                df.drop(labels=['單號'], axis=1, inplace=True)
         if '圓通-轉單表' in shtName:
             df.insert(0, '订单编号', '')  # 圆通直发
             # df.drop(labels=['發貨日期'], axis=1, inplace=True)  # 圆通改派
