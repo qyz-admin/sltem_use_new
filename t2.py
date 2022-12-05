@@ -39,7 +39,7 @@ if team in ('ga0t', 'slsc', 'sl_r9b'):
 else:
     # 更新时间
     data_begin = datetime.date(2022, 10, 1)  # 数据库更新
-    begin = datetime.date(2022, 10, 1)      # 单点更新
+    begin = datetime.date(2022, 12, 1)      # 单点更新
     end = datetime.date(2022, 12, 5)
     # 导出时间
     month_last = '2022-10-01'
@@ -93,7 +93,7 @@ print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO---数据库分段读取---
 print('---------------------------------- 数据库更新部分：--------------------------------')
-m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息、
+# m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息、
 
 # qu.EportOrder(team, month_last, month_yesterday, month_begin, '是', '导表')     # 最近两个月的更新信息导出
 
@@ -125,7 +125,7 @@ if team == 'gat' and updata == '全部':
 
     print('---------------------------------- 导出部分：--------------------------------')
     check = '是'
-    export = '导表'
+    export = '导0表'
     qu.EportOrder(team, month_last, month_yesterday, month_begin, check, export)     # 最近两个月的更新信息导出
     print('输出耗时：', datetime.datetime.now() - start)
 

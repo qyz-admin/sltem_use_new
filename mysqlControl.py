@@ -482,7 +482,8 @@ class MysqlControl(Settings):
                             null 组合销售金额,
                             null 姓名,
                             null 地址,
-                            null 取货方式
+                            null 取货方式,
+                            null 标准电话
                     FROM gk_order a
                             LEFT JOIN dim_area ON dim_area.id = a.area_id
                             LEFT JOIN dim_payment ON dim_payment.id = a.payment_id

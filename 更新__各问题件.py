@@ -1081,6 +1081,7 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
         return data
 
+    # 查询更新（新后台的获取-拒收问题件）
     def order_js_Query(self, timeStart, timeEnd):  # 进入拒收问题件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('+++正在查询信息中')
