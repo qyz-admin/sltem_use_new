@@ -680,19 +680,17 @@ class QueryUpdate(Settings):
         print('正在写入---' + match[team] + ' ---临时缓存…………')             # 备用临时缓存表
         df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
 
-        for tem in ('"神龙家族-港澳台"|slgat', '"红杉家族-港澳台", "红杉家族-港澳台2"|slgat_hs', '"火凤凰-港台(繁体)", "火凤凰-港澳台"|slgat_hfh', '"金狮-港澳台"|slgat_js', '"金鹏家族-小虎队"|slgat_jp', '"神龙-运营1组"|slgat_run'):
-            tem1 = tem.split('|')[0]
-            tem2 = tem.split('|')[1]
-            sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)
+        sql = '''SELECT DISTINCT 团队 FROM d1_gat;'''.format(team)     # 港台- 获取导出 团队名称
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        tem_name = list(df['团队'])
+        for tem in tem_name:
+            sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            # df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
-            old_path = 'G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2])
-            df.to_excel(old_path, sheet_name=match[tem2], index=False)
-            new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\{} {}签收表.xlsx'.format(today, match[tem2])
+            old_path = 'G:\\输出文件\\{} {}签收表.xlsx'.format(today, tem)
+            df.to_excel(old_path, sheet_name=tem, index=False)
+            new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\{} {}签收表.xlsx'.format(today, tem)
             shutil.copyfile(old_path, new_path)     # copy到指定位置
-            print(tem2 + '----已写入excel; 并复制到指定文件夹中')
-            # print('正在打印' + match[tem2] + ' 物流时效…………')
-            # self.m.data_wl(tem2)
+            print(tem + '----已写入excel; 并复制到指定文件夹中')
         try:
             print('正在转存中' + month_yesterday + '最近两个月的订单......')
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 订单来源, 订单编号, 出货时间, IF(`状态时间` = '',NULL,状态时间) as 状态时间, 上线时间, 最终状态,是否改派,物流方式,
@@ -10720,7 +10718,7 @@ if __name__ == '__main__':
     '''
     select = 99
     if int(select) == 99:
-        if team == 'g0at':
+        if team == 'gat':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
