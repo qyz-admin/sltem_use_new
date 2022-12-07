@@ -1090,6 +1090,7 @@ class QueryTwo(Settings, Settings_sso):
         ordersDict = []
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
+                # print(result['orderNumber'])
                 result['订单编号'] = result['orderNumber']
                 result['再次克隆下单'] = result['newCloneNumber']
                 result['跟进人'] = ''
@@ -1151,48 +1152,56 @@ class QueryTwo(Settings, Settings_sso):
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
                 # print(result)
                 # print(11)
-                # print(result['order_number'])
+                print(result['order_number'])
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
-                result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
-                if ';' in result['traceRecord']:
-                    trace_record = result['traceRecord'].split(";")
-                    for record in trace_record:
-                        if record.split("#处理结果：")[1] != '':
-                            result['deal_time'] = record.split()[0]
-                            result['result_reson'] = ''
-                            result['result_info'] = ''
+                if 'traceRecord' in result:
+                    result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
+                    if ';' in result['traceRecord']:
+                        trace_record = result['traceRecord'].split(";")
+                        for record in trace_record:
+                            if record.split("#处理结果：")[1] != '':
+                                result['deal_time'] = record.split()[0]
+                                result['result_reson'] = ''
+                                result['result_info'] = ''
 
-                            rec = record.split("#处理结果：")[1]
-                            if len(rec.split()) > 2:
-                                result['result_info'] = rec.split()[2]        # 客诉原因
-                            if len(rec.split()) > 1:
-                                result['result_reson'] = rec.split()[1]     # 处理内容
-                            result['dealContent'] = rec.split()[0]            # 最新处理结果
-                            rec_name = record.split("#处理结果：")[0]
-                            if len(rec_name.split()) > 1:
-                                if (rec_name.split())[2] != '' and (rec_name.split())[2] != []:
-                                    if '客服' in (rec_name.split())[2]:
-                                        result['traceUserName'] = ((rec_name.split())[2]).split("(客服)")[0]
-                                    else:
-                                        result['traceUserName'] = (rec_name.split())[2]
-                            else:
-                                result['traceUserName'] = ''
-                            ordersDict.append(result.copy())
+                                rec = record.split("#处理结果：")[1]
+                                if len(rec.split()) > 2:
+                                    result['result_info'] = rec.split()[2]        # 客诉原因
+                                if len(rec.split()) > 1:
+                                    result['result_reson'] = rec.split()[1]     # 处理内容
+                                result['dealContent'] = rec.split()[0]            # 最新处理结果
+                                rec_name = record.split("#处理结果：")[0]
+                                if len(rec_name.split()) > 1:
+                                    if (rec_name.split())[2] != '' and (rec_name.split())[2] != []:
+                                        if '客服' in (rec_name.split())[2]:
+                                            result['traceUserName'] = ((rec_name.split())[2]).split("(客服)")[0]
+                                        else:
+                                            result['traceUserName'] = (rec_name.split())[2]
+                                else:
+                                    result['traceUserName'] = ''
+                                ordersDict.append(result.copy())
+                    else:
+                        result['deal_time'] = ''
+                        result['result_reson'] = ''
+                        result['result_info'] = ''
+                        if '拒收' in result['dealContent']:
+                            if len(result['dealContent'].split()) > 2:
+                                result['result_info'] = result['dealContent'].split()[2]
+                            if len(result['dealContent'].split()) > 1:
+                                result['result_reson'] = result['dealContent'].split()[1]
+                            result['dealContent'] = result['dealContent'].split()[0]
+                        if result['traceRecord'] != '' or result['traceRecord'] != []:
+                            result['deal_time'] = result['traceRecord'].split()[0]
+                        if result['traceUserName'] != '' or result['traceUserName'] != []:
+                            result['traceUserName'] = result['traceUserName'].replace('客服：', '')
+                        result['dealContent'] = result['dealContent'].strip()
+                        ordersDict.append(result.copy())
                 else:
                     result['deal_time'] = ''
                     result['result_reson'] = ''
                     result['result_info'] = ''
-                    if '拒收' in result['dealContent']:
-                        if len(result['dealContent'].split()) > 2:
-                            result['result_info'] = result['dealContent'].split()[2]
-                        if len(result['dealContent'].split()) > 1:
-                            result['result_reson'] = result['dealContent'].split()[1]
-                        result['dealContent'] = result['dealContent'].split()[0]
-                    if result['traceRecord'] != '' or result['traceRecord'] != []:
-                        result['deal_time'] = result['traceRecord'].split()[0]
-                    if result['traceUserName'] != '' or result['traceUserName'] != []:
-                        result['traceUserName'] = result['traceUserName'].replace('客服：', '')
-                    result['dealContent'] = result['dealContent'].strip()
+                    result['dealContent'] = ''
+                    result['traceUserName'] = ''
                     ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
@@ -1252,48 +1261,56 @@ class QueryTwo(Settings, Settings_sso):
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
                 # print(55)
-                # print(result['order_number'])
+                print(result['order_number'])
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
-                result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
-                if ';' in result['traceRecord']:
-                    trace_record = result['traceRecord'].split(";")
-                    for record in trace_record:
-                        if record.split("#处理结果：")[1] != '':
-                            result['deal_time'] = record.split()[0]
-                            result['result_reson'] = ''
-                            result['result_info'] = ''
+                if 'traceRecord' in result:
+                    result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
+                    if ';' in result['traceRecord']:
+                        trace_record = result['traceRecord'].split(";")
+                        for record in trace_record:
+                            if record.split("#处理结果：")[1] != '':
+                                result['deal_time'] = record.split()[0]
+                                result['result_reson'] = ''
+                                result['result_info'] = ''
 
-                            rec = record.split("#处理结果：")[1]
-                            if len(rec.split()) > 2:
-                                result['result_info'] = rec.split()[2]        # 客诉原因
-                            if len(rec.split()) > 1:
-                                result['result_reson'] = rec.split()[1]     # 处理内容
-                            result['dealContent'] = rec.split()[0]            # 最新处理结果
-                            rec_name = record.split("#处理结果：")[0]
-                            if len(rec_name.split()) > 1:
-                                if (rec_name.split())[2] != '' and (rec_name.split())[2] != []:
-                                    if '客服' in (rec_name.split())[2]:
-                                        result['traceUserName'] = ((rec_name.split())[2]).split("(客服)")[0]
-                                    else:
-                                        result['traceUserName'] = (rec_name.split())[2]
-                            else:
-                                result['traceUserName'] = ''
-                            ordersDict.append(result.copy())
+                                rec = record.split("#处理结果：")[1]
+                                if len(rec.split()) > 2:
+                                    result['result_info'] = rec.split()[2]        # 客诉原因
+                                if len(rec.split()) > 1:
+                                    result['result_reson'] = rec.split()[1]     # 处理内容
+                                result['dealContent'] = rec.split()[0]            # 最新处理结果
+                                rec_name = record.split("#处理结果：")[0]
+                                if len(rec_name.split()) > 1:
+                                    if (rec_name.split())[2] != '' and (rec_name.split())[2] != []:
+                                        if '客服' in (rec_name.split())[2]:
+                                            result['traceUserName'] = ((rec_name.split())[2]).split("(客服)")[0]
+                                        else:
+                                            result['traceUserName'] = (rec_name.split())[2]
+                                else:
+                                    result['traceUserName'] = ''
+                                ordersDict.append(result.copy())
+                    else:
+                        result['deal_time'] = ''
+                        result['result_reson'] = ''
+                        result['result_info'] = ''
+                        if '拒收' in result['dealContent']:
+                            if len(result['dealContent'].split()) > 2:
+                                result['result_info'] = result['dealContent'].split()[2]
+                            if len(result['dealContent'].split()) > 1:
+                                result['result_reson'] = result['dealContent'].split()[1]
+                            result['dealContent'] = result['dealContent'].split()[0]
+                        if result['traceRecord'] != '' or result['traceRecord'] != []:
+                            result['deal_time'] = result['traceRecord'].split()[0]
+                        if result['traceUserName'] != '' or result['traceUserName'] != []:
+                            result['traceUserName'] = result['traceUserName'].replace('客服：', '')
+                        result['dealContent'] = result['dealContent'].strip()
+                        ordersDict.append(result.copy())
                 else:
                     result['deal_time'] = ''
                     result['result_reson'] = ''
                     result['result_info'] = ''
-                    if '拒收' in result['dealContent']:
-                        if len(result['dealContent'].split()) > 2:
-                            result['result_info'] = result['dealContent'].split()[2]
-                        if len(result['dealContent'].split()) > 1:
-                            result['result_reson'] = result['dealContent'].split()[1]
-                        result['dealContent'] = result['dealContent'].split()[0]
-                    if result['traceRecord'] != '' or result['traceRecord'] != []:
-                        result['deal_time'] = result['traceRecord'].split()[0]
-                    if result['traceUserName'] != '' or result['traceUserName'] != []:
-                        result['traceUserName'] = result['traceUserName'].replace('客服：', '')
-                    result['dealContent'] = result['dealContent'].strip()
+                    result['dealContent'] = ''
+                    result['traceUserName'] = ''
                     ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
@@ -1301,6 +1318,64 @@ class QueryTwo(Settings, Settings_sso):
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
         return data
+
+    def Check_Iphone_Updata(self):
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('正在输出 拒收&派送|物流问题件-电话检测 --- 数据中')
+        sql2 = '''SELECT sss2.*
+                FROM (		
+                        SELECT *
+                        FROM (SELECT s1.币种, s1.标准电话, 具体原因, COUNT(s1.订单编号) AS 次数
+                                    FROM (SELECT 订单编号, 币种, 标准电话,下单时间
+                                                FROM (SELECT *
+                                                            FROM gat_order_list g
+                                                            WHERE g.年月 >= '202206' AND g.系统物流状态 = '拒收'
+                                                ) ss1
+                                                WHERE ss1.`完结状态时间` >= '2022-10-01 00:00:00' AND ss1.`完结状态时间` <= '2022-11-30 23:59:59'
+                                    ) s1
+                                    LEFT JOIN 
+                                    (SELECT * FROM 拒收问题件_check_iphone js
+                                    ) s2 ON s1.订单编号 = s2.订单编号
+                                    GROUP BY s1.币种, s1.标准电话
+                        ) sss
+                        WHERE 次数 >=5
+                        ORDER BY 币种, 次数 DESC
+                ) sss1
+                LEFT JOIN 
+                ( 	SELECT IFNULL(币种,'合计') 币种, IFNULL(标准电话,'合计') 标准电话, IFNULL(拒收原因,'合计') 拒收原因, COUNT(订单编号) AS 出现次数
+                        FROM (
+                                SELECT s1.订单编号, s1.币种, s1.标准电话, s1.下单时间, IF(具体原因 IS NULL,'-',具体原因) AS 拒收原因
+                                FROM (SELECT 订单编号, 币种, 标准电话,下单时间
+                                            FROM (SELECT *
+                                                        FROM gat_order_list g
+                                                        WHERE g.年月 >= '202206' AND g.系统物流状态 = '拒收'
+                                            ) ss1
+                                            WHERE ss1.`完结状态时间` >= '2022-10-01 00:00:00' AND ss1.`完结状态时间` <= '2022-11-30 23:59:59'
+                                ) s1
+                                LEFT JOIN 
+                                ( SELECT * 
+                                    FROM 拒收问题件_check_iphone js
+                                ) s2 ON s1.订单编号 = s2.订单编号
+                    ) ss1
+                    GROUP BY 币种, 标准电话, 拒收原因
+                    WITH ROLLUP
+                ) sss2
+                ON sss1.标准电话 = sss2.标准电话
+                ORDER BY sss1.币种, sss1.次数 DESC, sss1.标准电话, sss2.出现次数 DESC;'''
+        df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
+
+        file_path = 'G:\\输出文件\\拒收&派送|物流问题件-电话检测 {}.xlsx'.format(rq)
+        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        df2.to_excel(excel_writer=writer, sheet_name='拒收电话', index=False)
+        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            del book['Sheet1']
+        writer.save()
+        writer.close()
+        print('输出成功')
 
 if __name__ == '__main__':
     start: datetime = datetime.datetime.now()
@@ -1372,7 +1447,7 @@ if __name__ == '__main__':
         m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "", 99)
 
         # timeStart, timeEnd = m.readInfo('拒收问题件_更新')
-        m.order_js_QueryUpdata('2022-10-01', '2022-11-30')
+        # m.order_js_QueryUpdata('2022-10-01', '2022-11-30')
         # m.order_js_QueryUpdata(timeStart, timeEnd)  # 拒收问题件 更新
 
         # timeStart, timeEnd = m.readInfo('物流问题件_更新')
@@ -1383,6 +1458,8 @@ if __name__ == '__main__':
         # timeStart, timeEnd = m.readInfo('派送问题件_更新')
         # m.getDeliveryList('2022-10-01', '2022-11-30')
         # m.getDeliveryList(timeStart, timeEnd)  # 派送问题件 更新
+
+        # m.Check_Iphone_Updata()              # 拒收&派送|物流问题件-电话检测
 
 
     print('查询耗时：', datetime.datetime.now() - start)
