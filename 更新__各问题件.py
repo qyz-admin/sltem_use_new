@@ -1691,7 +1691,7 @@ if __name__ == '__main__':
         js = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
         time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         time_now = time_yesterday
-        js.order_TimeQueryT(time_yesterday,time_now, '',  '检查头程直发渠道|删单原因', query)   # 检查头程直发渠道|删单原0因
+        js.order_TimeQueryT(time_yesterday, time_now, '',  '检查头程直发渠道|删单原因', query)   # 检查头程直发渠道|删单原0因
 
         hanlde = '自动'
         timeStart = '2022-09-19'

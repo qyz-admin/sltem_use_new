@@ -2042,39 +2042,7 @@ class QueryOrder(Settings, Settings_sso):
                 ORDER BY FIELD(币种,'台币','港币','合计'),
                          FIELD(运营团队,'神龙家族-港澳台','火凤凰-港澳台','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
                          订单量 DESC;'''
-#         sql ='''SELECT 币种,运营团队,删单原因2 AS '删单原因(单)',订单量2 AS '删单量(单)',删单率
-# FROM (
-# SELECT 币种,运营团队,
-#       删单原因,
-# --       IF(删单原因 IS NULL ,CONCAT('总订单量：',总订单量,'单; 总删单量：',总删单量,'单;'),删单原因) AS 删单原因2,
-#       IF(删单原因 IS NULL ,CONCAT('总订单量：',总订单量),删单原因) AS 删单原因2,
-#       IF(删单原因 IS NULL ,CONCAT('总删单量：',总删单量),订单量) AS 订单量2,
-#       订单量,总订单量,总删单量,
-#       concat(ROUND(SUM(IF(删单原因 IS NULL OR 删单原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
-#                 FROM (
-#                       SELECT s1.*,总订单量,总删单量
-#                       FROM (
-#                             SELECT 币种,运营团队,删单原因,COUNT(订单编号) AS 订单量
-#                             FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
-#                                   FROM `worksheet` c
-#                             ) w
-#                             GROUP BY 币种,运营团队,删单原因
-#                       ) s1
-#                       LEFT JOIN
-#                       (
-#                             SELECT 币种,运营团队,COUNT(订单编号) AS 总订单量,
-#                                   SUM(IF(订单状态 = '已删除',1,0)) AS 总删单量
-#                             FROM `worksheet` w
-#                             GROUP BY 币种,运营团队
-#                       ) s2 ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
-#                 ) s
-#                 WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台')
-#                 GROUP BY 币种,运营团队,删单原因
-# --                 WITH rollup
-#                 ORDER BY FIELD(币种,'台币','港币','合计'),
-#                          FIELD(运营团队,'神龙家族-港澳台','火凤凰-港澳台','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
-#                          订单量 DESC
-# ) ss;'''
+
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
         print(df1)
         # da = df1['总订单量'].values[0]
@@ -2115,148 +2083,17 @@ class QueryOrder(Settings, Settings_sso):
         #       FROM (
         #             SELECT 币种,删除原因,COUNT(订单编号) AS 订单量,
         #             		SUM(IF(拉黑率 > 80 ,1,0)) AS 拉黑率80以上,
-		# 					SUM(IF(拉黑率 < 80 ,1,0)) AS 拉黑率80以下
-        #             FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
-        #                                     FROM `cache` c
-        #                                     WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台')
-        #                         ) w
-        #             GROUP BY 币种,删单原因
-        #       )  s1
-        #             WHERE 删除原因 IS NOT NULL AND 删除原因 <> ""
-        #             GROUP BY 币种,删除原因
-        #       ORDER BY 订单量 desc
-        #       LIMIT 5;'''
-        # df2 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # listT.append(df2)
-        #
-        # print('正在获取 删单原因明细（恶意订单-电话） 信息…………')
-        # sql ='''SELECT 币种,删单原因,联系电话,COUNT(订单编号) AS 订单量
-        #         FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
-        #               FROM `cache` c
-        #               WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND 删除原因 LIKE '%恶意%'
-        #             ) w
-        #         GROUP BY 币种,`联系电话`
-		# 		ORDER BY 订单量 desc;'''
-        # df30 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # listT.append(df30)
-        # print('正在获取 删单原因明细（恶意订单-ip） 信息…………')
-        # sql = '''SELECT 币种,删单原因,IP,COUNT(订单编号) AS 订单量
-        #                 FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
-        #                       FROM `cache` c
-        #                       WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND 删除原因 LIKE '%恶意%'
-        #                     ) w
-        #                 GROUP BY 币种,`IP`
-        # 				ORDER BY 订单量 desc;'''
-        # df31 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # listT.append(df31)
-        #
-        # print('正在获取 删单原因明细（拉黑率-电话） 信息…………')
-        # sql = '''SELECT 币种,删单原因,联系电话,COUNT(订单编号) AS 订单量
-        #                 FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
-        #                       FROM `cache` c
-        #                       WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND 删除原因 LIKE '%拉黑率%'
-        #                     ) w
-        #                 GROUP BY 币种,`联系电话`
-        # 				ORDER BY 订单量 desc;'''
-        # df40 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # listT.append(df40)
-        # print('正在获取 删单原因明细（拉黑率-ip） 信息…………')
-        # sql = '''SELECT 币种,删单原因,IP,COUNT(订单编号) AS 订单量
-        #                         FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
-        #                               FROM `cache` c
-        #                               WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND 删除原因 LIKE '%拉黑率%'
-        #                             ) w
-        #                         GROUP BY 币种,`IP`
-        #         				ORDER BY 订单量 desc;'''
-        # df41 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # listT.append(df41)
-        #
-        # print('正在获取 删单原因明细（系统删除-删单原因） 信息…………')
-        # sql = '''SELECT 币种,删单原因,COUNT(订单编号) AS 订单量
-        #         FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
-        #              FROM `cache` c
-        #              WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND `删除人` IS NULL
-        #         ) w
-        #         GROUP BY 币种,`删单原因`
-		# 		ORDER BY 订单量 desc;'''
-        # df50 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # listT.append(df50)
-        # print('正在获取 删单原因明细（系统删除-ip） 信息…………')
-        # sql = '''SELECT 币种,删单原因,IP,COUNT(订单编号) AS 订单量
-        #         FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
-        #              FROM `cache` c
-        #              WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND `删除人` IS NULL
-        #         ) w
-        #         GROUP BY 币种,`IP`
-        #         ORDER BY 订单量 desc;'''
-        # df51 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # listT.append(df51)
-        # print('正在获取 删单原因明细（系统删除-电话） 信息…………')
-        # sql = '''SELECT 币种,删单原因,联系电话,COUNT(订单编号) AS 订单量
-        #         FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
-        #              FROM `cache` c
-        #              WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND `删除人` IS NULL
-        #         ) w
-        #         GROUP BY 币种,`联系电话`
-        #         ORDER BY 订单量 desc;'''
-        # df52 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # listT.append(df52)
-        #
-        # print('正在获取 删单原因明细（重复订单-电话） 信息…………')
-        # sql = '''SELECT 币种,删单原因,联系电话,COUNT(订单编号) AS 订单量
-        #                 FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
-        #                       FROM `cache` c
-        #                       WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND 删除原因 LIKE '%恶意%'
-        #                     ) w
-        #                 GROUP BY 币种,`联系电话`
-        # 				ORDER BY 订单量 desc;'''
-        # df60 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # listT.append(df60)
-        # print('正在获取 删单原因明细（重复订单-ip） 信息…………')
-        # sql = '''SELECT 币种,删单原因,IP,COUNT(订单编号) AS 订单量
-        #                         FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
-        #                               FROM `cache` c
-        #                               WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-港澳台') AND 删除原因 LIKE '%恶意%'
-        #                             ) w
-        #                         GROUP BY 币种,`IP`
-        #         				ORDER BY 订单量 desc;'''
-        # df61 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # listT.append(df61)
-        #
-        # print('正在写入excel…………')
-        # today = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        # file_path = 'H:\\桌面\\需要用到的文件\\输出文件\\工作数量 {}.xlsx'.format(today)
-        #
-        # writer2 = pd.ExcelWriter(file_path, engine='openpyxl')
-        # df1.to_excel(writer2, index=False)                  # 删单
-        # df2.to_excel(writer2, index=False, startrow=20)     # 删单原因汇总
-        #
-        # df30.to_excel(writer2, index=False, startcol=9)     # 恶意订单-电话
-        # df31.to_excel(writer2, index=False, startcol=14)    # 恶意订单-ip
-        #
-        # df40.to_excel(writer2, index=False, startcol=19)     # 拉黑率-电话
-        # df41.to_excel(writer2, index=False, startcol=24)     # 拉黑率-ip
-        #
-        # df50.to_excel(writer2, index=False, startcol=29)     # 系统删除-删单原因
-        # df51.to_excel(writer2, index=False, startcol=34)     # 系统删除-ip
-        # df52.to_excel(writer2, index=False, startcol=39)     # 系统删除-电话
-        #
-        # df60.to_excel(writer2, index=False, startcol=44)     # 重复订单-电话）
-        # df61.to_excel(writer2, index=False, startcol=49)     # 重复订单-ip
-        #
-        # writer2.save()
-        # writer2.close()
-        # print()
 
-    def order_track_Query(self, hanlde, timeStart, timeEnd):    # 进入订单检索界面     促单查询
+    # 绩效-查询促单
+    def service_id_order(self, hanlde, timeStart, timeEnd):    # 进入订单检索界面     促单查询
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         if hanlde == '自动':
             if (datetime.datetime.now()).strftime('%d') == 1:
-                timeStart = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+                timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
                 timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
             else:
-                timeStart = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
-                timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+                timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
+                timeEnd = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         print('+++正在查询 促单订单 信息中：' + str(timeStart) + " *** " + str(timeEnd))
 
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
@@ -2287,81 +2124,25 @@ class QueryOrder(Settings, Settings_sso):
                 print(in_count)
                 dlist = []
                 while n <= in_count:  # 这里用到了一个while循环，穿越过来的
-                    data = self._order_track_Query(timeStart, timeEnd, n)
+                    data = self._service_id_order(timeStart, timeEnd, n)
                     dlist.append(data)
                     print('剩余查询次数' + str(in_count - n))
                     n = n + 1
                 dp = df.append(dlist, ignore_index=True)
             else:
-                dp = self._order_track_Query(timeStart, timeEnd, n)
+                dp = self._service_id_order(timeStart, timeEnd, n)
             dp = dp[['orderNumber', 'currency', 'addTime', 'orderStatus', 'logisticsStatus', 'service', 'cloneUser']]
-            dp.columns = ['订单编号', '币种', '下单时间', '订单状态', '物流状态', '代下单客服', '克隆人']
+            dp.columns = ['订单编号', '币种', '下单时间', '代下单客服', '克隆人', '订单状态', '物流状态']
             dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+            sql = '''REPLACE INTO 促单表(订单编号,币种, 下单时间, 代下单客服, 克隆人, 订单状态, 物流状态, 统计日期,记录时间) 
+                    SELECT 订单编号,币种, 下单时间, 代下单客服, 克隆人, 订单状态, 物流状态, DATE_FORMAT(NOW(),'%Y-%m-%d') 统计日期,NOW() 记录时间 
+                    FROM cache_info;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('写入成功......')
 
-            listT = []
-            sql2 = '''SELECT 代下单客服, COUNT(订单编号) as 有效转化单量
-                    FROM ( SELECT *
-                            FROM `cache` s
-                            WHERE (s.克隆人 IS NULL OR s.克隆人 = "") AND s.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核")
-                    ) ss
-                    GROUP BY 代下单客服
-                    ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
-            df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
-            listT.append(df2)
-            sql3 = '''SELECT 代下单客服, COUNT(订单编号) as 总代下单量
-                    FROM ( SELECT *
-                            FROM `cache` s
-                            WHERE s.克隆人 IS NULL OR s.克隆人 = ""
-                    ) ss
-                    GROUP BY 代下单客服
-                    ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
-            df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
-            listT.append(df3)
-
-            sql4 = '''SELECT EXTRACT(DAY FROM 下单时间) AS 天, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 日期, 代下单客服, COUNT(订单编号) as 总代下单量,
-							SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量
-                    FROM ( SELECT *
-                            FROM `cache` s
-                            WHERE s.克隆人 IS NULL OR s.克隆人 = ""
-                    ) ss1
-                    GROUP BY 天, 代下单客服
-                    WITH ROLLUP 
-                    ORDER BY 天,
-					FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
-            df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
-            listT.append(df4)
-
-            sql5 = '''SELECT 代下单客服, COUNT(订单编号) as 总代下单量,
-            							SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量
-                        FROM ( SELECT *
-                                FROM `cache` s
-                                WHERE s.克隆人 IS NULL OR s.克隆人 = ""
-                        ) ss1
-                        GROUP BY 代下单客服
-                        WITH ROLLUP 
-                        ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
-            df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
-            listT.append(df5)
-
-            file_path = 'G:\\输出文件\\促单查询 {}.xlsx'.format(rq)
-            df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-            df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-            book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-            listT[2].to_excel(excel_writer=writer, sheet_name='明细', index=False)
-            listT[3].to_excel(excel_writer=writer, sheet_name='汇总', index=False)
-            listT[0].to_excel(excel_writer=writer, sheet_name='有效单量', index=False)
-            listT[1].to_excel(excel_writer=writer, sheet_name='总下单量', index=False)
-            if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-                del book['Sheet1']
-            writer.save()
-            writer.close()
-            # df.to_excel('G:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='有效单量', index=False, engine='xlsxwriter')
-
-        print('++++++本批次查询成功+++++++')
+        print('++++++本次查询成功+++++++')
         print('*' * 50)
-    def _order_track_Query(self, timeStart, timeEnd, n):
+    def _service_id_order(self, timeStart, timeEnd, n):
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
@@ -2440,7 +2221,67 @@ class QueryOrder(Settings, Settings_sso):
         print('*' * 50)
         return df
 
+    def service_check(self):
+        listT = []
+        sql2 = '''SELECT 代下单客服, COUNT(订单编号) as 有效转化单量
+                            FROM ( SELECT *
+                                    FROM `cache` s
+                                    WHERE (s.克隆人 IS NULL OR s.克隆人 = "") AND s.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核")
+                            ) ss
+                            GROUP BY 代下单客服
+                            ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
+        df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
+        listT.append(df2)
+        sql3 = '''SELECT 代下单客服, COUNT(订单编号) as 总代下单量
+                            FROM ( SELECT *
+                                    FROM `cache` s
+                                    WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                            ) ss
+                            GROUP BY 代下单客服
+                            ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
+        df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
+        listT.append(df3)
 
+        sql4 = '''SELECT EXTRACT(DAY FROM 下单时间) AS 天, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 日期, 代下单客服, COUNT(订单编号) as 总代下单量,
+        							SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量
+                            FROM ( SELECT *
+                                    FROM `cache` s
+                                    WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                            ) ss1
+                            GROUP BY 天, 代下单客服
+                            WITH ROLLUP 
+                            ORDER BY 天,
+        					FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
+        df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
+        listT.append(df4)
+
+        sql5 = '''SELECT 代下单客服, COUNT(订单编号) as 总代下单量,
+                    							SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量
+                                FROM ( SELECT *
+                                        FROM `cache` s
+                                        WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                                ) ss1
+                                GROUP BY 代下单客服
+                                WITH ROLLUP 
+                                ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
+        df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
+        listT.append(df5)
+
+        file_path = 'G:\\输出文件\\促单查询 {}.xlsx'.format(rq)
+        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        listT[2].to_excel(excel_writer=writer, sheet_name='明细', index=False)
+        listT[3].to_excel(excel_writer=writer, sheet_name='汇总', index=False)
+        listT[0].to_excel(excel_writer=writer, sheet_name='有效单量', index=False)
+        listT[1].to_excel(excel_writer=writer, sheet_name='总下单量', index=False)
+        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            del book['Sheet1']
+        writer.save()
+        writer.close()
+        # df.to_excel('G:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='有效单量', index=False, engine='xlsxwriter')
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
