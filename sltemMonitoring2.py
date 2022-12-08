@@ -1553,7 +1553,7 @@ class SltemMonitoring(Settings):
         filePath = ''
         if "品牌" in team:
             filePath = 'F:\\查询\\品牌监控\\{0}{1} {2} 监控表.xlsx'.format(today, team, ready)
-        elif "神龙" in team or "火凤凰" in team or "小虎队" in team or "港台" in team:
+        elif "神龙" in team or "火凤凰" in team or "小虎队" in team or "港台" in team or "金蝉" in team:
             filePath = 'F:\\查询\\港台监控\\{0}{1} {2} 监控表.xlsx'.format(today, team, ready)
         if os.path.exists(filePath):                            # 判断是否有需要的表格，进行初始化创建
             print("正在清除重复文件......")
@@ -1666,8 +1666,8 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2022.11.07'
-    now_month = '2022.12.07'
+    last_month = '2022.11.08'
+    now_month = '2022.12.08'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传
@@ -1676,7 +1676,7 @@ if __name__ == '__main__':
     m.order_Monitoring('港台')        # 各月缓存（整体一）、
     # for team in ['神龙-台湾', '神龙-香港', '神龙运营1组-台湾', '火凤凰-台湾', '火凤凰-香港', '小虎队-台湾']:
     for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '金蝉家族-台湾', '神龙运营1组-台湾']:
-    # for team in ['神龙-台湾', '火凤凰-台湾']:
+    # for team in ['神龙运营1组-台湾']:
         now_month = now_month.replace('.', '-')           # 修改配置时间
         last_month = last_month.replace('.', '-')
         m.sl_Monitoring(team, now_month, last_month, '本期宏')      # 输出数据--每月正常使用的时间（二）、

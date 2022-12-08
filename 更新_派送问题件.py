@@ -1152,7 +1152,7 @@ class QueryTwo(Settings, Settings_sso):
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
                 # print(result)
                 # print(11)
-                print(result['order_number'])
+                # print(result['order_number'])
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
                 if 'traceRecord' in result:
                     result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
@@ -1197,7 +1197,7 @@ class QueryTwo(Settings, Settings_sso):
                         result['dealContent'] = result['dealContent'].strip()
                         ordersDict.append(result.copy())
                 else:
-                    result['deal_time'] = ''
+                    result['deal_time'] = result['update_time']
                     result['result_reson'] = ''
                     result['result_info'] = ''
                     result['dealContent'] = ''
@@ -1232,8 +1232,8 @@ class QueryTwo(Settings, Settings_sso):
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             # dp.to_excel('G:\\输出文件\\物流问题件-更新2{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO 物流问题件_check_iphone(订单编号, 下单时间, 联系电话, 币种, 问题类型, 物流反馈时间, 导入人,处理时间, 处理日期时间, 处理人, 联系方式,  处理结果,拒收原因, 克隆订单编号, 记录时间) 
-                    SELECT 订单编号, 下单时间, 联系电话, 币种, 问题类型, 导入时间 AS 物流反馈时间, 导入人,处理时间, 处理日期时间, 处理人, 联系方式, IF(最新处理结果 = '',问题类型状态,最新处理结果) AS 处理结果,拒收原因, 赠品补发订单编号 AS 克隆订单编号, NOW() 记录时间 
+            sql = '''REPLACE INTO 物流问题件_check_iphone(订单编号, 下单时间, 联系电话, 币种, 问题类型, 问题描述, 物流反馈时间, 导入人,处理时间, 处理日期时间, 处理人, 联系方式,  处理结果,拒收原因, 克隆订单编号, 记录时间) 
+                    SELECT 订单编号, 下单时间, 联系电话, 币种, 问题类型, 问题描述, 导入时间 AS 物流反馈时间, 导入人,IF(处理时间 = '',NULL,处理时间) AS 处理时间, IF(处理日期时间 = '',NULL,处理日期时间) AS 处理日期时间, 处理人, 联系方式, IF(最新处理结果 = '',问题类型状态,最新处理结果) AS 处理结果,拒收原因, 赠品补发订单编号 AS 克隆订单编号, NOW() 记录时间 
                     FROM customer;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -1261,7 +1261,7 @@ class QueryTwo(Settings, Settings_sso):
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
                 # print(55)
-                print(result['order_number'])
+                # print(result['order_number'])
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
                 if 'traceRecord' in result:
                     result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
@@ -1306,7 +1306,7 @@ class QueryTwo(Settings, Settings_sso):
                         result['dealContent'] = result['dealContent'].strip()
                         ordersDict.append(result.copy())
                 else:
-                    result['deal_time'] = ''
+                    result['deal_time'] = result['update_time']
                     result['result_reson'] = ''
                     result['result_info'] = ''
                     result['dealContent'] = ''
@@ -1324,21 +1324,19 @@ class QueryTwo(Settings, Settings_sso):
         print('正在输出 拒收&派送|物流问题件-电话检测 --- 数据中')
         sql2 = '''SELECT sss2.*
                 FROM (		
-                        SELECT *
-                        FROM (SELECT s1.币种, s1.标准电话, 具体原因, COUNT(s1.订单编号) AS 次数
-                                    FROM (SELECT 订单编号, 币种, 标准电话,下单时间
-                                                FROM (SELECT *
-                                                            FROM gat_order_list g
-                                                            WHERE g.年月 >= '202206' AND g.系统物流状态 = '拒收'
-                                                ) ss1
-                                                WHERE ss1.`完结状态时间` >= '2022-10-01 00:00:00' AND ss1.`完结状态时间` <= '2022-11-30 23:59:59'
-                                    ) s1
-                                    LEFT JOIN 
-                                    (SELECT * FROM 拒收问题件_check_iphone js
-                                    ) s2 ON s1.订单编号 = s2.订单编号
-                                    GROUP BY s1.币种, s1.标准电话
-                        ) sss
-                        WHERE 次数 >=5
+                        SELECT s1.币种, s1.标准电话, 具体原因, 总单量, 总签收量, 总拒收量, s1.拉黑率, COUNT(s1.订单编号) AS 次数
+                        FROM (SELECT 订单编号, 币种, 标准电话,下单时间, 订单配送总量 AS 总单量, 拉黑率, 签收量 AS 总签收量, 拒收量 AS 总拒收量
+                                    FROM (SELECT *
+                                                FROM gat_order_list g
+                                                WHERE g.年月 >= '202206' AND g.系统物流状态 = '拒收'
+                                    ) ss1
+                                    WHERE ss1.`完结状态时间` >= '2022-10-01 00:00:00' AND ss1.`完结状态时间` <= '2022-11-30 23:59:59'
+                        ) s1
+                        LEFT JOIN 
+                        (SELECT * FROM 拒收问题件_check_iphone js
+                        ) s2 ON s1.订单编号 = s2.订单编号
+                        GROUP BY s1.币种, s1.标准电话
+                        HAVING 次数 >=5
                         ORDER BY 币种, 次数 DESC
                 ) sss1
                 LEFT JOIN 
@@ -1364,13 +1362,70 @@ class QueryTwo(Settings, Settings_sso):
                 ORDER BY sss1.币种, sss1.次数 DESC, sss1.标准电话, sss2.出现次数 DESC;'''
         df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
 
+        sql3 = '''SELECT s2.*
+                FROM (
+                        SELECT ss2.币种, ss2.标准电话,  COUNT(ss2.订单编号) AS 次数
+                        FROM (
+                                ( SELECT 订单编号, 派送问题
+                                    FROM 派送问题件_跟进表 ps
+                                    WHERE ps.创建日期 >= '2022-10-01' AND ps.创建日期 <= '2022-11-30'
+                                ) 
+                                union 
+                                ( SELECT 订单编号, IF(问题描述 IS NULL ,'-',问题描述) 问题描述
+                                    FROM 物流问题件_check_iphone wl
+                                    WHERE wl.物流反馈时间 >= '2022-10-01' AND wl.物流反馈时间 <= '2022-11-30' AND wl.问题类型 <= '派送问题件' 
+                                        AND wl.订单编号 NOT IN (SELECT 订单编号
+                                                                FROM 派送问题件_跟进表 ps
+                                                                WHERE ps.创建日期 >= '2022-10-01' AND ps.创建日期 <= '2022-11-30'
+                                                            )
+                                )
+                        ) ss1
+                        LEFT JOIN
+                        (			SELECT *
+                                    FROM gat_order_list g
+                                    WHERE g.年月 >= '202206'
+                        ) ss2 ON ss1.订单编号 = ss2.订单编号
+                        GROUP BY ss2.币种, ss2.标准电话
+                        HAVING 次数 >=5
+                ) s1
+                LEFT JOIN 
+                (
+                    SELECT IFNULL(ss2.币种,'合计') AS 币种, IFNULL(ss2.标准电话,'合计') AS 标准电话, IFNULL(派送问题,'合计') AS 派送问题, COUNT(ss1.订单编号) AS 出现次数
+                    FROM (
+                            ( SELECT 订单编号, 派送问题
+                                FROM 派送问题件_跟进表 ps
+                                WHERE ps.创建日期 >= '2022-10-01' AND ps.创建日期 <= '2022-11-30'
+                            ) 
+                            union 
+                            ( SELECT 订单编号, IF(问题描述 IS NULL ,'-',问题描述) 问题描述
+                                FROM 物流问题件_check_iphone wl
+                                WHERE wl.物流反馈时间 >= '2022-10-01' AND wl.物流反馈时间 <= '2022-11-30' AND wl.问题类型 <= '派送问题件' 
+                                    AND wl.订单编号 NOT IN (SELECT 订单编号
+                                                            FROM 派送问题件_跟进表 ps
+                                                            WHERE ps.创建日期 >= '2022-10-01' AND ps.创建日期 <= '2022-11-30'
+                                                        )
+                            ) 
+                    ) ss1
+                    LEFT JOIN
+                    (			SELECT *
+                                FROM gat_order_list g
+                                WHERE g.年月 >= '202206'
+                    ) ss2 ON ss1.订单编号 = ss2.订单编号
+                    GROUP BY ss2.币种, ss2.标准电话, 派送问题
+                    WITH ROLLUP
+                    ORDER BY ss2.币种, ss2.标准电话, 出现次数 DESC
+                ) s2 ON s1.标准电话 = s2.标准电话
+                ORDER BY s1.币种, s1.次数 DESC, s1.标准电话, s2.出现次数 DESC;'''
+        df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
+
         file_path = 'G:\\输出文件\\拒收&派送|物流问题件-电话检测 {}.xlsx'.format(rq)
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
         book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
         writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        df2.to_excel(excel_writer=writer, sheet_name='拒收电话', index=False)
+        df2.to_excel(excel_writer=writer, sheet_name='拒收-电话', index=False)
+        df3.to_excel(excel_writer=writer, sheet_name='派送&物流-电话', index=False)
         if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
             del book['Sheet1']
         writer.save()
@@ -1383,7 +1438,7 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 问题件 状态运行（一）-----------------------------------------
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     '''
-    select = 3
+    select = 99
     if int(select) == 99:
         handle = '手0动'
         login_TmpCode = '31edeffd85e039639ced83f95cac208b'
@@ -1447,7 +1502,7 @@ if __name__ == '__main__':
         m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "", 99)
 
         # timeStart, timeEnd = m.readInfo('拒收问题件_更新')
-        # m.order_js_QueryUpdata('2022-10-01', '2022-11-30')
+        m.order_js_QueryUpdata('2022-10-01', '2022-11-30')
         # m.order_js_QueryUpdata(timeStart, timeEnd)  # 拒收问题件 更新
 
         # timeStart, timeEnd = m.readInfo('物流问题件_更新')
@@ -1456,10 +1511,10 @@ if __name__ == '__main__':
         # m.waybill_InfoQueryUpdata(timeStart, timeEnd)  # 物流问题件 更新
 
         # timeStart, timeEnd = m.readInfo('派送问题件_更新')
-        # m.getDeliveryList('2022-10-01', '2022-11-30')
+        m.getDeliveryList('2022-10-01', '2022-11-30')
         # m.getDeliveryList(timeStart, timeEnd)  # 派送问题件 更新
 
-        # m.Check_Iphone_Updata()              # 拒收&派送|物流问题件-电话检测
+        m.Check_Iphone_Updata()              # 拒收&派送|物流问题件-电话检测
 
 
     print('查询耗时：', datetime.datetime.now() - start)

@@ -290,7 +290,7 @@ class QueryTwo(Settings, Settings_sso):
                         result['dealContent'] = result['dealContent'].strip()
                         ordersDict.append(result.copy())
                 else:
-                    result['deal_time'] = ''
+                    result['deal_time'] = result['update_time']
                     result['result_reson'] = ''
                     result['result_info'] = ''
                     result['dealContent'] = ''
@@ -326,7 +326,7 @@ class QueryTwo(Settings, Settings_sso):
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO 物流问题件(订单编号, 下单时间, 联系电话, 币种, 问题类型, 物流反馈时间, 导入人,处理时间, 处理日期时间, 处理人, 联系方式,  处理结果,拒收原因, 克隆订单编号, 记录时间) 
-                    SELECT 订单编号, 下单时间, 联系电话, 币种, 问题类型, 导入时间 AS 物流反馈时间, 导入人,处理时间, 处理日期时间, 处理人, 联系方式, IF(最新处理结果 = '',问题类型状态,最新处理结果) AS 处理结果,拒收原因, 赠品补发订单编号 AS 克隆订单编号, NOW() 记录时间 
+                    SELECT 订单编号, 下单时间, 联系电话, 币种, 问题类型, 导入时间 AS 物流反馈时间, 导入人,IF(处理时间 = '',NULL,处理时间) AS 处理时间, IF(处理日期时间 = '',NULL,处理日期时间) AS 处理日期时间, 处理人, 联系方式, IF(最新处理结果 = '',问题类型状态,最新处理结果) AS 处理结果,拒收原因, 赠品补发订单编号 AS 克隆订单编号, NOW() 记录时间 
                     FROM customer;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -365,7 +365,6 @@ class QueryTwo(Settings, Settings_sso):
                                 result['deal_time'] = record.split()[0]
                                 result['result_reson'] = ''
                                 result['result_info'] = ''
-
                                 rec = record.split("#处理结果：")[1]
                                 if len(rec.split()) > 2:
                                     result['result_info'] = rec.split()[2]        # 客诉原因
@@ -399,7 +398,7 @@ class QueryTwo(Settings, Settings_sso):
                         result['dealContent'] = result['dealContent'].strip()
                         ordersDict.append(result.copy())
                 else:
-                    result['deal_time'] = ''
+                    result['deal_time'] = result['update_time']
                     result['result_reson'] = ''
                     result['result_info'] = ''
                     result['dealContent'] = ''
