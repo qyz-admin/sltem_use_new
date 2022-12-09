@@ -314,7 +314,7 @@ class QueryTwo(Settings, Settings_sso):
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = df
-            dp.to_excel('G:\\输出文件\\物流问题件-查询2{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            # dp.to_excel('G:\\输出文件\\物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp = dp[['order_number',  'currency', 'ship_phone', 'amount', 'customer_name', 'customer_mobile', 'arrived_address', 'arrived_time', 'create_time', 'dealStatus', 'dealContent',
                      'deal_time', 'dealTime', 'result_reson', 'result_info', 'questionType', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus', 'operatorName','contact',
                      'gift_reissue_order_number',  'addtime','update_time']]
