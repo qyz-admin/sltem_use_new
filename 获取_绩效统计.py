@@ -2323,7 +2323,6 @@ class QueryOrder(Settings, Settings_sso):
             dp2 = dp[(dp['问题类型'].str.contains('订单压单（giikin内部专用）', na=False))]  # 筛选 问题类型
             dp2.to_excel('G:\\输出文件\\绩效压单核实-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp2.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-            dp2.to_excel('G:\\输出文件\\物流问题件-更新2{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO 物流问题_绩效(订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, 处理时间, 问题类型, 记录时间) 
                     SELECT 订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, IF(处理时间 = '',NULL,处理时间) AS 处理时间, 问题类型, NOW() 记录时间 
                     FROM cache_check;'''
