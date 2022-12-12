@@ -298,151 +298,6 @@ class QueryOrder(Settings, Settings_sso):
             wb.close()
         app.quit()
 
-    # 测试 self.InfoQuery(db, searchType)
-    def cs_wbsheetHost(self, filePath, team, searchType):
-        match2 = {'gat': '港台'}
-        print('---正在获取 ' + match2[team] + ' 签收表的详情++++++')
-        fileType = os.path.splitext(filePath)[1]
-        app = xlwings.App(visible=False, add_book=False)
-        app.display_alerts = False
-        if 'xls' in fileType:
-            wb = app.books.open(filePath, update_links=False, read_only=True)
-            for sht in wb.sheets:
-                try:
-                    db = None
-                    db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
-                    columns_value = list(db.columns)  # 获取数据的标题名，转为列表
-                    if '订单号' in columns_value:
-                        db.rename(columns={'订单号': '订单编号'}, inplace=True)
-                    for column_val in columns_value:
-                        if '订单编号' != column_val:
-                            db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
-                except Exception as e:
-                    print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
-                if db is not None and len(db) > 0:
-                    print('++++正在查询：' + sht.name + ' 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
-                    self.cs_InfoQuery(db, searchType)
-                else:
-                    print('----------数据为空导入失败：' + sht.name)
-            wb.close()
-        app.quit()
-    def cs_InfoQuery(self, db, searchType):  # 调用多线程
-        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        orderId = list(db['订单编号'])
-        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
-        if max_count > 500:
-            ord = ', '.join(orderId[0:500])
-            # df = self.cs_orderInfoQuery(ord, searchType)
-            self.cs_orderInfoQuery(ord, searchType)
-            df = self.q.get()
-            print(df)
-            print(99)
-            # self.q.join()
-            print('主线程开始执行……………………')
-            threads = []  # 多线程用线程池--
-            n = 0
-            count = 1
-            while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
-                n = n + 500
-                ord = ','.join(orderId[n:n + 500])
-                print(str(count) + '次')
-                # threads.append(Thread(target=self.cs_orderInfoQuery, args=(ord, searchType)))  # -----也即是子线程
-                t = Thread(target=self.cs_orderInfoQuery, args=(ord, searchType))  # -----也即是子线程
-                threads.append(t)
-                t.start()
-                count = count + 1
-            for th in threads:
-                th.join()
-            print('主线程执行结束---------')
-            dlist = []
-            for j in range(self.q.qsize()):
-                dlist.append(self.q.get())
-            print(dlist)
-            print('正在写入......')
-            dp = df.append(dlist, ignore_index=True)
-            print(dp)
-        else:
-            ord = ','.join(orderId[0:max_count])
-            df = self.cs_orderInfoQuery(ord, searchType)
-        dp.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-    def cs_orderInfoQuery(self, ord, searchType):  # 进入订单检索界面
-        print('+++正在查询订单信息中')
-        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-                    'origin': 'https: // gimp.giikin.com',
-                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
-        data = {'page': 1, 'pageSize': 500,
-                'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None,
-                'type': None, 'collId': None, 'isClone': None,
-                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '',
-                'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
-                'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
-                'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None,
-                'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
-                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None}
-        if searchType == '订单号':
-            data.update({'orderPrefix': ord,
-                         'shippingNumber': None})
-        elif searchType == '运单号':
-            data.update({'order_number': None,
-                         'shippingNumber': ord})
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
-        # print('+++已成功发送请求......')
-        req = json.loads(req.text)  # json类型数据转换为dict字典
-        ordersdict = []
-        # print('正在处理json数据转化为dataframe…………')
-        try:
-            for result in req['data']['list']:
-                result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
-                result['saleName'] = 0
-                result['productId'] = 0
-                result['saleProduct'] = 0
-                result['spec'] = 0
-                result['chooser'] = 0
-                result['saleId'] = result['specs'][0]['saleId']
-                result['saleName'] = result['specs'][0]['saleName']
-                result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
-                result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
-                result['spec'] = result['specs'][0]['spec']
-                result['chooser'] = result['specs'][0]['chooser']
-                quest = ''
-                for re in result['questionReason']:
-                    quest = quest + ';' + re
-                result['questionReason'] = quest
-                delr = ''
-                for re in result['delReason']:
-                    delr = delr + ';' + re
-                result['delReason'] = delr
-                auto = ''
-                for re in result['autoVerify']:
-                    auto = auto + ';' + re
-                result['autoVerify'] = auto
-                ordersdict.append(result)
-        except Exception as e:
-            print('转化失败： 重新获取中', str(Exception) + str(e))
-        data = pd.json_normalize(ordersdict)
-        df = None
-        try:
-            df = data[['orderNumber', 'currency', 'area', 'productId', 'saleProduct', 'saleName', 'spec',
-                    'shipInfo.shipName', 'shipInfo.shipPhone', 'percent', 'phoneLength', 'shipInfo.shipAddress',
-                    'amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime',
-                    'logisticsName', 'dpeStyle', 'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName',
-                    'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime',
-                    'finishTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer',
-                    'autoVerify', 'cloneUser', 'isClone', 'warehouse', 'smsStatus', 'logisticsControl',
-                    'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName', 'update_time']]
-            # print(df)
-            self.q.put(df)
-        except Exception as e:
-            print('------查询为空')
-        print('++++++本批次查询成功+++++++')
-        print('*' * 50)
-        # return df
 
     # 一、订单——查询更新（新后台的获取）
     def orderInfoQuery(self, ord, searchType):  # 进入订单检索界面
@@ -2064,7 +1919,7 @@ class QueryOrder(Settings, Settings_sso):
     # 绩效-查询促单（一）
     def service_id_order(self, hanlde, timeStart, timeEnd):    # 进入订单检索界面     促单查询
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        print('+++正在查询 促单订单 信息中：' + str(timeStart) + " *** " + str(timeEnd))
+        print('正在查询 促单订单 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
@@ -2090,7 +1945,7 @@ class QueryOrder(Settings, Settings_sso):
             n = 1
             if max_count > 500:
                 in_count = math.ceil(max_count / 500)
-                print(in_count)
+                # print(in_count)
                 dlist = []
                 while n <= in_count:  # 这里用到了一个while循环，穿越过来的
                     data = self._service_id_order(timeStart, timeEnd, n)
@@ -2100,7 +1955,7 @@ class QueryOrder(Settings, Settings_sso):
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = self._service_id_order(timeStart, timeEnd, n)
-            dp = dp[['orderNumber', 'currency', 'addTime', 'orderStatus', 'logisticsStatus', 'service', 'cloneUser']]
+            dp = dp[['orderNumber', 'currency', 'addTime', 'service', 'cloneUser', 'orderStatus', 'logisticsStatus']]
             dp.columns = ['订单编号', '币种', '下单时间', '代下单客服', '克隆人', '订单状态', '物流状态']
             dp.to_excel('G:\\输出文件\\绩效促单-查询{}.xlsx'.format(rq), sheet_name='促单', index=False, engine='xlsxwriter')
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
@@ -2109,8 +1964,8 @@ class QueryOrder(Settings, Settings_sso):
                     FROM cache_check;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
-        print('++++++本次查询成功+++++++')
-        print('*' * 50)
+        print('-' * 50)
+        print('-' * 50)
     def _service_id_order(self, timeStart, timeEnd, n):
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -2129,7 +1984,7 @@ class QueryOrder(Settings, Settings_sso):
                    'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
-        print('+++已成功发送请求......')
+        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
         ordersdict = []
@@ -2193,7 +2048,7 @@ class QueryOrder(Settings, Settings_sso):
     # 绩效-查询采购异常（二.1）
     def service_id_ssale(self, timeStart, timeEnd):  # 进入采购问题件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        print('+++正在查询信息中')
+        print('正在查询 采购订单 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.afterSale&action=getPurchaseAbnormalList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
@@ -2244,7 +2099,8 @@ class QueryOrder(Settings, Settings_sso):
         else:
             print('没有需要获取的信息！！！')
             return
-        print('*' * 50)
+        print('-' * 50)
+        print('-' * 50)
     def _service_id_ssale(self, timeStart, timeEnd, n):  # 进入物流问题件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.afterSale&action=getPurchaseAbnormalList'
@@ -2274,7 +2130,7 @@ class QueryOrder(Settings, Settings_sso):
     # 绩效-查询物流问题件 压单核实 （二.2）
     def service_id_waybill(self, timeStart, timeEnd):  # 进入物流问题件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        print('+++正在查询信息中---物流问题件更新')
+        print('正在查询 物流问题件&压单核实 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.customerQuestion&action=getCustomerComplaintList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
@@ -2287,7 +2143,7 @@ class QueryOrder(Settings, Settings_sso):
         # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
-        print('+++已成功发送请求......')
+        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         max_count = req['data']['count']
         print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
@@ -2314,25 +2170,26 @@ class QueryOrder(Settings, Settings_sso):
             dp1.to_excel('G:\\输出文件\\绩效物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp1.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
             dp1.to_excel('G:\\输出文件\\物流问题件-更新2{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO 物流问题_绩效(订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, 处理时间, 问题类型, 记录时间) 
-                    SELECT 订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, IF(处理时间 = '',NULL,处理时间) AS 处理时间, 问题类型, NOW() 记录时间 
+            sql = '''REPLACE INTO 物流问题_绩效(订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, 处理时间, 统计日期,记录时间) 
+                    SELECT 订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, IF(处理时间 = '',NULL,处理时间) AS 处理时间, DATE_FORMAT(NOW(),'%Y-%m-%d') 统计日期,NOW() 记录时间 
                     FROM cache_check;'''
-            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
             print('正在写入 压单核实......')
             dp2 = dp[(dp['问题类型'].str.contains('订单压单（giikin内部专用）', na=False))]  # 筛选 问题类型
             dp2.to_excel('G:\\输出文件\\绩效压单核实-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp2.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO 物流问题_绩效(订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, 处理时间, 问题类型, 记录时间) 
-                    SELECT 订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, IF(处理时间 = '',NULL,处理时间) AS 处理时间, 问题类型, NOW() 记录时间 
+            sql = '''REPLACE INTO 物流问题_绩效(订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, 处理时间, 统计日期,记录时间) 
+                    SELECT 订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, IF(处理时间 = '',NULL,处理时间) AS 处理时间, DATE_FORMAT(NOW(),'%Y-%m-%d') 统计日期,NOW() 记录时间 
                     FROM cache_check;'''
-            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
             print('写入成功......')
         else:
             print('没有需要获取的信息！！！')
             return
-        print('*' * 50)
+        print('-' * 50)
+        print('-' * 50)
     def _service_id_waybill(self, timeStart, timeEnd, n):  # 进入物流问题件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customerQuestion&action=getCustomerComplaintList'
@@ -2410,6 +2267,91 @@ class QueryOrder(Settings, Settings_sso):
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
         return data
+
+    # 查询更新（新后台的获取-派送问题件更新）
+    def service_id_getDeliveryList(self, timeStart, timeEnd):  # 进入订单检索界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('正在查询 派送问题件 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
+        url = r'https://gimp.giikin.com/service?service=gorder.deliveryQuestion&action=getDeliveryList'
+        url = r'https://gimp.giikin.com/service?service=gorder.deliveryQuestion&action=getDeliveryList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/deliveryProblemPackage'}
+        data = {'order_number': None, 'waybill_number': None, 'question_level': None, 'question_type': None, 'order_trace_id': None, 'ship_phone': None, 'page': 1, 'pageSize': 90,
+                'addtime': None, 'question_time': None, 'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'create_time': None, 'finishtime': None,
+                'sale_id': None, 'product_id': None, 'logistics_id': None, 'area_id': None, 'currency_id': None, 'order_status': None, 'logistics_status': None}
+        proxy = '47.75.114.218:10020'  # 使用代理服务器
+        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)          # json类型数据转换为dict字典
+        max_count = req['data']['count']    # 获取 请求订单量
+        ordersDict = []
+        if max_count != 0 and max_count != []:
+            try:
+                for result in req['data']['list']:                  # 添加新的字典键-值对，为下面的重新赋值
+                    ordersDict.append(result.copy())
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            df = pd.json_normalize(ordersDict)
+            print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+            print('*' * 50)
+            if max_count > 90:
+                in_count = math.ceil(max_count/90)
+                dlist = []
+                n = 1
+                while n < in_count:  # 这里用到了一个while循环，穿越过来的
+                    print('剩余查询次数' + str(in_count - n))
+                    n = n + 1
+                    data = self._service_id_getDeliveryList(timeStart, timeEnd, n)
+                    dlist.append(data)
+                dp = df.append(dlist, ignore_index=True)
+            else:
+                dp = df
+            dp = dp[['order_number',  'currency', 'ship_phone', 'addtime', 'create_time', 'finishtime', 'lastQuestionName', 'orderStatus', 'logisticsStatus',
+                     'reassignmentTypeName', 'logisticsName',  'questionAddtime', 'userName', 'traceName', 'traceTime', 'content','failNum']]
+            dp.columns = ['订单编号', '币种', '联系电话', '下单时间', '创建时间', '完成时间', '派送问题', '订单状态', '物流状态',
+                          '订单类型', '物流渠道',  '派送问题首次时间', '处理人', '处理记录', '处理时间', '备注', '派送次数']
+            print('正在写入......')
+            dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
+            # dp.to_excel('G:\\输出文件\\派送问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            sql = '''REPLACE INTO 派送问题件_绩效(订单编号,币种, 联系电话, 下单时间,完成时间,订单状态,物流状态,订单类型,物流渠道, 创建日期, 创建时间, 派送问题, 派送问题首次时间, 派送次数,处理人, 处理记录, 处理时间,备注, 记录时间) 
+                    SELECT 订单编号,币种, 联系电话, 下单时间,完成时间,订单状态,物流状态,订单类型,物流渠道, DATE_FORMAT(创建时间,'%Y-%m-%d') 创建日期, 创建时间, 派送问题, 派送问题首次时间, 派送次数, 处理人, 处理记录, IF(处理时间 = '',NULL,处理时间) 处理时间,备注,NOW() 记录时间 
+                    FROM cache_check;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('写入成功......')
+        else:
+            print('没有需要获取的信息！！！')
+            return
+        print('-' * 50)
+        print('-' * 50)
+    def _service_id_getDeliveryList(self, timeStart, timeEnd, n):  # 进入派送问题件界面
+        print('+++正在查询第 ' + str(n) + ' 页信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.deliveryQuestion&action=getDeliveryList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/deliveryProblemPackage'}
+        data = {'order_number': None, 'waybill_number': None, 'question_level': None, 'question_type': None, 'order_trace_id': None, 'ship_phone': None, 'page': n, 'pageSize': 90,
+                'addtime': None, 'question_time': None, 'trace_time': None, 'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'finishtime': None,
+                'sale_id': None, 'product_id': None, 'logistics_id': None, 'area_id': None, 'currency_id': None, 'order_status': None, 'logistics_status': None}
+        proxy = '47.75.114.218:10020'  # 使用代理服务器
+        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        ordersDict = []
+        try:
+            for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
+                ordersDict.append(result.copy())
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        data = pd.json_normalize(ordersDict)
+        print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
+        print('*' * 50)
+        return data
+
 
 
     # 绩效-汇总输出

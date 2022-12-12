@@ -448,14 +448,14 @@ class QueryTwo(Settings, Settings_sso):
                 dp = self._waybillInfoQuery(timeStart, timeEnd, n)
             print(dp)
             dp.to_excel('G:\\输出文件\\压单核实表-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            dp = dp[(dp['questionTypeName'].str.contains('订单压单（giikin内部专用）'))]
+            # dp = dp[(dp['questionTypeName'].str.contains('订单压单（giikin内部专用）'))]
             dp = dp[['order_number',  'deal_time', 'dealContent', 'traceUserName']]
             dp.columns = ['订单编号', '处理时间', '处理结果', '处理人']
             print('正在写入......')
-            dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            dp.to_sql('压单表_已核实_info_copy1', con=self.engine1, index=False, if_exists='replace')
             sql = '''REPLACE INTO 压单表_已核实_info(订单编号, 处理时间, 处理结果, 处理人, 记录时间) 
                     SELECT 订单编号, 处理时间, 处理结果, 处理人, NOW() 记录时间 
-                    FROM customer;'''
+                    FROM 压单表_已核实_info_copy1;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             dp.to_excel('G:\\输出文件\\压单核实表-2查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             print('写入成功......')
