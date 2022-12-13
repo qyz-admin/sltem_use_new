@@ -457,6 +457,10 @@ class QueryTwo(Settings, Settings_sso):
                     SELECT 订单编号, 处理时间, 处理结果, 处理人, NOW() 记录时间 
                     FROM 压单表_已核实_info_copy1;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            sql = '''REPLACE INTO 压单表_已核实(订单编号, 处理时间, 处理结果, 处理人, 记录时间) 
+                    SELECT 订单编号, 处理时间, 处理结果, 处理人, NOW() 记录时间 
+                    FROM 压单表_已核实_info_copy1;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             dp.to_excel('G:\\输出文件\\压单核实表-2查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             print('写入成功......')
         else:

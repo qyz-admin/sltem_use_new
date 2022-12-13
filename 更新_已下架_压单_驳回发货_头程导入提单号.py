@@ -146,7 +146,7 @@ class QueryTwoLower(Settings, Settings_sso):
                     sql = '''REPLACE INTO 压单表_已核实(订单编号,处理时间,处理结果,处理人, 记录时间) 
                             SELECT 订单编号,处理时间,处理结果,IF(处理人 = '' OR 处理人 IS NULL,'-',处理人) 处理人, NOW() 记录时间 
                             FROM customer;'''
-                    pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                    # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                     print('++++成功导入：' + sht.name + '--->>>到压单表')
                 else:
                     print('----------数据为空导入失败：' + sht.name)
