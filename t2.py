@@ -33,7 +33,7 @@ if team in ('gat', 'slsc', 'sl_r9b'):
     begin = data_begin
     end = datetime.datetime.now().date()
     # 导出时间
-    month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+    month_last = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'
     month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:

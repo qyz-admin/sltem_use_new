@@ -2166,7 +2166,7 @@ class Query_sso_updata(Settings):
             dp = dp[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'shipInfo.shipName', 'shipInfo.shipAddress','wayBillNumber','saleId', 'saleProduct', 'productId','spec','quantity', 'orderStatus',
                      'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime','transferTime', 'onlineTime', 'deliveryTime','finishTime','stateTime', 'logisticsUpdateTime', 'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName',
                      'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks', 'auto_VerifyTip',
-                     'percentInfo.arriveCount', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'tel_phone']]
+                     'percentInfo.arriveCount', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'tel_phone', 'percent']]
             print(dp)
             # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
             # dp.to_excel('H:\\桌面\\需要用到的文件\\\输出文件\\派送问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
@@ -2218,7 +2218,8 @@ class Query_sso_updata(Settings):
                                     dim_cate.`name` 三级分类,
                                     h.`shipInfo.shipName` 姓名,
                                     h.`shipInfo.shipAddress` 地址,
-                                    h.`tel_phone` 标准电话
+                                    h.`tel_phone` 标准电话,
+                                    h.`percent` 下单拒收率
                                    FROM d1_cpy h
                                        LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
                                        LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -2272,7 +2273,8 @@ class Query_sso_updata(Settings):
                                        a.`三级分类`= IF(a.`三级分类` IS NULL, IF(b.`三级分类` = '', NULL,  b.`三级分类`),  a.`三级分类`),
                                        a.`姓名`= IF(b.`姓名` = '', NULL,  b.`姓名`),
                                        a.`地址`= IF(b.`地址` = '', NULL,  b.`地址`),
-                                       a.`标准电话`= IF(b.`标准电话` = '', NULL,  b.`标准电话`)
+                                       a.`标准电话`= IF(b.`标准电话` = '', NULL,  b.`标准电话`),
+                                       a.`标准电话`= IF(b.`下单拒收率` = '', NULL,  b.`下单拒收率`)
                            where a.`订单编号`=b.`订单编号`;'''.format('gat_order_list')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         else:

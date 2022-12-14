@@ -518,7 +518,9 @@ class QueryTwoLower(Settings, Settings_sso):
                   '协来运': 241,
                   '协来运（废弃）': 49,
                   '易速配-桃园仓': 253,
-                  '香港圆通仓': 274
+                  '香港圆通仓': 274,
+                  '神龙备货铱熙无敌': 307,
+                  '火凤凰备货铱熙无敌': 308
                   }
         if auto_time == '自动':
             # sql = '''SELECT DISTINCT 统计时间 FROM 已下架表 d GROUP BY 统计时间 ORDER BY 统计时间 DESC'''
@@ -539,7 +541,7 @@ class QueryTwoLower(Settings, Settings_sso):
             timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
             print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
             for tem in team_whid:
-                if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货', '易速配-桃园仓'):
+                if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货', '易速配-桃园仓', '神龙备货铱熙无敌', '火凤凰备货铱熙无敌'):
                     for tem_type in team_stock_type:
                         print('+++正在查询仓库： ' + tem + '；库存类型:' + match[tem_type] + ' 信息')
                         self._order_lower_info(match2[tem], tem_type, timeStart, timeEnd, tem, match[tem_type])
@@ -549,7 +551,7 @@ class QueryTwoLower(Settings, Settings_sso):
         else:
             print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
             for tem in team_whid:
-                if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货', '易速配-桃园仓'):
+                if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货', '易速配-桃园仓', '神龙备货铱熙无敌', '火凤凰备货铱熙无敌'):
                     for tem_type in team_stock_type:
                         print('+++正在查询仓库： ' + tem + '；库存类型:' + match[tem_type] + ' 信息')
                         self._order_lower_info(match2[tem], tem_type, timeStart, timeEnd, tem, match[tem_type])
@@ -677,14 +679,18 @@ class QueryTwoLower(Settings, Settings_sso):
                             result['waill_name'] = '圆通'
                         elif '香港易速配' in result['whid']:
                             result['waill_name'] = '易速配'
-                        elif '神龙备货' in result['whid']:
+                        elif '龟山-神龙备货' in result['whid']:
                             result['waill_name'] = '龟山备货'
-                        elif '火凤凰备货' in result['whid']:
+                        elif '龟山-火凤凰备货' in result['whid']:
                             result['waill_name'] = '龟山备货'
                         elif '天马顺丰仓' in result['whid']:
                             result['waill_name'] = '天马顺丰'
                         elif '协来运' in result['whid']:
                             result['waill_name'] = '协来运'
+                        elif '神龙备货铱熙无敌' in result['whid']:
+                            result['waill_name'] = '铱熙无敌备货'
+                        elif '火凤凰备货铱熙无敌' in result['whid']:
+                            result['waill_name'] = '铱熙无敌备货'
                     # print(result)
                     ordersDict.append(result)
             except Exception as e:

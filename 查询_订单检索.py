@@ -76,7 +76,7 @@ class QueryOrder(Settings, Settings_sso):
                                                                                     self.mysql2['host'],
                                                                                     self.mysql2['port'],
                                                                                     self.mysql2['datebase']))
-    def readFormHost(self, team, searchType,pople_Query, timeStart, timeEnd):
+    def readFormHost(self, team, searchType,pople_Query, timeStart, timeEnd, to_sql):
         start = datetime.datetime.now()
         path = r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表'
         dirs = os.listdir(path=path)
@@ -90,12 +90,12 @@ class QueryOrder(Settings, Settings_sso):
                 elif pople_Query == '电话检索':
                     self.wbsheetHost_iphone(filePath, team, searchType, timeStart, timeEnd)
                 else:
-                    self.wbsheetHost(filePath, team, searchType)
+                    self.wbsheetHost(filePath, team, searchType, to_sql)
                 # self.cs_wbsheetHost(filePath, team, searchType)
         print('处理耗时：', datetime.datetime.now() - start)
 
     # 工作表的订单信息
-    def wbsheetHost(self, filePath, team, searchType):
+    def wbsheetHost(self, filePath, team, searchType, to_sql):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
         app.display_alerts = False
@@ -149,26 +149,29 @@ class QueryOrder(Settings, Settings_sso):
                                 print('正在写入......')
                                 # print(dlist)
                                 dp = df.append(dlist, ignore_index=True)
-                                dp = dp[['orderNumber', 'area', 'shipInfo.shipEmail', 'addTime']]
-                                dp.columns = ['订单编号', '运营团队', '邮箱', '下单时间']
-                                dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-                                sql = '''REPLACE INTO 订单检索(订单编号, 运营团队, 邮箱, 下单时间) SELECT 订单编号, 运营团队, 邮箱, 下单时间 FROM cache_check;'''
-                                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                                if to_sql == '写入':
+                                    dp = dp[['orderNumber', 'area', 'shipInfo.shipEmail', 'addTime']]
+                                    dp.columns = ['订单编号', '运营团队', '邮箱', '下单时间']
+                                    dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+                                    sql = '''REPLACE INTO 订单检索(订单编号, 运营团队, 邮箱, 下单时间) SELECT 订单编号, 运营团队, 邮箱, 下单时间 
+                                            FROM cache;'''
+                                    pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                         else:
                             ord = ','.join(orderId[0:max_count])
                             dp = self.orderInfoQuery(ord, searchType)
-                        # dp = dp[['orderNumber', 'currency', 'area', 'productId', 'saleProduct', 'saleName', 'spec', 'shipInfo.shipName', 'shipInfo.shipPhone', 'percent', 'phoneLength',
-                        #          'shipInfo.shipAddress','amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime', 'logisticsName', 'dpeStyle',
-                        #          'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName', 'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime','deliveryTime', 'onlineTime',
-                        #          'finishTime', 'refundTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer','autoVerify', 'cloneUser', 'isClone', 'warehouse', 'smsStatus',
-                        #          'logisticsControl', 'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName', 'update_time', 'autoVerifyTip', 'auto_VerifyTip', 'auto_VerifyTip_zl', 'auto_VerifyTip_qs', 'auto_VerifyTip_js','notes']]
-                        # dp.columns = ['订单编号', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '拉黑率', '电话长度',
-                        #               '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
-                        #               '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
-                        #               '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
-                        #               '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间', '异常提示', '异常拉黑率',
-                        #               '拉黑率总量','拉黑率签收','拉黑率拒收','留言']
-                        # dp.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+                        if to_sql != '写入':
+                            dp = dp[['orderNumber', 'currency', 'area', 'productId', 'saleProduct', 'saleName', 'spec', 'shipInfo.shipName', 'shipInfo.shipPhone', 'percent', 'phoneLength',
+                                     'shipInfo.shipAddress','amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime', 'logisticsName', 'dpeStyle',
+                                     'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName', 'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime','deliveryTime', 'onlineTime',
+                                     'finishTime', 'refundTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer','autoVerify', 'cloneUser', 'isClone', 'warehouse', 'smsStatus',
+                                     'logisticsControl', 'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName', 'update_time', 'autoVerifyTip', 'auto_VerifyTip', 'auto_VerifyTip_zl', 'auto_VerifyTip_qs', 'auto_VerifyTip_js','notes']]
+                            dp.columns = ['订单编号', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '拉黑率', '电话长度',
+                                          '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
+                                          '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
+                                          '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
+                                          '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间', '异常提示', '异常拉黑率',
+                                          '拉黑率总量','拉黑率签收','拉黑率拒收','留言']
+                            dp.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
                         print('查询已导出+++')
                     else:
                         print('----------数据为空,查询失败：' + sht.name)
@@ -2461,14 +2464,16 @@ if __name__ == '__main__':
         team = 'gat'
         searchType = '订单号'
         pople_Query = '订单检索'                # 客服查询；订单检索
-        m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd')        # 导入；，更新--->>数据更新切换
+        to_sql = '写0入'                       # 写入：汇总到数据库表； 不写入：直接导出表格
+        m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd', to_sql)        # 导入；，更新--->>数据更新切换
 
     elif int(select) == 2:
         print("1-->>> 正在按运单号查询+++")
         team = 'gat'
         searchType = '订单号'
         pople_Query = '客服查询'  # 客服查询；订单检索 运单号
-        m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd')  # 导入；，更新--->>数据更新切换
+        to_sql = '不写入'  # 写入：汇总到数据库表； 不写入：直接导出表格
+        m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd', to_sql)  # 导入；，更新--->>数据更新切换
 
     elif int(select) == 3:
         print("2-->>> 正在按下单时间查询+++")
@@ -2493,7 +2498,8 @@ if __name__ == '__main__':
         pople_Query = '电话检索'                # 电话查询；订单检索
         timeStart = '2022-10-01 00:00:00'
         timeEnd = '2022-11-30 23:59:59'
-        m.readFormHost(team, searchType, pople_Query, timeStart, timeEnd)
+        to_sql = '不写入'  # 写入：汇总到数据库表； 不写入：直接导出表格
+        m.readFormHost(team, searchType, pople_Query, timeStart, timeEnd, to_sql)
 
     # 促单查询；订单检索
     elif int(select) == 5:
