@@ -1319,36 +1319,43 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
         return data
 
-    def Check_Iphone_Updata(self):
+    def Check_Iphone_Updata(self, timeStart, timeEnd):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        print('正在输出 拒收&派送|物流问题件-电话检测 --- 数据中')
-        sql2 = '''SELECT sss2.*
+        print('正在输出 拒收&派送|物流问题件-电话检测 --- 数据中,起止：' + timeStart + ':' + timeEnd)
+        sql2 = '''SELECT sss2.币种, sss2.标准电话, sss2.拒收原因, sss2.近两月拒收量, 
+                         sss3.近两月订单量, sss3.近两月签收量, sss3.近两月退货量,  
+                         concat(ROUND(IFNULL(sss3.近两月签收量 / sss3.近两月订单量,0) * 100,2),'%') as 近两月签收率,
+                         concat(ROUND(IFNULL(sss3.近两月拒收量 / sss3.近两月订单量,0) * 100,2),'%') as 近两月拒收率,
+                         concat(ROUND(IFNULL(sss3.近两月退货量 / sss3.近两月订单量,0) * 100,2),'%') as 近两月退货率,
+                         sss1.总单量, sss1.总签收量, sss1.总拒收量,
+                         concat(ROUND(IFNULL(sss1.总签收量 / sss1.总单量,0) * 100,2),'%') as 总签收率, sss1.下单拒收率
                 FROM (		
-                        SELECT s1.币种, s1.标准电话, 具体原因, 总单量, 总签收量, 总拒收量, s1.拉黑率, COUNT(s1.订单编号) AS 次数
-                        FROM (SELECT 订单编号, 币种, 标准电话,下单时间, 订单配送总量 AS 总单量, 拉黑率, 签收量 AS 总签收量, 拒收量 AS 总拒收量
-                                    FROM (SELECT *
-                                                FROM gat_order_list g
-                                                WHERE g.年月 >= '202206' AND g.系统物流状态 = '拒收'
-                                    ) ss1
-                                    WHERE ss1.`完结状态时间` >= '2022-10-01 00:00:00' AND ss1.`完结状态时间` <= '2022-11-30 23:59:59'
+                        SELECT s1.币种, s1.标准电话, 具体原因, 总单量, 总签收量, 总拒收量, s1.下单拒收率, COUNT(s1.订单编号) AS 次数
+                        FROM (SELECT 订单编号, 币种, 标准电话,下单时间, 订单配送总量 AS 总单量, 下单拒收率, 签收量 AS 总签收量, 拒收量 AS 总拒收量
+                                FROM (SELECT *
+                                            FROM gat_order_list g
+                                            WHERE g.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m') AND g.系统物流状态 = '拒收'
+                                ) ss1
+                                WHERE ss1.`完结状态时间` >= '{0} 00:00:00' AND ss1.`完结状态时间` <= '{1} 23:59:59'
                         ) s1
                         LEFT JOIN 
-                        (SELECT * FROM 拒收问题件_check_iphone js
+                        (  SELECT * 
+                            FROM 拒收问题件_check_iphone js
                         ) s2 ON s1.订单编号 = s2.订单编号
                         GROUP BY s1.币种, s1.标准电话
                         HAVING 次数 >=5
                         ORDER BY 币种, 次数 DESC
                 ) sss1
                 LEFT JOIN 
-                ( 	SELECT IFNULL(币种,'合计') 币种, IFNULL(标准电话,'合计') 标准电话, IFNULL(拒收原因,'合计') 拒收原因, COUNT(订单编号) AS 出现次数
+                ( 	SELECT IFNULL(币种,'合计') 币种, IFNULL(标准电话,'合计') 标准电话, IFNULL(拒收原因,'合计') 拒收原因, COUNT(订单编号) AS 近两月拒收量
                         FROM (
                                 SELECT s1.订单编号, s1.币种, s1.标准电话, s1.下单时间, IF(具体原因 IS NULL,'-',具体原因) AS 拒收原因
                                 FROM (SELECT 订单编号, 币种, 标准电话,下单时间
                                             FROM (SELECT *
                                                         FROM gat_order_list g
-                                                        WHERE g.年月 >= '202206' AND g.系统物流状态 = '拒收'
+                                                        WHERE g.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m') AND g.系统物流状态 = '拒收'
                                             ) ss1
-                                            WHERE ss1.`完结状态时间` >= '2022-10-01 00:00:00' AND ss1.`完结状态时间` <= '2022-11-30 23:59:59'
+                                            WHERE ss1.`完结状态时间` >= '{0} 00:00:00' AND ss1.`完结状态时间` <= '{1} 23:59:59'
                                 ) s1
                                 LEFT JOIN 
                                 ( SELECT * 
@@ -1357,65 +1364,88 @@ class QueryTwo(Settings, Settings_sso):
                     ) ss1
                     GROUP BY 币种, 标准电话, 拒收原因
                     WITH ROLLUP
-                ) sss2
-                ON sss1.标准电话 = sss2.标准电话
-                ORDER BY sss1.币种, sss1.次数 DESC, sss1.标准电话, sss2.出现次数 DESC;'''
+                ) sss2 ON sss1.标准电话 = sss2.标准电话
+                LEFT JOIN (SELECT 标准电话,
+                                    COUNT(订单编号)  as 近两月订单量,
+                                    SUM(IF(`系统物流状态` = '已签收',1,0)) AS 近两月签收量,
+                                    SUM(IF(`系统物流状态` = '已退货',1,0)) AS 近两月退货量,
+                                    SUM(IF(`系统物流状态` = '拒收',1,0)) AS 近两月拒收量
+                            FROM ( SELECT *
+                                    FROM gat_order_list g
+                                    WHERE g.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m') AND g.系统物流状态 = '拒收'
+                            ) ss1
+                            WHERE ss1.`完结状态时间` >= '{0} 00:00:00' AND ss1.`完结状态时间` <= '{1} 23:59:59'
+                            GROUP BY 标准电话
+                ) sss3 ON sss1.标准电话 = sss3.标准电话
+                ORDER BY sss1.币种, sss1.次数 DESC, sss1.标准电话, sss2.近两月拒收量 DESC;'''.format(timeStart, timeEnd)
         df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
 
-        sql3 = '''SELECT s2.*
-                FROM (
-                        SELECT ss2.币种, ss2.标准电话,  COUNT(ss2.订单编号) AS 次数
+        sql3 = '''SELECT s2.*,
+                         s1.近两月订单量, s1.近两月签收量, s1.近两月拒收量, s1.近两月退货量, 
+                         concat(ROUND(IFNULL(s1.近两月签收量 / s1.近两月订单量,0) * 100,2),'%') as 近两月签收率,
+                         concat(ROUND(IFNULL(s1.近两月拒收量 / s1.近两月订单量,0) * 100,2),'%') as 近两月拒收率,
+                         concat(ROUND(IFNULL(s1.近两月退货量 / s1.近两月订单量,0) * 100,2),'%') as 近两月退货率,
+                         s1.总单量, s1.总签收量, s1.总拒收量, 
+                         concat(ROUND(IFNULL(s1.总签收量 / s1.总单量,0) * 100,2),'%') as 总签收率,s1.下单拒收率
+                FROM (   SELECT ss2.币种, ss2.标准电话,  
+                                 COUNT(ss2.订单编号) AS 近两月订单量,
+                                 SUM(IF(ss2.`系统物流状态` = '已签收',1,0)) AS 近两月签收量,
+                                 SUM(IF(ss2.`系统物流状态` = '已退货',1,0)) AS 近两月退货量,
+                                 SUM(IF(ss2.`系统物流状态` = '拒收',1,0)) AS 近两月拒收量, 
+                                 ss2.订单配送总量 AS 总单量, ss2.签收量 AS 总签收量,  ss2.拒收量 AS 总拒收量, ss2.下单拒收率
                         FROM (
                                 ( SELECT 订单编号, 派送问题
                                     FROM 派送问题件_跟进表 ps
-                                    WHERE ps.创建日期 >= '2022-10-01' AND ps.创建日期 <= '2022-11-30'
+                                    WHERE ps.创建日期 >= '{0}' AND ps.创建日期 <= '{1}'
                                 ) 
                                 union 
                                 ( SELECT 订单编号, IF(问题描述 IS NULL ,'-',问题描述) 问题描述
                                     FROM 物流问题件_check_iphone wl
-                                    WHERE wl.物流反馈时间 >= '2022-10-01' AND wl.物流反馈时间 <= '2022-11-30' AND wl.问题类型 <= '派送问题件' 
-                                        AND wl.订单编号 NOT IN (SELECT 订单编号
+                                    WHERE wl.物流反馈时间 >= '{0}' AND wl.物流反馈时间 <= '{1}' AND wl.问题类型 <= '派送问题件' 
+                                      AND wl.订单编号 NOT IN (
+                                                                SELECT 订单编号
                                                                 FROM 派送问题件_跟进表 ps
-                                                                WHERE ps.创建日期 >= '2022-10-01' AND ps.创建日期 <= '2022-11-30'
+                                                                WHERE ps.创建日期 >= '{0}' AND ps.创建日期 <= '{1}'
+                                                            )
+                                ) 
+                        ) ss1
+                        LEFT JOIN
+                        (	SELECT *
+                            FROM gat_order_list g
+                            WHERE g.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m')
+                        ) ss2 ON ss1.订单编号 = ss2.订单编号
+                        GROUP BY ss2.币种, ss2.标准电话
+                        HAVING 近两月订单量 >= 5
+                ) s1
+                LEFT JOIN 
+                (
+                        SELECT IFNULL(ss2.币种,'合计') AS 币种, IFNULL(ss2.标准电话,'合计') AS 标准电话, IFNULL(派送问题,'合计') AS 派送问题, COUNT(ss1.订单编号) AS 出现次数
+                        FROM (
+                                ( SELECT 订单编号, 派送问题
+                                    FROM 派送问题件_跟进表 ps
+                                    WHERE ps.创建日期 >= '{0}' AND ps.创建日期 <= '{1}'
+                                ) 
+                                union 
+                                ( SELECT 订单编号, IF(问题描述 IS NULL ,'-',问题描述) 问题描述
+                                    FROM 物流问题件_check_iphone wl
+                                    WHERE wl.物流反馈时间 >= '{0}' AND wl.物流反馈时间 <= '{1}' AND wl.问题类型 <= '派送问题件' 
+                                      AND wl.订单编号 NOT IN (
+                                                                SELECT 订单编号
+                                                                FROM 派送问题件_跟进表 ps
+                                                                WHERE ps.创建日期 >= '{0}' AND ps.创建日期 <= '{1}'
                                                             )
                                 )
                         ) ss1
                         LEFT JOIN
-                        (			SELECT *
-                                    FROM gat_order_list g
-                                    WHERE g.年月 >= '202206'
+                        (	SELECT *
+                            FROM gat_order_list g
+                            WHERE g.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m')
                         ) ss2 ON ss1.订单编号 = ss2.订单编号
-                        GROUP BY ss2.币种, ss2.标准电话
-                        HAVING 次数 >=5
-                ) s1
-                LEFT JOIN 
-                (
-                    SELECT IFNULL(ss2.币种,'合计') AS 币种, IFNULL(ss2.标准电话,'合计') AS 标准电话, IFNULL(派送问题,'合计') AS 派送问题, COUNT(ss1.订单编号) AS 出现次数
-                    FROM (
-                            ( SELECT 订单编号, 派送问题
-                                FROM 派送问题件_跟进表 ps
-                                WHERE ps.创建日期 >= '2022-10-01' AND ps.创建日期 <= '2022-11-30'
-                            ) 
-                            union 
-                            ( SELECT 订单编号, IF(问题描述 IS NULL ,'-',问题描述) 问题描述
-                                FROM 物流问题件_check_iphone wl
-                                WHERE wl.物流反馈时间 >= '2022-10-01' AND wl.物流反馈时间 <= '2022-11-30' AND wl.问题类型 <= '派送问题件' 
-                                    AND wl.订单编号 NOT IN (SELECT 订单编号
-                                                            FROM 派送问题件_跟进表 ps
-                                                            WHERE ps.创建日期 >= '2022-10-01' AND ps.创建日期 <= '2022-11-30'
-                                                        )
-                            ) 
-                    ) ss1
-                    LEFT JOIN
-                    (			SELECT *
-                                FROM gat_order_list g
-                                WHERE g.年月 >= '202206'
-                    ) ss2 ON ss1.订单编号 = ss2.订单编号
-                    GROUP BY ss2.币种, ss2.标准电话, 派送问题
-                    WITH ROLLUP
-                    ORDER BY ss2.币种, ss2.标准电话, 出现次数 DESC
+                        GROUP BY ss2.币种, ss2.标准电话, 派送问题
+                        WITH ROLLUP
+                        ORDER BY ss2.币种, ss2.标准电话, 出现次数 DESC
                 ) s2 ON s1.标准电话 = s2.标准电话
-                ORDER BY s1.币种, s1.次数 DESC, s1.标准电话, s2.出现次数 DESC;'''
+                ORDER BY s1.币种, s1.近两月订单量 DESC, s1.标准电话, s2.出现次数 DESC;'''.format(timeStart, timeEnd)
         df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
 
         file_path = 'G:\\输出文件\\拒收&派送|物流问题件-电话检测 {}.xlsx'.format(rq)
@@ -1514,7 +1544,9 @@ if __name__ == '__main__':
         m.getDeliveryList('2022-10-01', '2022-11-30')
         # m.getDeliveryList(timeStart, timeEnd)  # 派送问题件 更新
 
-        m.Check_Iphone_Updata()              # 拒收&派送|物流问题件-电话检测
+        timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
+        timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        m.Check_Iphone_Updata(timeStart, timeEnd)              # 拒收&派送|物流问题件-电话检测
 
 
     print('查询耗时：', datetime.datetime.now() - start)

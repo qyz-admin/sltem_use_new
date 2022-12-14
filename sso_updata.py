@@ -2274,7 +2274,7 @@ class Query_sso_updata(Settings):
                                        a.`姓名`= IF(b.`姓名` = '', NULL,  b.`姓名`),
                                        a.`地址`= IF(b.`地址` = '', NULL,  b.`地址`),
                                        a.`标准电话`= IF(b.`标准电话` = '', NULL,  b.`标准电话`),
-                                       a.`标准电话`= IF(b.`下单拒收率` = '', NULL,  b.`下单拒收率`)
+                                       a.`下单拒收率`= IF(b.`下单拒收率` = '', NULL,  b.`下单拒收率`)
                            where a.`订单编号`=b.`订单编号`;'''.format('gat_order_list')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         else:
