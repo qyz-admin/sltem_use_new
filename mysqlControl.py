@@ -2910,12 +2910,105 @@ class MysqlControl(Settings):
         print('*' * 50)
 
 
+    def _service_id_orderInfoTWO(self, ord):  # 进入订单检索界面
+        print('+++正在查询订单信息中')
+        sql = '''SELECT *
+                FROM cache_ch c
+                WHERE c.orderStatus IS NOT NULL AND c.orderStatus <> ""
+                ORDER BY orderNumber, id
+                -- LIMIT 10000'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        # print(df)
+        dict = {}
+        for index, x in df.iterrows():
+            print(index, x['id'], x['orderNumber'], x['orderStatus'], x['updateTime'], x['remark'], x['name'])
+            order_Number = x['orderNumber']
+            dict_info = {}
+            if order_Number not in dict:
+                dict_info['订单编号'] = x['orderNumber']
+                dict_info['id'] = x['id']
+                dict_info['订单状态'] = x['orderStatus']
+                dict_info['转化时间'] = x['updateTime']
+                dict_info['备注'] = x['remark']
+                dict_info['转化人'] = ""
+                dict[order_Number] = dict_info
+            else:
+                print(x['id'])
+                order_Number_last = dict[order_Number]['订单编号']
+                id_Status = x['id']
+                id_Status_last = dict[order_Number]['id']
+                order_Status = x['orderStatus']
+                order_Status_last = dict[order_Number]['订单状态']
+                update_Time = x['updateTime']
+                update_Time_last = dict[order_Number]['转化时间']
+                remark_Status = x['remark']
+                remark_Status_last = dict[order_Number]['备注']
+                name_Status = x['name']
+                name_Status_last = dict[order_Number]['转化人']
+                if '已删除' not in order_Status and '待发货' not in order_Status:
+                    print('已删除不在')
+                    if name_Status_last == "":
+                        dict_info['订单编号'] = x['orderNumber']
+                        dict_info['id'] = x['id']
+                        dict_info['订单状态'] = x['orderStatus']
+                        dict_info['转化时间'] = x['updateTime']
+                        dict_info['备注'] = x['remark']
+                        dict_info['转化人'] = ""
+                        dict[order_Number] = dict_info
+                    else:
+                        if order_Status_last == "问题订单":
+                            dict_info['订单编号'] = x['orderNumber']
+                            dict_info['id'] = x['id']
+                            dict_info['订单状态'] = x['orderStatus']
+                            dict_info['转化时间'] = x['updateTime']
+                            dict_info['备注'] = x['remark']
+                            dict_info['转化人'] = ""
+                            dict[order_Number] = dict_info
+                elif '已删除' in order_Status or '待发货' in order_Status:
+                    print('已删除在')
+                    if order_Status_last == "问题订单":
+                        if '修改order_status' in remark_Status:
+                            print(order_Status_last)
+                            print(remark_Status)
+                            print(name_Status)
+                            if '蔡利英' in name_Status or '杨嘉仪' in name_Status or '张陈平' in name_Status:
+                                dict_info['订单编号'] = x['orderNumber']
+                                dict_info['id'] = x['id']
+                                dict_info['订单状态'] = x['orderStatus']
+                                dict_info['转化时间'] = x['updateTime']
+                                dict_info['备注'] = x['remark']
+                                dict_info['转化人'] = x['name']
+                            elif '蔡利英' not in name_Status and '杨嘉仪' not in name_Status and '张陈平' not in name_Status:
+                                if '修改remark,->张' in remark_Status_last or '修改remark,->楊' in remark_Status_last or '修改remark,->英' in remark_Status_last:
+                                    dict_info['订单编号'] = order_Number_last
+                                    dict_info['id'] = id_Status_last
+                                    dict_info['订单状态'] = order_Status_last
+                                    dict_info['转化时间'] = update_Time_last
+                                    dict_info['备注'] = remark_Status_last
+                                    dict_info['转化人'] = name_Status_last
+                    print(dict_info)
+                    if dict_info != {}:
+                        dict[order_Number] = dict_info
+                        print(88)
+                        print(dict)
+                        print(808)
+        print('*' * 52)
+        print(dict)
+        print('*' * 52)
+        dict = list(dict.values())
+        dict = pd.json_normalize(dict)
+        print(dict)
+        dict.to_excel('G:\\输出文件\\列表-查询{}.xlsx', sheet_name='查询', index=False, engine='xlsxwriter')
+
+
 if __name__ == '__main__':
     #  messagebox.showinfo("提示！！！", "当前查询已完成--->>> 请前往（ 输出文件 ）查看")200
     m = MysqlControl()
     start = datetime.datetime.now()
 
-    select = 1
+    m._service_id_orderInfoTWO('')  # 派送问题  查询；订单检索
+
+    select = 19
     if select == 1:
         # 创建每日文件
         m.bulid_file()

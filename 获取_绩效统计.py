@@ -1916,7 +1916,7 @@ class QueryOrder(Settings, Settings_sso):
                 print(tem_count3)
 
 
-    # 绩效-查询 促单（一）
+    # 绩效-查询 促单（一.1）
     def service_id_order(self, hanlde, timeStart, timeEnd):    # 进入订单检索界面     促单查询
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 促单订单 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
@@ -2037,6 +2037,82 @@ class QueryOrder(Settings, Settings_sso):
                             t2 = result['autoVerifyTip'].split('拒收订单量：')[1]
                             t2 = t2.split('%;')[0]
                             result['auto_VerifyTip'] = t2.split('拉黑率')[1] + '%'
+                ordersdict.append(result)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        df = pd.json_normalize(ordersdict)
+        print('++++++本批次查询成功+++++++')
+        print('*' * 50)
+        return df
+
+    # 绩效-查询 挽单列表（一.2）
+    def service_id_getRedeemOrderList(self, timeStart, timeEnd):    # 进入订单检索界面     促单查询
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('正在查询 挽单列表 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
+        url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRedeemOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/saveOrder'}
+        data = {'order_number': None, 'type': None, 'order_status': None, 'logistics_status': None, 'old_order_status': None, 'old_logistics_status': None, 'operator': None,
+                'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59',
+                'is_del': None, 'page': 1, 'pageSize': 10, 'area_id': None}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        max_count = req['data']['count']
+        print('共...' + str(max_count) + '...单量')
+        if max_count != 0:
+            df = pd.DataFrame([])
+            n = 1
+            if max_count > 90:
+                in_count = math.ceil(max_count / 90)
+                # print(in_count)
+                dlist = []
+                while n <= in_count:  # 这里用到了一个while循环，穿越过来的
+                    data = self._service_id_getRedeemOrderList(timeStart, timeEnd, n)
+                    dlist.append(data)
+                    print('剩余查询次数' + str(in_count - n))
+                    n = n + 1
+                dp = df.append(dlist, ignore_index=True)
+            else:
+                dp = self._service_id_getRedeemOrderList(timeStart, timeEnd, n)
+            dp = dp[['order_number', 'redeemType', 'oldOrderStatus', 'oldLogisticsStatus', 'oldAmount', 'orderStatus',
+                     'logisticsStatus','amount','logisticsName','operatorName','create_time','save_money','currencyName']]
+            dp.columns = ['订单编号', '挽单类型', '原订单状态', '原物流状态', '原订单金额', '当前订单状态', '当前物流状态'
+                          ,'当前订单金额','当前物流渠道','创建人','创建时间','挽单金额','币种']
+            dp.to_excel('G:\\输出文件\\绩效挽单-查询{}.xlsx'.format(rq), sheet_name='挽单', index=False, engine='xlsxwriter')
+            dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
+            sql = '''REPLACE INTO 挽单列表_绩效(订单编号,币种, 创建时间, 创建人, 挽单类型, 当前订单状态, 当前物流状态, 回款状态, 统计日期,记录时间) 
+                    SELECT 订单编号,币种, 创建时间, 创建人, 挽单类型, 当前订单状态, 当前物流状态,NULL as 回款状态, DATE_FORMAT(NOW(),'%Y-%m-%d') 统计日期,NOW() 记录时间 
+                    FROM cache_check;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('写入成功......')
+        print('-' * 50)
+        print('-' * 50)
+    def _service_id_getRedeemOrderList(self, timeStart, timeEnd, n):
+        url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRedeemOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'order_number': None, 'type': None, 'order_status': None, 'logistics_status': None, 'old_order_status': None, 'old_logistics_status': None, 'operator': None,
+                'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59',
+                'is_del': None, 'page': n, 'pageSize': 90, 'area_id': None}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        ordersdict = []
+        # print('正在处理json数据转化为dataframe…………')
+        try:
+            for result in req['data']['list']:
                 ordersdict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
@@ -2268,7 +2344,134 @@ class QueryOrder(Settings, Settings_sso):
         print('*' * 50)
         return data
 
-    # 绩效-查询 派送问题件           （二.3）
+    # 绩效-查询 物流客诉件           （二.3）
+    def service_id_waybill_Query(self, timeStart, timeEnd):  # 进入物流客诉件界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('+++正在查询信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.orderCustomerComplaint&action=getCustomerComplaintList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
+        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': None, 'question_type': None, 'critical': None, 'read_status': None,
+                'operator_type': None, 'operator': None, 'create_time': None, 'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'is_gift_reissue': None,
+                'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': 1, 'pageSize': 90}
+        proxy = '47.75.114.218:10020'  # 使用代理服务器
+        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        max_count = req['data']['count']
+        print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+        print('*' * 50)
+        dp = None
+        if max_count > 0:
+            in_count = math.ceil(max_count/500)
+            df = pd.DataFrame([])
+            dlist = []
+            n = 1
+            while n < in_count:  # 这里用到了一个while循环，穿越过来的
+                print('剩余查询次数' + str(in_count - n))
+                data = self._service_id_waybill_Query(timeStart, timeEnd, n)
+                n = n + 1
+                dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+        if dp.empty:
+            print("今日无更新数据")
+        else:
+            dp.to_excel('G:\\输出文件\\绩效物流客诉件-查询1{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp = dp[['order_number',  'currency', 'amount', 'customer_name', 'customer_mobile', 'arrived_address', 'arrived_time', 'create_time', 'dealStatus', 'dealContent',
+                     'deal_time', 'result_content', 'result_info', 'result_reson', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus',
+                     'gift_reissue_order_number', 'update_time']]
+            dp.columns = ['订单编号', '币种', '订单金额', '客户姓名', '客户电话', '客户地址', '送达时间', '导入时间', '最新处理状态', '最新处理结果',
+                          '处理时间', '处理内容', '客诉原因', '具体原因', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态',
+                          '赠品补发订单编号', '更新时间']
+            print('正在写入......')
+            # dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞|张陈平', na=False))]
+            dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            dp.to_excel('G:\\输出文件\\绩效物流客诉件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            sql = '''REPLACE INTO 物流客诉件(处理时间,物流反馈时间,处理人,订单编号,处理方案, 处理结果, 客诉原因, 赠品补发订单编号,币种, 记录时间) 
+                    SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,最新处理结果 AS 处理方案, 处理内容 AS 处理结果, 客诉原因, 赠品补发订单编号, 币种, NOW() 记录时间 
+                    FROM customer;'''
+            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('写入成功......')
+        print('*' * 50)
+    def _service_id_waybill_Query(self, timeStart, timeEnd, n):  # 进入物流客诉件界面
+        print('+++正在查询第 ' + str(n) + ' 页信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.orderCustomerComplaint&action=getCustomerComplaintList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
+        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': None, 'question_type': None, 'critical': None, 'read_status': None,
+                'operator_type': None, 'operator': None, 'create_time': None, 'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'is_gift_reissue': None,
+                'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': n, 'pageSize': 90}
+        proxy = '47.75.114.218:10020'  # 使用代理服务器
+        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        ordersDict = []
+        try:
+            for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
+                result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
+                result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
+                if ';' in result['traceRecord']:
+                    trace_record = result['traceRecord'].split(";")
+                    for record in trace_record:
+                        result['deal_time'] = ''
+                        result['result_reson'] = ''
+                        result['result_info'] = ''
+                        result['result_content'] = ''
+                        result['deal_time'] = record.split()[0]
+                        rec = record.split("#处理结果：")[1]
+                        if len(rec.split()) > 3:
+                            result['result_reson'] = rec.split()[3]       # 具体原因
+                        if len(rec.split()) > 2:
+                            result['result_info'] = rec.split()[2]        # 客诉原因
+                        if len(rec.split()) > 1:
+                            result['result_content'] = rec.split()[1]     # 处理内容
+                        result['dealContent'] = rec.split()[0]            # 最新处理结果
+                        rec_name = record.split("#处理结果：")[0]
+                        if '赠品' in rec.split()[0] or '退款' in rec.split()[0] or '补发' in rec.split()[0] or '换货' in rec.split()[0]:                    # 筛选无用的通话记录
+                            if len(rec_name.split()) > 2:
+                                if (rec_name.split())[2] != '' or (rec_name.split())[2] != []:
+                                    result['traceUserName'] = (rec_name.split())[2]
+                            else:
+                                result['traceUserName'] = ''
+                        else:
+                            result['traceUserName'] = ''
+                        ordersDict.append(result.copy())    # append()方法只是将字典的地址存到list中，而键赋值的方式就是修改地址，所以才导致覆盖的问题;  使用copy() 或者 deepcopy()  当字典中存在list的时候需要使用deepcopy()
+                else:
+                    result['deal_time'] = ''
+                    result['result_reson'] = ''
+                    result['result_info'] = ''
+                    result['result_content'] = ''
+                    if len(result['dealContent'].split()) > 3:
+                        result['result_reson'] = result['dealContent'].split()[3]       # 具体原因
+                    if len(result['dealContent'].split()) > 2:
+                        result['result_info'] = result['dealContent'].split()[2]        # 客诉原因
+                    if len(result['dealContent'].split()) > 1:
+                        result['result_content'] = result['dealContent'].split()[1]     # 处理内容
+                    result['dealContent'] = result['dealContent'].split()[0]            # 最新处理结果
+
+                    if result['traceRecord'] != '' or result['traceRecord'] != []:
+                        result['deal_time'] = result['traceRecord'].split()[0]
+                    if result['traceUserName'] != '' or result['traceUserName'] != []:
+                        if '赠品' in result['traceRecord'] or '退款' in result['traceRecord'] or '补发' in result['traceRecord'] or '换货' in result['traceRecord']:
+                            result['traceUserName'] = result['traceUserName'].replace('客服：', '')
+                        else:
+                            result['traceUserName'] = ''
+                    result['dealContent'] = result['dealContent'].strip()
+                    ordersDict.append(result.copy())
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        data = pd.json_normalize(ordersDict)
+        print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
+        print('*' * 50)
+        return data
+
+    # 绩效-查询 派送问题件           （二.4）
     def service_id_getDeliveryList(self, timeStart, timeEnd):  # 进入订单检索界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 派送问题件 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
@@ -2350,6 +2553,108 @@ class QueryOrder(Settings, Settings_sso):
         print('*' * 50)
         return data
 
+    # 绩效-查询 拒收问题件           （二.5）
+    def service_id_order_js_Query(self, timeStart, timeEnd):  # 进入拒收问题件界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('+++正在查询信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRejectList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/customerRejection'}
+        data = {'page': 1, 'pageSize': 500, 'orderPrefix': None, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
+                'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
+                'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': -1, 'finishTimeStart': None,
+                'finishTimeEnd': None, 'traceTimeStart': timeStart + ' 00:00:00', 'traceTimeEnd': timeEnd + ' 23:59:59','newCloneNumber': None}
+        proxy = '47.75.114.218:10020'  # 使用代理服务器
+        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        max_count = req['data']['count']
+        print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+        # print(req)
+        if max_count != 0:
+            df = pd.DataFrame([])
+            in_count = math.ceil(max_count/500)
+            dlist = []
+            n = 1
+            while n < in_count:  # 这里用到了一个while循环，穿越过来的
+                print('剩余查询次数' + str(in_count - n))
+                data = self._service_id_order_js_Query(timeStart, timeEnd, n)
+                n = n + 1
+                dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+            dp.to_excel('G:\\输出文件\\拒收问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp = dp[['订单编号', 'currency', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'percentInfo.arriveCount', 'addTime', 'finishTime', 'tel_phone', 'shipInfo.shipPhone', 'ip','newCloneUser', 'newCloneStatus', 'newCloneLogisticsStatus', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
+            dp.columns = ['订单编号', '币种', '订单总量', '拒收量', '签收量','下单时间', '完成时间', '电话', '联系电话', 'ip','新单克隆人', '新单订单状态', '新单物流状态', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果', '是否需要商品']
+            print('正在写入......')
+            dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            sql = '''REPLACE INTO 拒收问题件(订单编号,币种,订单总量, 拒收量, 签收量, 下单时间, 完成时间, 电话, 联系电话, ip, 新单克隆人, 新单订单状态, 新单物流状态, 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果, 是否需要商品,记录时间)
+                    SELECT 订单编号,币种, 订单总量, 拒收量, 签收量, 下单时间, 完成时间, IF(电话 LIKE "852%",RIGHT(电话,LENGTH(电话)-3),IF(电话 LIKE "886%",RIGHT(电话,LENGTH(电话)-3),电话)) 电话, 联系电话, ip,新单克隆人, 新单订单状态, 新单物流状态,  IF(再次克隆下单 = '',NULL,再次克隆下单) 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果,是否需要商品, NOW() 记录时间
+                    FROM customer;'''
+            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('写入成功......')
+        else:
+            print('****** 没有信息！！！')
+        print('*' * 50)
+    def _service_id_order_js_Query(self, timeStart, timeEnd, n):  # 进入拒收问题件界面
+        print('+++正在查询第 ' + str(n) + ' 页信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRejectList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/customerRejection'}
+        data = {'page': n, 'pageSize': 500, 'orderPrefix': None, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
+                'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
+                'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': -1, 'finishTimeStart': None,
+                'finishTimeEnd': None, 'traceTimeStart': timeStart + ' 00:00:00', 'traceTimeEnd': timeEnd + ' 23:59:59', 'newCloneNumber': None}
+        proxy = '47.75.114.218:10020'  # 使用代理服务器
+        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        ordersDict = []
+        try:
+            for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
+                result['订单编号'] = result['orderNumber']
+                result['再次克隆下单'] = result['newCloneNumber']
+                result['跟进人'] = ''
+                result['时间'] = ''
+                result['内容'] = ''
+                result['联系方式'] = ''
+                result['问题类型'] = ''
+                result['问题原因'] = ''
+                result['处理结果'] = ''
+                result['是否需要商品'] = ''
+                if result['traceItems'] != []:
+                    for res in result['traceItems']:
+                        resval = res.split(':')[0]
+                        if '跟进人' in resval:
+                            result['跟进人'] = (res.split('跟进人:')[1]).strip()  # 跟进人
+                        if '时间' in resval and '跟进' not in resval:
+                            result['时间'] = (res.split('时间:')[1]).strip()  # 跟进人
+                        if '内容' in resval:
+                            result['内容'] = (res.split('内容:')[1]).strip()  # 跟进人
+                        if '联系方式' in resval:
+                            result['联系方式'] = (res.split('联系方式:')[1]).strip()  # 跟进人
+                        if '问题类型' in resval:
+                            result['问题类型'] = (res.split('问题类型:')[1]).strip()  # 跟进人
+                        if '问题原因' in resval:
+                            result['问题原因'] = (res.split('问题原因:')[1]).strip()  # 跟进人
+                        if '处理结果' in res:
+                            result['处理结果'] = (res.split('处理结果:')[1]).strip()  # 跟进人
+                        if '是否需要商品' in res:
+                            result['是否需要商品'] = (res.split('是否需要商品:')[1]).strip()  # 跟进人
+                ordersDict.append(result.copy())
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        data = pd.json_normalize(ordersDict)
+        print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
+        print('*' * 50)
+        return data
 
     # 绩效-查询系统问题件         （三）
     def service_id_orderInfo(self, timeStart, timeEnd):
@@ -2411,6 +2716,25 @@ class QueryOrder(Settings, Settings_sso):
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         return data
+    def _service_id_orderInfoTWO(self, ord):  # 进入订单检索界面
+        print('+++正在查询订单信息中')
+        sql = '''SELECT *
+                FROM cache_ch c
+                WHERE c.orderStatus IS NOT NULL AND c.orderStatus <> ""
+                ORDER BY orderNumber, id'''
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        print(df)
+        # ordersdict = []
+        # try:
+        #     for result in req['data']:
+        #         ordersdict.append(result)
+        # except Exception as e:
+        #     print('转化失败： 重新获取中', str(Exception) + str(e))
+        # data = pd.json_normalize(ordersdict)
+        # print('++++++本批次查询成功+++++++')
+        # print('*' * 50)
+        # return data
+
 
     # 绩效-汇总输出
     def service_check(self):
@@ -2543,10 +2867,12 @@ if __name__ == '__main__':
                 timeEnd = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         else:
             timeStart = '2022-11-01'
-            timeEnd = '2022-11-02'
+            timeEnd = '2022-11-30'
         print(timeStart + "---" + timeEnd)
 
         # m.service_id_order(hanlde, timeStart, timeEnd)      # 促单查询；订单检索
+
+        # m.service_id_getRedeemOrderList(timeStart, timeEnd)  # 挽单列表  查询；订单检索
 
         # m.service_id_ssale(timeStart, timeEnd)              # 采购查询；订单检索
 
@@ -2554,7 +2880,13 @@ if __name__ == '__main__':
 
         # m.service_id_getDeliveryList(timeStart, timeEnd)      # 派送问题  查询；订单检索
 
-        m.service_id_orderInfo(timeStart, timeEnd)      # 派送问题  查询；订单检索
+        # m.service_id_orderInfo(timeStart, timeEnd)      # 派送问题  查询；订单检索
+
+        # m.service_id_waybill_Query(timeStart, timeEnd)      # 派送问题  查询；订单检索
+
+        m.service_id_order_js_Query(timeStart, timeEnd)      # 拒收问题  查询；订单检索
+
+
 
 
     elif int(select) == 9:

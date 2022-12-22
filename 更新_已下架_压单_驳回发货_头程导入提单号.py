@@ -500,7 +500,7 @@ class QueryTwoLower(Settings, Settings_sso):
     # 进入 已下架 界面  （仓储的获取）（一）
     def order_lower(self, timeStart, timeEnd, auto_time):  # 进入已下架界面
         start: datetime = datetime.datetime.now()
-        team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓', '协来运', '协来运（废弃）','易速配-桃园仓', '香港圆通仓']
+        team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓', '协来运', '协来运（废弃）','易速配-桃园仓', '香港圆通仓', '神龙备货铱熙无敌', '火凤凰备货铱熙无敌']
         # team_whid = ['协来运']
         team_stock_type = [1, 2]
         # team_stock_type = [2]
