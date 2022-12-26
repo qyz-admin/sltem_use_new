@@ -2914,9 +2914,14 @@ class MysqlControl(Settings):
         print('+++正在查询订单信息中')
         sql = '''SELECT *
                 FROM cache_ch c
-                WHERE c.orderStatus IS NOT NULL AND c.orderStatus <> ""
+                WHERE c.orderStatus IS NOT NULL AND c.orderStatus <> "" AND c.orderNumber IN ("GT221116204644K77LU6","GT221116145531UH72J7","GT221115222604DBI7Z7",
+                "GT221115103948XV6SK2","GT221115025453CGNYG9","GT221114210256PDHX00","GT221114172616UWA8I9","GT2211140051244I6CD2","GT221113170252FWCV26",
+                "GT2211131601079FKZZ2","GT221113152410AMR0T2","GT221112203329X0KJ00","GT2211121006051BC813","GT221111143809X8LNE5","GT221109140155YMF6Q9",
+                "GT221108194100GPNBC3","GT2211081929204XYFF2","GT2211081433122FU9T1","GT221105125025YVEJJ9","GT221104160753PX4G20","GT221104151545IU4R31",
+                "GT221104133047PLK0V4","GT221103181157SKIQ36","GT221103142449YMF7P8","GT221102114210YDL3G8","GT221101164810BY4V45",
+                "GT221101114824DL3E19","GT221014060435374U39","GT211211114575966","GP221122210514L2K755")
                 ORDER BY orderNumber, id
-                -- LIMIT 10000'''
+                LIMIT 20000'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         # print(df)
         dict = {}
@@ -2998,7 +3003,7 @@ class MysqlControl(Settings):
         dict = list(dict.values())
         dict = pd.json_normalize(dict)
         print(dict)
-        dict.to_excel('G:\\输出文件\\列表-查询{}.xlsx', sheet_name='查询', index=False, engine='xlsxwriter')
+        dict.to_excel('G:\\输出文件\\列表-查询{2}.xlsx', sheet_name='查询', index=False, engine='xlsxwriter')
 
 
 if __name__ == '__main__':

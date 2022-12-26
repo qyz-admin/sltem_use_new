@@ -500,7 +500,7 @@ class QueryTwoLower(Settings, Settings_sso):
     # 进入 已下架 界面  （仓储的获取）（一）
     def order_lower(self, timeStart, timeEnd, auto_time):  # 进入已下架界面
         start: datetime = datetime.datetime.now()
-        team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓', '协来运', '协来运（废弃）','易速配-桃园仓', '香港圆通仓', '神龙备货铱熙无敌', '火凤凰备货铱熙无敌']
+        team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓', '协来运', '协来运（废弃）','易速配-桃园仓', '香港圆通仓', '神龙备货-铱熙无敌', '火凤凰备货-铱熙无敌']
         # team_whid = ['协来运']
         team_stock_type = [1, 2]
         # team_stock_type = [2]
@@ -519,8 +519,8 @@ class QueryTwoLower(Settings, Settings_sso):
                   '协来运（废弃）': 49,
                   '易速配-桃园仓': 253,
                   '香港圆通仓': 274,
-                  '神龙备货铱熙无敌': 307,
-                  '火凤凰备货铱熙无敌': 308
+                  '神龙备货-铱熙无敌': 307,
+                  '火凤凰备货-铱熙无敌': 308
                   }
         if auto_time == '自动':
             # sql = '''SELECT DISTINCT 统计时间 FROM 已下架表 d GROUP BY 统计时间 ORDER BY 统计时间 DESC'''
@@ -541,7 +541,7 @@ class QueryTwoLower(Settings, Settings_sso):
             timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
             print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
             for tem in team_whid:
-                if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货', '易速配-桃园仓', '神龙备货铱熙无敌', '火凤凰备货铱熙无敌'):
+                if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货', '易速配-桃园仓', '神龙备货-铱熙无敌', '火凤凰备货-铱熙无敌'):
                     for tem_type in team_stock_type:
                         print('+++正在查询仓库： ' + tem + '；库存类型:' + match[tem_type] + ' 信息')
                         self._order_lower_info(match2[tem], tem_type, timeStart, timeEnd, tem, match[tem_type])
@@ -551,7 +551,7 @@ class QueryTwoLower(Settings, Settings_sso):
         else:
             print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
             for tem in team_whid:
-                if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货', '易速配-桃园仓', '神龙备货铱熙无敌', '火凤凰备货铱熙无敌'):
+                if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货', '易速配-桃园仓', '神龙备货-铱熙无敌', '火凤凰备货-铱熙无敌'):
                     for tem_type in team_stock_type:
                         print('+++正在查询仓库： ' + tem + '；库存类型:' + match[tem_type] + ' 信息')
                         self._order_lower_info(match2[tem], tem_type, timeStart, timeEnd, tem, match[tem_type])
@@ -663,7 +663,12 @@ class QueryTwoLower(Settings, Settings_sso):
 
                     # result['count_time'] = timeEnd
                     if type_name == 'SKU库存':
-                        result['waill_name'] = '龟山备货'
+                        if '神龙备货-铱熙无敌' in result['whid']:
+                            result['waill_name'] = '铱熙无敌备货'
+                        elif '火凤凰备货-铱熙无敌' in result['whid']:
+                            result['waill_name'] = '铱熙无敌备货'
+                        else:
+                            result['waill_name'] = '备货'
                     else:
                         if '龟山易速配' in result['whid']:
                             result['waill_name'] = '龟山'
@@ -687,9 +692,9 @@ class QueryTwoLower(Settings, Settings_sso):
                             result['waill_name'] = '天马顺丰'
                         elif '协来运' in result['whid']:
                             result['waill_name'] = '协来运'
-                        elif '神龙备货铱熙无敌' in result['whid']:
+                        elif '神龙备货-铱熙无敌' in result['whid']:
                             result['waill_name'] = '铱熙无敌备货'
-                        elif '火凤凰备货铱熙无敌' in result['whid']:
+                        elif '火凤凰备货-铱熙无敌' in result['whid']:
                             result['waill_name'] = '铱熙无敌备货'
                     # print(result)
                     ordersDict.append(result)
@@ -1320,7 +1325,6 @@ class QueryTwoLower(Settings, Settings_sso):
         df = pd.json_normalize(ordersdict)
         df.to_excel('G:\\输出文件\\{0} 驳回发货-查询.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         print('写入完成++++++')
-
     def _delivery_rejectDelivery(self, waybill):
         print('+++正在驳回中')
         url = r'http://gwms-v3.giikin.cn/order/delivery/rejectDelivery'
@@ -1344,6 +1348,79 @@ class QueryTwoLower(Settings, Settings_sso):
         ordersdict[str(waybill)] = req['comment']
         return ordersdict
 
+
+    # 查询出库更新 以订单编号（仓储的获取）
+    def gwms_chuku(self,timeStart, timeEnd):  # 进入压单检索界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('正在获取需 更新订单信息…………')
+        sql = '''SELECT 订单编号 FROM 查询 g;'''.format('', '')
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        orderId = list(df['订单编号'])
+        max_count = len(orderId)
+        print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+        if max_count > 500:
+            ord = "', '".join(orderId[0:500])
+            df = self._gwms_chuku(ord, timeStart, timeEnd)
+            dlist = []
+            n = 0
+            while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
+                n = n + 500
+                ord = "', '".join(orderId[n:n + 500])
+                data = self._gwms_chuku(ord, timeStart, timeEnd)
+                print(data)
+                if data is not None and len(data) > 0:
+                    dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+        else:
+            print(22)
+            ord = "','".join(orderId[0:max_count])
+            dp = self._gwms_chuku(ord, timeStart, timeEnd)
+        if dp is None or len(dp) == 0:
+            print('查询为空，不需更新+++')
+        else:
+            print('正在写入临时缓存表......')
+            print(dp)
+            print('查询已导出+++')
+            dp.to_excel('G:\\输出文件\\出库-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        # 进入运单扫描导出 界面
+    def _gwms_chuku(self, ord ,timeStart, timeEnd):
+        print('+++正在查询订单信息中')
+        # timeStart = ((datetime.datetime.now() + datetime.timedelta(days=1)) - relativedelta(months=2)).strftime('%Y-%m-%d')
+        # timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
+        url = r'http://gwms-v3.giikin.cn/order/delivery/deliverylog'
+        r_header = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+            'origin': 'http://gwms-v3.giikin.cn',
+            'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
+        data = {'page': 1,
+                'limit': 500,
+                'startDate': timeStart + ' 00:00:00',
+                'endDate': timeEnd + ' 23:59:59',
+                'selectStr': "1=1 and bs.order_number in ('" + ord + "')"
+                }
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
+        max_count = req['count']
+        print(max_count)
+        if max_count != [] and max_count != 0:
+            ordersdict = []
+            try:
+                for result in req['data']:
+                    ordersdict.append(result)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            data = pd.json_normalize(ordersdict)
+        else:
+            data = None
+            print('****** 没有信息！！！')
+        return data
+
+
 if __name__ == '__main__':
     m = QueryTwoLower('+86-18538110674', 'qyz04163510.','1dd6113668f83ab5b79797b87b8bcc41','手0动')
     # m.bulid_file()
@@ -1353,7 +1430,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
-    select = 4
+    select = 5
     if select == 1:
         m.readFile(select)            # 上传每日压单核实结果
         m.order_spec()                # 压单反馈  （备注（压单核实是否需要））
@@ -1369,7 +1446,9 @@ if __name__ == '__main__':
         m.delivery_rejectDelivery()     # 驳回发货-改派使用
 
     elif select == 5:
-        m.readFile(select)  # 上传每日压单核实结果
+        # m.readFile(select)  # 上传每日压单核实结果
+
+        m.gwms_chuku('2022-10-01', '2022-12-23')
         pass
         # m.get_take_delivery_no()
         # m.readFile(select)
