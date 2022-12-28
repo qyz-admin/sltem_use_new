@@ -653,7 +653,7 @@ class QueryTwoLower(Settings, Settings_sso):
             ordersDict = []
             try:
                 for result in req['data']:              # 添加新的字典键-值对，为下面的重新赋值
-                    if '协来运' in tem_name:
+                    if '协来运' in tem_name or '神龙备货-铱熙无敌' in tem_name or '火凤凰备货-铱熙无敌' in tem_name:
                         result['count_time'] = (datetime.datetime.strptime(result['intime'], '%Y-%m-%d %H:%M:%S') + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
                     else:
                         if result['intime'] > (result['intime']).split()[0] + ' 08:30:00':      # 判断修改统计时间

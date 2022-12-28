@@ -38,14 +38,14 @@ if team in ('gat', 'slsc', 'sl_r9b'):
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    data_begin = datetime.date(2022, 8, 1)  # 数据库更新
-    begin = datetime.date(2022, 8, 1)      # 单点更新
-    end = datetime.date(2022, 10, 1)
+    data_begin = datetime.date(2022, 10, 1)  # 数据库更新
+    begin = datetime.date(2022, 10, 1)      # 单点更新
+    end = datetime.date(2022, 12, 28)
     # 导出时间
 
-    month_last = '2022-08-01'
-    month_yesterday = '2022-10-01'
-    month_begin = '2022-07-01'
+    month_last = '2022-10-01'
+    month_yesterday = '2022-12-28'
+    month_begin = '2022-09-01'
 print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 导出      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
@@ -96,7 +96,7 @@ print('导入耗时：', datetime.datetime.now() - start)
 print('---------------------------------- 数据库更新部分：--------------------------------')
 m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息、
 
-# qu.EportOrder(team, month_last, month_yesterday, month_begin, '是', '导0表')     # 最近两个月的更新信息导出
+# qu.EportOrder(team, month_last, month_yesterday, month_begin, '是', '导表')     # 最近两个月的更新信息导出
 
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''

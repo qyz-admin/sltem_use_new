@@ -1050,7 +1050,7 @@ class QueryUpdate(Settings):
                             "香港-圆通", "香港-立邦-顺丰","香港-森鸿物流", "香港-森鸿-SH渠道","香港-森鸿-顺丰渠道","香港-易速配-顺丰",
                             "森鸿","龟山",
                             "速派新竹", "速派黑猫", "速派宅配通",
-                            "台湾-铱熙无敌-新竹改派", "台湾-铱熙无敌-黑猫改派",
+                            "台湾-铱熙无敌-新竹改派", "台湾-铱熙无敌-黑猫改派", "台湾-铱熙无敌-黑猫改派备货",
                             "天马顺丰","天马黑猫","天马新竹",
                             "香港-圆通-改派","香港-立邦-改派","香港-森鸿-改派","香港-易速配-改派","合计"),
             s2.总订单 DESC;'''.format(team, month_last, month_yesterday, currency)
@@ -1162,7 +1162,7 @@ class QueryUpdate(Settings):
                             "香港-圆通", "香港-立邦-顺丰","香港-森鸿物流", "香港-森鸿-SH渠道","香港-森鸿-顺丰渠道","香港-易速配-顺丰",
                             "森鸿","龟山",
                             "速派新竹", "速派黑猫", "速派宅配通",
-                            "台湾-铱熙无敌-新竹改派", "台湾-铱熙无敌-黑猫改派",
+                            "台湾-铱熙无敌-新竹改派", "台湾-铱熙无敌-黑猫改派", "台湾-铱熙无敌-黑猫改派备货",
                             "天马顺丰","天马黑猫","天马新竹",
                             "香港-圆通-改派","香港-立邦-改派","香港-森鸿-改派","香港-易速配-改派","合计"),
                 FIELD(s2.`旬`,'上旬','中旬','下旬','合计'),
@@ -8045,6 +8045,158 @@ class QueryUpdate(Settings):
                 print('运行失败：', str(Exception) + str(e))
             print('----已写入excel ')
 
+        if week.isoweekday() == 3 or week.isoweekday() == '手动':
+            month = datetime.datetime.now().strftime('%Y%m')
+            if (datetime.datetime.now()).strftime('%d') == 1:
+                time_bengin = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'
+                time_end = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            else:
+                time_bengin = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
+                time_end = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            listT = []  # 查询sql的结果 存放池
+            print("正在获取 在线签收率" + time_bengin + "-" + time_end + " 数据内容…………")
+            sql = '''SELECT s2.家族,s2.币种,s2.年月,s2.是否改派,s2.物流方式,
+						IF(s2.签收=0,NULL,s2.签收) as 签收,
+						IF(s2.拒收=0,NULL,s2.拒收) as 拒收,
+						IF(s2.在途=0,NULL,s2.在途) as 在途,				
+						IF(s2.未发货=0,NULL,s2.未发货) as 未发货,
+						IF(s2.未上线=0,NULL,s2.未上线) as 未上线,
+						IF(s2.已退货=0,NULL,s2.已退货) as 已退货,					
+						IF(s2.理赔=0,NULL,s2.理赔) as 理赔,
+						IF(s2.自发头程丢件=0,NULL,s2.自发头程丢件) as 自发头程丢件,
+						IF(s2.已发货=0,NULL,s2.已发货) as 已发货,
+						IF(s2.已完成=0,NULL,s2.已完成) as 已完成,
+						IF(s2.总订单=0,NULL,s2.总订单) as 全部,					
+                    concat(ROUND(IFNULL(s2.签收 / s2.已完成,0) * 100,2),'%') as 完成签收,
+                        concat(ROUND(IFNULL(s2.签收 / s2.总订单,0) * 100,2),'%') as 总计签收,
+                        concat(ROUND(IFNULL(s2.已完成 / s2.总订单,0) * 100,2),'%') as 完成占比,
+                        concat(ROUND(IFNULL(s2.总订单 / 总量,0) * 100,2),'%') as 在线占比,
+                        concat(ROUND(IFNULL(s2.已完成 / s2.已发货,0) * 100,2),'%') as '已完成/已发货',
+                        concat(ROUND(IFNULL(s2.已退货 / s2.总订单,0) * 100,2),'%') as 退货率,
+                    concat(ROUND(IFNULL(s2.签收金额 / s2.完成金额,0) * 100,2),'%') as '完成签收(金额)',
+                        concat(ROUND(IFNULL(s2.签收金额 / s2.总计金额,0) * 100,2),'%') as '总计签收(金额)',
+                        concat(ROUND(IFNULL(s2.完成金额 / s2.总计金额,0) * 100,2),'%') as '完成占比(金额)',
+                        concat(ROUND(IFNULL(s2.完成金额 / s2.发货金额,0) * 100,2),'%') as '已完成/已发货(金额)',
+                        concat(ROUND(IFNULL(s2.退货金额 / s2.总计金额,0) * 100,2),'%') as '退货率(金额)',总量
+                FROM ( SELECT IFNULL(s1.币种,'合计') as 币种,
+                            IFNULL(s1.家族,'合计') as 家族,
+                            IFNULL(s1.年月,'合计') as 年月,
+                            IFNULL(s1.是否改派,'合计') as 是否改派,
+                            IFNULL(s1.物流方式,'合计') as 物流方式,
+                            SUM(s1.签收) as 签收,
+                            SUM(s1.拒收) as 拒收,
+                            SUM(s1.在途) as 在途,
+                            SUM(s1.未发货) as 未发货,
+                            SUM(s1.未上线) as 未上线,
+                            SUM(s1.已退货) as 已退货,
+                            SUM(s1.理赔) as 理赔,
+                            SUM(s1.自发头程丢件) as 自发头程丢件,
+                            SUM(s1.已发货) as 已发货,
+                            SUM(s1.已完成) as 已完成,
+                            SUM(s1.总订单) as 总订单,
+                            SUM(s1.签收金额) as 签收金额,
+                            SUM(s1.退货金额) as 退货金额,
+                            SUM(s1.完成金额) as 完成金额,
+                            SUM(s1.发货金额) as 发货金额,
+                            SUM(s1.总计金额) as 总计金额
+                    FROM (SELECT cx.币种 as 币种,cx.家族 as 家族,cx.年月 as 年月,cx.是否改派 as 是否改派,cx.物流方式 as 物流方式,
+                                SUM(IF(最终状态 = "已签收",1,0)) as 签收,
+                                SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+                                SUM(IF(最终状态 = "在途",1,0)) as 在途,
+                                SUM(IF(最终状态 = "未发货",1,0)) as 未发货,
+                                SUM(IF(最终状态 = "未上线",1,0)) as 未上线,
+                                SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
+                                SUM(IF(最终状态 = "理赔",1,0)) as 理赔,
+                                SUM(IF(最终状态 = "自发头程丢件",1,0)) as 自发头程丢件,
+                                SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
+                                count(订单编号) as 总订单,
+                                count(订单编号)-SUM(IF(最终状态 = "未发货",1,0)) as 已发货,
+                                SUM(IF(最终状态 = "已签收",`价格RMB`,0)) as 签收金额,
+                                SUM(IF(最终状态 = "已退货",`价格RMB`,0)) as 退货金额,
+                                SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),`价格RMB`,0)) as 完成金额,
+                                SUM(`价格RMB`) as 总计金额,
+                                SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
+                            FROM (SELECT *,
+                                    IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组", 
+                                     IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族,
+									IF(付款方式 NOT LIKE '%货到付款%','在线付款','货到付款') AS 支付类型
+                                FROM gat_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{0}' AND cc.日期 <= '{1}'
+                            ) cx
+							where cx.支付类型 = '在线付款'
+                            GROUP BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`是否改派`, cx.`物流方式`
+                            ORDER BY cx.`币种`,cx.`家族`, cx.`年月`, cx.`是否改派` DESC, 总订单 DESC
+                    ) s1
+                    GROUP BY s1.`家族`,s1.`币种`, s1.`年月`, s1.`是否改派`,  s1.`物流方式`
+                    with rollup
+                ) s2
+                LEFT JOIN (SELECT IFNULL(币种,'合计') as 币种,
+                                    IFNULL(家族,'合计') as 家族,
+                                    IFNULL(年月,'合计') as 年月,
+                                    IFNULL(是否改派,'合计') as 是否改派,
+                                    IFNULL(物流方式,'合计') as 物流方式, COUNT(订单编号) AS 总量
+                            FROM ( SELECT *, IF(cc.团队 LIKE "%红杉%","红杉",IF(cc.团队 LIKE "火凤凰%","火凤凰",IF(cc.团队 LIKE "神龙家族%","神龙",IF(cc.团队 LIKE "金狮%","金狮",IF(cc.团队 LIKE "神龙-运营1组%","神龙运营1组",
+                                              IF(cc.团队 LIKE "金鹏%","小虎队",IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营",IF(cc.团队 LIKE "金蝉家族%","金蝉家族",cc.团队)))))))) as 家族,
+                                            IF(付款方式 NOT LIKE '%货到付款%','在线付款','货到付款') AS 支付类型
+                                    FROM gat_zqsb cc 
+                                    where cc.`运单编号` is not null AND cc.日期 >= '{0}' AND cc.日期 <= '{1}'
+                            ) z
+                        GROUP BY 家族, 币种, 年月
+                        with rollup
+                ) s3 ON  s2.家族 = s3.家族 AND s2.币种 = s3.币种 AND s2.年月 = s3.年月
+                GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`是否改派`,  s2.`物流方式`
+                HAVING s2.年月 <> '合计'
+                ORDER BY FIELD(s2.`家族`,'神龙','火凤凰','神龙运营1组','Line运营','金蝉家族','神龙主页运营','小虎队','红杉','金狮','合计'),
+                        FIELD(s2.`币种`,'台湾','香港','合计'),
+                        s2.`年月`,
+                        FIELD(s2.`是否改派`,'改派','直发','合计'),
+                        FIELD(s2.`物流方式`, "台湾-森鸿-新竹-自发头程", "台湾-森鸿-新竹","台湾-大黄蜂普货头程-森鸿尾程","台湾-立邦普货头程-森鸿尾程",
+                                        "台湾-立邦普货头程-易速配尾程","台湾-大黄蜂普货头程-易速配尾程",  
+                                        "台湾-易速配-新竹", "台湾-易速配-TW海快", "台湾-易速配-海快头程【易速配尾程】",
+                                        "台湾-铱熙无敌-711超商","台湾-铱熙无敌-新竹", "台湾-铱熙无敌-黑猫", 
+                                        "台湾-速派-711超商", "台湾-速派-新竹", "台湾-速派-黑猫", "台湾-速派宅配通",
+                                        "台湾-天马-新竹","台湾-天马-顺丰","台湾-天马-黑猫",
+                                        "香港-圆通", "香港-立邦-顺丰","香港-森鸿物流", "香港-森鸿-SH渠道","香港-森鸿-顺丰渠道","香港-易速配-顺丰",
+                                        "森鸿","龟山",
+                                        "速派新竹", "速派黑猫", "速派宅配通",
+                                        "台湾-铱熙无敌-新竹改派", "台湾-铱熙无敌-黑猫改派",
+                                        "天马顺丰","天马黑猫","天马新竹",
+                                        "香港-圆通-改派","香港-立邦-改派","香港-森鸿-改派","香港-易速配-改派","合计"),
+                        s2.总订单 DESC;'''.format(month, time_bengin, time_end)  # 港台查询函数导出
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            listT.append(df)
+
+            print('正在写入excel…………')
+            today = datetime.date.today().strftime('%Y.%m.%d')
+            file_path = 'G:\\输出文件\\{} 在线签收率_查询.xlsx'.format(today)
+            sheet_name = ['物流分类']
+            df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+            df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+            book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            for i in range(len(listT)):
+                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+            if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+                del book['Sheet1']
+            writer.save()
+            writer.close()
+            new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\签收率\\{} {} 在线签收率_查询.xlsx'.format(today, match[team])
+            shutil.copyfile(file_path, new_path)  # copy到指定位置
+            try:
+                print('正在运行 在线签收率 宏…………')
+                app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
+                app.display_alerts = False
+                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+                wbsht1 = app.books.open(file_path)
+                wbsht.macro('总_品类_物流_两月')()
+                wbsht1.save()
+                wbsht1.close()
+                wbsht.close()
+                app.quit()
+            except Exception as e:
+                print('运行失败：', str(Exception) + str(e))
+            print('----已写入excel ')
+
     def slrb_new(self, team, month_last, month_yesterday):  # 报表各团队近两个月的物流数据
         month_now = datetime.datetime.now().strftime('%Y-%m-%d')
         match = {'gat': '港台'}
@@ -10744,7 +10896,7 @@ if __name__ == '__main__':
         m.gat_new(team, month_last, month_yesterday, currency_id)      # 获取-货到付款& 在线付款 签收率-报表
         m.qsb_new(team, month_old)                                  # 获取-每日-报表
         m.EportOrderBook(team, month_last, month_yesterday)         # 导出-总的-签收
-        m.phone_report('handle')                                    # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比）
+        m.phone_report('handle')                                    # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）
 
         # currency_id = '在线付款'
         # m.gat_new(team, month_last, month_yesterday, currency_id)  # 获取-在线付款 签收率-报表

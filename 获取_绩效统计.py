@@ -2860,7 +2860,7 @@ if __name__ == '__main__':
         hanlde = '自0动'
         if hanlde == '自动':
             if (datetime.datetime.now()).strftime('%d') == 1:
-                timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
+                timeStart = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'
                 timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
             else:
                 timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
