@@ -139,7 +139,7 @@ class QueryTwo(Settings, Settings_sso):
             dp = df.append(dlist, ignore_index=True)
             nan_value = float("NaN")   # 用null替换所有空位，然后用dropna函数删除所有空值列。
             dp.replace("", nan_value, inplace=True)
-            dp.dropna(axis=0, how='any', inplace=True, subset=['查件单号'])
+            dp.dropna(axis=0, how='any', inplace=True, subset=['运单号'])
             # dp.dropna(axis=0, how='any', inplace=True)
         else:
             dp = None
@@ -233,9 +233,14 @@ class QueryTwo(Settings, Settings_sso):
                 # data.dropna(axis=0, subset=["查件单号"], inplace=True)
                 # data.sort_values(by="轨迹时间", inplace=True, ascending=True)  # inplace: 原地修改; ascending：升序
                 result['序号'] = ""
-                result['查件单号'] = ""
-                result['轨迹时间'] = ""
-                result['轨迹内容'] = ""
+                result['订单编号'] = ""
+                result['运单号'] = ""
+                result['物流轨迹时间'] = ""
+                result['出货时间'] = ""
+                result['上线时间'] = ""
+                result['保管时间'] = ""
+                result['完成时间'] = ""
+                result['物流轨迹'] = ""
                 result['負責營業所'] = ""
                 result['轨迹备注'] = ""
                 # print(result)
@@ -247,21 +252,23 @@ class QueryTwo(Settings, Settings_sso):
                 L_time10 = L_time_val[0].split('bl12">')
                 L_time11 = L_time_val[0].split('bl12">')[len(L_time10)-1]
                 L_time22 = L_time_val[1].split('</span>')[0]
-                L_time = L_time11 + ' ' + L_time22
-
+                L_time = L_time11 + '' + L_time22
                 if 'strong' in str(val):
                     L_info = str(val).split('<strong>')[1].split('</strong>')[0]
                 else:
                     L_info = str(val).split('bl12">')[2].split('</span>')[0]
-
                 L_info2 = str(val).split('foothold.aspx?n=')[1].split('</a>')[0]
                 L_info2 = L_info2.split('>')[1]
                 L_info3 = str(val).split('title=')[1].split('>')[0]
-
                 result['序号'] = index
-                result['查件单号'] = L_waybill
-                result['轨迹时间'] = L_time
-                result['轨迹内容'] = L_info
+                result['订单编号'] = ""
+                result['运单号'] = L_waybill
+                result['物流轨迹时间'] = L_time
+                result['出货时间'] = ""
+                result['上线时间'] = ""
+                result['保管时间'] = ""
+                result['完成时间'] = ""
+                result['物流轨迹'] = L_info
                 result['轨迹备注'] = L_info3
                 result['負責營業所'] = L_info2
                 result['轨迹备注'] = L_info3
@@ -270,8 +277,7 @@ class QueryTwo(Settings, Settings_sso):
                 L_time10 = L_time_val[0].split('bl12">')
                 L_time11 = L_time_val[0].split('bl12">')[len(L_time10)-1]
                 L_time22 = L_time_val[1].split('</span>')[0]
-                L_time = L_time11 + ' ' + L_time22
-
+                L_time = L_time11 + '' + L_time22
                 if 'strong' in str(val):
                     L_info = str(val).split('<strong>')[1].split('</strong>')[0]
                 else:
@@ -279,11 +285,15 @@ class QueryTwo(Settings, Settings_sso):
                 L_info2 = str(val).split('foothold.aspx?n=')[1].split('</a>')[0]
                 L_info2 = L_info2.split('>')[1]
                 L_info3 = str(val).split('title=')[1].split('>')[0]
-
                 result['序号'] = index
-                result['查件单号'] = L_waybill
-                result['轨迹时间'] = L_time
-                result['轨迹内容'] = L_info
+                result['订单编号'] = ""
+                result['运单号'] = L_waybill
+                result['物流轨迹时间'] = L_time
+                result['出货时间'] = ""
+                result['上线时间'] = ""
+                result['保管时间'] = ""
+                result['完成时间'] = ""
+                result['物流轨迹'] = L_info
                 result['負責營業所'] = L_info2
                 result['轨迹备注'] = L_info3
             # print(858)

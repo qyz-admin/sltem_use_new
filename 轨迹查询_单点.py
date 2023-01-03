@@ -12,7 +12,7 @@ from queue import Queue
 from dateutil.relativedelta import relativedelta
 from threading import Thread #  使用 threading 模块创建线程
 import pandas.io.formats.excel
-
+from bs4 import BeautifulSoup # 抓标签里面元素的方法
 from sqlalchemy import create_engine
 from settings import Settings
 from settings_sso import Settings_sso
@@ -33,6 +33,7 @@ class QueryTwo(Settings, Settings_sso):
         # self.sso_online_Two()
         # self.sso__online_handle(login_TmpCode)
         # self.sso__online_auto()
+
         if handle == '手动':
             self.sso__online_handle(login_TmpCode)
         else:
@@ -136,8 +137,19 @@ class QueryTwo(Settings, Settings_sso):
             dlist = []
             for ord in orderId:
                 print(ord)
-                data = self._order_online(ord, isReal)
-                # print(data)
+                print(type(ord))
+                ord = str(ord)
+                # if type(ord) == "<class 'str'>":
+                #     print('字符串')
+                # else:
+                #     print(ord[:3])
+                if ord[:3] == '620' or ord[:3] == '901':
+                    print('黑猫查询中')
+                    data = self._SearchGoods_heimao(ord)
+                else:
+                    print('单点查询中')
+                    data = self._order_online(ord, isReal)
+                    print(data)
                 if data is not None and len(data) > 0:
                     dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
@@ -145,8 +157,8 @@ class QueryTwo(Settings, Settings_sso):
         else:
             dp = None
         print(dp)
-        dp = dp[['orderNumber', 'wayBillNumber', 'track_date', '出货时间', '上线时间', '保管时间', '完成时间', 'track_info', 'track_status']]
-        dp.columns = ['订单编号', '运单号', '物流轨迹时间', '出货时间', '上线时间', '保管时间', '完成时间', '物流轨迹', '轨迹代码']
+        dp = dp[['orderNumber', 'wayBillNumber', 'track_date', '出货时间', '上线时间', '保管时间', '完成时间', 'track_info', 'track_status', '负责营业所', '轨迹备注', '序号']]
+        dp.columns = ['订单编号', '运单号', '物流轨迹时间', '出货时间', '上线时间', '保管时间', '完成时间', '物流轨迹', '轨迹代码', '负责营业所', '轨迹备注', '序号']
         dp.to_excel('G:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         print('查询已导出+++')
         print('*' * 50)
@@ -185,7 +197,7 @@ class QueryTwo(Settings, Settings_sso):
         print('查询耗时：', datetime.datetime.now() - start)
         print('*' * 50)
 
-    #  查询运单轨迹-按订单查询（一）
+    #  查询运单轨迹-按订单查询（一 、1.单点）
     def _order_online(self, ord, isReal):  # 进入订单检索界面
         print('+++实时_搜索轨迹信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
@@ -216,7 +228,11 @@ class QueryTwo(Settings, Settings_sso):
                     return None
                 else:
                     for result in req['data']['list']:
-                        for res in result['list']:
+                        # for res in result['list']:
+                        for index, res in enumerate(result['list']):
+                            res['序号'] = index + 1
+                            res['负责营业所'] = ''
+                            res['轨迹备注'] = ''
                             res['出货时间'] = ''
                             res['上线时间'] = ''
                             res['完成时间'] = ''
@@ -259,7 +275,7 @@ class QueryTwo(Settings, Settings_sso):
             print('++++++本次获取成功+++++++')
             # print('*' * 50)
             return data
-    # 物流轨迹数据库
+    #  物流轨迹数据库   （一 、2.单点）
     def _order_online_data(self, ord, isReal):  # 进入订单检索界面
         print('+++数据库_搜索轨迹信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
@@ -289,7 +305,9 @@ class QueryTwo(Settings, Settings_sso):
                     return None
                 else:
                     for result in req['data']['list']:
-                        for res in result['list']:
+                        # for res in result['list']:
+                        for index, res in enumerate(result['list']):
+                            res['序号'] = index + 1
                             # res['出货上线时间'] = ''
                             # res['orderNumber'] = result['order_number']
                             # res['wayBillNumber'] = result['track_no']
@@ -299,7 +317,8 @@ class QueryTwo(Settings, Settings_sso):
                             #     res['track_date'] = res['track_date']
                             # if '已核重-集运仓发货' in res['track_info'] or '顺丰速运 已收取快件' in res['track_info'] or '貨件整理中' in res['track_info'] or '二次出貨貼標' in res['track_info']:
                             #     res['出货上线时间'] = res['track_date']
-
+                            res['负责营业所'] = ''
+                            res['轨迹备注'] = ''
                             res['出货时间'] = ''
                             res['上线时间'] = ''
                             res['完成时间'] = ''
@@ -342,6 +361,129 @@ class QueryTwo(Settings, Settings_sso):
             # print('*' * 50)
             return data
 
+    #  查询运单轨迹-按运单查询（一 、3.黑猫官网）
+    def _SearchGoods_heimao(self,wayBillNumber):
+        #1、构建url 、请求数据
+        url = "https://www.t-cat.com.tw/Inquire/TraceDetail.aspx?BillID=" + wayBillNumber   #url为机器人的webhook
+        #2、构建一下请求头部
+        r_header = {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Accept-Language": "zh-CN,zh;q=0.9",
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    # "Connection": "close",
+                    # "Content-Length": '92',
+                    # "Content-Type": "application/x-www-form-urlencoded",
+                    "Host": "www.t-cat.com.tw",
+                    'Origin': 'https://www.t-cat.com.tw',
+                    # "Pragma": "no-cache",
+                    # "Pragma": "1",
+                    "Referer": "https://www.t-cat.com.tw/Inquire/trace.aspx",
+                    "Sec-Fetch-Mode": "navigate",
+                    "Sec-Fetch-Site": "same-origin",
+                    "Sec-Fetch-User": "?1",
+                    "Upgrade-Insecure-Requests": '1',
+                    "Charset": "UTF-8",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
+                    # "User-Agent": user_agent()
+                    # "User-Agent": random.choice(user_agent_list)
+                    }
+        #3、构建请求数据
+        data = {'BillID': 620430597712}
+        proxy = '47.242.154.178:37466'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # 使用代理ip发送请求
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False)
+        # print(req)
+        # print('----------数据获取返回成功-----------')
+        rq = BeautifulSoup(req.text, 'lxml')
+        rq = rq.find_all('tr')
+        ordersDict = []
+        L_waybill = ''
+        L_time = ''
+        L_info = ''
+        L_info2 = ''
+        L_info3 = ''
+        for index, val in enumerate(rq):
+            result = {}
+            # print(index)
+            # print(val)
+            # print('-' * 10)
+            if "top" in str(val) and "time" not in str(val):            # 没有查询到货态
+                result['序号'] = ""
+                result['orderNumber'] = ""
+                result['wayBillNumber'] = ""
+                result['track_date'] = ""
+                result['出货时间'] = ""
+                result['上线时间'] = ""
+                result['保管时间'] = ""
+                result['完成时间'] = ""
+                result['track_info'] = ""
+                result['负责营业所'] = ""
+                result['轨迹备注'] = ""
+            if "height" in str(val) and "rowspan" in str(val):       # 查询到货态（一）
+                L_waybill = str(val).split('</span>')[0].split('bl12">')[1]
+                L_time_val = str(val).split('<br/>')
+                L_time10 = L_time_val[0].split('bl12">')
+                L_time11 = L_time_val[0].split('bl12">')[len(L_time10)-1]
+                L_time22 = L_time_val[1].split('</span>')[0]
+                L_time = L_time11 + '' + L_time22
+                if 'strong' in str(val):
+                    L_info = str(val).split('<strong>')[1].split('</strong>')[0]
+                else:
+                    L_info = str(val).split('bl12">')[2].split('</span>')[0]
+                L_info2 = str(val).split('foothold.aspx?n=')[1].split('</a>')[0]
+                L_info2 = L_info2.split('>')[1]
+                L_info3 = str(val).split('title=')[1].split('>')[0]
+                result['序号'] = index
+                result['orderNumber'] = ""
+                result['wayBillNumber'] = L_waybill
+                result['track_date'] = L_time
+                result['出货时间'] = ""
+                result['上线时间'] = ""
+                result['保管时间'] = ""
+                result['完成时间'] = ""
+                result['track_info'] = L_info
+                result['轨迹备注'] = L_info3
+                result['负责营业所'] = L_info2
+                result['轨迹备注'] = L_info3
+            if "height" not in str(val) and "rowspan" not in str(val) and "<br/>" in str(val):
+                L_time_val = str(val).split('<br/>')
+                L_time10 = L_time_val[0].split('bl12">')
+                L_time11 = L_time_val[0].split('bl12">')[len(L_time10)-1]
+                L_time22 = L_time_val[1].split('</span>')[0]
+                L_time = L_time11 + '' + L_time22
+                if 'strong' in str(val):
+                    L_info = str(val).split('<strong>')[1].split('</strong>')[0]
+                else:
+                    L_info = str(val).split('bl12">')[1].split('</span>')[0]
+                L_info2 = str(val).split('foothold.aspx?n=')[1].split('</a>')[0]
+                L_info2 = L_info2.split('>')[1]
+                L_info3 = str(val).split('title=')[1].split('>')[0]
+                result['序号'] = index
+                result['orderNumber'] = ""
+                result['wayBillNumber'] = L_waybill
+                result['track_date'] = L_time
+                result['出货时间'] = ""
+                result['上线时间'] = ""
+                result['保管时间'] = ""
+                result['完成时间'] = ""
+                result['track_info'] = L_info
+                result['负责营业所'] = L_info2
+                result['轨迹备注'] = L_info3
+            ordersDict.append(result)
+        data = pd.json_normalize(ordersDict)
+        print(data)
+        nan_value = float("NaN")  # 用null替换所有空位，然后用dropna函数删除所有空值列。
+        data.replace("", nan_value, inplace=True)
+        data.dropna(axis=0, how='any', inplace=True, subset=['wayBillNumber'])
+        # print(99)
+        # print(data)
+        # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        # data.to_excel('G:\\输出文件\\黑猫宅急便 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        return data
 
 
 
