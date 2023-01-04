@@ -5944,11 +5944,7 @@ class QueryUpdate(Settings):
         print('正在获取---10、同产品各月的对比…………')
         sql51 = '''SELECT *
                 FROM (SELECT IFNULL(家族, '总计') 家族, IFNULL(地区, '总计') 地区, IFNULL(产品id, '总计') 产品id,  IFNULL(产品名称, '总计') 产品名称, IFNULL(父级分类, '总计') 父级分类,
-						    SUM(总单量) 总单量,					
-						SUM(03总量) 202112总单量,
-							concat(ROUND(SUM(03签收量) / SUM(03总量) * 100,2),'%') as 202112总计签收,
-							concat(ROUND(SUM(03签收量) / SUM(03完成量) * 100,2),'%') as 202112完成签收,
-							concat(ROUND(SUM(03完成量) / SUM(03总量) * 100,2),'%') as 202112完成占比,						
+						    SUM(总单量) 总单量,										
 						SUM(04总量) 202201总单量,
 							concat(ROUND(SUM(04签收量) / SUM(04总量) * 100,2),'%') as 202201总计签收,
 							concat(ROUND(SUM(04签收量) / SUM(04完成量) * 100,2),'%') as 202201完成签收,
@@ -5996,12 +5992,13 @@ class QueryUpdate(Settings):
 						SUM(15总量) 202212总单量,
 							concat(ROUND(SUM(15签收量) / SUM(15总量) * 100,2),'%') as 202212总计签收,
 							concat(ROUND(SUM(15签收量) / SUM(15完成量) * 100,2),'%') as 202212完成签收,
-							concat(ROUND(SUM(15完成量) / SUM(15总量) * 100,2),'%') as 202212完成占比
+							concat(ROUND(SUM(15完成量) / SUM(15总量) * 100,2),'%') as 202212完成占比,	
+						SUM(16总量) 202301总单量,
+							concat(ROUND(SUM(16签收量) / SUM(16总量) * 100,2),'%') as 202301总计签收,
+							concat(ROUND(SUM(16签收量) / SUM(16完成量) * 100,2),'%') as 202301完成签收,
+							concat(ROUND(SUM(16完成量) / SUM(16总量) * 100,2),'%') as 202301完成占比
                     FROM(SELECT 家族,币种 地区, 产品id, 产品名称, 父级分类,
-                                COUNT(cx.`订单编号`) as 总单量,				
-                            SUM(IF(年月 = 202112,1,0)) as 03总量,
-                                SUM(IF(年月 = 202112 AND 最终状态 = "已签收",1,0)) as 03签收量,
-                                SUM(IF(年月 = 202112 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 03完成量,					
+                                COUNT(cx.`订单编号`) as 总单量,									
                             SUM(IF(年月 = 202201,1,0)) as 04总量,
                                 SUM(IF(年月 = 202201 AND 最终状态 = "已签收",1,0)) as 04签收量,
                                 SUM(IF(年月 = 202201 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 04完成量,					
@@ -6037,7 +6034,10 @@ class QueryUpdate(Settings):
                                 SUM(IF(年月 = 202211 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 14完成量,
                             SUM(IF(年月 = 202212,1,0)) as 15总量,
                                 SUM(IF(年月 = 202212 AND 最终状态 = "已签收",1,0)) as 15签收量,
-                                SUM(IF(年月 = 202212 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 15完成量			
+                                SUM(IF(年月 = 202212 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 15完成量,
+                            SUM(IF(年月 = 202301,1,0)) as 16总量,
+                                SUM(IF(年月 = 202301 AND 最终状态 = "已签收",1,0)) as 16签收量,
+                                SUM(IF(年月 = 202301 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 16完成量
                         FROM gat_zqsb_cache cx
                         where cx.`运单编号` is not null AND cx.团队 NOT IN ({0})
                         GROUP BY cx.家族,cx.币种,cx.产品id
@@ -7621,11 +7621,11 @@ class QueryUpdate(Settings):
         print('----已写入excel ')
 
     # 获取电话核实日报表 周报表
-    def phone_report(self, handle):
+    def phone_report(self, handle, month_last, month_yesterday):
         today = datetime.date.today().strftime('%Y.%m.%d')
         match = {'gat': '港台'}
         week: datetime = datetime.datetime.now()
-        if week.isoweekday() == 1 or week.isoweekday() == '手动':
+        if week.isoweekday() == 1 or handle == '手动':
             week_time1 = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%m.%d')
             week_time2 = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%m.%d')
             listT = []  # 查询sql的结果 存放池
@@ -7956,7 +7956,7 @@ class QueryUpdate(Settings):
                 print('运行失败：', str(Exception) + str(e))
             print('----已写入excel ')
 
-        if week.isoweekday() == 2 or week.isoweekday() == 4 or week.isoweekday() == '手动':
+        if week.isoweekday() == 2 or week.isoweekday() == 4 or handle == '手动':
             month = datetime.datetime.now().strftime('%Y%m')
             time_bengin = ((datetime.datetime.now() - relativedelta(months=1)) - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
             time_end = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
@@ -8045,16 +8045,9 @@ class QueryUpdate(Settings):
                 print('运行失败：', str(Exception) + str(e))
             print('----已写入excel ')
 
-        if week.isoweekday() == 3 or week.isoweekday() == '手动':
-            month = datetime.datetime.now().strftime('%Y%m')
-            if (datetime.datetime.now()).strftime('%d') == 1:
-                time_bengin = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'
-                time_end = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-            else:
-                time_bengin = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
-                time_end = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        if week.isoweekday() == 3 or handle == '手动':
             listT = []  # 查询sql的结果 存放池
-            print("正在获取 在线签收率" + time_bengin + "-" + time_end + " 数据内容…………")
+            print("正在获取 在线签收率" + month_last + "-" + month_yesterday + " 数据内容…………")
             sql = '''SELECT s2.家族,s2.币种,s2.年月,s2.是否改派,s2.物流方式,
 						IF(s2.签收=0,NULL,s2.签收) as 签收,
 						IF(s2.拒收=0,NULL,s2.拒收) as 拒收,
@@ -8161,7 +8154,7 @@ class QueryUpdate(Settings):
                                         "台湾-铱熙无敌-新竹改派", "台湾-铱熙无敌-黑猫改派",
                                         "天马顺丰","天马黑猫","天马新竹",
                                         "香港-圆通-改派","香港-立邦-改派","香港-森鸿-改派","香港-易速配-改派","合计"),
-                        s2.总订单 DESC;'''.format(month, time_bengin, time_end)  # 港台查询函数导出
+                        s2.总订单 DESC;'''.format(month_last, month_yesterday)  # 港台查询函数导出
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             listT.append(df)
 
@@ -10876,15 +10869,15 @@ if __name__ == '__main__':
     '''
     select = 99
     if int(select) == 99:
-        if team == 'gat':
+        if team == 'ga0t':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
         else:
-            month_last = '2022-10-01'
-            month_old = '2022-10-01'  # 获取-每日-报表 开始的时间
-            month_yesterday = '2022-11-30'
+            month_last = '2022-11-01'
+            month_old = '2022-11-01'  # 获取-每日-报表 开始的时间
+            month_yesterday = '2022-12-31'
 
         last_time = '2021-01-01'
         up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期
@@ -10896,7 +10889,7 @@ if __name__ == '__main__':
         m.gat_new(team, month_last, month_yesterday, currency_id)      # 获取-货到付款& 在线付款 签收率-报表
         m.qsb_new(team, month_old)                                  # 获取-每日-报表
         m.EportOrderBook(team, month_last, month_yesterday)         # 导出-总的-签收
-        m.phone_report('handle')                                    # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）
+        m.phone_report('handle', month_last, month_yesterday)                                    # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）
 
         # currency_id = '在线付款'
         # m.gat_new(team, month_last, month_yesterday, currency_id)  # 获取-在线付款 签收率-报表

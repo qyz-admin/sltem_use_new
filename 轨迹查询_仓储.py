@@ -22,7 +22,7 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  
 
 
 # -*- coding:utf-8 -*-
-class QueryTwo(Settings, Settings_sso):
+class Gwms_v3(Settings, Settings_sso):
     def __init__(self, userMobile, password, login_TmpCode, handle):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
@@ -35,9 +35,9 @@ class QueryTwo(Settings, Settings_sso):
         # self.sso__online_auto()
 
         if handle == '手动':
-            self.sso__online_handle(login_TmpCode)
+            self.sso_online_cang_handle(login_TmpCode)
         else:
-            self.sso__online_auto()
+            self.sso_online_cang_auto()
 
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -157,14 +157,14 @@ class QueryTwo(Settings, Settings_sso):
         else:
             dp = None
         print(dp)
-        dp = dp[['orderNumber', 'wayBillNumber', 'track_date', '出货时间', '上线时间', '保管时间', '完成时间', 'track_info', 'track_status', '负责营业所', '轨迹备注', '序号']]
-        dp.columns = ['订单编号', '运单号', '物流轨迹时间', '出货时间', '上线时间', '保管时间', '完成时间', '物流轨迹', '轨迹代码', '负责营业所', '轨迹备注', '序号']
+        # dp = dp[['orderNumber', 'wayBillNumber', 'track_date', '出货时间', '上线时间', '保管时间', '完成时间', 'track_info', 'track_status', '负责营业所', '轨迹备注', '序号']]
+        # dp.columns = ['订单编号', '运单号', '物流轨迹时间', '出货时间', '上线时间', '保管时间', '完成时间', '物流轨迹', '轨迹代码', '负责营业所', '轨迹备注', '序号']
         dp.to_excel('G:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         print('查询已导出+++')
         print('*' * 50)
 
     #  查询运单轨迹-按时间查询（二）
-    def order_online(self, timeStart, timeEnd, isReal):  # 进入运单轨迹界面
+    def order_online(self, timeStart, timeEnd, isReal):  # 进入仓储 轨迹查询界面
         # print('正在获取需要订单信息......')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         start = datetime.datetime.now()
@@ -198,22 +198,26 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
 
     #  查询运单轨迹-按订单查询（一 、1.单点）
-    def _order_online(self, ord, isReal):  # 进入订单检索界面
+    def _order_online(self, ord, type):  # 进入订单检索界面
         print('+++实时_搜索轨迹信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        url = r'https://gimp.giikin.com/service?service=gorder.order&action=getLogisticsTrace'
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
-                    'origin': 'https: // gimp.giikin.com',
-                    'Referer': 'https://gimp.giikin.com/front/logisticsTrajectory'}
-        data = {'numbers': ord,
-                'searchType': 1,
-                'isReal': isReal
+        url = r'http://gwms-v3.giikin.cn/order/trace/index'
+        r_header = {'Accept': 'application/json, text/javascript, */*; q=0.01',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'http://gwms-v3.giikin.cn',
+                    'Referer': 'http://gwms-v3.giikin.cn/order/trace/index'}
+        data = {'no': ord,
+                'type': type
                 }
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
+        print(data)
+        print(req.headers)
+        print(4)
+        print(req.text)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         print(req)
@@ -222,17 +226,15 @@ class QueryTwo(Settings, Settings_sso):
         if req['data'] == []:
             data = self._order_online_data(ord, 0)
             return data
-        elif req['data']['list'] == []:
-            data = self._order_online_data(ord, 0)
-            return data
         else:
             ordersDict = []
             try:
-                if req['data']['list'][0]['list'] == []:
+                if req['data'][0] == []:
                     # print(req['data']['list'])
                     return None
                 else:
-                    for result in req['data']['list']:
+                    for result in req['data']:
+                        print(result)
                         # for res in result['list']:
                         for index, res in enumerate(result['list']):
                             res['序号'] = index + 1
@@ -662,7 +664,7 @@ class QueryTwo(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    m = QueryTwo('+86-18538110674', 'qyz04163510.','d6c722afa57930c78b0637b55c9ede58','手0动')
+    g = Gwms_v3('+86-18538110674', 'qyz04163510.','d6c722afa57930c78b0637b55c9ede58','手0动')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     '''
@@ -670,17 +672,16 @@ if __name__ == '__main__':
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 
     '''
-    isReal = 1
-    select = 1
+    select = 3
+    type = 2            # 查询选项》》 1：订单编号； 2：运单号； 3： 转单号
     if int(select) == 1:
         print("1-->>> 正在按运单号查询+++")
-        m.readFormHost(isReal)       # 导入；，更新--->>数据更新切换
+        g.readFormHost(type)                     # 读表查询
     elif int(select) == 2:
         print("2-->>> 正在按时间查询+++")
-        m.order_online('2022-01-01', '2022-01-05', isReal)
+        g.order_online('2022-01-01', '2022-01-05', type)
 
-    # m.order_bind_status('2022-01-01', '2022-01-02')
-
-    # m._order_bind_status('7449201841')
+    elif int(select) == 3:
+        g._order_online('7736000764', type)     # 单独查询
 
     print('查询耗时：', datetime.datetime.now() - start)

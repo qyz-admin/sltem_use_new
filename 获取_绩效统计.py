@@ -2081,7 +2081,7 @@ class QueryOrder(Settings, Settings_sso):
             else:
                 dp = self._service_id_getRedeemOrderList(timeStart, timeEnd, n)
             dp = dp[['id', 'order_number', 'redeemType', 'oldOrderStatus', 'oldLogisticsStatus', 'oldAmount', 'orderStatus','logisticsStatus','amount','logisticsName','operatorName','create_time','save_money','currencyName', 'delOperatorName','del_reason']]
-            dp.columns = ['id', '订单编号', '挽单类型', '原订单状态', '原物流状态', '原订单金额', '当前订单状态', '当前物流状态' ,'当前订单金额','当前物流渠道','创建人','创建时间','挽单金额','币种', '删除人', '删除原因']
+            dp.columns = ['id', '订单编号', '挽单类型', '原订单状态', '原物流状态', '原订单金额', '当前订单状态', '当前物流状态','当前订单金额','当前物流渠道','创建人','创建时间','挽单金额','币种', '删除人', '删除原因']
             dp.to_excel('G:\\输出文件\\绩效挽单-查询{}.xlsx'.format(rq), sheet_name='挽单', index=False, engine='xlsxwriter')
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
             sql = '''REPLACE INTO 挽单列表_绩效(id, 订单编号,币种, 创建时间, 创建人, 挽单类型, 当前订单状态, 当前物流状态, 回款状态, 删除人, 删除原因, 统计日期,记录时间) 
@@ -2242,21 +2242,21 @@ class QueryOrder(Settings, Settings_sso):
             print('正在写入 物流问题件......')
             dp1 = dp[(dp['问题类型'].str.contains('派送问题件', na=False))]  # 筛选 问题类型
             dp1.to_excel('G:\\输出文件\\绩效物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            dp1.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-            dp1.to_excel('G:\\输出文件\\物流问题件-更新2{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO 物流问题_绩效(订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, 处理时间, 统计日期,记录时间) 
-                    SELECT 订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, IF(处理时间 = '',NULL,处理时间) AS 处理时间, DATE_FORMAT(NOW(),'%Y-%m-%d') 统计日期,NOW() 记录时间 
-                    FROM cache_check;'''
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            # dp1.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
+            # dp1.to_excel('G:\\输出文件\\物流问题件-更新2{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            # sql = '''REPLACE INTO 物流问题_绩效(订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, 处理时间, 统计日期,记录时间)
+            #         SELECT 订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, IF(处理时间 = '',NULL,处理时间) AS 处理时间, DATE_FORMAT(NOW(),'%Y-%m-%d') 统计日期,NOW() 记录时间
+            #         FROM cache_check;'''
+            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
             print('正在写入 压单核实......')
             dp2 = dp[(dp['问题类型'].str.contains('订单压单（giikin内部专用）', na=False))]  # 筛选 问题类型
             dp2.to_excel('G:\\输出文件\\绩效压单核实-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            dp2.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO 物流问题_绩效(订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, 处理时间, 统计日期,记录时间) 
-                    SELECT 订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, IF(处理时间 = '',NULL,处理时间) AS 处理时间, DATE_FORMAT(NOW(),'%Y-%m-%d') 统计日期,NOW() 记录时间 
-                    FROM cache_check;'''
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            # dp2.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
+            # sql = '''REPLACE INTO 物流问题_绩效(订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, 处理时间, 统计日期,记录时间)
+            #         SELECT 订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新处理状态, 最新处理结果, IF(处理时间 = '',NULL,处理时间) AS 处理时间, DATE_FORMAT(NOW(),'%Y-%m-%d') 统计日期,NOW() 记录时间
+            #         FROM cache_check;'''
+            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
             print('写入成功......')
         else:
@@ -2345,7 +2345,7 @@ class QueryOrder(Settings, Settings_sso):
     # 绩效-查询 物流客诉件           （二.3）
     def service_id_waybill_Query(self, timeStart, timeEnd):  # 进入物流客诉件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        print('+++正在查询信息中')
+        print('正在查询 物流客诉件 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.orderCustomerComplaint&action=getCustomerComplaintList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
@@ -2552,7 +2552,7 @@ class QueryOrder(Settings, Settings_sso):
     # 绩效-查询 拒收问题件           （二.50）
     def service_id_order_js_Query(self, timeStart, timeEnd):  # 进入拒收问题件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        print('+++正在查询信息中')
+        print('正在查询 拒收问题件 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRejectList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
@@ -2611,10 +2611,14 @@ class QueryOrder(Settings, Settings_sso):
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
+        # print(req)
+        # print(req.text)
         req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
         ordersDict = []
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
+                # print(result['orderNumber'])
                 result['订单编号'] = result['orderNumber']
                 result['再次克隆下单'] = result['newCloneNumber']
                 result['跟进人'] = ''
@@ -2686,7 +2690,6 @@ class QueryOrder(Settings, Settings_sso):
             print('写入成功......')
         else:
             print('无需查询......')
-
     def _service_id_orderInfo(self, ord):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getOrderLog'
@@ -2736,22 +2739,21 @@ class QueryOrder(Settings, Settings_sso):
     def service_check(self):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         listT = []
-        sql2 = '''SELECT 代下单客服, COUNT(订单编号) as 有效转化单量
-                            FROM ( SELECT *
-                                    FROM `cache` s
-                                    WHERE (s.克隆人 IS NULL OR s.克隆人 = "") AND s.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核")
-                            ) ss
-                            GROUP BY 代下单客服
-                            ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
+        print('促单-绩效 获取中......')
+        sql2 = '''SELECT 订单编号, 币种, 代下单客服, 克隆人, 订单状态,  物流状态
+                FROM ( SELECT *, DATE_FORMAT(统计日期,'%Y%m') AS 月份
+                        FROM 促单_绩效 cd
+                ) s1
+                WHERE  s1.`月份` = DATE_FORMAT(CURDATE(),'%Y%m');;'''
         df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
         listT.append(df2)
-        sql3 = '''SELECT 代下单客服, COUNT(订单编号) as 总代下单量
-                            FROM ( SELECT *
-                                    FROM `cache` s
-                                    WHERE s.克隆人 IS NULL OR s.克隆人 = ""
-                            ) ss
-                            GROUP BY 代下单客服
-                            ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
+
+        print('采购异常-绩效 获取中......')
+        sql3 = '''SELECT 订单编号, 币种, 下单时间, 处理时间, 处理人, 处理结果, 订单状态,  物流状态
+                FROM (  SELECT *, DATE_FORMAT(统计日期,'%Y%m') AS 月份
+                        FROM 采购异常_绩效 cg
+                ) s1
+                WHERE  s1.`月份` = DATE_FORMAT(CURDATE(),'%Y%m');'''
         df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
         listT.append(df3)
 
@@ -2775,17 +2777,17 @@ class QueryOrder(Settings, Settings_sso):
                         WHERE id IN (SELECT MAX(id) FROM 挽单列表_绩效 w WHERE w.删除人 = "" GROUP BY 订单编号) 
                         ORDER BY id
                 ) s1
-                WHERE s1.`月份` = "202212";'''
+                WHERE s1.`月份` = DATE_FORMAT(CURDATE(),'%Y%m');'''
         df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
         listT.append(df5)
 
         print('拒收问题件-绩效 获取中......')
-        sql6 = '''SELECT 订单编号, 新单克隆人, 新单订单状态, 新单物流状态, 再次克隆下单, 处理人
+        sql6 = '''SELECT 订单编号, 再次克隆下单, 新单克隆人, 新单订单状态, 新单物流状态, 处理人
                     FROM (
                             SELECT *, DATE_FORMAT(统计日期,'%Y%m') AS 月份
                             FROM 拒收问题件_绩效 js
                     ) s1
-                    WHERE s1.`再次克隆下单` IS NOT NULL AND s1.`月份` = "202212";'''
+                    WHERE s1.`再次克隆下单` IS NOT NULL AND s1.`月份` = DATE_FORMAT(CURDATE(),'%Y%m');'''
         df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
         listT.append(df6)
 
@@ -2871,27 +2873,25 @@ if __name__ == '__main__':
                 timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
                 timeEnd = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         else:
-            timeStart = '2022-11-01'
-            timeEnd = '2022-11-30'
+            timeStart = '2022-12-01'
+            timeEnd = '2022-12-31'
         print(timeStart + "---" + timeEnd)
 
-        # m.service_id_order(hanlde, timeStart, timeEnd)      # 促单查询；订单检索
+        m.service_id_order(hanlde, timeStart, timeEnd)      # 促单查询；订单检索@
 
-        # m.service_id_getRedeemOrderList(timeStart, timeEnd)  # 挽单列表  查询；订单检索
+        m.service_id_ssale(timeStart, timeEnd)              # 采购查询；订单检索@
 
-        # m.service_id_ssale(timeStart, timeEnd)              # 采购查询；订单检索
+        # m.service_id_orderInfo(timeStart, timeEnd)            # 系统问题件  查询；订单检索
 
         # m.service_id_waybill(timeStart, timeEnd)              # 物流问题  压单核实 查询；订单检索
 
-        # m.service_id_getDeliveryList(timeStart, timeEnd)      # 派送问题  查询；订单检索
+        # m.service_id_getDeliveryList(timeStart, timeEnd)      # 派送问题  查询；订单检索@
 
-        # m.service_id_orderInfo(timeStart, timeEnd)            # 派送问题  查询；订单检索
+        # m.service_id_waybill_Query(timeStart, timeEnd)      # 物流客诉件  查询；订单检索
 
-        m.service_id_waybill_Query(timeStart, timeEnd)      # 物流客诉件  查询；订单检索
+        # m.service_id_getRedeemOrderList(timeStart, timeEnd)  # 挽单列表  查询；订单检索@
 
-        # m.service_id_order_js_Query(timeStart, timeEnd)      # 拒收问题  查询；订单检索
-
-
+        m.service_id_order_js_Query(timeStart, timeEnd)      # 拒收问题  查询；订单检索
 
 
     elif int(select) == 9:

@@ -121,13 +121,18 @@ class QueryTwo(Settings, Settings_sso):
         rq = datetime.datetime.now().strftime('%m.%d')
         # self.getOrderList(timeStart, timeEnd)
         # self.getDeliveryList(timeStart, timeEnd)
-        print('正在获取 派送问题件 各类型签收率…………')
         month = (datetime.datetime.now()).strftime('%Y%m')
-        print(month)
+        # print(month)
         # print(type(month))
-        time_Start = (datetime.datetime.now()).strftime('%Y') + '-01-01'        # 派送问题件签收率
-        timeStart = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'
-        timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        time_Start = (datetime.datetime.now() - relativedelta(months=12)).strftime('%Y-%m') + '-01'        # 派送问题件签收率
+        if (datetime.datetime.now()).strftime('%d') == 1:
+            timeStart = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m') + '-01'
+            timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        else:
+            timeStart = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'
+            timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+
+        print('派送问题件 各类型签收率，导出时间》》》 ' + time_Start + "---" + timeEnd)
         sql8 = '''SELECT s2.派送类型, s2.月份, s2.总订单,
                         concat(ROUND(IFNULL(s2.签收 / s2.已完成,0) * 100,2),'%') as 完成签收,
                         -- concat(ROUND(IFNULL(s2.签收退货 / s2.已完成,0) * 100,2),'%') as 完成签收退货,
@@ -1571,8 +1576,13 @@ if __name__ == '__main__':
 
             # timeStart = '2022-09-01'
             # timeEnd = '2022-10-25'
-            timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
-            timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            if (datetime.datetime.now()).strftime('%d') == 1:
+                timeStart = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'
+                timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            else:
+                timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
+                timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+
             print('派送问题件，导出时间》》》 ' + timeStart + "---" + timeEnd)
             m.outport_getDeliveryList('2022-10-01', timeEnd, logisticsN_begin, logisticsN_end)
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出

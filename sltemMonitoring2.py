@@ -1666,8 +1666,8 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2022.11.30'
-    now_month = '2022.12.30'
+    last_month = '2022.12.03'
+    now_month = '2023.01.04'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传
@@ -1679,9 +1679,9 @@ if __name__ == '__main__':
     # for team in ['神龙-台湾', '火凤凰-台湾']:
         now_month = now_month.replace('.', '-')           # 修改配置时间
         last_month = last_month.replace('.', '-')
-        m.sl_Monitoring(team, now_month, last_month, '本期宏')      # 输出数据--每月正常使用的时间（二）、
+        # m.sl_Monitoring(team, now_month, last_month, '本期宏')      # 输出数据--每月正常使用的时间（二）、
         # m.sl_Monitoring(team, now_month, last_month, '本期月初宏')      # 输出数据--每月正常使用的时间（二）、
-        # m.sl_Monitoring(team, now_month, last_month, '本期上月宏')      # 输出数据--每月正常使用的时间（二）
+        m.sl_Monitoring(team, now_month, last_month, '本期上月宏')      # 输出数据--每月正常使用的时间（二）
 
         # m.sl_Monitoring(team, now_month, last_month, '上期宏')      # 输出数据--每月正常使用的时间（二）
 

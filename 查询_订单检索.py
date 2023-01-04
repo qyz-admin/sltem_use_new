@@ -2295,6 +2295,7 @@ class QueryOrder(Settings, Settings_sso):
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = self._order_track_Query(timeStart, timeEnd, n)
+            dp.to_excel('G:\\输出文件\\促单明细 {}.xlsx'.format(rq), sheet_name='明细', index=False, engine='xlsxwriter')
             dp = dp[['orderNumber', 'currency', 'addTime', 'orderStatus', 'logisticsStatus', 'service', 'cloneUser']]
             dp.columns = ['订单编号', '币种', '下单时间', '订单状态', '物流状态', '代下单客服', '克隆人']
             dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
@@ -2458,7 +2459,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 5                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
@@ -2504,8 +2505,8 @@ if __name__ == '__main__':
     # 促单查询；订单检索
     elif int(select) == 5:
         hanlde = '自0动'
-        timeStart = '2022-11-01'
-        timeEnd = '2022-11-30'
+        timeStart = '2022-01-01'
+        timeEnd = '2022-08-31'
 
         # timeStart = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         # timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
