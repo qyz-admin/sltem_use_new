@@ -2377,19 +2377,23 @@ class QueryOrder(Settings, Settings_sso):
         if dp.empty:
             print("今日无更新数据")
         else:
-            dp.to_excel('G:\\输出文件\\绩效物流客诉件-查询1{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            dp = dp[['order_number',  'currency', 'amount', 'customer_name', 'customer_mobile', 'arrived_address', 'arrived_time', 'create_time', 'dealStatus', 'deal_Content', 'deal_time', 'result_content','dealContent',
-                     'result_info', 'result_reson', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus', 'gift_reissue_order_number', 'update_time']]
-            dp.columns = ['订单编号', '币种', '订单金额', '客户姓名', '客户电话', '客户地址', '送达时间', '导入时间', '最新处理状态', '最新处理结果', '处理时间', '处理内容', '最新处理内容',
-                          '客诉原因', '具体原因', '问题类型', '问题描述', '历史处理记录', '处理人', '赠品补发订单状态', '赠品补发订单编号', '更新时间']
+            dp = dp[['id','order_number',  'currency', 'addtime', 'areaName', 'payType', 'reassignmentTypeName', 'orderStatus', 'logisticsStatus', 'logisticsName', 'questionTypeName', 'create_time',
+                     'dealStatus', 'dealTime', 'deal_time', 'traceUserName', 'trace_UserName', 'dealContent', 'deal_Content', 'result_content', 'result_info', 'result_reson',
+                     'gift_reissue_order_number', 'giftStatus', 'contact', 'traceRecord']]
+            dp.columns = ['id','订单编号', '币种', '下单时间', '归属团队', '支付类型', '订单类型', '订单状态', '物流状态', '物流渠道', '问题类型', '导入时间',
+                          '最新处理状态', '最新处理时间', '最新客服处理日期', '最新处理人', '最新客服处理人', '最新处理结果', '最新客服处理', '最新客服处理结果', '客诉原因',  '具体原因',
+                          '赠品补发订单编号', '赠品补发订单状态', '联系方式', '历史处理记录']
             print('正在写入......')
-            # dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞|张陈平', na=False))]
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\绩效物流客诉件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO 物流客诉件(处理时间,物流反馈时间,处理人,订单编号,处理方案, 处理结果, 最新处理内容, 客诉原因, 赠品补发订单编号,币种, 记录时间) 
-                    SELECT 处理时间,导入时间 AS 物流反馈时间,处理人,订单编号,最新处理结果 AS 处理方案, 处理内容 AS 处理结果, 最新处理内容, 客诉原因, 赠品补发订单编号, 币种, NOW() 记录时间 
+            sql = '''REPLACE INTO 物流客诉件_绩效(id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
+                                            最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
+                                            赠品补发订单编号,赠品补发订单状态,联系方式,历史处理记录,统计日期,记录时间) 
+                    SELECT id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
+                            最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
+                            赠品补发订单编号,赠品补发订单状态,联系方式,历史处理记录,DATE_FORMAT(NOW(),'%Y-%m-%d') 统计日期,NOW() 记录时间 
                     FROM cache_check;'''
-            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
         print('*' * 50)
     def _service_id_waybill_Query(self, timeStart, timeEnd, n):  # 进入物流客诉件界面
@@ -2400,7 +2404,7 @@ class QueryOrder(Settings, Settings_sso):
                     'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
         data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': None, 'question_type': None, 'critical': None, 'read_status': None,
                 'operator_type': None, 'operator': None, 'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'trace_time': None, 'is_gift_reissue': None,
-                'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': n, 'pageSize': 90}
+                'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': n, 'pageSize': 500}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
         # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -2414,51 +2418,49 @@ class QueryOrder(Settings, Settings_sso):
                 result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
                 if ';' in result['traceRecord']:
                     trace_record = result['traceRecord'].split(";")
+                    result['deal_time'] = ''
+                    result['result_reson'] = ''
+                    result['result_info'] = ''
+                    result['result_content'] = ''
+                    result['deal_Content'] = ''
+                    result['trace_UserName'] = ''
                     for record in trace_record:
-                        result['deal_time'] = ''
-                        result['result_reson'] = ''
-                        result['result_info'] = ''
-                        result['result_content'] = ''
-                        result['deal_time'] = record.split()[0]
-                        rec = record.split("#处理结果：")[1]
-                        if len(rec.split()) > 3:
-                            result['result_reson'] = rec.split()[3]       # 具体原因
-                        if len(rec.split()) > 2:
-                            result['result_info'] = rec.split()[2]        # 客诉原因
-                        if len(rec.split()) > 1:
-                            result['result_content'] = rec.split()[1]     # 处理内容
-                        result['dealContent'] = rec.split()[0]            # 最新处理结果
-                        rec_name = record.split("#处理结果：")[0]
-                        if '赠品' in rec.split()[0] or '退款' in rec.split()[0] or '补发' in rec.split()[0] or '换货' in rec.split()[0]:                    # 筛选无用的通话记录
-                            if len(rec_name.split()) > 2:
-                                if (rec_name.split())[2] != '' or (rec_name.split())[2] != []:
-                                    result['traceUserName'] = (rec_name.split())[2]
-                            else:
-                                result['traceUserName'] = ''
-                        else:
-                            result['traceUserName'] = ''
-                        ordersDict.append(result.copy())    # append()方法只是将字典的地址存到list中，而键赋值的方式就是修改地址，所以才导致覆盖的问题;  使用copy() 或者 deepcopy()  当字典中存在list的时候需要使用deepcopy()
+                        if '物流' not in record:
+                            result['deal_time'] = record.split()[0]
+                            rec = record.split("#处理结果：")[1]
+                            if len(rec.split()) > 3:
+                                result['result_reson'] = rec.split()[3]       # 最新客服 具体原因
+                            if len(rec.split()) > 2:
+                                result['result_info'] = rec.split()[2]        # 最新客服 客诉原因
+                            if len(rec.split()) > 1:
+                                result['result_content'] = rec.split()[1]     # 最新客服 处理结果
+                            result['deal_Content'] = rec.split()[0]           # 最新客服 处理
+                            rec_name = record.split("#处理结果：")[0]
+                            if '客服' in rec_name:
+                                recname = (rec_name.split())[2]
+                                result['trace_UserName'] = recname.replace('(客服)', '')
+                    ordersDict.append(result.copy())    # append()方法只是将字典的地址存到list中，而键赋值的方式就是修改地址，所以才导致覆盖的问题;  使用copy() 或者 deepcopy()  当字典中存在list的时候需要使用deepcopy()
                 else:
                     result['deal_time'] = ''
                     result['result_reson'] = ''
                     result['result_info'] = ''
                     result['result_content'] = ''
+                    result['deal_Content'] = ''
+                    result['trace_UserName'] = ''
                     if len(result['dealContent'].split()) > 3:
-                        result['result_reson'] = result['dealContent'].split()[3]       # 具体原因
+                        result['result_reson'] = result['dealContent'].split()[3]       # 最新客服 具体原因
                     if len(result['dealContent'].split()) > 2:
-                        result['result_info'] = result['dealContent'].split()[2]        # 客诉原因
+                        result['result_info'] = result['dealContent'].split()[2]        # 最新客服 客诉原因
                     if len(result['dealContent'].split()) > 1:
-                        result['result_content'] = result['dealContent'].split()[1]     # 处理内容
-                    result['dealContent'] = result['dealContent'].split()[0]            # 最新处理结果
+                        result['result_content'] = result['dealContent'].split()[1]     # 最新客服 处理内容
+                    result['deal_Content'] = result['dealContent'].split()[0]           # 最新客服 处理
 
                     if result['traceRecord'] != '' or result['traceRecord'] != []:
                         result['deal_time'] = result['traceRecord'].split()[0]
                     if result['traceUserName'] != '' or result['traceUserName'] != []:
-                        if '赠品' in result['traceRecord'] or '退款' in result['traceRecord'] or '补发' in result['traceRecord'] or '换货' in result['traceRecord']:
-                            result['traceUserName'] = result['traceUserName'].replace('客服：', '')
-                        else:
-                            result['traceUserName'] = ''
-                    result['deal_Content'] = result['dealContent'].strip()
+                        # if '赠品' in result['traceRecord'] or '退款' in result['traceRecord'] or '补发' in result['traceRecord'] or '换货' in result['traceRecord']:
+                        if '客服' in result['traceRecord']:
+                            result['trace_UserName'] = result['traceUserName'].replace('客服：', '')
                     ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
@@ -2877,9 +2879,9 @@ if __name__ == '__main__':
             timeEnd = '2022-12-31'
         print(timeStart + "---" + timeEnd)
 
-        m.service_id_order(hanlde, timeStart, timeEnd)      # 促单查询；订单检索@
+        # m.service_id_order(hanlde, timeStart, timeEnd)      # 促单查询；订单检索@~@
 
-        m.service_id_ssale(timeStart, timeEnd)              # 采购查询；订单检索@
+        # m.service_id_ssale(timeStart, timeEnd)              # 采购查询；订单检索@~@
 
         # m.service_id_orderInfo(timeStart, timeEnd)            # 系统问题件  查询；订单检索
 
@@ -2887,11 +2889,11 @@ if __name__ == '__main__':
 
         # m.service_id_getDeliveryList(timeStart, timeEnd)      # 派送问题  查询；订单检索@
 
-        # m.service_id_waybill_Query(timeStart, timeEnd)      # 物流客诉件  查询；订单检索
+        m.service_id_waybill_Query(timeStart, timeEnd)      # 物流客诉件  查询；订单检索
 
-        # m.service_id_getRedeemOrderList(timeStart, timeEnd)  # 挽单列表  查询；订单检索@
+        # m.service_id_getRedeemOrderList(timeStart, timeEnd)  # 挽单列表  查询；订单检索@~@
 
-        m.service_id_order_js_Query(timeStart, timeEnd)      # 拒收问题  查询；订单检索
+        # m.service_id_order_js_Query(timeStart, timeEnd)      # 拒收问题  查询；订单检索@~@
 
 
     elif int(select) == 9:

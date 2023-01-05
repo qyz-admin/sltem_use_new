@@ -203,19 +203,21 @@ class Gwms_v3(Settings, Settings_sso):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         url = r'http://gwms-v3.giikin.cn/order/trace/index'
         r_header = {'Accept': 'application/json, text/javascript, */*; q=0.01',
+                    'Accept - Encoding':'gzip, deflate',
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'http://gwms-v3.giikin.cn',
                     'Referer': 'http://gwms-v3.giikin.cn/order/trace/index'}
-        data = {'no': ord,
-                'type': type
-                }
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        data = {'no': ord,'type': type}
+        proxy = '192.168.13.89:37467'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         print(data)
+        print(req)
         print(req.headers)
+        print(req.status_code)
+        print(req.content)
         print(4)
         print(req.text)
         # print('+++已成功发送请求......')
