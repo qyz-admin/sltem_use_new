@@ -501,7 +501,7 @@ class QueryUpdate(Settings):
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
     # 导出需要更新的签收表---港澳台(二)
-    def EportOrder(self, team, month_last, month_yesterday, month_begin, check, export):
+    def EportOrder(self, team, month_last, month_yesterday, month_begin, check, export, handle):
         match = {'gat': '港台',
                  'slsc': '品牌'}
         emailAdd = {'gat': 'giikinliujun@163.com',
@@ -586,7 +586,11 @@ class QueryUpdate(Settings):
                 print(' ****** 没有要补充的信息; ****** ')
             else:
                 print('！！！ 请再次补充缺少的数据中！！！')
-                lw = QueryTwoT('+86-18538110674', 'qyz04163510.',"e3e4ceaef6fd326cafa231d9c35b18f4","手0动")
+                login_TmpCode = 'login_TmpCode'
+                if handle == '手动':
+                    print('请输入口令Token:  回车确认')
+                    login_TmpCode = str(input())
+                lw = QueryTwoT('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
                 lw.productInfo('gat_order_list', ordersDict)
 
         if team in ('gat'):
@@ -5195,6 +5199,7 @@ class QueryUpdate(Settings):
             wbsht1 = app.books.open(file_path)
             wbsht.macro('gat_总_品类_物流_两月签收率')()
             wbsht1.save()
+            wbsht.save()
             wbsht1.close()
             wbsht.close()
             app.quit()
@@ -5232,6 +5237,7 @@ class QueryUpdate(Settings):
             wbsht1 = app.books.open(file_path)
             wbsht.macro('gat_品类直发分旬签收率')()
             wbsht1.save()
+            wbsht.save()
             wbsht1.close()
             wbsht.close()
             app.quit()
@@ -5279,6 +5285,7 @@ class QueryUpdate(Settings):
             wbsht1 = app.books.open(file_path)
             wbsht.macro('gat_产品签收率_总')()
             wbsht1.save()
+            wbsht.save()
             wbsht1.close()
             wbsht.close()
             app.quit()
@@ -5942,6 +5949,125 @@ class QueryUpdate(Settings):
 
         # 10、同产品各月的对比
         print('正在获取---10、同产品各月的对比…………')
+        t1 = (datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m')
+        t2 = (datetime.datetime.now() - relativedelta(months=11)).strftime('%Y%m')
+        t3 = (datetime.datetime.now() - relativedelta(months=10)).strftime('%Y%m')
+        t4 = (datetime.datetime.now() - relativedelta(months=9)).strftime('%Y%m')
+        t5 = (datetime.datetime.now() - relativedelta(months=8)).strftime('%Y%m')
+        t6 = (datetime.datetime.now() - relativedelta(months=7)).strftime('%Y%m')
+        t7 = (datetime.datetime.now() - relativedelta(months=6)).strftime('%Y%m')
+        t8 = (datetime.datetime.now() - relativedelta(months=5)).strftime('%Y%m')
+        t9 = (datetime.datetime.now() - relativedelta(months=4)).strftime('%Y%m')
+        t10 = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y%m')
+        t11 = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y%m')
+        t12 = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y%m')
+        t13 = datetime.datetime.now().strftime('%Y%m')
+        # sql51 = '''SELECT *
+        #         FROM (SELECT IFNULL(家族, '总计') 家族, IFNULL(地区, '总计') 地区, IFNULL(产品id, '总计') 产品id,  IFNULL(产品名称, '总计') 产品名称, IFNULL(父级分类, '总计') 父级分类,
+		# 				    SUM(总单量) 总单量,
+		# 				SUM(04总量) 202201总单量,
+		# 					concat(ROUND(SUM(04签收量) / SUM(04总量) * 100,2),'%') as 202201总计签收,
+		# 					concat(ROUND(SUM(04签收量) / SUM(04完成量) * 100,2),'%') as 202201完成签收,
+		# 					concat(ROUND(SUM(04完成量) / SUM(04总量) * 100,2),'%') as 202201完成占比,
+		# 				SUM(05总量) 202202总单量,
+		# 					concat(ROUND(SUM(05签收量) / SUM(05总量) * 100,2),'%') as 202202总计签收,
+		# 					concat(ROUND(SUM(05签收量) / SUM(05完成量) * 100,2),'%') as 202202完成签收,
+		# 					concat(ROUND(SUM(05完成量) / SUM(05总量) * 100,2),'%') as 202202完成占比,
+		# 				SUM(06总量) 202203总单量,
+		# 					concat(ROUND(SUM(06签收量) / SUM(06总量) * 100,2),'%') as 202203总计签收,
+		# 					concat(ROUND(SUM(06签收量) / SUM(06完成量) * 100,2),'%') as 202203完成签收,
+		# 					concat(ROUND(SUM(06完成量) / SUM(06总量) * 100,2),'%') as 202203完成占比,
+		# 				SUM(07总量) 202204总单量,
+		# 					concat(ROUND(SUM(07签收量) / SUM(07总量) * 100,2),'%') as 202204总计签收,
+		# 					concat(ROUND(SUM(07签收量) / SUM(07完成量) * 100,2),'%') as 202204完成签收,
+		# 					concat(ROUND(SUM(07完成量) / SUM(07总量) * 100,2),'%') as 202204完成占比,
+		# 				SUM(08总量) 202205总单量,
+		# 					concat(ROUND(SUM(08签收量) / SUM(08总量) * 100,2),'%') as 202205总计签收,
+		# 					concat(ROUND(SUM(08签收量) / SUM(08完成量) * 100,2),'%') as 202205完成签收,
+		# 					concat(ROUND(SUM(08完成量) / SUM(08总量) * 100,2),'%') as 202205完成占比,
+		# 				SUM(09总量) 202206总单量,
+		# 					concat(ROUND(SUM(09签收量) / SUM(09总量) * 100,2),'%') as 202206总计签收,
+		# 					concat(ROUND(SUM(09签收量) / SUM(09完成量) * 100,2),'%') as 202206完成签收,
+		# 					concat(ROUND(SUM(09完成量) / SUM(09总量) * 100,2),'%') as 202206完成占比,
+		# 				SUM(10总量) 202207总单量,
+		# 					concat(ROUND(SUM(10签收量) / SUM(10总量) * 100,2),'%') as 202207总计签收,
+		# 					concat(ROUND(SUM(10签收量) / SUM(10完成量) * 100,2),'%') as 202207完成签收,
+		# 					concat(ROUND(SUM(10完成量) / SUM(10总量) * 100,2),'%') as 202207完成占比,
+		# 				SUM(11总量) 202208总单量,
+		# 					concat(ROUND(SUM(11签收量) / SUM(11总量) * 100,2),'%') as 202208总计签收,
+		# 					concat(ROUND(SUM(11签收量) / SUM(11完成量) * 100,2),'%') as 202208完成签收,
+		# 					concat(ROUND(SUM(11完成量) / SUM(11总量) * 100,2),'%') as 202208完成占比,
+		# 				SUM(12总量) 202209总单量,
+		# 					concat(ROUND(SUM(12签收量) / SUM(12总量) * 100,2),'%') as 202209总计签收,
+		# 					concat(ROUND(SUM(12签收量) / SUM(12完成量) * 100,2),'%') as 202209完成签收,
+		# 					concat(ROUND(SUM(12完成量) / SUM(12总量) * 100,2),'%') as 202209完成占比,
+		# 				SUM(13总量) 202210总单量,
+		# 					concat(ROUND(SUM(12签收量) / SUM(12总量) * 100,2),'%') as 202210总计签收,
+		# 					concat(ROUND(SUM(12签收量) / SUM(12完成量) * 100,2),'%') as 202210完成签收,
+		# 					concat(ROUND(SUM(12完成量) / SUM(12总量) * 100,2),'%') as 202210完成占比,
+		# 				SUM(14总量) 202211总单量,
+		# 					concat(ROUND(SUM(14签收量) / SUM(14总量) * 100,2),'%') as 202211总计签收,
+		# 					concat(ROUND(SUM(14签收量) / SUM(14完成量) * 100,2),'%') as 202211完成签收,
+		# 					concat(ROUND(SUM(14完成量) / SUM(14总量) * 100,2),'%') as 202211完成占比,
+		# 				SUM(15总量) 202212总单量,
+		# 					concat(ROUND(SUM(15签收量) / SUM(15总量) * 100,2),'%') as 202212总计签收,
+		# 					concat(ROUND(SUM(15签收量) / SUM(15完成量) * 100,2),'%') as 202212完成签收,
+		# 					concat(ROUND(SUM(15完成量) / SUM(15总量) * 100,2),'%') as 202212完成占比,
+		# 				SUM(16总量) 202301总单量,
+		# 					concat(ROUND(SUM(16签收量) / SUM(16总量) * 100,2),'%') as 202301总计签收,
+		# 					concat(ROUND(SUM(16签收量) / SUM(16完成量) * 100,2),'%') as 202301完成签收,
+		# 					concat(ROUND(SUM(16完成量) / SUM(16总量) * 100,2),'%') as 202301完成占比
+        #             FROM(SELECT 家族,币种 地区, 产品id, 产品名称, 父级分类,
+        #                         COUNT(cx.`订单编号`) as 总单量,
+        #                     SUM(IF(年月 = {1},1,0)) as 04总量,
+        #                         SUM(IF(年月 = {1} AND 最终状态 = "已签收",1,0)) as 04签收量,
+        #                         SUM(IF(年月 = {1} AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 04完成量,
+        #                     SUM(IF(年月 = {2},1,0)) as 05总量,
+        #                         SUM(IF(年月 = 202202 AND 最终状态 = "已签收",1,0)) as 05签收量,
+        #                         SUM(IF(年月 = 202202 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 05完成量,
+        #                     SUM(IF(年月 = {3},1,0)) as 06总量,
+        #                         SUM(IF(年月 = 202203 AND 最终状态 = "已签收",1,0)) as 06签收量,
+        #                         SUM(IF(年月 = 202203 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 06完成量,
+        #                     SUM(IF(年月 = {4},1,0)) as 07总量,
+        #                         SUM(IF(年月 = 202204 AND 最终状态 = "已签收",1,0)) as 07签收量,
+        #                         SUM(IF(年月 = 202204 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 07完成量,
+        #                     SUM(IF(年月 = {5},1,0)) as 08总量,
+        #                         SUM(IF(年月 = 202205 AND 最终状态 = "已签收",1,0)) as 08签收量,
+        #                         SUM(IF(年月 = 202205 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 08完成量,
+        #                     SUM(IF(年月 = {6},1,0)) as 09总量,
+        #                         SUM(IF(年月 = 202206 AND 最终状态 = "已签收",1,0)) as 09签收量,
+        #                         SUM(IF(年月 = 202206 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 09完成量,
+        #                     SUM(IF(年月 = {7},1,0)) as 10总量,
+        #                         SUM(IF(年月 = 202207 AND 最终状态 = "已签收",1,0)) as 10签收量,
+        #                         SUM(IF(年月 = 202207 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 10完成量,
+        #                     SUM(IF(年月 = {8},1,0)) as 11总量,
+        #                         SUM(IF(年月 = 202208 AND 最终状态 = "已签收",1,0)) as 11签收量,
+        #                         SUM(IF(年月 = 202208 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 11完成量,
+        #                     SUM(IF(年月 = {9,1,0)) as 12总量,
+        #                         SUM(IF(年月 = 202209 AND 最终状态 = "已签收",1,0)) as 12签收量,
+        #                         SUM(IF(年月 = 202209 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 12完成量,
+        #                     SUM(IF(年月 = {10},1,0)) as 13总量,
+        #                         SUM(IF(年月 = 202210 AND 最终状态 = "已签收",1,0)) as 13签收量,
+        #                         SUM(IF(年月 = 202210 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 13完成量,
+        #                     SUM(IF(年月 = {11},1,0)) as 14总量,
+        #                         SUM(IF(年月 = 202211 AND 最终状态 = "已签收",1,0)) as 14签收量,
+        #                         SUM(IF(年月 = 202211 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 14完成量,
+        #                     SUM(IF(年月 = {12},1,0)) as 15总量,
+        #                         SUM(IF(年月 = 202212 AND 最终状态 = "已签收",1,0)) as 15签收量,
+        #                         SUM(IF(年月 = 202212 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 15完成量,
+        #                     SUM(IF(年月 = {13},1,0)) as 16总量,
+        #                         SUM(IF(年月 = 202301 AND 最终状态 = "已签收",1,0)) as 16签收量,
+        #                         SUM(IF(年月 = 202301 AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 16完成量
+        #                 FROM gat_zqsb_cache cx
+        #                 where cx.`运单编号` is not null AND cx.团队 NOT IN ({0})
+        #                 GROUP BY cx.家族,cx.币种,cx.产品id
+        #             ) s
+		# 			GROUP BY s.家族,s.地区,s.产品id
+		# 			WITH ROLLUP
+		# 		) ss
+        #         ORDER BY FIELD(ss.`家族`,'神龙','火凤凰','小虎队', '神龙运营1组','红杉','金狮','总计'),
+        #                 FIELD(ss.地区, '台湾', '香港', '总计' ),
+        #                 ss.总单量 DESC;'''.format(not_team, t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13)
         sql51 = '''SELECT *
                 FROM (SELECT IFNULL(家族, '总计') 家族, IFNULL(地区, '总计') 地区, IFNULL(产品id, '总计') 产品id,  IFNULL(产品名称, '总计') 产品名称, IFNULL(父级分类, '总计') 父级分类,
 						    SUM(总单量) 总单量,										
@@ -8181,7 +8307,7 @@ class QueryUpdate(Settings):
                 app.display_alerts = False
                 wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
                 wbsht1 = app.books.open(file_path)
-                wbsht.macro('总_品类_物流_两月')()
+                wbsht.macro('gat_总_品类_物流_两月签收率')()
                 wbsht1.save()
                 wbsht1.close()
                 wbsht.close()
@@ -10869,7 +10995,7 @@ if __name__ == '__main__':
     '''
     select = 99
     if int(select) == 99:
-        if team == 'ga0t':
+        if team == 'gat':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间

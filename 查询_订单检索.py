@@ -150,10 +150,10 @@ class QueryOrder(Settings, Settings_sso):
                                 # print(dlist)
                                 dp = df.append(dlist, ignore_index=True)
                                 if to_sql == '写入':
-                                    dp = dp[['orderNumber', 'area', 'shipInfo.shipEmail', 'addTime']]
-                                    dp.columns = ['订单编号', '运营团队', '邮箱', '下单时间']
+                                    dp = dp[['orderNumber', 'area', 'shipInfo.shipEmail', 'addTime','logisticsStatus','orderStatus']]
+                                    dp.columns = ['订单编号', '运营团队', '邮箱', '下单时间','物流状态','订单状态']
                                     dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
-                                    sql = '''REPLACE INTO 订单检索(订单编号, 运营团队, 邮箱, 下单时间) SELECT 订单编号, 运营团队, 邮箱, 下单时间 
+                                    sql = '''REPLACE INTO 订单检索(订单编号, 运营团队, 邮箱, 下单时间, 物流状态, 订单状态) SELECT 订单编号, 运营团队, 邮箱, 下单时间 , 物流状态, 订单状态
                                             FROM cache;'''
                                     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                         else:
@@ -2446,7 +2446,7 @@ class QueryOrder(Settings, Settings_sso):
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
-    m = QueryOrder('+86-18538110674', 'qyz04163510.', '202900d829aa38ccbab4fcd676fe1cae', '手0动')
+    m = QueryOrder('+86-18538110674', 'qyz04163510.', '7f41117a53f8332fb650dbd46623beb3', '手动')
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}

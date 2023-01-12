@@ -662,7 +662,7 @@ class QueryTwo(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    m = QueryTwo('+86-18538110674', 'qyz04163510.','d6c722afa57930c78b0637b55c9ede58','手0动')
+    m = QueryTwo('+86-18538110674', 'qyz04163510.','d2256f542b08379f9d800d75d45f5a3c','手动')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     '''

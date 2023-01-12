@@ -187,8 +187,8 @@ class QueryTwo(Settings, Settings_sso):
                     "Sec-Fetch-User": "?1",
                     "Upgrade-Insecure-Requests": '1',
                     "Charset": "UTF-8",
-                    # "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
-                    "User-Agent": user_agent()
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
+                    # "User-Agent": user_agent()
                     # "User-Agent": random.choice(user_agent_list)
                     }
 
@@ -213,9 +213,9 @@ class QueryTwo(Settings, Settings_sso):
                    'https': 'socks5://' + proxy}
 
         # 检测代理ip是否使用
-        rq_ip = requests.get('http://httpbin.org/ip', proxies=proxies, timeout=3)
-        rq_ip = json.loads(rq_ip.text)
-        print('代理ip(一)：' + rq_ip['origin'])
+        # rq_ip = requests.get('http://httpbin.org/ip', proxies=proxies, timeout=3)
+        # rq_ip = json.loads(rq_ip.text)
+        # print('代理ip(一)：' + rq_ip['origin'])
 
         # 使用代理ip发送请求
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -264,7 +264,7 @@ class QueryTwo(Settings, Settings_sso):
                    'https': 'socks5://' + proxy}
 
         # 检测代理ip是否使用
-        rq_ip = requests.get('http://httpbin.org/ip', proxies=proxies, timeout=3)
+        # rq_ip = requests.get('http://httpbin.org/ip', proxies=proxies, timeout=3)
         # rq_ip = json.loads(rq_ip.text)
         # print('代理ip(二)：' + rq_ip['origin'])
 

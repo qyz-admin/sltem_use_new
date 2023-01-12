@@ -1420,6 +1420,87 @@ class QueryTwoLower(Settings, Settings_sso):
             print('****** 没有信息！！！')
         return data
 
+    # 仓储库存查询 （仓储的获取）
+    def inquire_info(self, n, tem, tem_type, timeStart, timeEnd, tem_name, type_name):
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        # print('+++正在查询信息中')
+        url = r'http://gwms-v3.giikin.cn/order/order/shelves'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'http://gwms-v3.giikin.cn',
+                    'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
+        data = {'page': n, 'limit': 500, 'startDate': timeStart + ' 09:00:00', 'endDate':  timeEnd + ' 23:59:59', 'selectStr': '1=1 and ob.whid = ' + str(tem) + ' and ob.stock_type = ' + str(tem_type)}
+        proxy = '47.75.114.218:10020'  # 使用代理服务器
+        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        # print(req.text)
+        # print(json.loads(f'"{req.text}"'))
+        # req = req.text.encode('utf-8').decode("unicode_escape")
+        # print('+++已成功发送请求......')              # 转码使用
+        req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
+        # print(req)
+        max_count = req['data']
+        if max_count != []:
+            ordersDict = []
+            try:
+                for result in req['data']:              # 添加新的字典键-值对，为下面的重新赋值
+                    if '协来运' in tem_name or '神龙备货-铱熙无敌' in tem_name or '火凤凰备货-铱熙无敌' in tem_name:
+                        result['count_time'] = (datetime.datetime.strptime(result['intime'], '%Y-%m-%d %H:%M:%S') + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+                    else:
+                        if result['intime'] > (result['intime']).split()[0] + ' 08:30:00':      # 判断修改统计时间
+                            result['count_time'] = (datetime.datetime.strptime(result['intime'], '%Y-%m-%d %H:%M:%S') + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+                        else:
+                            result['count_time'] = (result['intime']).split()[0]
+
+                    # result['count_time'] = timeEnd
+                    if type_name == 'SKU库存':
+                        if '神龙备货-铱熙无敌' in result['whid']:
+                            result['waill_name'] = '铱熙无敌备货'
+                        elif '火凤凰备货-铱熙无敌' in result['whid']:
+                            result['waill_name'] = '铱熙无敌备货'
+                        else:
+                            result['waill_name'] = '备货'
+                    else:
+                        if '龟山易速配' in result['whid']:
+                            result['waill_name'] = '龟山'
+                        if '易速配-桃园仓' in result['whid']:
+                            result['waill_name'] = '易速配桃园'
+                        elif '速派八股仓' in result['whid']:
+                            result['waill_name'] = '速派'
+                        elif '天马新竹仓' in result['whid']:
+                            result['waill_name'] = '天马新竹'
+                        elif '立邦香港顺丰' in result['whid']:
+                            result['waill_name'] = '立邦'
+                        elif '香港圆通仓' in result['whid']:
+                            result['waill_name'] = '圆通'
+                        elif '香港易速配' in result['whid']:
+                            result['waill_name'] = '易速配'
+                        elif '龟山-神龙备货' in result['whid']:
+                            result['waill_name'] = '龟山备货'
+                        elif '龟山-火凤凰备货' in result['whid']:
+                            result['waill_name'] = '龟山备货'
+                        elif '天马顺丰仓' in result['whid']:
+                            result['waill_name'] = '天马顺丰'
+                        elif '协来运' in result['whid']:
+                            result['waill_name'] = '协来运'
+                        elif '神龙备货-铱熙无敌' in result['whid']:
+                            result['waill_name'] = '铱熙无敌备货'
+                        elif '火凤凰备货-铱熙无敌' in result['whid']:
+                            result['waill_name'] = '铱熙无敌备货'
+                    # print(result)
+                    ordersDict.append(result)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            data = pd.json_normalize(ordersDict)
+            data = data[['order_number', 'addtime', 'billno', 'old_billno', 'goods_id', 'product_name', 'intime', 'whid', 'waill_name', 'currency_id', 'area_id', 'product_spec', 'quantity', 'ship_name', 'ship_address', 'ship_phone', 'amount', 'userId', 'in_sqs', 'count_time']]
+            data.columns = ['订单编号', '下单时间', '新运单号', '原运单号', '产品id', '商品名称', '下架时间', '仓库', '物流渠道', '币种', '团队', '商品规格', '购买数量', '收货人', '收货地址', '联系电话', '订单金额', '下架人', '获取单号结果', '统计时间']
+            # print(data)
+        else:
+            print('****** 没有新增的改派订单！！！')
+            data = None
+        print('*' * 50)
+        return data
+
 
 if __name__ == '__main__':
     m = QueryTwoLower('+86-18538110674', 'qyz04163510.','1dd6113668f83ab5b79797b87b8bcc41','手0动')

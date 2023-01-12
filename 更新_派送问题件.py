@@ -140,16 +140,17 @@ class QueryTwo(Settings, Settings_sso):
                         concat(ROUND(IFNULL(s2.已完成 / s2.总订单,0) * 100,2),'%') as 完成占比,
                         concat(ROUND(IFNULL(s2.已退货 / s2.总订单,0) * 100,2),'%') as 退货率,
                         concat(ROUND(IFNULL(s2.总订单 / ss2.单量,0) * 100,2),'%') as 订单占比,NULL 处理方式
-                FROM( SELECT 月份, 派送类型, COUNT(订单编号) AS 总订单,
-                                    SUM(IF(物流状态 = "已签收" OR 物流状态 = "已退货",1,0)) as 签收退货,
-                                    SUM(IF(物流状态 = "已签收",1,0)) as 签收,
-                                    SUM(IF(物流状态 = "拒收",1,0)) as 拒收,
-                                    SUM(IF(物流状态 = "已退货",1,0)) as 已退货,
-                                    SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成
+                FROM( SELECT s1.月份, s1.派送类型, COUNT(ss3.订单编号) AS 总订单,
+                                    SUM(IF(ss3.系统物流状态 = "已签收" OR ss3.系统物流状态 = "已退货",1,0)) as 签收退货,
+                                    SUM(IF(ss3.系统物流状态 = "已签收",1,0)) as 签收,
+                                    SUM(IF(ss3.系统物流状态 = "拒收",1,0)) as 拒收,
+                                    SUM(IF(ss3.系统物流状态 = "已退货",1,0)) as 已退货,
+                                    SUM(IF(ss3.系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成
                     FROM (  SELECT *,EXTRACT(YEAR_MONTH FROM 创建日期) AS 月份, IF(派送问题 = '送至便利店' OR 派送问题 = '客户自取','送至便利店',IF(派送问题 = '客户长期不在' OR 派送问题 = '送达客户不在','送达客户不在',派送问题)) AS 派送类型
                             FROM 派送问题件_跟进表 g
                             WHERE g.`创建日期` >= '{0}'  AND g.`创建日期` <= '{1}' AND g.币种 ='台币'
                     ) s1
+                    LEFT JOIN (SELECT * FROM gat_order_list) ss3 ON s1.订单编号 = ss3.订单编号
                     GROUP BY s1.月份, s1.派送类型
                 ) s2
                 LEFT JOIN (  SELECT 年月 AS 月份,  COUNT(订单编号) AS 单量
@@ -169,16 +170,17 @@ class QueryTwo(Settings, Settings_sso):
                                 concat(ROUND(IFNULL(s2.已完成 / s2.总订单,0) * 100,2),'%') as 完成占比,
                                 concat(ROUND(IFNULL(s2.已退货 / s2.总订单,0) * 100,2),'%') as 退货率,
                                 concat(ROUND(IFNULL(s2.总订单 / ss2.单量,0) * 100,2),'%') as 订单占比,NULL 处理方式
-                        FROM( SELECT 月份, 派送类型, COUNT(订单编号) AS 总订单,
-                                            SUM(IF(物流状态 = "已签收" OR 物流状态 = "已退货",1,0)) as 签收退货,
-                                            SUM(IF(物流状态 = "已签收",1,0)) as 签收,
-                                            SUM(IF(物流状态 = "拒收",1,0)) as 拒收,
-                                            SUM(IF(物流状态 = "已退货",1,0)) as 已退货,
-                                            SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成
+                        FROM( SELECT s1.月份, s1.派送类型, COUNT(ss3.订单编号) AS 总订单,
+                                            SUM(IF(ss3.系统物流状态 = "已签收" OR ss3.系统物流状态 = "已退货",1,0)) as 签收退货,
+                                            SUM(IF(ss3.系统物流状态 = "已签收",1,0)) as 签收,
+                                            SUM(IF(ss3.系统物流状态 = "拒收",1,0)) as 拒收,
+                                            SUM(IF(ss3.系统物流状态 = "已退货",1,0)) as 已退货,
+                                            SUM(IF(ss3.系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成
                             FROM (  SELECT *,EXTRACT(YEAR_MONTH FROM 创建日期) AS 月份,  IF(派送问题 = '客户长期不在' OR 派送问题 = '送达客户不在','送达客户不在',派送问题) AS 派送类型
                                     FROM 派送问题件_跟进表 g
                                     WHERE g.`创建日期` >= '{0}'  AND g.`创建日期` <= '{1}' AND g.币种 ='港币'
                             ) s1
+                            LEFT JOIN (SELECT * FROM gat_order_list) ss3 ON s1.订单编号 = ss3.订单编号
                             GROUP BY s1.月份, s1.派送类型
                         ) s2
                         LEFT JOIN (  SELECT 年月 AS 月份,  COUNT(订单编号) AS 单量
@@ -1550,7 +1552,7 @@ if __name__ == '__main__':
     select = 99
     if int(select) == 99:
         handle = '手0动'
-        login_TmpCode = '31edeffd85e039639ced83f95cac208b'
+        login_TmpCode = '117f0d7736513a58ba2bc0522018beea'
         m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, select)
         start: datetime = datetime.datetime.now()
 

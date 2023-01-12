@@ -506,6 +506,9 @@ class QueryUpdate(Settings):
                 where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
         # 调用更新库 函数
         up = Settings_sso()
+        if handle == '手动':
+            print('请输入口令Token:  回车确认')
+            login_TmpCode = str(input())
         up.updata(sql, sql2, team, data_df, data_df2, login_TmpCode, handle)
         print('更新完成…………')
 
@@ -595,8 +598,8 @@ if __name__ == '__main__':
         # if week.isoweekday() == 2 or week.isoweekday() == 5:
         upload = '查询-运单号'    # 获取在途未上线 催促的
         team = 'gat'
-        login_TmpCode = 'b2bfec1821b53c318ca2be62ffe4226e'
-        handle = '手0动'
+        login_TmpCode = '5071d283e9f03534a7548c8ab2701682'
+        handle = '手动'
         m.onrount_online(team, login_TmpCode, handle)
 
         
