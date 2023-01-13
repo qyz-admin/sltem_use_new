@@ -479,11 +479,10 @@ class QueryOrder(Settings, Settings_sso):
         elif searchType == '运单号':
             data.update({'order_number': None,
                          'shippingNumber': ord})
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        proxy = '192.168.13.89:37467'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
@@ -919,11 +918,10 @@ class QueryOrder(Settings, Settings_sso):
                     'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
                     'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
                     'timeStart': timeStart + '00:00:00', 'timeEnd': timeEnd + '23:59:59'}
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        proxy = '192.168.13.89:37467'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         df = None
@@ -1033,11 +1031,10 @@ class QueryOrder(Settings, Settings_sso):
                          'timeEnd': None,
                          'finishTimeStart': timeStart + '00:00:00',
                          'finishTimeEnd': timeEnd + '23:59:59'})
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        proxy = '192.168.13.89:37467'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data)
         # print('......已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersdict = []
@@ -1168,11 +1165,10 @@ class QueryOrder(Settings, Settings_sso):
                     'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
                     'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None,
                     'questionId': None, 'reassignmentType': None, 'delUserId': None, 'delReasonIds': None,'delTimeStart':None, 'delTimeEnd': None}
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        proxy = '192.168.13.89:37467'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data)
         # print('......已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
@@ -2272,11 +2268,10 @@ class QueryOrder(Settings, Settings_sso):
                 'shipState': None, 'weightStart': None,'weightEnd': None,  'estimateWeightStart': None,  'estimateWeightEnd': None, 'order': None, 'sortField': None,
                 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None,
                 'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59'}
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        proxy = '192.168.13.89:37467'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data)
         req = json.loads(req.text)  # json类型数据转换为dict字典
         max_count = req['data']['count']
         print('共...' + str(max_count) + '...单量')
@@ -2376,11 +2371,10 @@ class QueryOrder(Settings, Settings_sso):
                 'shipState': None, 'weightStart': None,'weightEnd': None,  'estimateWeightStart': None,  'estimateWeightEnd': None, 'order': None, 'sortField': None,
                 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None,
                 'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59'}
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        proxy = '192.168.13.89:37467'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
@@ -2446,7 +2440,7 @@ class QueryOrder(Settings, Settings_sso):
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
-    m = QueryOrder('+86-18538110674', 'qyz04163510.', '7f41117a53f8332fb650dbd46623beb3', '手动')
+    m = QueryOrder('+86-18538110674', 'qyz04163510.', '9c9894668263325b9ae4c85ba94b61b4', '手动')
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}

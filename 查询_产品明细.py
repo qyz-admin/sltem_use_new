@@ -23,7 +23,7 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  
 
 # -*- coding:utf-8 -*-
 class QueryTwoT(Settings, Settings_sso):
-    def __init__(self, userMobile, password, login_TmpCode, handle):
+    def __init__(self, userMobile, password, login_TmpCode, handle, proxy_handle, proxy_id):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
@@ -33,10 +33,16 @@ class QueryTwoT(Settings, Settings_sso):
         # self.sso_online_Two()
 
         # self.sso__online_auto()
-        if handle == '手动':
-            self.sso__online_handle(login_TmpCode)
+        if proxy_handle == '代理服务器':
+            if handle == '手动':
+                self.sso__online_handle_proxy(login_TmpCode, proxy_id)
+            else:
+                self.sso__online_auto_proxy(proxy_id)
         else:
-            self.sso__online_auto()
+            if handle == '手动':
+                self.sso__online_handle(login_TmpCode)
+            else:
+                self.sso__online_auto()
 
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -342,11 +348,10 @@ class QueryTwoT(Settings, Settings_sso):
                     'Referer': 'https://gimp.giikin.com/front/orderToolsProductSearch'}
         data = {}
         data.update({'productId': proId})
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        proxy = '192.168.13.89:37467'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
+        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        # req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersDict = []

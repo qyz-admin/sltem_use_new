@@ -501,7 +501,7 @@ class QueryUpdate(Settings):
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
     # 导出需要更新的签收表---港澳台(二)
-    def EportOrder(self, team, month_last, month_yesterday, month_begin, check, export, handle):
+    def EportOrder(self, team, month_last, month_yesterday, month_begin, check, export, handle, proxy_handle, proxy_id):
         match = {'gat': '港台',
                  'slsc': '品牌'}
         emailAdd = {'gat': 'giikinliujun@163.com',
@@ -590,7 +590,7 @@ class QueryUpdate(Settings):
                 if handle == '手动':
                     print('请输入口令Token:  回车确认')
                     login_TmpCode = str(input())
-                lw = QueryTwoT('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
+                lw = QueryTwoT('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
                 lw.productInfo('gat_order_list', ordersDict)
 
         if team in ('gat'):

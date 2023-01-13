@@ -105,11 +105,15 @@ print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
 
 # TODO---单点更新读取---
+
+proxy_handle = '代理服务器'
+proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
+
 if team == 'gat' and updata == '全部':
     print('---------------------------------- 单点更新部分：--------------------------------')
-    login_TmpCode = 'd3446c06b5443d268535ca024c7398c8'
-    handle = '手0动'
-    sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', login_TmpCode, handle)
+    handle = '手动'
+    login_TmpCode = '9b02343c97dc3852a36b1d994075011c'              # 输入登录口令Tkoen
+    sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', login_TmpCode, handle, proxy_handle, proxy_id)
     for i in range((end - begin).days):                             # 按天循环获取订单状态
         day = begin + datetime.timedelta(days=i)
         day_time = str(day)
@@ -119,7 +123,7 @@ if team == 'gat' and updata == '全部':
     print('---------------------------------- 导出部分：--------------------------------')
     check = '是'
     export = '导表'
-    qu.EportOrder(team, month_last, month_yesterday, month_begin, check, export, handle)     # 最近两个月的更新信息导出
+    qu.EportOrder(team, month_last, month_yesterday, month_begin, check, export, handle, proxy_handle, proxy_id)     # 最近两个月的更新信息导出
     print('输出耗时：', datetime.datetime.now() - start)
 
     # sso.readFormHost('gat', '导入')                       # 导入新增的订单 line运营  手动导入
@@ -130,10 +134,12 @@ if team == 'gat' and updata == '全部':
     # sso.orderInfo_append(str(begin), str(end), 179, '990bb426a1053d4382ed45fa935f3742', '手0动')               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
     # sso.orderInfo(team, updata, begin, end)
 
+
+
 elif team != 'gat' and updata == '全1部':
     print('---------------------------------- 手动导入更新部分：--------------------------------')
     handle = '手动'
-    sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343','',handle)
+    sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343','',handle, proxy_handle, proxy_id)
     sso.readFormHost('gat', '导入')                                   # 导入新增的订单 line运营  手动导入
     sso.readFormHost('gat', '更新')                                   # 更新新增的订单 手动导入
     qu.EportOrder(team, month_last, month_yesterday, month_begin, '是', '导表', handle)     # 最近两个月的更新信息导出

@@ -23,7 +23,7 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  
 
 # -*- coding:utf-8 -*-
 class QueryTwo(Settings, Settings_sso):
-    def __init__(self, userMobile, password, login_TmpCode, handle):
+    def __init__(self, userMobile, password, login_TmpCode, handle, proxy_handle, proxy_id):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
@@ -33,11 +33,16 @@ class QueryTwo(Settings, Settings_sso):
         # self.sso_online_Two()
         # self.sso__online_handle(login_TmpCode)
         # self.sso__online_auto()
-
-        if handle == '手动':
-            self.sso__online_handle(login_TmpCode)
+        if proxy_handle == '代理服务器':
+            if handle == '手动':
+                self.sso__online_handle_proxy(login_TmpCode, proxy_id)
+            else:
+                self.sso__online_auto_proxy(proxy_id)
         else:
-            self.sso__online_auto()
+            if handle == '手动':
+                self.sso__online_handle(login_TmpCode)
+            else:
+                self.sso__online_auto()
 
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -72,7 +77,7 @@ class QueryTwo(Settings, Settings_sso):
                                                                                     self.mysql2['port'],
                                                                                     self.mysql2['datebase']))
     # 获取签收表内容
-    def readFormHost(self, isReal):
+    def readFormHost(self, isReal, proxy_handle, proxy_id):
         start = datetime.datetime.now()
         path = r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表'
         dirs = os.listdir(path=path)
@@ -81,10 +86,10 @@ class QueryTwo(Settings, Settings_sso):
             filePath = os.path.join(path, dir)
             if dir[:2] != '~$':
                 print(filePath)
-                self.wbsheetHost(filePath, isReal)
+                self.wbsheetHost(filePath, isReal, proxy_handle, proxy_id)
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
-    def wbsheetHost(self, filePath, isReal):
+    def wbsheetHost(self, filePath, isReal, proxy_handle, proxy_id):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
         app.display_alerts = False
@@ -118,7 +123,7 @@ class QueryTwo(Settings, Settings_sso):
                         print(db)
                         print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
                         # 将获取到的运单号 查询轨迹
-                        self.Search_online(db, isReal, tem)
+                        self.Search_online(db, isReal, tem, proxy_handle, proxy_id)
                     else:
                         print('----------数据为空,查询失败：' + sht.name)
                 else:
@@ -127,7 +132,7 @@ class QueryTwo(Settings, Settings_sso):
         app.quit()
 
     #  查询运单轨迹-按订单查询（一）
-    def Search_online(self, db, isReal, tem):
+    def Search_online(self, db, isReal, tem, proxy_handle, proxy_id):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         orderId = list(db[tem])
         print(orderId)
@@ -145,10 +150,10 @@ class QueryTwo(Settings, Settings_sso):
                 #     print(ord[:3])
                 if ord[:3] == '620' or ord[:3] == '901':
                     print('黑猫查询中')
-                    data = self._SearchGoods_heimao(ord)
+                    data = self._SearchGoods_heimao(ord, proxy_handle, proxy_id)
                 else:
                     print('单点查询中')
-                    data = self._order_online(ord, isReal)
+                    data = self._order_online(ord, isReal, proxy_handle, proxy_id)
                     print(data)
                 if data is not None and len(data) > 0:
                     dlist.append(data)
@@ -163,8 +168,57 @@ class QueryTwo(Settings, Settings_sso):
         print('查询已导出+++')
         print('*' * 50)
 
+    def Search_online_write(self, isReal, proxy_handle, proxy_id):
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        sql = '''SELECT 运单编号
+                FROM {0} s
+                WHERE s.`运单编号` NOT IN (SELECT DISTINCT 运单号 FROM 轨迹查询);'''.format('sheet1_copy')
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        if ordersDict.empty:
+            print('无需要更新订单信息！！！')
+            return
+        print(ordersDict['运单编号'][0])
+        orderId = list(ordersDict['运单编号'])
+        print(orderId)
+        max_count = len(orderId)                 # 使用len()获取列表的长度，上节学的
+        if max_count > 0:
+            df = pd.DataFrame([])                # 创建空的dataframe数据框
+            dlist = []
+            for ord in orderId:
+                print(ord)
+                ord = str(ord)
+                print(type(ord))
+                # if type(ord) == "<class 'str'>":
+                #     print('字符串')
+                # else:
+                #     print(ord[:3])
+                if ord[:3] == '620' or ord[:3] == '901':
+                    print('黑猫查询中')
+                    data = self._SearchGoods_heimao(ord, proxy_handle, proxy_id)
+                else:
+                    print('单点查询中')
+                    data = self._order_online(ord, isReal, proxy_handle, proxy_id)
+                    print(data)
+                if data is not None and len(data) > 0:
+                    dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+            # dp.dropna(axis=0, how='any', inplace=True)
+        else:
+            dp = None
+        print(dp)
+        dp = dp[['orderNumber', 'wayBillNumber', 'track_date', '出货时间', '上线时间', '保管时间', '完成时间', 'track_info', 'track_status', '负责营业所', '轨迹备注', '序号']]
+        dp.columns = ['订单编号', '运单号', '物流轨迹时间', '出货时间', '上线时间', '保管时间', '完成时间', '物流轨迹', '轨迹代码', '负责营业所', '轨迹备注', '序号']
+        dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+        columns = list(dp.columns)
+        columns = ','.join(columns)
+        sql = 'REPLACE INTO {0}({1}, 添加时间) SELECT *, NOW() 添加时间 FROM cache; '.format('轨迹查询', columns)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        # dp.to_excel('G:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+        print('查询已导出+++')
+        print('*' * 50)
+
     #  查询运单轨迹-按时间查询（二）
-    def order_online(self, timeStart, timeEnd, isReal):  # 进入运单轨迹界面
+    def order_online(self, timeStart, timeEnd, isReal, proxy_handle, proxy_id):  # 进入运单轨迹界面
         # print('正在获取需要订单信息......')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         start = datetime.datetime.now()
@@ -188,7 +242,7 @@ class QueryTwo(Settings, Settings_sso):
                 dlist = []
                 for ord in orderId:
                     print(ord)
-                    data = self._order_online(ord, isReal)
+                    data = self._order_online(ord, isReal, proxy_handle, proxy_id)
                     if data is not None and len(data) > 0:
                         dlist.append(data)
                 dp = df.append(dlist, ignore_index=True)
@@ -198,7 +252,7 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
 
     #  查询运单轨迹-按订单查询（一 、1.单点）
-    def _order_online(self, ord, isReal):  # 进入订单检索界面
+    def _order_online(self, ord, isReal, proxy_handle, proxy_id):  # 进入订单检索界面
         print('+++实时_搜索轨迹信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getLogisticsTrace'
@@ -209,21 +263,21 @@ class QueryTwo(Settings, Settings_sso):
                 'searchType': 1,
                 'isReal': isReal
                 }
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         print(req)
         print(5)
         print(req['data'])
         if req['data'] == []:
-            data = self._order_online_data(ord, 0)
+            data = self._order_online_data(ord, 0, proxy_handle, proxy_id)
             return data
         elif req['data']['list'] == []:
-            data = self._order_online_data(ord, 0)
+            data = self._order_online_data(ord, 0, proxy_handle, proxy_id)
             return data
         else:
             ordersDict = []
@@ -281,7 +335,7 @@ class QueryTwo(Settings, Settings_sso):
             # print('*' * 50)
             return data
     #  物流轨迹数据库   （一 、2.单点）
-    def _order_online_data(self, ord, isReal):  # 进入订单检索界面
+    def _order_online_data(self, ord, isReal, proxy_handle, proxy_id):  # 进入订单检索界面
         print('+++数据库_搜索轨迹信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getLogisticsTrace'
@@ -292,11 +346,11 @@ class QueryTwo(Settings, Settings_sso):
                 'searchType': 1,
                 'isReal': isReal
                 }
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
@@ -367,7 +421,7 @@ class QueryTwo(Settings, Settings_sso):
             return data
 
     #  查询运单轨迹-按运单查询（一 、3.黑猫官网）
-    def _SearchGoods_heimao(self,wayBillNumber):
+    def _SearchGoods_heimao(self,wayBillNumber, proxy_handle, proxy_id):
         #1、构建url 、请求数据
         url = "https://www.t-cat.com.tw/Inquire/TraceDetail.aspx?BillID=" + wayBillNumber   #url为机器人的webhook
         #2、构建一下请求头部
@@ -395,12 +449,12 @@ class QueryTwo(Settings, Settings_sso):
                     }
         #3、构建请求数据
         data = {'BillID': 620430597712}
-        proxy = '47.242.154.178:37466'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # 使用代理ip发送请求
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False)
+        if proxy_handle == '代理服务器':             # 使用代理ip发送请求
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
+        # req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False)
         # print(req)
         # print('----------数据获取返回成功-----------')
         rq = BeautifulSoup(req.text, 'lxml')
@@ -662,7 +716,9 @@ class QueryTwo(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    m = QueryTwo('+86-18538110674', 'qyz04163510.','d2256f542b08379f9d800d75d45f5a3c','手动')
+    proxy_handle = '代理服务器'
+    proxy_id = '192.168.13.89:37469'  # 输入代理服务器节点和端口
+    m = QueryTwo('+86-18538110674', 'qyz04163510.','b2484dd85ac1389190951b4b951106fd','手0动', proxy_handle, proxy_id)
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     '''
@@ -671,13 +727,18 @@ if __name__ == '__main__':
     # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 
     '''
     isReal = 1
-    select = 1
+    select = 3
     if int(select) == 1:
         print("1-->>> 正在按运单号查询+++")
-        m.readFormHost(isReal)       # 导入；，更新--->>数据更新切换
+        m.readFormHost(isReal, proxy_handle, proxy_id)       # 导入；，更新--->>数据更新切换
+
+    elif int(select) == 3:
+        print("1-->>> 正在按运单号查询+++")
+        m.Search_online_write(isReal, proxy_handle, proxy_id)       # 导入；，更新--->>数据更新切换
+
     elif int(select) == 2:
         print("2-->>> 正在按时间查询+++")
-        m.order_online('2022-01-01', '2022-01-05', isReal)
+        m.order_online('2022-01-01', '2022-01-05', isReal, proxy_handle, proxy_id)
 
     # m.order_bind_status('2022-01-01', '2022-01-02')
 
