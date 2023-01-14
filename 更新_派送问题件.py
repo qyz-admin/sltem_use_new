@@ -32,7 +32,7 @@ from 查询_订单检索 import QueryOrder
 
 # -*- coding:utf-8 -*-
 class QueryTwo(Settings, Settings_sso):
-    def __init__(self, userMobile, password, login_TmpCode,handle, select):
+    def __init__(self, userMobile, password, login_TmpCode,handle, select, proxy_handle, proxy_id):
         Settings.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
         self.q = Queue()  # 多线程调用的函数不能用return返回值，用来保存返回值
@@ -43,10 +43,16 @@ class QueryTwo(Settings, Settings_sso):
         # self.sso__online_handle(login_TmpCode)
         # # self.sso__online_auto()
         if select == 99:
-            if handle == '手动':
-                self.sso__online_handle(login_TmpCode)
+            if proxy_handle == '代理服务器':
+                if handle == '手动':
+                    self.sso__online_handle_proxy(login_TmpCode, proxy_id)
+                else:
+                    self.sso__online_auto_proxy(proxy_id)
             else:
-                self.sso__online_auto()
+                if handle == '手动':
+                    self.sso__online_handle(login_TmpCode)
+                else:
+                    self.sso__online_auto()
 
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -676,7 +682,7 @@ class QueryTwo(Settings, Settings_sso):
         print('----已写入excel')
 
     # 查询更新（新后台的获取-派送问题件更新）
-    def getDeliveryList(self, timeStart, timeEnd):  # 进入订单检索界面
+    def getDeliveryList(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入订单检索界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('+++正在查询信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.deliveryQuestion&action=getDeliveryList'
@@ -687,10 +693,11 @@ class QueryTwo(Settings, Settings_sso):
         data = {'order_number': None, 'waybill_number': None, 'question_level': None, 'question_type': None, 'order_trace_id': None, 'ship_phone': None, 'page': 1, 'pageSize': 90,
                 'addtime': None, 'question_time': None, 'trace_time': None, 'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'finishtime': None,
                 'sale_id': None, 'product_id': None, 'logistics_id': None, 'area_id': None, 'currency_id': None, 'order_status': None, 'logistics_status': None}
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)          # json类型数据转换为dict字典
         max_count = req['data']['count']    # 获取 请求订单量
@@ -712,7 +719,7 @@ class QueryTwo(Settings, Settings_sso):
                 while n < in_count:  # 这里用到了一个while循环，穿越过来的
                     print('剩余查询次数' + str(in_count - n))
                     n = n + 1
-                    data = self._getDeliveryList(timeStart, timeEnd, n)
+                    data = self._getDeliveryList(timeStart, timeEnd, n,proxy_handle,proxy_id)
                     dlist.append(data)
                 dp = df.append(dlist, ignore_index=True)
             else:
@@ -733,7 +740,7 @@ class QueryTwo(Settings, Settings_sso):
             print('没有需要获取的信息！！！')
             return
         print('*' * 50)
-    def _getDeliveryList(self, timeStart, timeEnd, n):  # 进入派送问题件界面
+    def _getDeliveryList(self, timeStart, timeEnd, n,proxy_handle,proxy_id):  # 进入派送问题件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.deliveryQuestion&action=getDeliveryList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -742,10 +749,11 @@ class QueryTwo(Settings, Settings_sso):
         data = {'order_number': None, 'waybill_number': None, 'question_level': None, 'question_type': None, 'order_trace_id': None, 'ship_phone': None, 'page': n, 'pageSize': 90,
                 'addtime': None, 'question_time': None, 'trace_time': None, 'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'finishtime': None,
                 'sale_id': None, 'product_id': None, 'logistics_id': None, 'area_id': None, 'currency_id': None, 'order_status': None, 'logistics_status': None}
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersDict = []
@@ -760,7 +768,7 @@ class QueryTwo(Settings, Settings_sso):
         return data
 
     # 查询更新（新后台的获取-订单完成 一）
-    def getOrderList(self, timeStart, timeEnd):  # 进入订单检索界面
+    def getOrderList(self, timeStart, timeEnd,proxy_handle,proxy_id):  # 进入订单检索界面
         begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d')
         begin = begin.date()
         end = datetime.datetime.strptime(timeEnd, '%Y-%m-%d')
@@ -779,7 +787,7 @@ class QueryTwo(Settings, Settings_sso):
                 print('+++正在查询： ' + day_time + match[id] + '完成 信息')
                 dict = []
                 res = {}
-                count = self._getOrderList(id, None, day_time, day_time)
+                count = self._getOrderList(id, None, day_time, day_time,proxy_handle,proxy_id)
                 res['币种'] = match[id]
                 res['日期'] = day_time
                 res['总单量'] = count
@@ -788,7 +796,7 @@ class QueryTwo(Settings, Settings_sso):
                 dict.append(res)
                 for log in logisticsStatus:
                         print('+++正在查询： ' + match[id] + match2[log] + ' 信息')
-                        count2 = self._getOrderList(id, log,  day_time, day_time)
+                        count2 = self._getOrderList(id, log,  day_time, day_time,proxy_handle,proxy_id)
                         if log == 2:
                             res['签收单量'] = count2
                         elif log == 3:
@@ -803,7 +811,7 @@ class QueryTwo(Settings, Settings_sso):
                 SELECT 币种,日期,总单量,签收单量, 拒收单量
                 FROM cache_info;'''
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-    def _getOrderList(self, id, log, timeStart, timeEnd):  # 进入订单检索界面
+    def _getOrderList(self, id, log, timeStart, timeEnd,proxy_handle,proxy_id):  # 进入订单检索界面
         print('+++正在查询信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -818,10 +826,11 @@ class QueryTwo(Settings, Settings_sso):
                 'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None,
                 'order': None, 'sortField': None, 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
                 'timeStart': None, 'timeEnd': None, 'finishTimeStart': timeStart + '00:00:00', 'finishTimeEnd': timeEnd + '23:59:59'}
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
@@ -831,7 +840,7 @@ class QueryTwo(Settings, Settings_sso):
         return max_count
 
     # 查询更新（新后台的获取-订单完成 二）
-    def getOrderList_T(self, timeStart, timeEnd):  # 进入订单检索界面
+    def getOrderList_T(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入订单检索界面
         begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d')
         begin = begin.date()
         end = datetime.datetime.strptime(timeEnd, '%Y-%m-%d')
@@ -871,7 +880,7 @@ class QueryTwo(Settings, Settings_sso):
                     res['退货单量'] = ''
                     for log in logisticsStatus:
                         print('+++正在查询： ' + match[id] + match3[log_Id] + match2[log] + ' 信息')
-                        count2 = self._getOrderList_T(id, log_Id, log, day_time, day_time)
+                        count2 = self._getOrderList_T(id, log_Id, log, day_time, day_time, proxy_handle, proxy_id)
                         if log == 9999:
                             res['总单量'] = count2
                         elif log == 2:
@@ -891,7 +900,7 @@ class QueryTwo(Settings, Settings_sso):
                 SELECT 币种,日期,物流名称, 总单量,签收单量, 拒收单量, 退货单量
                 FROM cache_info;'''
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-    def _getOrderList_T(self, id, log_Id, log, timeStart, timeEnd):  # 进入订单检索界面
+    def _getOrderList_T(self, id, log_Id, log, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入订单检索界面
         print('+++正在查询信息中')
         if log_Id == 9999:
             log_Id = None
@@ -910,10 +919,11 @@ class QueryTwo(Settings, Settings_sso):
                 'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None,
                 'order': None, 'sortField': None, 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
                 'timeStart': None, 'timeEnd': None, 'finishTimeStart': timeStart + '00:00:00', 'finishTimeEnd': timeEnd + '23:59:59'}
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
@@ -923,7 +933,7 @@ class QueryTwo(Settings, Settings_sso):
         return max_count
 
     # 查询更新（新后台的获取-短信发送）
-    def getMessageLog(self, timeStart, timeEnd):  # 进入订单检索界面
+    def getMessageLog(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入订单检索界面
         begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d')
         begin = begin.date()
         end = datetime.datetime.strptime(timeEnd, '%Y-%m-%d')
@@ -942,7 +952,7 @@ class QueryTwo(Settings, Settings_sso):
             for id in template_id:
                 print('+++正在查询： ' + day_time + match[id] + ' 短信发送量')
                 res = {}
-                count = self._getMessageLog(id, day_time, day_time)
+                count = self._getMessageLog(id, day_time, day_time, proxy_handle, proxy_id)
                 res['币种'] = '台币'
                 res['日期'] = day_time
                 res['短信模板'] = match[id]
@@ -969,7 +979,7 @@ class QueryTwo(Settings, Settings_sso):
             for id in template_id:
                 print('+++正在查询： ' + day_time + match[id] + ' 短信发送量')
                 res = {}
-                count = self._getMessageLog(id, day_time, day_time)
+                count = self._getMessageLog(id, day_time, day_time, proxy_handle, proxy_id)
                 res['币种'] = '港币'
                 res['日期'] = day_time
                 res['短信模板'] = match[id]
@@ -982,7 +992,7 @@ class QueryTwo(Settings, Settings_sso):
         dp.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
         sql = '''REPLACE INTO 派送问题件_跟进表_message(币种,日期,短信模板,发送量)  SELECT * FROM cache_cp;'''
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-    def _getMessageLog(self, id, timeStart, timeEnd):  # 进入订单检索界面
+    def _getMessageLog(self, id, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入订单检索界面
         print('+++正在查询信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.sms&action=getMessageLog'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -991,10 +1001,11 @@ class QueryTwo(Settings, Settings_sso):
         data = {'order_number': None, 'waybill_number': None, 'to_phone': None, 'add_date': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59',
                 'send_status': None, 'msgid': None, 'template_id': id, 'page': 1, 'pageSize': 10}
         # print(data)
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
@@ -1063,7 +1074,7 @@ class QueryTwo(Settings, Settings_sso):
 
 
     # 查询更新（新后台的获取-拒收问题件更新）
-    def order_js_QueryUpdata(self, timeStart, timeEnd):  # 进入拒收问题件界面
+    def order_js_QueryUpdata(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入拒收问题件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('+++正在查询信息中---拒收问题件更新')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRejectList'
@@ -1075,10 +1086,11 @@ class QueryTwo(Settings, Settings_sso):
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
                 'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': -1,
                 'finishTimeStart': timeStart + ' 00:00:00', 'finishTimeEnd': timeEnd + ' 23:59:59', 'traceTimeStart': None, 'traceTimeEnd': None,'newCloneNumber': None}
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         max_count = req['data']['count']
@@ -1130,7 +1142,7 @@ class QueryTwo(Settings, Settings_sso):
                 while n < in_count:  # 这里用到了一个while循环，穿越过来的
                     print('剩余查询次数' + str(in_count - n))
                     n = n + 1
-                    data = self._order_js_QueryUpdata(timeStart, timeEnd, n)
+                    data = self._order_js_QueryUpdata(timeStart, timeEnd, n,proxy_handle,proxy_id)
                     dlist.append(data)
                 dp = df.append(dlist, ignore_index=True)
             else:
@@ -1148,7 +1160,7 @@ class QueryTwo(Settings, Settings_sso):
         else:
             print('****** 没有信息！！！')
         print('*' * 50)
-    def _order_js_QueryUpdata(self, timeStart, timeEnd, n):  # 进入拒收问题件界面
+    def _order_js_QueryUpdata(self, timeStart, timeEnd, n, proxy_handle, proxy_id):  # 进入拒收问题件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRejectList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -1159,10 +1171,11 @@ class QueryTwo(Settings, Settings_sso):
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
                 'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': -1,
                 'finishTimeStart': timeStart + ' 00:00:00', 'finishTimeEnd': timeEnd + ' 23:59:59', 'traceTimeStart': None, 'traceTimeEnd': None,'newCloneNumber': None}
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersDict = []
@@ -1207,7 +1220,7 @@ class QueryTwo(Settings, Settings_sso):
         return data
 
     # 查询更新（新后台的获取-物流问题件更新）
-    def waybill_InfoQueryUpdata(self, timeStart, timeEnd):  # 进入物流问题件界面
+    def waybill_InfoQueryUpdata(self, timeStart, timeEnd,proxy_handle,proxy_id):  # 进入物流问题件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('+++正在查询信息中---物流问题件更新')
         url = r'https://gimp.giikin.com/service?service=gorder.customerQuestion&action=getCustomerComplaintList'
@@ -1218,10 +1231,11 @@ class QueryTwo(Settings, Settings_sso):
                 'question_type': None, 'critical': None, 'read_status': None, 'operator_type': None, 'operator': None, 'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59',
                 'trace_time': None, 'is_collection': None, 'logistics_status': None, 'user_id': None,
                 'page': 1, 'pageSize': 90}
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         max_count = req['data']['count']
@@ -1294,7 +1308,7 @@ class QueryTwo(Settings, Settings_sso):
                 while n < in_count:  # 这里用到了一个while循环，穿越过来的
                     print('剩余查询次数' + str(in_count - n))
                     n = n + 1
-                    data = self._waybillInfoQueryUpdata(timeStart, timeEnd, n)
+                    data = self._waybillInfoQueryUpdata(timeStart, timeEnd, n,proxy_handle,proxy_id)
                     dlist.append(data)
                 dp = df.append(dlist, ignore_index=True)
             else:
@@ -1319,7 +1333,7 @@ class QueryTwo(Settings, Settings_sso):
             print('没有需要获取的信息！！！')
             return
         print('*' * 50)
-    def _waybillInfoQueryUpdata(self, timeStart, timeEnd, n):  # 进入物流问题件界面
+    def _waybillInfoQueryUpdata(self, timeStart, timeEnd, n,proxy_handle,proxy_id):  # 进入物流问题件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customerQuestion&action=getCustomerComplaintList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -1329,10 +1343,11 @@ class QueryTwo(Settings, Settings_sso):
                 'question_type': None, 'critical': None, 'read_status': None, 'operator_type': None, 'operator': None, 'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59',
                 'trace_time': None, 'is_collection': None, 'logistics_status': None, 'user_id': None,
                 'page': n, 'pageSize': 90}
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersDict = []
@@ -1549,8 +1564,11 @@ if __name__ == '__main__':
     select = 99
     if int(select) == 99:
         handle = '手动'
-        login_TmpCode = '7effc1fb7a003ec788a50144a910aaa9'
-        m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, select)
+        login_TmpCode = 'e39c1b085a59395586b0d86319e45c8d'          # 输入登录口令Tkoen
+        proxy_handle = '代理服务器'
+        proxy_id = '192.168.13.89:37468'                            # 输入代理服务器节点和端口
+
+        m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, select, proxy_handle, proxy_id)
         start: datetime = datetime.datetime.now()
 
         if int(select) == 11:
@@ -1559,15 +1577,15 @@ if __name__ == '__main__':
         elif int(select) == 99:         # 查询更新-派送问题件
             timeStart, timeEnd = m.readInfo('派送问题件_订单完成单量&短信发送单量')
             # m.getOrderList_T('2022-07-25', '2022-07-26')
-            m.getOrderList_T(timeStart, timeEnd)                      # 订单完成单量 更新
+            m.getOrderList_T(timeStart, timeEnd, proxy_handle, proxy_id)                      # 订单完成单量 更新
 
             # m.getMessageLog('2022-07-25', '2022-07-26')
-            m.getMessageLog(timeStart, timeEnd)                       # 短信发送单量 更新
+            m.getMessageLog(timeStart, timeEnd, proxy_handle, proxy_id)                       # 短信发送单量 更新
 
             timeStart, timeEnd = m.readInfo('派送问题件_更新')
             # m.getDeliveryList('2022-06-12', '2022-06-30')
             # m.getDeliveryList('2022-07-10', '2022-07-26')
-            m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
+            m.getDeliveryList(timeStart, timeEnd, proxy_handle, proxy_id)                     # 派送问题件 更新
 
             # timeStart, timeEnd = m.readInfo('派送问题件_导出')
             logisticsN_begin = '2022-07-11'                         # 送达客户不在/客户长期不在  物流轨迹查询时间
@@ -1588,12 +1606,14 @@ if __name__ == '__main__':
 
         elif int(select) == 909:         # 查询更新-派送问题件
             # timeStart, timeEnd = m.readInfo('派送问题件_更新')
-            m.getDeliveryList('2022-04-01', '2022-04-30')
+            m.getDeliveryList('2022-04-01', '2022-04-30', proxy_handle, proxy_id)
             # m.getDeliveryList('2022-07-10', '2022-07-26')
             # m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
 
     elif int(select) == 1:
-        m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "", select)
+        proxy_handle = '代理服务器0'
+        proxy_id = '192.168.13.89:37467'                            # 输入代理服务器节点和端口
+        m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "", select, proxy_handle, proxy_id)
         # timeStart, timeEnd = m.readInfo('派送问题件_跟进表')
         # m.getOrderList_T('2022-06-01', '2022-06-30')
         logisticsN_begin = '2022-07-11'                             # 送达客户不在/客户长期不在  物流轨迹查询时间
@@ -1604,7 +1624,9 @@ if __name__ == '__main__':
 
 
     elif int(select) == 2:
-        m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "", select)
+        proxy_handle = '代理服务器0'
+        proxy_id = '192.168.13.89:37467'                            # 输入代理服务器节点和端口
+        m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "", select, proxy_handle, proxy_id)
         # timeStart, timeEnd = m.readInfo('派送问题件_跟进表')
         # m.getOrderList_T('2022-06-01', '2022-06-30')
         m.outport_List('2022-07-20', '2022-08-17')
@@ -1612,19 +1634,21 @@ if __name__ == '__main__':
 
 
     elif int(select) == 3:              # 拒收问题件、物流问题件、物流问题件 检测同一个客户（电话） 的订单
-        m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "", 99)
+        proxy_handle = '代理服务器0'
+        proxy_id = '192.168.13.89:37467'                            # 输入代理服务器节点和端口
+        m = QueryTwo('+86-18538110674', 'qyz04163510.', "", "", 99, proxy_handle, proxy_id)
 
         # timeStart, timeEnd = m.readInfo('拒收问题件_更新')
-        m.order_js_QueryUpdata('2022-10-01', '2022-11-30')
+        m.order_js_QueryUpdata('2022-10-01', '2022-11-30', proxy_handle, proxy_id)
         # m.order_js_QueryUpdata(timeStart, timeEnd)  # 拒收问题件 更新
 
         # timeStart, timeEnd = m.readInfo('物流问题件_更新')
-        m.waybill_InfoQueryUpdata('2022-10-01', '2022-10-31')
-        m.waybill_InfoQueryUpdata('2022-11-01', '2022-11-30')
+        m.waybill_InfoQueryUpdata('2022-10-01', '2022-10-31', proxy_handle, proxy_id)
+        m.waybill_InfoQueryUpdata('2022-11-01', '2022-11-30', proxy_handle, proxy_id)
         # m.waybill_InfoQueryUpdata(timeStart, timeEnd)  # 物流问题件 更新
 
         # timeStart, timeEnd = m.readInfo('派送问题件_更新')
-        m.getDeliveryList('2022-10-01', '2022-11-30')
+        m.getDeliveryList('2022-10-01', '2022-11-30', proxy_handle, proxy_id)
         # m.getDeliveryList(timeStart, timeEnd)  # 派送问题件 更新
 
         timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'

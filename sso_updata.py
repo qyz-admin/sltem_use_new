@@ -1211,7 +1211,7 @@ class Query_sso_updata(Settings):
             except Exception as e:
                 print('重新启动： 3分钟后', str(Exception) + str(e))
                 time.sleep(300)
-                self.sso__online_auto()
+                self.sso__online_auto_host()
         elif 'message' in req.keys():
             info = req['message']
             win32api.MessageBox(0, "登录失败: " + info, "错误 提醒", win32con.MB_ICONSTOP)
@@ -2713,7 +2713,7 @@ class Query_sso_updata(Settings):
             print('更新失败：', str(Exception) + str(e))
         print('*************************本批次更新成功***********************************')
     # 更新团队订单明细（新后台的获取  方法一（2）的全部更新）
-    def order_getList(self, team, updata, begin, end):  # 进入订单检索界面
+    def order_getList(self, team, updata, begin, end, proxy_handle, proxy_id):  # 进入订单检索界面
         # print('正在获取需要订单信息......')
         match1 = {'gat': '港台', 'slsc': '品牌'}
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
@@ -2728,10 +2728,11 @@ class Query_sso_updata(Settings):
                 'estimateWeightEnd': None, 'order': None, 'sortField': None, 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None, 'percentStart': None,
                 'percentEnd': None, 'userid': None, 'questionId': None, 'delUserId': None, 'transferNumber': None, 'smsStatus': None, 'designer_id': None, 'logistics_remarks': None, 'clone_type': None,
                 'categoryId': None, 'addressType': None, 'timeStart': begin + ' 00:00:00', 'timeEnd': end + ' 23:59:59'}
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)          # json类型数据转换为dict字典
         # print(req)
@@ -2745,7 +2746,7 @@ class Query_sso_updata(Settings):
             dlist = []
             n = 1
             while n <= in_count:  # 这里用到了一个while循环，穿越过来的
-                data = self._order_getList(n, begin, end)
+                data = self._order_getList(n, begin, end, proxy_handle, proxy_id)
                 dlist.append(data)
                 print('剩余查询次数' + str(in_count - n))
                 n = n + 1
@@ -2869,7 +2870,7 @@ class Query_sso_updata(Settings):
             print('没有需要获取的信息！！！')
             return
         print('*' * 50)
-    def _order_getList(self, n, begin, end):  # 进入订单检索界面
+    def _order_getList(self, n, begin, end, proxy_handle, proxy_id):  # 进入订单检索界面
         # print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -2883,10 +2884,11 @@ class Query_sso_updata(Settings):
                 'estimateWeightEnd': None, 'order': None, 'sortField': None, 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None, 'percentStart': None,
                 'percentEnd': None, 'userid': None, 'questionId': None, 'delUserId': None, 'transferNumber': None, 'smsStatus': None, 'designer_id': None, 'logistics_remarks': None, 'clone_type': None,
                 'categoryId': None, 'addressType': None, 'timeStart': begin + ' 00:00:00', 'timeEnd': end + ' 23:59:59'}
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)

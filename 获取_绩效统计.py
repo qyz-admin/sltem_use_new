@@ -26,7 +26,7 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  
 
 # -*- coding:utf-8 -*-
 class QueryOrder(Settings, Settings_sso):
-    def __init__(self, userMobile, password, login_TmpCode, handle):
+    def __init__(self, userMobile, password, login_TmpCode, handle, proxy_handle, proxy_id):
         Settings.__init__(self)
         Settings_sso.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
@@ -37,12 +37,16 @@ class QueryOrder(Settings, Settings_sso):
         # self._online_Two()
 
         # self.sso__online_auto()
-        if handle == '手动':
-            self.sso__online_handle(login_TmpCode)
-            print(11)
+        if proxy_handle == '代理服务器':
+            if handle == '手动':
+                self.sso__online_handle_proxy(login_TmpCode, proxy_id)
+            else:
+                self.sso__online_auto_proxy(proxy_id)
         else:
-            # print(11)
-            self.sso__online_auto()
+            if handle == '手动':
+                self.sso__online_handle(login_TmpCode)
+            else:
+                self.sso__online_auto()
 
         # self.sso__online_handle(login_TmpCode)
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
@@ -2046,7 +2050,7 @@ class QueryOrder(Settings, Settings_sso):
         return df
 
     # 绩效-查询 挽单列表（一.2）
-    def service_id_getRedeemOrderList(self, timeStart, timeEnd):    # 进入订单检索界面     挽单列表查询
+    def service_id_getRedeemOrderList(self, timeStart, timeEnd, proxy_handle, proxy_id):    # 进入订单检索界面     挽单列表查询
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 挽单列表 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRedeemOrderList'
@@ -2056,11 +2060,11 @@ class QueryOrder(Settings, Settings_sso):
         data = {'order_number': None, 'type': None, 'order_status': None, 'logistics_status': None, 'old_order_status': None, 'old_logistics_status': None, 'operator': None,
                 'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59',
                 'is_del': None, 'page': 1, 'pageSize': 10, 'area_id': None}
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
         max_count = req['data']['count']
@@ -2073,13 +2077,13 @@ class QueryOrder(Settings, Settings_sso):
                 # print(in_count)
                 dlist = []
                 while n <= in_count:  # 这里用到了一个while循环，穿越过来的
-                    data = self._service_id_getRedeemOrderList(timeStart, timeEnd, n)
+                    data = self._service_id_getRedeemOrderList(timeStart, timeEnd, n, proxy_handle, proxy_id)
                     dlist.append(data)
                     print('剩余查询次数' + str(in_count - n))
                     n = n + 1
                 dp = df.append(dlist, ignore_index=True)
             else:
-                dp = self._service_id_getRedeemOrderList(timeStart, timeEnd, n)
+                dp = self._service_id_getRedeemOrderList(timeStart, timeEnd, n, proxy_handle, proxy_id)
             dp = dp[['id', 'order_number', 'redeemType', 'oldOrderStatus', 'oldLogisticsStatus', 'oldAmount', 'orderStatus','logisticsStatus','amount','logisticsName','operatorName','create_time','save_money','currencyName', 'delOperatorName','del_reason']]
             dp.columns = ['id', '订单编号', '挽单类型', '原订单状态', '原物流状态', '原订单金额', '当前订单状态', '当前物流状态','当前订单金额','当前物流渠道','创建人','创建时间','挽单金额','币种', '删除人', '删除原因']
             dp.to_excel('G:\\输出文件\\绩效挽单-查询{}.xlsx'.format(rq), sheet_name='挽单', index=False, engine='xlsxwriter')
@@ -2091,7 +2095,7 @@ class QueryOrder(Settings, Settings_sso):
             print('写入成功......')
         print('-' * 50)
         print('-' * 50)
-    def _service_id_getRedeemOrderList(self, timeStart, timeEnd, n):
+    def _service_id_getRedeemOrderList(self, timeStart, timeEnd, n, proxy_handle, proxy_id):
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRedeemOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
@@ -2099,11 +2103,11 @@ class QueryOrder(Settings, Settings_sso):
         data = {'order_number': None, 'type': None, 'order_status': None, 'logistics_status': None, 'old_order_status': None, 'old_logistics_status': None, 'operator': None,
                 'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59',
                 'is_del': None, 'page': n, 'pageSize': 90, 'area_id': None}
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
@@ -2120,7 +2124,7 @@ class QueryOrder(Settings, Settings_sso):
         return df
 
     # 绩效-查询 采购异常             （二.1）
-    def service_id_ssale(self, timeStart, timeEnd):  # 进入采购问题件界面
+    def service_id_ssale(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入采购问题件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 采购订单 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.afterSale&action=getPurchaseAbnormalList'
@@ -2154,7 +2158,7 @@ class QueryOrder(Settings, Settings_sso):
                 while n < in_count:  # 这里用到了一个while循环，穿越过来的
                     print('剩余查询次数' + str(in_count - n))
                     n = n + 1
-                    data = self._service_id_ssale(timeStart, timeEnd, n)                     # 分页获取详情
+                    data = self._service_id_ssale(timeStart, timeEnd, n, proxy_handle, proxy_id)                     # 分页获取详情
                     dlist.append(data)
                 dp = df.append(dlist, ignore_index=True)
             else:
@@ -2175,7 +2179,7 @@ class QueryOrder(Settings, Settings_sso):
             return
         print('-' * 50)
         print('-' * 50)
-    def _service_id_ssale(self, timeStart, timeEnd, n):  # 进入物流问题件界面
+    def _service_id_ssale(self, timeStart, timeEnd, n, proxy_handle, proxy_id):  # 进入物流问题件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.afterSale&action=getPurchaseAbnormalList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -2202,7 +2206,7 @@ class QueryOrder(Settings, Settings_sso):
         return data
 
     # 绩效-查询 物流问题件 压单核实  （二.2）
-    def service_id_waybill(self, timeStart, timeEnd):  # 进入物流问题件界面
+    def service_id_waybill(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入物流问题件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 物流问题件&压单核实 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.customerQuestion&action=getCustomerComplaintList'
@@ -2213,10 +2217,11 @@ class QueryOrder(Settings, Settings_sso):
                 'question_type': None, 'critical': None, 'read_status': None, 'operator_type': None, 'operator': None, 'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59',
                 'trace_time': None, 'is_collection': None, 'logistics_status': None, 'user_id': None,
                 'page': 1, 'pageSize': 90}
-        proxy = '47.75.114.218:10020'  # 使用代理服务器
-        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         max_count = req['data']['count']
@@ -2230,7 +2235,7 @@ class QueryOrder(Settings, Settings_sso):
                 n = 1
                 while n <= in_count:  # 这里用到了一个while循环，穿越过来的
                     print('剩余查询次数' + str(in_count - n))
-                    data = self._service_id_waybill(timeStart, timeEnd, n)
+                    data = self._service_id_waybill(timeStart, timeEnd, n, proxy_handle, proxy_id)
                     dlist.append(data)
                     n = n + 1
                 dp = df.append(dlist, ignore_index=True)
@@ -2267,7 +2272,7 @@ class QueryOrder(Settings, Settings_sso):
             return
         print('-' * 50)
         print('-' * 50)
-    def _service_id_waybill(self, timeStart, timeEnd, n):  # 进入物流问题件界面
+    def _service_id_waybill(self, timeStart, timeEnd, n, proxy_handle, proxy_id):  # 进入物流问题件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customerQuestion&action=getCustomerComplaintList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -2277,10 +2282,11 @@ class QueryOrder(Settings, Settings_sso):
                 'question_type': None, 'critical': None, 'read_status': None, 'operator_type': None, 'operator': None, 'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59',
                 'trace_time': None, 'is_collection': None, 'logistics_status': None, 'user_id': None,
                 'page': n, 'pageSize': 90}
-        proxy = '47.75.114.218:10020'  # 使用代理服务器
-        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersDict = []
@@ -2347,7 +2353,7 @@ class QueryOrder(Settings, Settings_sso):
         return data
 
     # 绩效-查询 物流客诉件           （二.3）
-    def service_id_waybill_Query(self, timeStart, timeEnd):  # 进入物流客诉件界面
+    def service_id_waybill_Query(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入物流客诉件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 物流客诉件 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.orderCustomerComplaint&action=getCustomerComplaintList'
@@ -2357,10 +2363,11 @@ class QueryOrder(Settings, Settings_sso):
         data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': None, 'question_type': None, 'critical': None, 'read_status': None,
                 'operator_type': None, 'operator': None, 'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'trace_time': None, 'is_gift_reissue': None,
                 'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': 1, 'pageSize': 90}
-        proxy = '47.75.114.218:10020'  # 使用代理服务器
-        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         max_count = req['data']['count']
@@ -2374,7 +2381,7 @@ class QueryOrder(Settings, Settings_sso):
             n = 1
             while n <= in_count:  # 这里用到了一个while循环，穿越过来的
                 print('剩余查询次数' + str(in_count - n))
-                data = self._service_id_waybill_Query(timeStart, timeEnd, n)
+                data = self._service_id_waybill_Query(timeStart, timeEnd, n, proxy_handle, proxy_id)
                 n = n + 1
                 dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
@@ -2400,7 +2407,7 @@ class QueryOrder(Settings, Settings_sso):
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
         print('*' * 50)
-    def _service_id_waybill_Query(self, timeStart, timeEnd, n):  # 进入物流客诉件界面
+    def _service_id_waybill_Query(self, timeStart, timeEnd, n, proxy_handle, proxy_id):  # 进入物流客诉件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.orderCustomerComplaint&action=getCustomerComplaintList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -2409,10 +2416,11 @@ class QueryOrder(Settings, Settings_sso):
         data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': None, 'question_type': None, 'critical': None, 'read_status': None,
                 'operator_type': None, 'operator': None, 'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'trace_time': None, 'is_gift_reissue': None,
                 'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': n, 'pageSize': 500}
-        proxy = '47.75.114.218:10020'  # 使用代理服务器
-        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersDict = []
@@ -2474,7 +2482,7 @@ class QueryOrder(Settings, Settings_sso):
         return data
 
     # 绩效-查询 派送问题件           （二.4）
-    def service_id_getDeliveryList(self, timeStart, timeEnd, order_time):  # 进入订单检索界面
+    def service_id_getDeliveryList(self, timeStart, timeEnd, order_time, proxy_handle, proxy_id):  # 进入订单检索界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 派送问题件 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.deliveryQuestion&action=getDeliveryList'
@@ -2494,10 +2502,11 @@ class QueryOrder(Settings, Settings_sso):
             data.update({'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
             data_woks = '派送问题件_创建时间'
             data_woks2 = '创建时间'
-        proxy = '47.75.114.218:10020'  # 使用代理服务器
-        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)          # json类型数据转换为dict字典
         if req['data'] != []:
@@ -2519,7 +2528,7 @@ class QueryOrder(Settings, Settings_sso):
                     while n <= in_count:  # 这里用到了一个while循环，穿越过来的
                         print('剩余查询次数' + str(in_count - n))
                         n = n + 1
-                        data = self._service_id_getDeliveryList(timeStart, timeEnd, n, order_time)
+                        data = self._service_id_getDeliveryList(timeStart, timeEnd, n, order_time, proxy_handle, proxy_id)
                         dlist.append(data)
                     dp = df.append(dlist, ignore_index=True)
                 else:
@@ -2539,7 +2548,7 @@ class QueryOrder(Settings, Settings_sso):
             return
         print('-' * 50)
         print('-' * 50)
-    def _service_id_getDeliveryList(self, timeStart, timeEnd, n, order_time):  # 进入派送问题件界面
+    def _service_id_getDeliveryList(self, timeStart, timeEnd, n, order_time, proxy_handle, proxy_id):  # 进入派送问题件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.deliveryQuestion&action=getDeliveryList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -2552,10 +2561,11 @@ class QueryOrder(Settings, Settings_sso):
             data.update({'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
         elif order_time == '创建时间':
             data.update({'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
-        proxy = '47.75.114.218:10020'  # 使用代理服务器
-        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(88)
@@ -2575,7 +2585,7 @@ class QueryOrder(Settings, Settings_sso):
         return data
 
     # 绩效-查询 拒收问题件           （二.50）
-    def service_id_order_js_Query(self, timeStart, timeEnd):  # 进入拒收问题件界面
+    def service_id_order_js_Query(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入拒收问题件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 拒收问题件 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRejectList'
@@ -2587,10 +2597,11 @@ class QueryOrder(Settings, Settings_sso):
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
                 'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': None, 'finishTimeStart': None,
                 'finishTimeEnd': None, 'traceTimeStart': timeStart + ' 00:00:00', 'traceTimeEnd': timeEnd + ' 23:59:59','newCloneNumber': None}
-        proxy = '47.75.114.218:10020'  # 使用代理服务器
-        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         max_count = req['data']['count']
@@ -2603,7 +2614,7 @@ class QueryOrder(Settings, Settings_sso):
             n = 1
             while n <= in_count:  # 这里用到了一个while循环，穿越过来的
                 print('剩余查询次数' + str(in_count - n))
-                data = self._service_id_order_js_Query(timeStart, timeEnd, n)
+                data = self._service_id_order_js_Query(timeStart, timeEnd, n, proxy_handle, proxy_id)
                 n = n + 1
                 dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
@@ -2620,7 +2631,7 @@ class QueryOrder(Settings, Settings_sso):
         else:
             print('****** 没有信息！！！')
         print('*' * 50)
-    def _service_id_order_js_Query(self, timeStart, timeEnd, n):  # 进入拒收问题件界面
+    def _service_id_order_js_Query(self, timeStart, timeEnd, n, proxy_handle, proxy_id):  # 进入拒收问题件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRejectList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -2631,10 +2642,11 @@ class QueryOrder(Settings, Settings_sso):
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
                 'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': None, 'finishTimeStart': None,
                 'finishTimeEnd': None, 'traceTimeStart': timeStart + ' 00:00:00', 'traceTimeEnd': timeEnd + ' 23:59:59', 'newCloneNumber': None}
-        proxy = '47.75.114.218:10020'  # 使用代理服务器
-        # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         # print(req)
         # print(req.text)
@@ -2682,7 +2694,7 @@ class QueryOrder(Settings, Settings_sso):
         return data
 
     # 绩效-查询系统问题件         （三）
-    def service_id_orderInfo(self, timeStart, timeEnd):
+    def service_id_orderInfo(self, timeStart, timeEnd, proxy_handle, proxy_id):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 系统问题件 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         sql = '''SELECT 订单编号
@@ -2698,7 +2710,7 @@ class QueryOrder(Settings, Settings_sso):
             dlist = []
             while n <= max_count:  # 这里用到了一个while循环，穿越过来的
                 ord = ','.join(orderId[n:n + 10])
-                data = self._service_id_orderInfo(ord)
+                data = self._service_id_orderInfo(ord, proxy_handle, proxy_id)
                 dlist.append(data)
                 print('剩余查询次数' + str(math.ceil((max_count - n) / 10)))
                 n = n + 10
@@ -2715,18 +2727,18 @@ class QueryOrder(Settings, Settings_sso):
             print('写入成功......')
         else:
             print('无需查询......')
-    def _service_id_orderInfo(self, ord):  # 进入订单检索界面
+    def _service_id_orderInfo(self, ord, proxy_handle, proxy_id):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getOrderLog'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
         data = {'orderKey': ord}
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
@@ -2834,7 +2846,11 @@ class QueryOrder(Settings, Settings_sso):
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
-    m = QueryOrder('+86-18538110674', 'qyz04163510.', '2a19286511503864889e4847bbdf5db2', '手动')
+    handle = '手动0'
+    login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
+    proxy_handle = '代理服务器0'
+    proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
+    m = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
@@ -2908,19 +2924,19 @@ if __name__ == '__main__':
 
         order_time = '处理时间'                              # 派送问题  处理时间:登记结果处理时间； 创建时间： 订单放入时间
         # order_time = '创建时间'                              # 派送问题  处理时间:登记结果处理时间； 创建时间： 订单放入时间
-        m.service_id_getDeliveryList(timeStart, timeEnd, order_time)
+        m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
         order_time = '创建时间'
-        m.service_id_getDeliveryList(timeStart, timeEnd, order_time)
+        m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
 
-        # m.service_id_waybill(timeStart, timeEnd)              # 物流问题  压单核实 查询；订单检索
+        m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id)              # 物流问题  压单核实 查询；订单检索
 
-        # m.service_id_waybill_Query(timeStart, timeEnd)       # 物流客诉件  查询；订单检索@~@
+        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id)       # 物流客诉件  查询；订单检索@~@
 
-        # m.service_id_getRedeemOrderList(timeStart, timeEnd)  # 挽单列表  查询；订单检索@~@
+        m.service_id_getRedeemOrderList(timeStart, timeEnd, proxy_handle, proxy_id)  # 挽单列表  查询；订单检索@~@
 
-        # m.service_id_orderInfo(timeStart, timeEnd)            # 系统问题件  查询；订单检索
+        m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)            # 系统问题件  查询；订单检索
 
-        # m.service_id_order_js_Query(timeStart, timeEnd)      # 拒收问题  查询；订单检索@~@
+        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id)      # 拒收问题  查询；订单检索@~@
 
 
     elif int(select) == 9:

@@ -172,26 +172,23 @@ class QueryTwo(Settings, Settings_sso):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         sql = '''SELECT 运单编号
                 FROM {0} s
-                WHERE s.`运单编号` NOT IN (SELECT DISTINCT 运单号 FROM 轨迹查询);'''.format('sheet1_copy')
+                WHERE s.`运单编号` NOT IN (SELECT DISTINCT 运单号 FROM 轨迹查询);'''.format('运单号')
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
         if ordersDict.empty:
             print('无需要更新订单信息！！！')
             return
-        print(ordersDict['运单编号'][0])
         orderId = list(ordersDict['运单编号'])
-        print(orderId)
         max_count = len(orderId)                 # 使用len()获取列表的长度，上节学的
-        if max_count > 0:
+        print('++++++本次需查询;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+        n = 0
+        while n <= max_count + 10:  # 这里用到了一个while循环，穿越过来的
+            order = orderId[n:n + 10]
             df = pd.DataFrame([])                # 创建空的dataframe数据框
             dlist = []
-            for ord in orderId:
+            for ord in order:
                 print(ord)
                 ord = str(ord)
                 print(type(ord))
-                # if type(ord) == "<class 'str'>":
-                #     print('字符串')
-                # else:
-                #     print(ord[:3])
                 if ord[:3] == '620' or ord[:3] == '901':
                     print('黑猫查询中')
                     data = self._SearchGoods_heimao(ord, proxy_handle, proxy_id)
@@ -202,20 +199,19 @@ class QueryTwo(Settings, Settings_sso):
                 if data is not None and len(data) > 0:
                     dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
-            # dp.dropna(axis=0, how='any', inplace=True)
-        else:
-            dp = None
-        print(dp)
-        dp = dp[['orderNumber', 'wayBillNumber', 'track_date', '出货时间', '上线时间', '保管时间', '完成时间', 'track_info', 'track_status', '负责营业所', '轨迹备注', '序号']]
-        dp.columns = ['订单编号', '运单号', '物流轨迹时间', '出货时间', '上线时间', '保管时间', '完成时间', '物流轨迹', '轨迹代码', '负责营业所', '轨迹备注', '序号']
-        dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
-        columns = list(dp.columns)
-        columns = ','.join(columns)
-        sql = 'REPLACE INTO {0}({1}, 添加时间) SELECT *, NOW() 添加时间 FROM cache; '.format('轨迹查询', columns)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        # dp.to_excel('G:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
-        print('查询已导出+++')
-        print('*' * 50)
+            print(dp)
+            dp = dp[['orderNumber', 'wayBillNumber', 'track_date', '出货时间', '上线时间', '保管时间', '完成时间', 'track_info', 'track_status', '负责营业所', '轨迹备注', '序号']]
+            dp.columns = ['订单编号', '运单号', '物流轨迹时间', '出货时间', '上线时间', '保管时间', '完成时间', '物流轨迹', '轨迹代码', '负责营业所', '轨迹备注', '序号']
+            dp.to_sql('cache_waybill', con=self.engine1, index=False, if_exists='replace')
+            columns = list(dp.columns)
+            columns = ','.join(columns)
+            sql = 'REPLACE INTO {0}({1}, 添加时间) SELECT *, NOW() 添加时间 FROM cache_waybill; '.format('轨迹查询', columns)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            # dp.to_excel('G:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+            print('查询已导出+++')
+            print('*' * 50)
+            n = n + 10
+            print('剩余查询信息：' + str(max_count - n) + ' 条信息+++++++')
 
     #  查询运单轨迹-按时间查询（二）
     def order_online(self, timeStart, timeEnd, isReal, proxy_handle, proxy_id):  # 进入运单轨迹界面
@@ -716,9 +712,14 @@ class QueryTwo(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
+    # TODO------------------------------------单点更新配置------------------------------------
+    handle = '手动'
+    login_TmpCode = '0b04de569eb6395e88a34a2e9cde8e92'  # 输入登录口令Tkoen
     proxy_handle = '代理服务器'
-    proxy_id = '192.168.13.89:37469'  # 输入代理服务器节点和端口
-    m = QueryTwo('+86-18538110674', 'qyz04163510.','b2484dd85ac1389190951b4b951106fd','手0动', proxy_handle, proxy_id)
+    proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
+
+    # TODO------------------------------------单点更新读取------------------------------------
+    m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     '''
@@ -734,7 +735,7 @@ if __name__ == '__main__':
 
     elif int(select) == 3:
         print("1-->>> 正在按运单号查询+++")
-        m.Search_online_write(isReal, proxy_handle, proxy_id)       # 导入；，更新--->>数据更新切换
+        m.Search_online_write(isReal, proxy_handle, proxy_id)       # 写入数据库中；，可中断重启查询
 
     elif int(select) == 2:
         print("2-->>> 正在按时间查询+++")

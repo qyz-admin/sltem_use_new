@@ -25,7 +25,7 @@ from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  
 
 # -*- coding:utf-8 -*-
 class QueryOrder(Settings, Settings_sso):
-    def __init__(self, userMobile, password, login_TmpCode, handle):
+    def __init__(self, userMobile, password, login_TmpCode, handle, proxy_id, proxy_handle):
         Settings.__init__(self)
         Settings_sso.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
@@ -36,12 +36,17 @@ class QueryOrder(Settings, Settings_sso):
         # self._online_Two()
 
         # self.sso__online_auto()
-        if handle == '手动':
-            self.sso__online_handle(login_TmpCode)
-            print(11)
+
+        if proxy_handle == '代理服务器':
+            if handle == '手动':
+                self.sso__online_handle_proxy(login_TmpCode, proxy_id)
+            else:
+                self.sso__online_auto_proxy(proxy_id)
         else:
-            # print(11)
-            self.sso__online_auto()
+            if handle == '手动':
+                self.sso__online_handle(login_TmpCode)
+            else:
+                self.sso__online_auto()
 
         # self.sso__online_handle(login_TmpCode)
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
@@ -76,7 +81,7 @@ class QueryOrder(Settings, Settings_sso):
                                                                                     self.mysql2['host'],
                                                                                     self.mysql2['port'],
                                                                                     self.mysql2['datebase']))
-    def readFormHost(self, team, searchType,pople_Query, timeStart, timeEnd, to_sql):
+    def readFormHost(self, team, searchType,pople_Query, timeStart, timeEnd, to_sql, proxy_id, proxy_handle):
         start = datetime.datetime.now()
         path = r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表'
         dirs = os.listdir(path=path)
@@ -86,16 +91,16 @@ class QueryOrder(Settings, Settings_sso):
             if dir[:2] != '~$':
                 print(filePath)
                 if pople_Query == '客服查询':
-                    self.wbsheetHost_pople(filePath, team, searchType)
+                    self.wbsheetHost_pople(filePath, team, searchType, proxy_id, proxy_handle)
                 elif pople_Query == '电话检索':
-                    self.wbsheetHost_iphone(filePath, team, searchType, timeStart, timeEnd)
+                    self.wbsheetHost_iphone(filePath, team, searchType, timeStart, timeEnd, proxy_id, proxy_handle)
                 else:
-                    self.wbsheetHost(filePath, team, searchType, to_sql)
+                    self.wbsheetHost(filePath, team, searchType, to_sql, proxy_id, proxy_handle)
                 # self.cs_wbsheetHost(filePath, team, searchType)
         print('处理耗时：', datetime.datetime.now() - start)
 
     # 工作表的订单信息
-    def wbsheetHost(self, filePath, team, searchType, to_sql):
+    def wbsheetHost(self, filePath, team, searchType, to_sql, proxy_id, proxy_handle):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
         app.display_alerts = False
@@ -137,14 +142,14 @@ class QueryOrder(Settings, Settings_sso):
                         if max_count > 500:
                             ord = ','.join(orderId[0:500])
                             # print(ord)
-                            df = self.orderInfoQuery(ord, searchType)
+                            df = self.orderInfoQuery(ord, searchType, proxy_id, proxy_handle)
                             # print(df)
                             dlist = []
                             n = 0
                             while n < max_count-500:                                # 这里用到了一个while循环，穿越过来的
                                 n = n + 500
                                 ord = ','.join(orderId[n:n + 500])
-                                data = self.orderInfoQuery(ord, searchType)
+                                data = self.orderInfoQuery(ord, searchType, proxy_id, proxy_handle)
                                 dlist.append(data)
                                 print('正在写入......')
                                 # print(dlist)
@@ -158,7 +163,7 @@ class QueryOrder(Settings, Settings_sso):
                                     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                         else:
                             ord = ','.join(orderId[0:max_count])
-                            dp = self.orderInfoQuery(ord, searchType)
+                            dp = self.orderInfoQuery(ord, searchType, proxy_id, proxy_handle)
                         if to_sql != '写入':
                             dp = dp[['orderNumber', 'currency', 'area', 'productId', 'saleProduct', 'saleName', 'spec', 'shipInfo.shipName', 'shipInfo.shipPhone', 'percent', 'phoneLength',
                                      'shipInfo.shipAddress','amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime', 'logisticsName', 'dpeStyle',
@@ -180,7 +185,7 @@ class QueryOrder(Settings, Settings_sso):
             wb.close()
         app.quit()
 
-    def wbsheetHost_pople(self, filePath, team, searchType):
+    def wbsheetHost_pople(self, filePath, team, searchType, proxy_id, proxy_handle):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
         app.display_alerts = False
@@ -222,21 +227,21 @@ class QueryOrder(Settings, Settings_sso):
                         max_count = len(orderId)                                    # 使用len()获取列表的长度，上节学的
                         if max_count > 90:
                             ord = ','.join(orderId[0:90])
-                            df = self.orderInfo_pople(ord, searchType)
+                            df = self.orderInfo_pople(ord, searchType, proxy_id, proxy_handle)
                             # print(df)
                             dlist = []
                             n = 0
                             while n < max_count-90:                                # 这里用到了一个while循环，穿越过来的
                                 n = n + 90
                                 ord = ','.join(orderId[n:n + 90])
-                                data = self.orderInfo_pople(ord, searchType)
+                                data = self.orderInfo_pople(ord, searchType, proxy_id, proxy_handle)
                                 dlist.append(data)
                             print('正在写入......')
                             # print(dlist)
                             dp = df.append(dlist, ignore_index=True)
                         else:
                             ord = ','.join(orderId[0:max_count])
-                            dp = self.orderInfo_pople(ord, searchType)
+                            dp = self.orderInfo_pople(ord, searchType, proxy_id, proxy_handle)
                         # dp.columns = ['订单编号', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '拉黑率', '电话长度',
                         #               '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
                         #               '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
@@ -252,7 +257,7 @@ class QueryOrder(Settings, Settings_sso):
             wb.close()
         app.quit()
 
-    def wbsheetHost_iphone(self, filePath, team, searchType, timeStart, timeEnd):
+    def wbsheetHost_iphone(self, filePath, team, searchType, timeStart, timeEnd, proxy_id, proxy_handle):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
         app.display_alerts = False
@@ -276,7 +281,7 @@ class QueryOrder(Settings, Settings_sso):
                             # ord = ','.join(orderId[0:100])
                             ord = ','.join('%s' % d for d in orderId[0:10])
                             # print(ord)
-                            df = self.orderInfo_iphone(ord, searchType, timeStart, timeEnd)
+                            df = self.orderInfo_iphone(ord, searchType, timeStart, timeEnd, proxy_id, proxy_handle)
                             dlist = []
                             n = 0
                             while n < max_count-10:                                # 这里用到了一个while循环，穿越过来的
@@ -284,7 +289,7 @@ class QueryOrder(Settings, Settings_sso):
                                 # ord = ','.join(orderId[n:n + 100])
                                 ord = ','.join('%s' % d for d in orderId[n:n + 10])
                                 # print(ord)
-                                data = self.orderInfo_iphone(ord, searchType, timeStart, timeEnd)
+                                data = self.orderInfo_iphone(ord, searchType, timeStart, timeEnd, proxy_id, proxy_handle)
                                 dlist.append(data)
                             print('正在写入......')
                             # print(dlist)
@@ -294,7 +299,7 @@ class QueryOrder(Settings, Settings_sso):
                             # ord = ','.join(orderId[0:max_count])
                             ord = ','.join('%s' %d for d in orderId[0:max_count])
                             # print(ord)
-                            dp = self.orderInfo_iphone(ord, searchType, timeStart, timeEnd)
+                            dp = self.orderInfo_iphone(ord, searchType, timeStart, timeEnd, proxy_id, proxy_handle)
                         # dp.columns = ['订单编号', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '拉黑率', '电话长度',
                         #               '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
                         #               '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
@@ -457,7 +462,7 @@ class QueryOrder(Settings, Settings_sso):
         # return df
 
     # 一、订单——查询更新（新后台的获取）
-    def orderInfoQuery(self, ord, searchType):  # 进入订单检索界面
+    def orderInfoQuery(self, ord, searchType, proxy_id, proxy_handle):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -479,10 +484,11 @@ class QueryOrder(Settings, Settings_sso):
         elif searchType == '运单号':
             data.update({'order_number': None,
                          'shippingNumber': ord})
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
@@ -539,21 +545,13 @@ class QueryOrder(Settings, Settings_sso):
                 ordersdict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
-            # time.sleep(10)
-            # print(team)
-            # print(searchType)
-            # self.readFormHost(team, searchType)
-            # self.orderInfoQuery(ord, searchType)
-        #     self.q.put(result)
-        # for i in range(len(req['data']['list'])):
-        #     ordersdict.append(self.q.get())
         df = pd.json_normalize(ordersdict)
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         return df
 
     # 一、订单——客服查询（新后台的获取）
-    def orderInfo_pople(self, ord, searchType):  # 进入订单检索界面
+    def orderInfo_pople(self, ord, searchType, proxy_id, proxy_handle):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getQueryOrder'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -572,12 +570,11 @@ class QueryOrder(Settings, Settings_sso):
         elif searchType == '运单号':
             data.update({'order_number': None,
                          'shippingNumber': ord})
-        # print(data)
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
@@ -636,7 +633,7 @@ class QueryOrder(Settings, Settings_sso):
         print('*' * 50)
         return data
     # 一、订单——电话查询（新后台的获取）
-    def orderInfo_iphone(self, ord, searchType, timeStart, timeEnd):  # 进入订单检索界面
+    def orderInfo_iphone(self, ord, searchType, timeStart, timeEnd, proxy_id, proxy_handle):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -659,8 +656,11 @@ class QueryOrder(Settings, Settings_sso):
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
@@ -736,7 +736,7 @@ class QueryOrder(Settings, Settings_sso):
 
 
     # 二、时间-查询更新（新后台的获取 line运营）
-    def order_TimeQuery(self, timeStart, timeEnd, areaId, query):  # 进入订单检索界面
+    def order_TimeQuery(self, timeStart, timeEnd, areaId, query, proxy_id, proxy_handle):  # 进入订单检索界面
         print('+++正在查询订单信息中起止： ' + timeStart + ':' + timeEnd)
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
@@ -783,12 +783,11 @@ class QueryOrder(Settings, Settings_sso):
                          'timeEnd': None,
                          'finishTimeStart': timeStart + '00:00:00',
                          'finishTimeEnd': timeEnd + '23:59:59'})
-
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersdict = []
@@ -881,7 +880,7 @@ class QueryOrder(Settings, Settings_sso):
             print('查询已导出+++')
 
     # 二、时间-查询更新（新后台的获取 全部 & 昨日订单删除分析）
-    def order_TimeQueryT(self, timeStart, timeEnd, areaId, select, query):  # 进入订单检索界面
+    def order_TimeQueryT(self, timeStart, timeEnd, areaId, select, query, proxy_id, proxy_handle):  # 进入订单检索界面
         print('+++正在查询 ' + timeStart + ' 到 ' + timeEnd + ' 号订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
@@ -918,10 +917,11 @@ class QueryOrder(Settings, Settings_sso):
                     'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
                     'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
                     'timeStart': timeStart + '00:00:00', 'timeEnd': timeEnd + '23:59:59'}
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         df = None
@@ -971,7 +971,7 @@ class QueryOrder(Settings, Settings_sso):
                     sql = '''DELETE FROM `cache` gt WHERE gt.`订单编号` IN (SELECT * FROM gat_地址邮编错误);'''
                     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
-                    self.del_people()
+                    self.del_people(proxy_id, proxy_handle)
                     self.del_order_day()
                     sql = '''SELECT * FROM {0};'''.format('cache')
                     db00 = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -984,7 +984,7 @@ class QueryOrder(Settings, Settings_sso):
             print('无信息+++')
 
     # 订单检索 时间查询的公用函数
-    def _timeQuery(self, timeStart, timeEnd, n, areaId, query):  # 进入订单检索界面
+    def _timeQuery(self, timeStart, timeEnd, n, areaId, query, proxy_id, proxy_handle):  # 进入订单检索界面
         # print('......正在查询信息中......')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
@@ -1031,10 +1031,11 @@ class QueryOrder(Settings, Settings_sso):
                          'timeEnd': None,
                          'finishTimeStart': timeStart + '00:00:00',
                          'finishTimeEnd': timeEnd + '23:59:59'})
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('......已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersdict = []
@@ -1104,7 +1105,7 @@ class QueryOrder(Settings, Settings_sso):
         return df
 
     # 更新删除订单的原因
-    def del_people(self):
+    def del_people(self, proxy_id, proxy_handle):
         print('正在更新 订单删除 信息……………………………………………………………………………………………………………………………………………………………………………………')
         start = datetime.datetime.now()
         sql = '''SELECT 订单编号 FROM {0} s WHERE s.`订单状态` = '已删除';'''.format('cache')
@@ -1117,19 +1118,19 @@ class QueryOrder(Settings, Settings_sso):
         max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
         if max_count > 500:
             ord = ', '.join(orderId[0:500])
-            df = self._del_people(ord, '')
+            df = self._del_people(ord, '', proxy_id, proxy_handle)
             dlist = []
             n = 0
             while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
                 n = n + 500
                 ord = ','.join(orderId[n:n + 500])
-                data = self._del_people(ord, '')
+                data = self._del_people(ord, '', proxy_id, proxy_handle)
                 dlist.append(data)
             print('正在写入......')
             dp = df.append(dlist, ignore_index=True)
         else:
             ord = ','.join(orderId[0:max_count])
-            dp = self._del_people(ord, '')
+            dp = self._del_people(ord, '', proxy_id, proxy_handle)
         if dp is None or len(dp) == 0:
             print('查询为空，不需更新+++')
         else:
@@ -1149,7 +1150,7 @@ class QueryOrder(Settings, Settings_sso):
                         a.`删除原因` = IF(a.`删除原因` LIKE ';%', RIGHT(a.`删除原因`,CHAR_LENGTH(a.`删除原因`)-1), a.`删除原因`);'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('查询耗时：', datetime.datetime.now() - start)
-    def _del_people(self, ord, areaId):  # 进入订单检索界面
+    def _del_people(self, ord, areaId, proxy_id, proxy_handle):  # 进入订单检索界面
         # print('......正在查询信息中......')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRemoveOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
@@ -1165,10 +1166,11 @@ class QueryOrder(Settings, Settings_sso):
                     'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
                     'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None,
                     'questionId': None, 'reassignmentType': None, 'delUserId': None, 'delReasonIds': None,'delTimeStart':None, 'delTimeEnd': None}
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # print('......已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
@@ -2245,7 +2247,7 @@ class QueryOrder(Settings, Settings_sso):
         # writer2.close()
         # print()
 
-    def order_track_Query(self, hanlde, timeStart, timeEnd):    # 进入订单检索界面     促单查询
+    def order_track_Query(self, hanlde, timeStart, timeEnd, proxy_id, proxy_handle):    # 进入订单检索界面     促单查询
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         if hanlde == '自动':
             if (datetime.datetime.now()).strftime('%d') == 1:
@@ -2358,7 +2360,7 @@ class QueryOrder(Settings, Settings_sso):
 
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
-    def _order_track_Query(self, timeStart, timeEnd, n):
+    def _order_track_Query(self, timeStart, timeEnd, n, proxy_id, proxy_handle):
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
@@ -2439,8 +2441,13 @@ class QueryOrder(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
-    m = QueryOrder('+86-18538110674', 'qyz04163510.', '9c9894668263325b9ae4c85ba94b61b4', '手动')
+    # TODO------------------------------------单点更新配置------------------------------------
+    proxy_handle = '代理服务器'
+    proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
+    handle = '手动'
+    login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
+
+    m = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_id, proxy_handle)
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
@@ -2460,7 +2467,7 @@ if __name__ == '__main__':
         searchType = '订单号'
         pople_Query = '订单检索'                # 客服查询；订单检索
         to_sql = '写0入'                       # 写入：汇总到数据库表； 不写入：直接导出表格
-        m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd', to_sql)        # 导入；，更新--->>数据更新切换
+        m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd', to_sql, proxy_id, proxy_handle)        # 导入；，更新--->>数据更新切换
 
     elif int(select) == 2:
         print("1-->>> 正在按运单号查询+++")
@@ -2468,7 +2475,7 @@ if __name__ == '__main__':
         searchType = '订单号'
         pople_Query = '客服查询'  # 客服查询；订单检索 运单号
         to_sql = '不写入'  # 写入：汇总到数据库表； 不写入：直接导出表格
-        m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd', to_sql)  # 导入；，更新--->>数据更新切换
+        m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd', to_sql, proxy_id, proxy_handle)  # 导入；，更新--->>数据更新切换
 
     elif int(select) == 3:
         print("2-->>> 正在按下单时间查询+++")
@@ -2476,7 +2483,7 @@ if __name__ == '__main__':
         timeEnd = '2022-11-14'
         areaId = ''
         query = '下单时间'
-        m.order_TimeQuery(timeStart, timeEnd, areaId, query)
+        m.order_TimeQuery(timeStart, timeEnd, areaId, query, proxy_id, proxy_handle)
 
     elif int(select) == 33:
         print("2-->>> 正在按完成时间查询+++")
@@ -2484,7 +2491,7 @@ if __name__ == '__main__':
         timeEnd = '2022-09-15'
         areaId = ''
         query = '完成时间'
-        m.order_TimeQuery(timeStart, timeEnd, areaId, query)
+        m.order_TimeQuery(timeStart, timeEnd, areaId, query, proxy_id, proxy_handle)
 
     elif int(select) == 4:
         print("1-->>> 正在按电话查询+++")
@@ -2494,7 +2501,7 @@ if __name__ == '__main__':
         timeStart = '2022-10-01 00:00:00'
         timeEnd = '2022-11-30 23:59:59'
         to_sql = '不写入'  # 写入：汇总到数据库表； 不写入：直接导出表格
-        m.readFormHost(team, searchType, pople_Query, timeStart, timeEnd, to_sql)
+        m.readFormHost(team, searchType, pople_Query, timeStart, timeEnd, to_sql, proxy_id, proxy_handle)
 
     # 促单查询；订单检索
     elif int(select) == 5:
@@ -2505,7 +2512,7 @@ if __name__ == '__main__':
         # timeStart = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         # timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         print(timeStart + "---" + timeEnd)
-        m.order_track_Query(hanlde, timeStart, timeEnd)
+        m.order_track_Query(hanlde, timeStart, timeEnd, proxy_id, proxy_handle)
 
     elif int(select) == 9:
         m.del_order_day()

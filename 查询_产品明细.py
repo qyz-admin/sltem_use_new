@@ -382,7 +382,13 @@ class QueryTwoT(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    m = QueryTwoT('+86-18538110674', 'qyz35100416')
+    # TODO------------------------------------单点更新配置------------------------------------
+    proxy_handle = '代理服务器'
+    proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
+    handle = '手动'
+    login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
+
+    m = QueryTwoT('+86-18538110674', 'qyz35100416',handle,login_TmpCode,proxy_handle,proxy_id)
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
