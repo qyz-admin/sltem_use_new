@@ -26,7 +26,7 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
 '''
 # 初始化时间设置
 updata = '全部'           #  后台获取全部（两月）、部分更新（近五天）
-if team in ('ga0t', 'slsc', 'sl_r9b'):
+if team in ('gat', 'slsc', 'sl_r9b'):
     # 更新时间
     timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
     data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
@@ -105,9 +105,9 @@ print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
 
 # TODO------------------------------------单点更新配置------------------------------------
-proxy_handle = '代理服务器'
+proxy_handle = '代理服务器0'
 proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
-handle = '手0动'
+handle = '手动0'
 login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
 
 if team == 'gat' and updata == '全部':

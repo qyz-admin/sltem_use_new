@@ -936,7 +936,7 @@ class QueryOrder(Settings, Settings_sso):
             n = 1
             while n <= in_count:  # 这里用到了一个while循环，穿越过来的
                 print('查询第 ' + str(n) + ' 页中，剩余次数' + str(in_count - n))
-                data = self._timeQuery(timeStart, timeEnd, n, areaId, query)
+                data = self._timeQuery(timeStart, timeEnd, n, areaId, query, proxy_id, proxy_handle)
                 dlist.append(data)
                 n = n + 1
             print('正在写入......')
@@ -2270,10 +2270,11 @@ class QueryOrder(Settings, Settings_sso):
                 'shipState': None, 'weightStart': None,'weightEnd': None,  'estimateWeightStart': None,  'estimateWeightEnd': None, 'order': None, 'sortField': None,
                 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None,
                 'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59'}
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         req = json.loads(req.text)  # json类型数据转换为dict字典
         max_count = req['data']['count']
         print('共...' + str(max_count) + '...单量')
@@ -2285,13 +2286,13 @@ class QueryOrder(Settings, Settings_sso):
                 print(in_count)
                 dlist = []
                 while n <= in_count:  # 这里用到了一个while循环，穿越过来的
-                    data = self._order_track_Query(timeStart, timeEnd, n)
+                    data = self._order_track_Query(timeStart, timeEnd, n, proxy_handle, proxy_id)
                     dlist.append(data)
                     print('剩余查询次数' + str(in_count - n))
                     n = n + 1
                 dp = df.append(dlist, ignore_index=True)
             else:
-                dp = self._order_track_Query(timeStart, timeEnd, n)
+                dp = self._order_track_Query(timeStart, timeEnd, n, proxy_handle, proxy_id)
             dp.to_excel('G:\\输出文件\\促单明细 {}.xlsx'.format(rq), sheet_name='明细', index=False, engine='xlsxwriter')
             dp = dp[['orderNumber', 'currency', 'addTime', 'orderStatus', 'logisticsStatus', 'service', 'cloneUser']]
             dp.columns = ['订单编号', '币种', '下单时间', '订单状态', '物流状态', '代下单客服', '克隆人']
@@ -2373,10 +2374,11 @@ class QueryOrder(Settings, Settings_sso):
                 'shipState': None, 'weightStart': None,'weightEnd': None,  'estimateWeightStart': None,  'estimateWeightEnd': None, 'order': None, 'sortField': None,
                 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None,
                 'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59'}
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        # req = self.session.post(url=url, headers=r_header, data=data)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
@@ -2444,7 +2446,7 @@ if __name__ == '__main__':
     # TODO------------------------------------单点更新配置------------------------------------
     proxy_handle = '代理服务器'
     proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
-    handle = '手动'
+    handle = '手0动'
     login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
 
     m = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_id, proxy_handle)

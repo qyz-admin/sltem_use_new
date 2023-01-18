@@ -433,7 +433,7 @@ class MysqlControl(Settings):
                             IF(a.low_price=0,'否','是') 是否低价,
                             a.sale_id 商品id,
                             gk_sale.product_id 产品id,
-             		        gk_sale.product_name 产品名称,
+                            gk_sale.product_name 产品名称,
                             dim_cate.ppname 父级分类,
                             dim_cate.pname 二级分类,
                             dim_cate.name 三级分类,
@@ -484,7 +484,9 @@ class MysqlControl(Settings):
                             null 地址,
                             null 取货方式,
                             null 标准电话,
-                            null 下单拒收率
+                            null 下单拒收率,
+                            null 发货仓库,
+                            null 克隆类型
                     FROM gk_order a
                             LEFT JOIN dim_area ON dim_area.id = a.area_id
                             LEFT JOIN dim_payment ON dim_payment.id = a.payment_id

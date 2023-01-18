@@ -2808,7 +2808,9 @@ class Query_sso_updata(Settings):
                                     h.`shipInfo.shipName` 姓名,
                                     h.`shipInfo.shipAddress` 地址,
                                     h.`tel_phone` 标准电话,
-                                    h.`percent` 下单拒收率
+                                    h.`percent` 下单拒收率,
+                                    h.`warehouse` 发货仓库,
+                                    h.`cloneTypeName` 克隆类型
                                    FROM d1_cpy h
                                        LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
                                        LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -2863,7 +2865,9 @@ class Query_sso_updata(Settings):
                                        a.`姓名`= IF(b.`姓名` = '', NULL,  b.`姓名`),
                                        a.`地址`= IF(b.`地址` = '', NULL,  b.`地址`),
                                        a.`标准电话`= IF(b.`标准电话` = '', NULL,  b.`标准电话`),
-                                       a.`下单拒收率`= IF(b.`下单拒收率` = '', NULL,  b.`下单拒收率`)
+                                       a.`下单拒收率`= IF(b.`下单拒收率` = '', NULL,  b.`下单拒收率`),
+                                       a.`发货仓库`= IF(b.`发货仓库` = '', NULL,  b.`发货仓库`),
+                                       a.`克隆类型`= IF(b.`克隆类型` = '', NULL,  b.`克隆类型`)
                            where a.`订单编号`=b.`订单编号`;'''.format('gat_order_list')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         else:

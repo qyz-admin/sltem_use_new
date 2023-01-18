@@ -1564,9 +1564,9 @@ if __name__ == '__main__':
     select = 99
     if int(select) == 99:
         handle = '手动'
-        login_TmpCode = 'e39c1b085a59395586b0d86319e45c8d'          # 输入登录口令Tkoen
+        login_TmpCode = '2bb2a3ecea7932ddb588d29b39c8d8ba'          # 输入登录口令Tkoen
         proxy_handle = '代理服务器'
-        proxy_id = '192.168.13.89:37468'                            # 输入代理服务器节点和端口
+        proxy_id = '192.168.13.89:37466'                            # 输入代理服务器节点和端口
 
         m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, select, proxy_handle, proxy_id)
         start: datetime = datetime.datetime.now()
