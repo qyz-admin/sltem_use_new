@@ -713,9 +713,9 @@ class QueryTwo(Settings, Settings_sso):
 
 if __name__ == '__main__':
     # TODO------------------------------------单点更新配置------------------------------------
-    handle = '手动'
+    handle = '手动0'
     login_TmpCode = '0b04de569eb6395e88a34a2e9cde8e92'  # 输入登录口令Tkoen
-    proxy_handle = '代理服务器'
+    proxy_handle = '代理服务器0'
     proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
 
     # TODO------------------------------------单点更新读取------------------------------------
@@ -728,7 +728,7 @@ if __name__ == '__main__':
     # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 
     '''
     isReal = 1
-    select = 3
+    select = 1
     if int(select) == 1:
         print("1-->>> 正在按运单号查询+++")
         m.readFormHost(isReal, proxy_handle, proxy_id)       # 导入；，更新--->>数据更新切换

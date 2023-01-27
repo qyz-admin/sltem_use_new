@@ -2118,7 +2118,7 @@ class QueryOrder(Settings, Settings_sso):
         return df
 
     # 绩效-查询 采购异常             （二.1.1）
-    def service_id_ssale(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入采购问题件界面   # 筛选币种
+    def service_id_ssale(self, timeStart, timeEnd, proxy_handle, proxy_id,order_time):  # 进入采购问题件界面   # 筛选币种
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 采购订单 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.afterSale&action=getPurchaseAbnormalList'
@@ -2126,8 +2126,18 @@ class QueryOrder(Settings, Settings_sso):
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
         data = {'page': 1, 'pageSize': 90, 'areaId': None, 'userId': None, 'dealUser': None, 'currencyId': "6,13", 'orderNumber': None,
-                'productId': None, 'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59', 'add_time_start': None, 'add_time_end': None,
+                'productId': None, 'timeStart': None, 'timeEnd': None, 'add_time_start': None, 'add_time_end': None,
                 'orderType': None, 'lastProcess': None, 'logisticsStatus': None, 'update_time_start': None, 'update_time_end': None}
+        data_woks = None
+        data_woks2 = None
+        if order_time == '跟进时间':
+            data.update({'update_time_start': timeStart + ' 00:00:00', 'update_time_end': timeEnd + ' 23:59:59'})
+            data_woks = '采购问题件_跟进时间'
+            data_woks2 = '处理时间'
+        elif order_time == '创建时间':
+            data.update({'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59'})
+            data_woks = '采购异常_创建时间'
+            data_woks2 = '创建时间'
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -2145,18 +2155,18 @@ class QueryOrder(Settings, Settings_sso):
                 in_count = math.ceil(max_count/90)
                 n = 1
                 while n <= in_count:  # 这里用到了一个while循环，穿越过来的
-                    data = self._service_id_ssale(timeStart, timeEnd, n, proxy_handle, proxy_id)                     # 分页获取详情
+                    data = self._service_id_ssale(timeStart, timeEnd, n, proxy_handle, proxy_id,order_time)                     # 分页获取详情
                     dlist.append(data)
                     print('剩余查询次数' + str(in_count - n))
                     n = n + 1
                 dp = df.append(dlist, ignore_index=True)
                 dp = dp[['orderNumber', 'currencyName', 'addtime', 'orderStatus', 'logisticsStatus', 'dealTime', 'dealName', 'dealProcess', 'description', 'create_time','fbName']]
                 dp.columns = ['订单编号', '币种', '下单时间', '订单状态', '物流状态', '处理时间', '处理人', '处理结果', '反馈描述', '创建时间','采购反馈人']
-                dp.to_excel('G:\\输出文件\\绩效采购-查询{}.xlsx'.format(rq), sheet_name='采购', index=False, engine='xlsxwriter')
+                dp.to_excel('G:\\输出文件\\采购问题件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='采购', index=False, engine='xlsxwriter')
                 dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-                sql = '''REPLACE INTO 采购异常_创建时间(订单编号,币种,下单时间,订单状态,物流状态,处理时间,处理人, 处理结果, 反馈描述, 创建时间, 采购反馈人,客服处理时间,客服处理人, 客服处理结果,客服反馈描述,统计月份,记录时间) 
+                sql = '''REPLACE INTO {0}(订单编号,币种,下单时间,订单状态,物流状态,处理时间,处理人, 处理结果, 反馈描述, 创建时间, 采购反馈人,客服处理时间,客服处理人, 客服处理结果,客服反馈描述,统计月份,记录时间) 
                          SELECT 订单编号,币种,下单时间,订单状态,物流状态,处理时间,处理人, 处理结果, 反馈描述, 创建时间, 采购反馈人,NULL 客服处理时间,NULL 客服处理人, NULL 客服处理结果,NULL 客服反馈描述,DATE_FORMAT(创建时间,'%Y%m') 统计月份, NOW() 记录时间 
-                        FROM cache_check;'''
+                        FROM cache_check;'''.format(data_woks, data_woks2)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                 print('写入成功......')
         else:
@@ -2164,15 +2174,19 @@ class QueryOrder(Settings, Settings_sso):
             return
         print('-' * 50)
         print('-' * 50)
-    def _service_id_ssale(self, timeStart, timeEnd, n, proxy_handle, proxy_id):  # 进入物流问题件界面
+    def _service_id_ssale(self, timeStart, timeEnd, n, proxy_handle, proxy_id, order_time):  # 进入物流问题件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.afterSale&action=getPurchaseAbnormalList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
         data = {'page': n, 'pageSize': 90, 'areaId': None, 'userId': None, 'dealUser': None, 'currencyId': "6,13", 'orderNumber': None,
-                'productId': None, 'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59', 'add_time_start': None, 'add_time_end': None,
+                'productId': None, 'timeStart': None, 'timeEnd': None, 'add_time_start': None, 'add_time_end': None,
                 'orderType': None, 'lastProcess': None, 'logisticsStatus': None, 'update_time_start': None, 'update_time_end': None}
+        if order_time == '跟进时间':
+            data.update({'update_time_start': timeStart + ' 00:00:00', 'update_time_end': timeEnd + ' 23:59:59'})
+        elif order_time == '创建时间':
+            data.update({'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59'})
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -2401,7 +2415,7 @@ class QueryOrder(Settings, Settings_sso):
         return data
 
     # 绩效-查询 物流客诉件           （二.3）
-    def service_id_waybill_Query(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入物流客诉件界面
+    def service_id_waybill_Query(self, timeStart, timeEnd, proxy_handle, proxy_id, order_time):  # 进入物流客诉件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 物流客诉件 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.orderCustomerComplaint&action=getCustomerComplaintList'
@@ -2409,8 +2423,18 @@ class QueryOrder(Settings, Settings_sso):
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
         data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': None, 'question_type': None, 'critical': None, 'read_status': None,
-                'operator_type': None, 'operator': None, 'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'trace_time': None, 'is_gift_reissue': None,
+                'operator_type': None, 'operator': None, 'create_time': None, 'trace_time': None, 'is_gift_reissue': None,
                 'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': 1, 'pageSize': 90}
+        data_woks = None
+        data_woks2 = None
+        if order_time == '跟进时间':
+            data.update({'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
+            data_woks = '采购问题件_跟进时间'
+            data_woks2 = '处理时间'
+        elif order_time == '创建时间':
+            data.update({'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
+            data_woks = '采购异常_创建时间'
+            data_woks2 = '创建时间'
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -2429,7 +2453,7 @@ class QueryOrder(Settings, Settings_sso):
             n = 1
             while n <= in_count:  # 这里用到了一个while循环，穿越过来的
                 print('剩余查询次数' + str(in_count - n))
-                data = self._service_id_waybill_Query(timeStart, timeEnd, n, proxy_handle, proxy_id)
+                data = self._service_id_waybill_Query(timeStart, timeEnd, n, proxy_handle, proxy_id, order_time)
                 n = n + 1
                 dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
@@ -2444,26 +2468,30 @@ class QueryOrder(Settings, Settings_sso):
                           '赠品补发订单编号', '赠品补发订单状态', '联系方式', '历史处理记录']
             print('正在写入......')
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-            dp.to_excel('G:\\输出文件\\绩效物流客诉件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('G:\\输出文件\\物流客诉件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO 物流客诉件_绩效(id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
                                             最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
                                             赠品补发订单编号,赠品补发订单状态,联系方式,历史处理记录,统计日期,记录时间) 
                     SELECT id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
                             最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
                             赠品补发订单编号,赠品补发订单状态,联系方式,历史处理记录,DATE_FORMAT(NOW(),'%Y-%m-%d') 统计日期,NOW() 记录时间 
-                    FROM cache_check;'''
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                    FROM cache_check;'''.format(data_woks, data_woks2)
+            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
         print('*' * 50)
-    def _service_id_waybill_Query(self, timeStart, timeEnd, n, proxy_handle, proxy_id):  # 进入物流客诉件界面
+    def _service_id_waybill_Query(self, timeStart, timeEnd, n, proxy_handle, proxy_id, order_time):  # 进入物流客诉件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.orderCustomerComplaint&action=getCustomerComplaintList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
         data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': None, 'question_type': None, 'critical': None, 'read_status': None,
-                'operator_type': None, 'operator': None, 'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'trace_time': None, 'is_gift_reissue': None,
+                'operator_type': None, 'operator': None, 'create_time': None, 'trace_time': None, 'is_gift_reissue': None,
                 'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': n, 'pageSize': 500}
+        if order_time == '跟进时间':
+            data.update({'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
+        elif order_time == '创建时间':
+            data.update({'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -2576,7 +2604,7 @@ class QueryOrder(Settings, Settings_sso):
                 dp.columns = ['id','订单编号', '币种', '下单时间', '订单状态', '物流状态', '物流渠道','创建时间', '派送问题类型', '联系方式', '最新处理人', '最新处理状态', '最新处理结果', '处理时间', '派送次数', '最新抓取时间', '最新问题类型']
                 print('正在写入......')
                 dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-                dp.to_excel('G:\\输出文件\\绩效派送问题件-{0}{1}.xlsx'.format(order_time,rq), sheet_name='查询', index=False, engine='xlsxwriter')
+                dp.to_excel('G:\\输出文件\\派送问题件-{0}{1}.xlsx'.format(order_time,rq), sheet_name='查询', index=False, engine='xlsxwriter')
                 sql = '''REPLACE INTO {0}(id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,处理时间,派送次数,最新抓取时间,最新问题类型,统计月份, 记录时间) 
                         SELECT id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,IF(处理时间 = '',NULL,处理时间) 处理时间,派送次数,IF(最新抓取时间 = '',NULL,最新抓取时间) 最新抓取时间,最新问题类型,DATE_FORMAT({1},'%Y%m') 统计月份, NOW() 记录时间 
                         FROM cache_check;'''.format(data_woks, data_woks2)
@@ -2959,7 +2987,11 @@ if __name__ == '__main__':
 
         # m.service_id_order(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)      # 促单查询；下单时间 @~@ok
 
-        # m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id)              # 采购查询；创建时间 （一、获取订单内容）@~@ok
+        # order_time = '跟进时间'
+        # m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；处理时间 （一、获取订单内容）@~@ok
+        # m.service_id_ssale_info(proxy_handle, proxy_id)                             # 采购查询；处理时间 （二、获取处理详情）@~@ok
+        # order_time = '创建时间'
+        # m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；创建时间 （一、获取订单内容）@~@ok
         # m.service_id_ssale_info(proxy_handle, proxy_id)                             # 采购查询；创建时间 （二、获取处理详情）@~@ok
 
         # order_time = '处理时间'                                                     # 派送问题  处理时间:登记结果处理时间； 创建时间： 订单放入时间@~@ok
@@ -2969,7 +3001,10 @@ if __name__ == '__main__':
 
         # m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id)              # 物流问题  压单核实 查询；订单检索
 
-        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id)       # 物流客诉件  查询；订单检索@~@
+        order_time = '跟进时间'
+        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@
+        order_time = '创建时间'
+        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@
 
         # m.service_id_getRedeemOrderList(timeStart, timeEnd, proxy_handle, proxy_id)  # 挽单列表  查询@~@ok
 

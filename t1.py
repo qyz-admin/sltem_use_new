@@ -120,7 +120,7 @@ if wb == '改派未发货 已导出':
     print(wb)
 else:
     print('正在获取 改派未发货 中')
-    handle = '手动'
+    handle = '手0动'
     token = 'af85e3c7c7a6344b91ee5e9348647346'
     proxy_handle = '代理服务器'
     proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口

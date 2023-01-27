@@ -2444,7 +2444,7 @@ class QueryOrder(Settings, Settings_sso):
 
 if __name__ == '__main__':
     # TODO------------------------------------单点更新配置------------------------------------
-    proxy_handle = '代理服务器'
+    proxy_handle = '代理服务器0'
     proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
     handle = '手0动'
     login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
