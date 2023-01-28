@@ -41812,3 +41812,392 @@ JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_F
 
 ###!!! [Parent][RunMessage] Error: Channel closing: too late to send/recv, messages will be lost
 
+1674804167845	geckodriver	INFO	Listening on 127.0.0.1:54346
+1674804173874	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofileQFys9c"
+*** You are running in headless mode.
+1674804174340	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofileQFys9c\\search.json.mozlz4", (void 0)))
+1674804176729	Marionette	INFO	Listening on port 54360
+1674804177018	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+1674804188059	Marionette	INFO	Stopped listening on port 54360
+
+###!!! [Child][RunMessage] Error: Channel closing: too late to send/recv, messages will be lost
+
+
+###!!! [Parent][MessageChannel] Error: (msgtype=0x39007A,name=PContent::Msg_DestroyBrowsingContextGroup) Closed channel: cannot send/recv
+
+JavaScript error: resource://gre/modules/Sqlite.jsm, line 1059: Error: Sqlite.jsm has been shutdown. Cannot open connection to: G:\Temp\rust_mozprofileQFys9c\protections.sqlite
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+
+###!!! [Parent][RunMessage] Error: Channel closing: too late to send/recv, messages will be lost
+
+1674807256866	geckodriver	INFO	Listening on 127.0.0.1:61581
+1674807262917	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofileUGvGSq"
+*** You are running in headless mode.
+1674807263967	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofileUGvGSq\\search.json.mozlz4", (void 0)))
+1674807266214	Marionette	INFO	Listening on port 61597
+1674807266634	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+1674807277583	Marionette	INFO	Stopped listening on port 61597
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 718: Error: Phase "Sqlite.jsm: wait until all connections are closed" is finished, it is too late to register completion condition "protections.sqlite#0: waiting for shutdown"
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+1674807415086	geckodriver	INFO	Listening on 127.0.0.1:61773
+1674807421098	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofileYQZwaC"
+*** You are running in headless mode.
+1674807421569	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofileYQZwaC\\search.json.mozlz4", (void 0)))
+1674807423733	Marionette	INFO	Listening on port 61791
+1674807424242	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+1674807435223	Marionette	INFO	Stopped listening on port 61791
+
+###!!! [Parent][MessageChannel] Error: (msgtype=0x39007A,name=PContent::Msg_DestroyBrowsingContextGroup) Closed channel: cannot send/recv
+
+JavaScript error: resource://gre/modules/Sqlite.jsm, line 1059: Error: Sqlite.jsm has been shutdown. Cannot open connection to: G:\Temp\rust_mozprofileYQZwaC\protections.sqlite
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+
+###!!! [Parent][RunMessage] Error: Channel closing: too late to send/recv, messages will be lost
+
+1674807838133	geckodriver	INFO	Listening on 127.0.0.1:62177
+1674807844156	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofileWq8UJp"
+*** You are running in headless mode.
+1674807844567	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofileWq8UJp\\search.json.mozlz4", (void 0)))
+1674807846758	Marionette	INFO	Listening on port 62191
+1674807846917	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+1674807857722	Marionette	INFO	Stopped listening on port 62191
+
+###!!! [Parent][MessageChannel] Error: (msgtype=0x39007A,name=PContent::Msg_DestroyBrowsingContextGroup) Closed channel: cannot send/recv
+
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+
+###!!! [Parent][RunMessage] Error: Channel closing: too late to send/recv, messages will be lost
+
+1674808050807	geckodriver	INFO	Listening on 127.0.0.1:62410
+1674808056807	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofilebGQIwX"
+*** You are running in headless mode.
+1674808057214	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofilebGQIwX\\search.json.mozlz4", (void 0)))
+1674808059407	Marionette	INFO	Listening on port 62425
+1674808059585	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+1674808070325	Marionette	INFO	Stopped listening on port 62425
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+1674808180731	geckodriver	INFO	Listening on 127.0.0.1:62564
+1674808186716	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofilebv3vtd"
+*** You are running in headless mode.
+1674808187086	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofilebv3vtd\\search.json.mozlz4", (void 0)))
+1674808189088	Marionette	INFO	Listening on port 62578
+1674808189344	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+1674808200163	Marionette	INFO	Stopped listening on port 62578
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 718: Error: Phase "Sqlite.jsm: wait until all connections are closed" is finished, it is too late to register completion condition "protections.sqlite#0: waiting for shutdown"
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+1674808396694	geckodriver	INFO	Listening on 127.0.0.1:62887
+1674808402752	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofile3QlmXV"
+*** You are running in headless mode.
+1674808403818	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofile3QlmXV\\search.json.mozlz4", (void 0)))
+1674808406198	Marionette	INFO	Listening on port 62906
+1674808406406	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+1674808417565	Marionette	INFO	Stopped listening on port 62906
+
+###!!! [Child][MessageChannel] Error: (msgtype=0x230030,name=PBrowser::Msg___delete__) Channel closing: too late to send/recv, messages will be lost
+
+
+###!!! [Parent][MessageChannel] Error: (msgtype=0x39007A,name=PContent::Msg_DestroyBrowsingContextGroup) Closed channel: cannot send/recv
+
+JavaScript error: resource://gre/modules/Sqlite.jsm, line 1059: Error: Sqlite.jsm has been shutdown. Cannot open connection to: G:\Temp\rust_mozprofile3QlmXV\protections.sqlite
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+
+###!!! [Parent][RunMessage] Error: Channel closing: too late to send/recv, messages will be lost
+
+1674813314192	geckodriver	INFO	Listening on 127.0.0.1:55726
+1674813320181	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofileU4uiC1"
+*** You are running in headless mode.
+1674813321727	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofileU4uiC1\\search.json.mozlz4", (void 0)))
+1674813324466	Marionette	INFO	Listening on port 55743
+1674813325295	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+1674813335884	Marionette	INFO	Stopped listening on port 55743
+
+###!!! [Parent][MessageChannel] Error: (msgtype=0x39007A,name=PContent::Msg_DestroyBrowsingContextGroup) Closed channel: cannot send/recv
+
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+1674824499101	geckodriver	INFO	Listening on 127.0.0.1:62826
+1674824505130	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofilezGKjgO"
+*** You are running in headless mode.
+1674824505470	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofilezGKjgO\\search.json.mozlz4", (void 0)))
+1674824508147	Marionette	INFO	Listening on port 62837
+1674824508399	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+1674824520223	Marionette	INFO	Stopped listening on port 62837
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 718: Error: Phase "Sqlite.jsm: wait until all connections are closed" is finished, it is too late to register completion condition "protections.sqlite#0: waiting for shutdown"
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+1674829876319	geckodriver	INFO	Listening on 127.0.0.1:63706
+1674829882340	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofileVWoBr8"
+*** You are running in headless mode.
+1674829882679	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofileVWoBr8\\search.json.mozlz4", (void 0)))
+1674829885285	Marionette	INFO	Listening on port 63718
+1674829885472	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+1674829897674	Marionette	INFO	Stopped listening on port 63718
+
+###!!! [Parent][MessageChannel] Error: (msgtype=0x39007A,name=PContent::Msg_DestroyBrowsingContextGroup) Closed channel: cannot send/recv
+
+[Parent 5744, IPC I/O Parent] WARNING: file /builds/worker/checkouts/gecko/ipc/chromium/src/base/process_util_win.cc:167
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 718: Error: Phase "Sqlite.jsm: wait until all connections are closed" is finished, it is too late to register completion condition "protections.sqlite#0: waiting for shutdown"
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+1674868234119	geckodriver	INFO	Listening on 127.0.0.1:64301
+1674868240120	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofileKNs47A"
+*** You are running in headless mode.
+1674868241676	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofileKNs47A\\search.json.mozlz4", (void 0)))
+1674868244875	Marionette	INFO	Listening on port 64318
+1674868245376	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+1674868258583	Marionette	INFO	Stopped listening on port 64318
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 718: Error: Phase "Sqlite.jsm: wait until all connections are closed" is finished, it is too late to register completion condition "protections.sqlite#0: waiting for shutdown"
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+1674868589166	geckodriver	INFO	Listening on 127.0.0.1:65034
+1674868595178	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofileq5WlQj"
+*** You are running in headless mode.
+1674868595567	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofileq5WlQj\\search.json.mozlz4", (void 0)))
+1674868598172	Marionette	INFO	Listening on port 65052
+1674868598305	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+1674868609447	Marionette	INFO	Stopped listening on port 65052
+
+###!!! [Parent][MessageChannel] Error: (msgtype=0x39007A,name=PContent::Msg_DestroyBrowsingContextGroup) Closed channel: cannot send/recv
+
+JavaScript error: resource://gre/modules/Sqlite.jsm, line 1059: Error: Sqlite.jsm has been shutdown. Cannot open connection to: G:\Temp\rust_mozprofileq5WlQj\protections.sqlite
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+
+###!!! [Parent][RunMessage] Error: Channel closing: too late to send/recv, messages will be lost
+
+1674868707203	geckodriver	INFO	Listening on 127.0.0.1:65248
+1674868713214	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofilegaurVC"
+*** You are running in headless mode.
+1674868713614	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofilegaurVC\\search.json.mozlz4", (void 0)))
+1674868715833	Marionette	INFO	Listening on port 65261
+1674868716342	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+1674868727264	Marionette	INFO	Stopped listening on port 65261
+
+###!!! [Parent][MessageChannel] Error: (msgtype=0x39007A,name=PContent::Msg_DestroyBrowsingContextGroup) Closed channel: cannot send/recv
+
+JavaScript error: resource://gre/modules/Sqlite.jsm, line 1059: Error: Sqlite.jsm has been shutdown. Cannot open connection to: G:\Temp\rust_mozprofilegaurVC\protections.sqlite
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+1674869912734	geckodriver	INFO	Listening on 127.0.0.1:49942
+1674869918723	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofileuS0xjB"
+*** You are running in headless mode.
+1674869919118	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofileuS0xjB\\search.json.mozlz4", (void 0)))
+1674869921618	Marionette	INFO	Listening on port 49959
+1674869921875	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+1674869933176	Marionette	INFO	Stopped listening on port 49959
+
+###!!! [Parent][MessageChannel] Error: (msgtype=0x39007A,name=PContent::Msg_DestroyBrowsingContextGroup) Closed channel: cannot send/recv
+
+JavaScript error: resource://gre/modules/Sqlite.jsm, line 1059: Error: Sqlite.jsm has been shutdown. Cannot open connection to: G:\Temp\rust_mozprofileuS0xjB\protections.sqlite
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+
+###!!! [Parent][RunMessage] Error: Channel closing: too late to send/recv, messages will be lost
+
+1674870716612	geckodriver	INFO	Listening on 127.0.0.1:50809
+1674870722597	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofilewwrn7N"
+*** You are running in headless mode.
+1674870723008	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofilewwrn7N\\search.json.mozlz4", (void 0)))
+1674870725501	Marionette	INFO	Listening on port 50824
+1674870725730	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+1674870736216	Marionette	INFO	Stopped listening on port 50824
+
+###!!! [Parent][MessageChannel] Error: (msgtype=0x39007A,name=PContent::Msg_DestroyBrowsingContextGroup) Closed channel: cannot send/recv
+
+JavaScript error: resource://gre/modules/Sqlite.jsm, line 1059: Error: Sqlite.jsm has been shutdown. Cannot open connection to: G:\Temp\rust_mozprofilewwrn7N\protections.sqlite
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+1674872082576	geckodriver	INFO	Listening on 127.0.0.1:59283
+1674872088590	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofileesGZoc"
+*** You are running in headless mode.
+1674872088967	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofileesGZoc\\search.json.mozlz4", (void 0)))
+1674872091189	Marionette	INFO	Listening on port 59299
+1674872091380	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+1674872102556	Marionette	INFO	Stopped listening on port 59299
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+1674873866922	geckodriver	INFO	Listening on 127.0.0.1:61202
+1674873872920	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofile1iYyVH"
+*** You are running in headless mode.
+1674873873400	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofile1iYyVH\\search.json.mozlz4", (void 0)))
+1674873875689	Marionette	INFO	Listening on port 61216
+1674873876050	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+1674873886547	Marionette	INFO	Stopped listening on port 61216
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 718: Error: Phase "Sqlite.jsm: wait until all connections are closed" is finished, it is too late to register completion condition "protections.sqlite#0: waiting for shutdown"
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+
+###!!! [Parent][RunMessage] Error: Channel closing: too late to send/recv, messages will be lost
+
+1674874406233	geckodriver	INFO	Listening on 127.0.0.1:51465
+1674874412236	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofileQ6FBq1"
+*** You are running in headless mode.
+1674874412602	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofileQ6FBq1\\search.json.mozlz4", (void 0)))
+1674874414662	Marionette	INFO	Listening on port 56812
+1674874414862	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+1674874426926	Marionette	INFO	Stopped listening on port 56812
+
+###!!! [Parent][MessageChannel] Error: (msgtype=0x39007A,name=PContent::Msg_DestroyBrowsingContextGroup) Closed channel: cannot send/recv
+
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 718: Error: Phase "Sqlite.jsm: wait until all connections are closed" is finished, it is too late to register completion condition "protections.sqlite#0: waiting for shutdown"
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+
+###!!! [Parent][RunMessage] Error: Channel closing: too late to send/recv, messages will be lost
+
+1674876313147	geckodriver	INFO	Listening on 127.0.0.1:51624
+1674876319147	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofileObNPi1"
+*** You are running in headless mode.
+1674876320351	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofileObNPi1\\search.json.mozlz4", (void 0)))
+1674876322556	Marionette	INFO	Listening on port 51638
+1674876322776	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.10/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+1674876333984	Marionette	INFO	Stopped listening on port 51638
+
+###!!! [Parent][MessageChannel] Error: (msgtype=0x39007A,name=PContent::Msg_DestroyBrowsingContextGroup) Closed channel: cannot send/recv
+
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 718: Error: Phase "Sqlite.jsm: wait until all connections are closed" is finished, it is too late to register completion condition "protections.sqlite#0: waiting for shutdown"
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE
+
+###!!! [Parent][RunMessage] Error: Channel closing: too late to send/recv, messages will be lost
+
+1674885965045	geckodriver	INFO	Listening on 127.0.0.1:65343
+1674885971054	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-headless" "-no-remote" "-profile" "G:\\Temp\\rust_mozprofileRSwvZB"
+*** You are running in headless mode.
+1674885972393	Marionette	INFO	Marionette enabled
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at G:\\Temp\\rust_mozprofileRSwvZB\\search.json.mozlz4", (void 0)))
+1674885974781	Marionette	INFO	Listening on port 65358
+1674885975206	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+JavaScript error: resource://gre/modules/PartitioningExceptionListService.jsm, line 69: NS_ERROR_MALFORMED_URI: Component returned failure code: 0x804b000a (NS_ERROR_MALFORMED_URI) [nsIPartitioningExceptionListObserver.onExceptionListUpdate]
+JavaScript warning: https://g.alicdn.com/secdev/sufei_data/3.9.11/index.js, line 1: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WEBGL_debug_renderer_info is deprecated in Firefox and will be removed. Please use RENDERER.
+JavaScript warning: https://g.alicdn.com/AWSC/et/1.62.7/et_n.js, line 2: WebGL context was lost.
+JavaScript warning: https://g.alicdn.com/??xlly/spl/rp.js,secdev/nsv/1.0.87/ns_f_95_3_n.js?v=1, line 6: WebGL context was lost.
+1674885987040	Marionette	INFO	Stopped listening on port 65358
+
+###!!! [Parent][MessageChannel] Error: (msgtype=0x39007A,name=PContent::Msg_DestroyBrowsingContextGroup) Closed channel: cannot send/recv
+
+JavaScript error: resource://gre/modules/Sqlite.jsm, line 1059: Error: Sqlite.jsm has been shutdown. Cannot open connection to: G:\Temp\rust_mozprofileRSwvZB\protections.sqlite
+JavaScript error: resource://gre/modules/AsyncShutdown.jsm, line 575: NS_ERROR_FAILURE

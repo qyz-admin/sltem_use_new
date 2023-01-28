@@ -2417,7 +2417,7 @@ class QueryOrder(Settings, Settings_sso):
     # 绩效-查询 物流客诉件           （二.3）
     def service_id_waybill_Query(self, timeStart, timeEnd, proxy_handle, proxy_id, order_time):  # 进入物流客诉件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        print('正在查询 物流客诉件 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
+        print('正在查询 物流客诉件(' + order_time + ') 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.orderCustomerComplaint&action=getCustomerComplaintList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
@@ -2429,12 +2429,12 @@ class QueryOrder(Settings, Settings_sso):
         data_woks2 = None
         if order_time == '跟进时间':
             data.update({'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
-            data_woks = '采购问题件_跟进时间'
-            data_woks2 = '处理时间'
+            data_woks = '物流客诉件_跟进时间'
+            data_woks2 = '最新处理时间'
         elif order_time == '创建时间':
             data.update({'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
-            data_woks = '采购异常_创建时间'
-            data_woks2 = '创建时间'
+            data_woks = '物流客诉件_创建时间'
+            data_woks2 = '导入时间'
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -2469,14 +2469,14 @@ class QueryOrder(Settings, Settings_sso):
             print('正在写入......')
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\物流客诉件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO 物流客诉件_绩效(id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
-                                            最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
-                                            赠品补发订单编号,赠品补发订单状态,联系方式,历史处理记录,统计日期,记录时间) 
+            sql = '''REPLACE INTO {0}(id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
+                                                最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
+                                                赠品补发订单编号,赠品补发订单状态,联系方式,历史处理记录,统计月份,记录时间) 
                     SELECT id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
                             最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
-                            赠品补发订单编号,赠品补发订单状态,联系方式,历史处理记录,DATE_FORMAT(NOW(),'%Y-%m-%d') 统计日期,NOW() 记录时间 
+                            赠品补发订单编号,赠品补发订单状态,联系方式,历史处理记录,DATE_FORMAT({1},'%Y%m') 统计月份,NOW() 记录时间 
                     FROM cache_check;'''.format(data_woks, data_woks2)
-            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
         print('*' * 50)
     def _service_id_waybill_Query(self, timeStart, timeEnd, n, proxy_handle, proxy_id, order_time):  # 进入物流客诉件界面
@@ -2497,11 +2497,12 @@ class QueryOrder(Settings, Settings_sso):
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         else:
             req = self.session.post(url=url, headers=r_header, data=data)
-        print('+++已成功发送请求......')
+        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersDict = []
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
+                # print(result['order_number'])
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
                 result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
                 if ';' in result['traceRecord']:
@@ -2514,19 +2515,22 @@ class QueryOrder(Settings, Settings_sso):
                     result['trace_UserName'] = ''
                     for record in trace_record:
                         if '物流' not in record:
-                            result['deal_time'] = record.split()[0]
                             rec = record.split("#处理结果：")[1]
-                            if len(rec.split()) > 3:
-                                result['result_reson'] = rec.split()[3]       # 最新客服 具体原因
-                            if len(rec.split()) > 2:
-                                result['result_info'] = rec.split()[2]        # 最新客服 客诉原因
-                            if len(rec.split()) > 1:
-                                result['result_content'] = rec.split()[1]     # 最新客服 处理结果
-                            result['deal_Content'] = rec.split()[0]           # 最新客服 处理
-                            rec_name = record.split("#处理结果：")[0]
-                            if '客服' in rec_name:
-                                recname = (rec_name.split())[2]
-                                result['trace_UserName'] = recname.replace('(客服)', '')
+                            # print(record)
+                            # print(rec)
+                            if rec != "" and rec != " ":
+                                result['deal_time'] = record.split()[0]
+                                if len(rec.split()) > 3:
+                                    result['result_reson'] = rec.split()[3]       # 最新客服 具体原因
+                                if len(rec.split()) > 2:
+                                    result['result_info'] = rec.split()[2]        # 最新客服 客诉原因
+                                if len(rec.split()) > 1:
+                                    result['result_content'] = rec.split()[1]     # 最新客服 处理结果
+                                result['deal_Content'] = rec.split()[0]           # 最新客服 处理
+                                rec_name = record.split("#处理结果：")[0]
+                                if '客服' in rec_name:
+                                    recname = (rec_name.split())[2]
+                                    result['trace_UserName'] = recname.replace('(客服)', '')
                     ordersDict.append(result.copy())    # append()方法只是将字典的地址存到list中，而键赋值的方式就是修改地址，所以才导致覆盖的问题;  使用copy() 或者 deepcopy()  当字典中存在list的时候需要使用deepcopy()
                 else:
                     result['deal_time'] = ''
@@ -2652,7 +2656,7 @@ class QueryOrder(Settings, Settings_sso):
         return data
 
     # 绩效-查询 拒收问题件           （二.50）
-    def service_id_order_js_Query(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入拒收问题件界面
+    def service_id_order_js_Query(self, timeStart, timeEnd, proxy_handle, proxy_id, order_time):  # 进入拒收问题件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 拒收问题件 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRejectList'
@@ -2663,7 +2667,22 @@ class QueryOrder(Settings, Settings_sso):
                 'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
                 'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': None, 'finishTimeStart': None,
-                'finishTimeEnd': None, 'traceTimeStart': timeStart + ' 00:00:00', 'traceTimeEnd': timeEnd + ' 23:59:59','newCloneNumber': None}
+                'finishTimeEnd': None, 'traceTimeStart': None, 'traceTimeEnd': None,'newCloneNumber': None}
+        data_woks = None
+        data_woks2 = None
+        data_woks3 = None
+        if order_time == '跟进时间':
+            data.update({'traceItemIds': -1, 'traceTimeStart': timeStart + ' 00:00:00,', 'traceTimeEnd': timeEnd + ' 23:59:59'})
+            data_woks = '拒收问题件_跟进时间'
+            data_woks2 = '处理时间'
+        elif order_time == '下单跟进时间':
+            data.update({'traceItemIds': -1, 'timeStart': timeStart + ' 00:00:00,', 'timeEnd': timeEnd + ' 23:59:59'})
+            data_woks = '拒收问题件_下单跟进时间'
+            data_woks2 = '下单时间'
+        elif order_time == '下单时间':
+            data.update({'timeStart': timeStart + ' 00:00:00,', 'timeEnd': timeEnd + ' 23:59:59'})
+            data_woks = '拒收问题件_下单时间'
+            data_woks3 = '下单时间'
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -2690,9 +2709,9 @@ class QueryOrder(Settings, Settings_sso):
             print('正在写入......')
             dp.to_excel('G:\\输出文件\\绩效拒收问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO 拒收问题件_绩效(id, 订单编号,币种, 订单总量, 拒收量, 签收量, 下单时间, 完成时间, 电话, 联系电话, ip, 本单克隆人, 新单克隆人, 新单订单状态, 新单物流状态, 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果, 是否需要商品,统计日期,记录时间)
-                     SELECT id, 订单编号,币种, 订单总量, 拒收量, 签收量, 下单时间, 完成时间, IF(电话 LIKE "852%",RIGHT(电话,LENGTH(电话)-3),IF(电话 LIKE "886%",RIGHT(电话,LENGTH(电话)-3),电话)) 电话, 联系电话, ip, 本单克隆人, 新单克隆人, 新单订单状态, 新单物流状态,  IF(再次克隆下单 = '',NULL,再次克隆下单) 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果,是否需要商品, DATE_FORMAT(NOW(),'%Y-%m-%d') 统计日期,NOW() 记录时间
-                    FROM cache_check;'''
+            sql = '''REPLACE INTO {0}(id, 订单编号,币种, 订单总量, 拒收量, 签收量, 下单时间, 完成时间, 电话, 联系电话, ip, 本单克隆人, 新单克隆人, 新单订单状态, 新单物流状态, 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果, 是否需要商品,统计月份,记录时间)
+                     SELECT id, 订单编号,币种, 订单总量, 拒收量, 签收量, 下单时间, 完成时间, IF(电话 LIKE "852%",RIGHT(电话,LENGTH(电话)-3),IF(电话 LIKE "886%",RIGHT(电话,LENGTH(电话)-3),电话)) 电话, 联系电话, ip, 本单克隆人, 新单克隆人, 新单订单状态, 新单物流状态,  IF(再次克隆下单 = '',NULL,再次克隆下单) 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果,是否需要商品, DATE_FORMAT({1},'%Y%m') 统计月份,NOW() 记录时间
+                    FROM cache_check;'''.format(data_woks, data_woks2)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
         else:
@@ -2708,7 +2727,22 @@ class QueryOrder(Settings, Settings_sso):
                 'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
                 'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': None, 'finishTimeStart': None,
-                'finishTimeEnd': None, 'traceTimeStart': timeStart + ' 00:00:00', 'traceTimeEnd': timeEnd + ' 23:59:59', 'newCloneNumber': None}
+                'finishTimeEnd': None, 'traceTimeStart': None, 'traceTimeEnd': None,'newCloneNumber': None}
+        data_woks = None
+        data_woks2 = None
+        data_woks3 = None
+        if order_time == '跟进时间':
+            data.update({'traceItemIds': -1, 'traceTimeStart': timeStart + ' 00:00:00,', 'traceTimeEnd': timeEnd + ' 23:59:59'})
+            data_woks = '拒收问题件_跟进时间'
+            data_woks2 = '最新处理时间'
+        elif order_time == '下单跟进时间':
+            data.update({'traceItemIds': -1, 'timeStart': timeStart + ' 00:00:00,', 'timeEnd': timeEnd + ' 23:59:59'})
+            data_woks = '拒收问题件_下单跟进时间'
+            data_woks2 = '导入时间'
+        elif order_time == '下单时间':
+            data.update({'timeStart': timeStart + ' 00:00:00,', 'timeEnd': timeEnd + ' 23:59:59'})
+            data_woks = '拒收问题件_下单时间'
+            data_woks3 = '导入时间'
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -2913,8 +2947,8 @@ class QueryOrder(Settings, Settings_sso):
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
-    handle = '手动0'
-    login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
+    handle = '手动'
+    login_TmpCode = '81f33fd61d543c8a930d7426ec15ab22'  # 输入登录口令Tkoen
     proxy_handle = '代理服务器0'
     proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
     m = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
@@ -2981,7 +3015,7 @@ if __name__ == '__main__':
                 timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
                 timeEnd = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         else:
-            timeStart = '2022-11-01'
+            timeStart = '2022-12-01'
             timeEnd = '2022-12-31'
         print(timeStart + "---" + timeEnd)
 
@@ -2999,19 +3033,19 @@ if __name__ == '__main__':
         # order_time = '创建时间'                                                     # 派送问题   创建时间： 订单放入时间（每次导出时需要更新数据）@~@ok
         # m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
 
-        # m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id)              # 物流问题  压单核实 查询；订单检索
-
-        order_time = '跟进时间'
-        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@
-        order_time = '创建时间'
-        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@
+        # order_time = '跟进时间'
+        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
+        # order_time = '创建时间'
+        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
 
         # m.service_id_getRedeemOrderList(timeStart, timeEnd, proxy_handle, proxy_id)  # 挽单列表  查询@~@ok
 
+
+        order_time = '跟进时间'
+        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@
+
+        # m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id)              # 物流问题  压单核实 查询；订单检索
         # m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)            # 系统问题件  查询；订单检索
-
-        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id)      # 拒收问题  查询；订单检索@~@
-
 
     elif int(select) == 9:
         m.del_order_day()

@@ -2752,7 +2752,7 @@ class Query_sso_updata(Settings):
                 n = n + 1
             dp = df.append(dlist, ignore_index=True)
             # print('正在写入缓存中......')
-            dp = dp[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'shipInfo.shipName', 'shipInfo.shipAddress','wayBillNumber','saleId', 'saleProduct', 'productId','spec','quantity', 'orderStatus',
+            dp = dp[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'shipInfo.shipCity','shipInfo.shipName', 'shipInfo.shipAddress','wayBillNumber','saleId', 'saleProduct', 'productId','spec','quantity', 'orderStatus',
                      'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime','transferTime', 'onlineTime', 'deliveryTime','finishTime','stateTime', 'logisticsUpdateTime', 'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName',
                      'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks', 'auto_VerifyTip',
                      'percentInfo.arriveCount', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'tel_phone', 'percent','warehouse','cloneTypeName']]
@@ -2788,6 +2788,7 @@ class Query_sso_updata(Settings):
                                     h.stateTime 状态时间,
                                     h.`weight` 包裹重量,
                                     h.`shipInfo.shipState` 省洲,
+                                    h.`shipInfo.shipCity` 市区,
                                     h.`spec` 规格中文,
                                     h.`autoVerify` 审单类型,
                                     h.`auto_VerifyTip` 拉黑率,
@@ -2845,6 +2846,7 @@ class Query_sso_updata(Settings):
                                        a.`完结状态时间`= IF(b.`状态时间` = '', IF(b.`物流更新时间` = '', IF(b.`完结状态时间` = '', NULL, b.`完结状态时间`), b.`物流更新时间`), b.`状态时间`),
                                        a.`包裹重量`= IF(b.`包裹重量` = '', NULL, b.`包裹重量`),
                                        a.`省洲`= IF(b.`省洲` = '', NULL, b.`省洲`),
+                                       a.`市区`= IF(b.`市区` = '', NULL, b.`市区`),
                                        a.`规格中文`= IF(b.`规格中文` = '', NULL, b.`规格中文`),
                                        a.`审单类型`= IF(b.`审单类型` = '', NULL, IF(b.`审单类型` like '%自动审单%','是','否')),
                                        a.`审单类型明细`= IF(b.`审单类型` = '', NULL, b.`审单类型`),

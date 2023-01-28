@@ -272,6 +272,10 @@ class QueryTwo(Settings, Settings_sso):
                 result['轨迹备注'] = L_info3
                 result['負責營業所'] = L_info2
                 result['轨迹备注'] = L_info3
+                if '包裹已經送達收件人' in L_info3:
+                    result['完成时间'] = L_time
+                elif '順利送達' in L_info:
+                    result['完成时间'] = L_time
             if "height" not in str(val) and "rowspan" not in str(val) and "<br/>" in str(val):
                 L_time_val = str(val).split('<br/>')
                 L_time10 = L_time_val[0].split('bl12">')
@@ -296,12 +300,34 @@ class QueryTwo(Settings, Settings_sso):
                 result['物流轨迹'] = L_info
                 result['負責營業所'] = L_info2
                 result['轨迹备注'] = L_info3
+
+                if 'sd已經至寄件人指定地點收到包裹' in L_info3:
+                    result['出货时间'] = L_time
+                elif '已集貨' in L_info:
+                    result['出货时间'] = L_time
+
+                if '包裹正從營業所送到轉運中心，或從轉運中心送到營業所' in L_info3:
+                    result['上线时间'] = L_time
+                elif '轉運中' in L_info or 'sd正在將包裹配送到收件人途中' in L_info3:
+                    result['上线时间'] = L_time
+
+                if '暫置營業所保管中' in L_info:
+                    result['保管时间'] = L_time
+                elif '調查處理中' in L_info or '另約時間' in L_info:
+                    result['保管时间'] = L_time
+
+                if '包裹已經送達收件人' in L_info3:
+                    result['完成时间'] = L_time
+                elif '順利送達' in L_info:
+                    result['完成时间'] = L_time
+
             # print(858)
             # print(result)
             # print(848)
             ordersDict.append(result)
         # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         data = pd.json_normalize(ordersDict)
+        data.sort_values(by=["运单号", "物流轨迹时间"], inplace=True, ascending=[True, True])
         print(data)
         # print(99)
         # data.dropna(axis=0, how='any', inplace=True)

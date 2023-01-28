@@ -640,7 +640,8 @@ class QueryUpdate(Settings):
                 new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\{} {} 更新-签收表.xlsx'.format(today,match[team])
                 shutil.copyfile(old_path, new_path)     # copy到指定位置
                 print('----已写入excel; 并复制到指定文件夹中')
-
+            else:
+                print('不 写入excel…………')
         sql = '''DELETE FROM d1_gat gt WHERE gt.`订单编号` IN (SELECT 订单编号 FROM gat_易速配退运);'''
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         sql = '''DELETE FROM gat_zqsb gt WHERE gt.年月 BETWEEN '202206' AND '202207' AND gt.`订单编号` IN (SELECT 订单编号 FROM gat_易速配退运);'''
@@ -5882,7 +5883,7 @@ class QueryUpdate(Settings):
 							SUM(金蝉家族单量) 金蝉家族单量, SUM(金蝉家族签收) 金蝉家族签收, SUM(金蝉家族拒收) 金蝉家族拒收,
                                 concat(ROUND(SUM(金蝉家族改派) / SUM(金蝉家族单量) * 100,2),'%') as 金蝉家族改派占比,
                                 concat(ROUND(SUM(金蝉家族签收) / SUM(金蝉家族单量) * 100,2),'%') as 金蝉家族总计签收,
-                                concat(ROUND(SUM(金蝉家族签收) / SUM(金蝉家族完成) * 100,2),'%') as 金蝉家族营完成签收,
+                                concat(ROUND(SUM(金蝉家族签收) / SUM(金蝉家族完成) * 100,2),'%') as 金蝉家族完成签收,
                                 concat(ROUND(SUM(金蝉家族完成) / SUM(金蝉家族单量) * 100,2),'%') as 金蝉家族完成占比,				
 							SUM(神龙运营单量) 神龙运营单量, SUM(神龙运营签收) 神龙运营签收, SUM(神龙运营拒收) 神龙运营拒收,
                                 concat(ROUND(SUM(神龙运营改派) / SUM(神龙运营单量) * 100,2),'%') as 神龙运营改派占比,
