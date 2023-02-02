@@ -2251,7 +2251,7 @@ class QueryOrder(Settings, Settings_sso):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         if hanlde == '自动':
             if (datetime.datetime.now()).strftime('%d') == 1:
-                timeStart = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+                timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m-%d')
                 timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
             else:
                 timeStart = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
@@ -2293,10 +2293,10 @@ class QueryOrder(Settings, Settings_sso):
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = self._order_track_Query(timeStart, timeEnd, n, proxy_handle, proxy_id)
-            dp.to_excel('G:\\输出文件\\促单明细 {}.xlsx'.format(rq), sheet_name='明细', index=False, engine='xlsxwriter')
             dp = dp[['orderNumber', 'currency', 'addTime', 'orderStatus', 'logisticsStatus', 'service', 'cloneUser']]
             dp.columns = ['订单编号', '币种', '下单时间', '订单状态', '物流状态', '代下单客服', '克隆人']
             dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+            dp.to_excel('G:\\输出文件\\促单明细 {}.xlsx'.format(rq), sheet_name='明细', index=False, engine='xlsxwriter')
 
             listT = []
             sql2 = '''SELECT 代下单客服, COUNT(订单编号) as 有效转化单量
@@ -2351,6 +2351,26 @@ class QueryOrder(Settings, Settings_sso):
             df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
             listT.append(df5)
 
+            sql6 = '''SELECT 币种, COUNT(订单编号) as 总代下单量,
+                            SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量,
+                            concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 完成签收,
+                            SUM(IF(物流状态 = "已签收",1,0)) as 签收,
+                            SUM(IF(物流状态 = "拒收",1,0)) as 拒收,
+                            SUM(IF(物流状态 = "已退货",1,0)) as 已退货,
+                            SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
+                            concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / COUNT(订单编号),0) * 100,2),'%') as 总计签收,
+                            concat(ROUND(IFNULL(SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / COUNT(订单编号),0) * 100,2),'%') as 完成占比,
+                            concat(ROUND(IFNULL(SUM(IF(物流状态 = "已退货",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
+                        FROM ( SELECT *
+                                FROM `worksheet` s
+                                WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                        ) ss1
+                        GROUP BY 币种
+                        WITH ROLLUP 
+                        ORDER BY 币种;'''
+            df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
+            listT.append(df6)
+
             file_path = 'G:\\输出文件\\促单查询 {}.xlsx'.format(rq)
             df0 = pd.DataFrame([])  # 创建空的dataframe数据框
             df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -2361,6 +2381,7 @@ class QueryOrder(Settings, Settings_sso):
             listT[3].to_excel(excel_writer=writer, sheet_name='汇总', index=False)
             listT[0].to_excel(excel_writer=writer, sheet_name='有效单量', index=False)
             listT[1].to_excel(excel_writer=writer, sheet_name='总下单量', index=False)
+            listT[4].to_excel(excel_writer=writer, sheet_name='分币种单量', index=False)
             if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
                 del book['Sheet1']
             writer.save()
@@ -2470,7 +2491,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 5                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
@@ -2516,8 +2537,8 @@ if __name__ == '__main__':
     # 促单查询；订单检索
     elif int(select) == 5:
         hanlde = '自0动'
-        timeStart = '2022-01-01'
-        timeEnd = '2022-08-31'
+        timeStart = '2023-01-01'
+        timeEnd = '2023-01-31'
 
         # timeStart = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         # timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')

@@ -297,7 +297,7 @@ class QueryTwoT(Settings, Settings_sso):
 
 
     # 后台  补充  产品信息
-    def productInfo(self, team, ordersDict):  # 进入查询界面，
+    def productInfo(self, team, ordersDict, proxy_handle, proxy_id):  # 进入查询界面，
         print('正在获取需要更新的产品id信息')
         start = datetime.datetime.now()
         month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
@@ -318,7 +318,7 @@ class QueryTwoT(Settings, Settings_sso):
             dlist = []
             for proId in productId:
                 print(proId)
-                data = self.productQuery(proId)
+                data = self.productQuery(proId, proxy_handle, proxy_id)
                 dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
             dp.to_sql('tem_product', con=self.engine1, index=False, if_exists='replace')
@@ -340,7 +340,7 @@ class QueryTwoT(Settings, Settings_sso):
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('共有 ' + str(len(dp)) + '条 成功更新+++++++')
 
-    def productQuery(self, proId):  # 进入订单检索界面
+    def productQuery(self, proId, proxy_handle, proxy_id):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getProductList&page=1&pageSize=10&productName=&status=&source=&isSensitive=&isGift=&isDistribution=&chooserId=&buyerId='
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
@@ -348,9 +348,11 @@ class QueryTwoT(Settings, Settings_sso):
                     'Referer': 'https://gimp.giikin.com/front/orderToolsProductSearch'}
         data = {}
         data.update({'productId': proId})
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典

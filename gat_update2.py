@@ -1,8 +1,10 @@
 import pandas as pd
 import os, shutil
 import datetime
+import time
 import xlwings
 import win32api, win32con
+import win32com.client
 import requests
 from os import *
 import json
@@ -591,7 +593,7 @@ class QueryUpdate(Settings):
                     print('请输入口令Token:  回车确认')
                     login_TmpCode = str(input())
                 lw = QueryTwoT('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
-                lw.productInfo('gat_order_list', ordersDict)
+                lw.productInfo('gat_order_list', ordersDict, proxy_handle, proxy_id)
 
         if team in ('gat'):
             del_time = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y%m')
@@ -5172,7 +5174,7 @@ class QueryUpdate(Settings):
         today = datetime.date.today().strftime('%Y.%m.%d')
         sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品分旬台湾', '产品整月香港', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾']
         print('正在将物流品类写入excel…………')
-
+        file_path = 'G:\\输出文件\\港台-签收率.xlsx'
         if currency_id == '全部付款':
             file_path = 'G:\\输出文件\\{} {} 物流品类-签收率.xlsx'.format(today, match[team])
         elif currency_id == '货到付款':
@@ -5192,21 +5194,27 @@ class QueryUpdate(Settings):
             del book['Sheet1']
         writer.save()
         writer.close()
+
+        print('正在运行' + match[team] + '表宏…………（xlwings方法一）')
         try:
-            print('正在运行' + match[team] + '表宏…………')
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-            app.display_alerts = False
+            app.screen_updating = False
+            # app.display_alerts = False
             wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
             wbsht1 = app.books.open(file_path)
-            wbsht.macro('gat_总_品类_物流_两月签收率')()
+            wbsht.macro('zl_gat_report_new.gat_总_品类_物流_两月签收率')()
             wbsht1.save()
             wbsht.save()
             wbsht1.close()
             wbsht.close()
+            wbsht = None
+            time.sleep(180)
             app.quit()
             app.quit()
         except Exception as e:
             print('运行失败：', str(Exception) + str(e))
+
+
         new_path = 'F:\\神龙签收率\\' + (datetime.datetime.now()).strftime('%m.%d') + '\\签收率\\{} {} 物流品类-签收率.xlsx'.format(today, match[team])
         shutil.copyfile(file_path, new_path)        # copy到指定位置
         print('----已写入excel; 并复制到指定文件夹中')
@@ -5230,17 +5238,20 @@ class QueryUpdate(Settings):
             del book['Sheet1']
         writer.save()
         writer.close()
+        print('正在运行' + match[team] + '表宏…………')
         try:
-            print('正在运行' + match[team] + '表宏…………')
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-            app.display_alerts = False
+            app.screen_updating = False
+            # app.display_alerts = False
             wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
             wbsht1 = app.books.open(file_path)
-            wbsht.macro('gat_品类直发分旬签收率')()
+            wbsht.macro('zl_gat_report_new.gat_品类直发分旬签收率')()
             wbsht1.save()
-            wbsht.save()
             wbsht1.close()
+            wbsht.save()
             wbsht.close()
+            wbsht = None
+            time.sleep(180)
             app.quit()
             app.quit()
         except Exception as e:
@@ -5278,20 +5289,25 @@ class QueryUpdate(Settings):
             del book['Sheet1']
         writer.save()
         writer.close()
+        print('正在运行' + match[team] + '表宏…………')
         try:
-            print('正在运行' + match[team] + '表宏…………')
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-            app.display_alerts = False
+            app.screen_updating = False
+            # app.display_alerts = False
             wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
             wbsht1 = app.books.open(file_path)
-            wbsht.macro('gat_产品签收率_总')()
+            wbsht.macro('zl_gat_report_new.gat_产品签收率_总')()
             wbsht1.save()
-            wbsht.save()
             wbsht1.close()
+            wbsht.save()
             wbsht.close()
+            wbsht = None
+            time.sleep(180)
+            app.quit()
             app.quit()
         except Exception as e:
             print('运行失败：', str(Exception) + str(e))
+
         new_path = 'F:\\神龙签收率\\' + (datetime.datetime.now()).strftime('%m.%d') + '\\签收率\\{} {} 产品明细-签收率.xlsx'.format(today, match[team])
         shutil.copyfile(file_path, new_path)        # copy到指定位置
         print('----已写入excel; 并复制到指定文件夹中')
@@ -6410,8 +6426,9 @@ class QueryUpdate(Settings):
             del book['Sheet1']
         writer.save()
         writer.close()
+
+        print('正在运行' + match[team] + '表宏…………（xlwings方法一）')
         try:
-            print('正在运行' + match[team] + '表宏…………')
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.display_alerts = False
             wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
@@ -6419,10 +6436,29 @@ class QueryUpdate(Settings):
             wbsht.macro('zl_report_day')()
             wbsht1.save()
             wbsht1.close()
+            wbsht.save()
             wbsht.close()
+
+            time.sleep(180)
             app.quit()
         except Exception as e:
             print('运行失败：', str(Exception) + str(e))
+
+        # print('正在运行' + match[team] + '表宏…………（win32com方法二）')
+        # xls = win32com.client.Dispatch("Excel.Application")
+        # wb = xls.workbooks.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')  ##存储vba代码的文件
+        # wb.Application.DisplayAlerts = False
+        # try:
+        #     wb1 = xls.workbooks.open(file_path)
+        #     wb.Application.Run('zl_gat_report_new.gat_总_品类_物流_两月签收率')  ##开始调用vba宏
+        #     wb1.Application.Save()
+        #     wb1.Application.close()
+        #     wb.Application.Save()
+        #     wb.Application.close()
+        # except Exception as e:
+        #     print(e)
+        # xls.Application.Quit()
+
         new_path = 'F:\\神龙签收率\\' + (datetime.datetime.now()).strftime('%m.%d') + '\\{} {}-签收率.xlsx'.format(today, match[team])
         shutil.copyfile(file_path, new_path)        # copy到指定位置
         print('----已写入excel; 并复制到指定文件夹中')
@@ -11007,15 +11043,15 @@ if __name__ == '__main__':
     '''
     select = 99
     if int(select) == 99:
-        if team == 'gat':
+        if team == 'gat0':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
         else:
-            month_last = '2022-11-01'
-            month_old = '2022-11-01'  # 获取-每日-报表 开始的时间
-            month_yesterday = '2022-12-31'
+            month_last = '2022-12-01'
+            month_old = '2022-12-01'  # 获取-每日-报表 开始的时间
+            month_yesterday = '2023-01-31'
 
         last_time = '2021-01-01'
         up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期

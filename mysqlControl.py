@@ -2925,7 +2925,7 @@ class MysqlControl(Settings):
                 ORDER BY orderNumber, id
                 LIMIT 20000'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
-        # print(df)
+        print(df)
         dict = {}
         for index, x in df.iterrows():
             print(index, x['id'], x['orderNumber'], x['orderStatus'], x['updateTime'], x['remark'], x['name'])
@@ -2939,6 +2939,9 @@ class MysqlControl(Settings):
                 dict_info['备注'] = x['remark']
                 dict_info['转化人'] = ""
                 dict[order_Number] = dict_info
+                print(dict)
+                print(dict_info)
+                print('新增' + str(x['id']))
             else:
                 print(x['id'])
                 order_Number_last = dict[order_Number]['订单编号']
@@ -2954,23 +2957,17 @@ class MysqlControl(Settings):
                 name_Status_last = dict[order_Number]['转化人']
                 if '已删除' not in order_Status and '待发货' not in order_Status:
                     print('已删除不在')
-                    if name_Status_last == "":
-                        dict_info['订单编号'] = x['orderNumber']
-                        dict_info['id'] = x['id']
-                        dict_info['订单状态'] = x['orderStatus']
-                        dict_info['转化时间'] = x['updateTime']
-                        dict_info['备注'] = x['remark']
-                        dict_info['转化人'] = ""
-                        dict[order_Number] = dict_info
+                    print(name_Status_last)
+                    dict_info['订单编号'] = x['orderNumber']
+                    dict_info['id'] = x['id']
+                    dict_info['订单状态'] = x['orderStatus']
+                    dict_info['转化时间'] = x['updateTime']
+                    dict_info['备注'] = x['remark']
+                    if order_Status == '问题订单':
+                        dict_info['转化人'] = x['name']
                     else:
-                        if order_Status_last == "问题订单":
-                            dict_info['订单编号'] = x['orderNumber']
-                            dict_info['id'] = x['id']
-                            dict_info['订单状态'] = x['orderStatus']
-                            dict_info['转化时间'] = x['updateTime']
-                            dict_info['备注'] = x['remark']
-                            dict_info['转化人'] = ""
-                            dict[order_Number] = dict_info
+                        dict_info['转化人'] = ""
+                    dict[order_Number] = dict_info
                 elif '已删除' in order_Status or '待发货' in order_Status:
                     print('已删除在')
                     if order_Status_last == "问题订单":
@@ -3005,7 +3002,7 @@ class MysqlControl(Settings):
         dict = list(dict.values())
         dict = pd.json_normalize(dict)
         print(dict)
-        dict.to_excel('G:\\输出文件\\列表-查询{2}.xlsx', sheet_name='查询', index=False, engine='xlsxwriter')
+        dict.to_excel('G:\\输出文件\\列表-查询{22}.xlsx', sheet_name='查询', index=False, engine='xlsxwriter')
 
 
 if __name__ == '__main__':

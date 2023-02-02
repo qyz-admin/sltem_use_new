@@ -218,6 +218,12 @@ class QueryTwo(Settings, Settings_sso):
             rq = pd.to_datetime(rq['处理时间'][0])
             last_time = (rq + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
             now_time = (datetime.datetime.now()).strftime('%Y-%m-%d')
+        elif team == '短信模板':
+            sql = '''SELECT DISTINCT DATE_FORMAT(发送时间,'%Y-%m-%d') 发送日期 FROM 短信日志_发送时间 d  GROUP BY DATE_FORMAT(发送时间,'%Y-%m-%d') ORDER BY 发送时间 DESC;'''.format(team)
+            rq = pd.read_sql_query(sql=sql, con=self.engine1)
+            rq = pd.to_datetime(rq['发送日期'][0])
+            last_time = (rq + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         else:
             sql = '''SELECT DISTINCT 处理时间 FROM {0} d GROUP BY 处理时间 ORDER BY 处理时间 DESC'''.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -1542,6 +1548,83 @@ class QueryTwo(Settings, Settings_sso):
         return tem
 
 
+    # 短信模板
+    def getMessage_Log(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入短信模板界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('+++正在查询信息中---短信模板......')
+        url = r'https://gimp.giikin.com/service?service=gorder.sms&action=getMessageLog'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/workOrderCenter'}
+        data = {'page': 1, 'pageSize': 90, 'order_number': None, 'waybill_number': None, 'to_phone': None,
+                'add_date': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'send_status': None, 'msgid': None,
+                'template_id': "147,148,31,35,36,49,50,52,68,69,70,71,72,73,74,76,77,78,82,83,84,85,86,87,88,89,90,100,101,102,151,136,127,34"}
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        max_count = req['data']['count']
+        print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+        print('*' * 50)
+        if max_count != 0:
+            n = 1
+            in_count = math.ceil(max_count/90)
+            df = pd.DataFrame([])
+            dlist = []
+            while n <= in_count:
+                data = self._getMessage_Log(timeStart, timeEnd, n, proxy_handle, proxy_id)
+                dlist.append(data)
+                print('剩余查询次数' + str(in_count - n))
+                n = n + 1
+            dp = df.append(dlist, ignore_index=True)
+            dp = dp[['id','order_number','areaName','currency','to_phone','add_date','sendStatus','content','receiveStatus','receive_msg','typeName','templateName']]
+            dp.columns = ['id','订单编号','团队','币种','发送者的电话号码','发送时间','是否发送成功','短信内容','接收状态','接收异常原因','短信用途','短信模板']
+            print('正在写入......')
+            dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            dp.to_excel('G:\\输出文件\\短信模板-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            sql = '''REPLACE INTO 短信日志_发送时间(id, 订单编号,团队,币种,发送者的电话号码,发送时间,是否发送成功,短信内容,接收状态,接收异常原因,短信用途,短信模板,记录时间)
+                     SELECT id, 订单编号,团队,币种,发送者的电话号码,IF(发送时间 = '',NULL, 发送时间) AS 发送时间,是否发送成功,短信内容,接收状态,接收异常原因,短信用途,短信模板,NOW() 记录时间
+                    FROM  customer;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('写入成功......')
+        else:
+            print('没有需要获取的信息！！！')
+            return
+        print('*' * 50)
+    def _getMessage_Log(self, timeStart, timeEnd, n, proxy_handle, proxy_id):  # 进入短信模板界面
+        print('+++正在查询第 ' + str(n) + ' 页信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.sms&action=getMessageLog'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/workOrderCenter'}
+        data = {'page': n, 'pageSize': 90, 'order_number': None, 'waybill_number': None, 'to_phone': None,
+                'add_date': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'send_status': None, 'msgid': None,
+                'template_id': "147,148,31,35,36,49,50,52,68,69,70,71,72,73,74,76,77,78,82,83,84,85,86,87,88,89,90,100,101,102,151,136,127,34"}
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        max_count = req['data']['count']
+        ordersDict = []
+        if max_count > 0:
+            try:
+                for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
+                    ordersDict.append(result.copy())
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            data = pd.json_normalize(ordersDict)
+        else:
+            data = None
+        print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
+        print('*' * 50)
+        return data
+
     # 工单列表
     def getOrderCollectionList(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入订单检索界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
@@ -1641,7 +1724,6 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
         return data
 
-
 if __name__ == '__main__':
     start: datetime = datetime.datetime.now()
     '''
@@ -1702,6 +1784,9 @@ if __name__ == '__main__':
 
         timeStart, timeEnd = m.readInfo('采购异常')
         m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'), proxy_handle, proxy_id)                        # 查询更新-采购问题件（一、简单查询）
+
+        timeStart, timeEnd = m.readInfo('短信模板')
+        m.getMessage_Log(timeStart, timeEnd, proxy_handle, proxy_id)  # 查询更新-短信模板
 
         # m.ssale_Query('2022-04-28', datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
         # m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
@@ -1768,14 +1853,19 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    # handle = '手0动'
-    # login_TmpCode = '3129878cee9537a6b68f48743902548e'
-    # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
+    # handle = '手动0'
+    # login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
+    # proxy_handle = '代理服务器0'
+    # proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
+    # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
     # start: datetime = datetime.datetime.now()
-    # #
+    #
     # timeStart, timeEnd = m.readInfo('压单表_已核实')
     # m.waybill_InfoQuery_yadan(timeStart, timeEnd)  # 查询更新-物流问题件 - 压单核实
     # m.waybill_InfoQuery_yadan('2022-11-09', '2022-11-09')  # 查询更新-物流问题件 - 压单核实
+
+    # timeStart, timeEnd = m.readInfo('短信模板')
+    # m.getMessage_Log(timeStart, timeEnd, proxy_handle, proxy_id)  # 查询更新-短信模板
 
     #
     # begin = datetime.date(2022, 10, 1)

@@ -367,10 +367,10 @@ class ExcelControl():
                 df = df[~(df['订单编号'].str.contains('BJ|GK|KD|NB|NR|TG|TR|XM'))]
                 df.reset_index(drop=True, inplace=True)
 
-            if ('新竹' in shtName and '协来运' not in shtName) or '7-11' in shtName or '711' in shtName:       # 添加上线时间新竹
+            if '7-11' in shtName or '711' in shtName or ('新竹' in shtName and '协来运' not in shtName):  # 添加上线时间新竹
                 df.insert(0, '上线时间', '')
                 if '清关时间' in df.columns or '''清关时间
-''' in df.columns:
+        ''' in df.columns:
                     df['上线时间'] = df['清关时间'].copy()
                 else:
                     df['上线时间'] = df['出货时间'].copy()

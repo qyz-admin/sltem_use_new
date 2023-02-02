@@ -156,14 +156,21 @@ class QueryTwo(Settings, Settings_sso):
         app.quit()
 
     # 更新订单状态
-    def waybill_info(self, login_TmpCode, handle):
+    def waybill_info(self, login_TmpCode, handle, proxy_handle, proxy_id):
         # lw = Settings_sso()
         # lw.sso_online_Two()
         # self.sso_online_Two()
-        if handle == '手动':
-            self.sso__online_handle(login_TmpCode)
+        if proxy_handle == '代理服务器':
+            if handle == '手动':
+                self.sso__online_handle_proxy(login_TmpCode, proxy_id)
+            else:
+                self.sso__online_auto_proxy(proxy_id)
         else:
-            self.sso__online_auto()
+            if handle == '手动':
+                self.sso__online_handle(login_TmpCode)
+            else:
+                self.sso__online_auto()
+
         print('正在更新 订单跟进 信息……………………………………………………………………………………………………………………………………………………………………………………')
         start = datetime.datetime.now()
         sql = '''SELECT 订单编号 FROM {0} s WHERE s.`添加时间` = CURDATE();'''.format('gat_waybill_list')
@@ -176,19 +183,19 @@ class QueryTwo(Settings, Settings_sso):
         max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
         if max_count > 500:
             ord = ', '.join(orderId[0:500])
-            df = self.order_Info_Query(ord)
+            df = self.order_Info_Query(ord, proxy_handle, proxy_id)
             dlist = []
             n = 0
             while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
                 n = n + 500
                 ord = ','.join(orderId[n:n + 500])
-                data = self.order_Info_Query(ord)
+                data = self.order_Info_Query(ord, proxy_handle, proxy_id)
                 dlist.append(data)
             print('正在写入......')
             dp = df.append(dlist, ignore_index=True)
         else:
             ord = ','.join(orderId[0:max_count])
-            dp = self.order_Info_Query(ord)
+            dp = self.order_Info_Query(ord, proxy_handle, proxy_id)
         dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
         print('正在更新订单跟进表中......')
         sql = '''update {0} a, customer b
@@ -201,7 +208,7 @@ class QueryTwo(Settings, Settings_sso):
                 where a.`订单编号`=b.`订单编号`;'''.format('gat_waybill_list')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('查询耗时：', datetime.datetime.now() - start)
-    def order_Info_Query(self, ord):  # 更新订单跟进 的状态信息
+    def order_Info_Query(self, ord, proxy_handle, proxy_id):  # 更新订单跟进 的状态信息
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
@@ -219,9 +226,11 @@ class QueryTwo(Settings, Settings_sso):
                 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None}
         data.update({'orderPrefix': ord,
                     'shippingNumber': None})
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
@@ -544,11 +553,13 @@ if __name__ == '__main__':
 
     elif int(select) == 5:
         team = 'gat_waybill_list'
-        login_TmpCode = '6914e0a74a36379ab559813b07753517'
-        handle = '手0动'
+        handle = '手动0'
+        login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
+        proxy_handle = '代理服务器0'
+        proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
 
         m.readFormHost(team)
-        m.waybill_info(login_TmpCode, handle)
+        m.waybill_info(login_TmpCode, handle, proxy_handle, proxy_id)
         m.chuhuo_info('502ad2b4d54e3c149a6fbda3c65f7fb5', 'a29f63dcfcc13cc49ac45c88e380cf49', handle)
         m.waybill_updata()
 

@@ -3375,7 +3375,7 @@ class Query_sso_updata(Settings):
 
 
     # 改派-查询未发货的订单
-    def gp_order(self):
+    def gp_order(self, proxy_handle, proxy_id):
         print('正在获取 改派未发货…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
         sql = '''SELECT xj.订单编号, xj.下单时间, xj.新运单号 运单编号, xj.查件单号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, b.物流状态, c.标准物流状态,b.状态时间, NULL 系统订单状态, NULL 系统物流状态, 
@@ -3405,7 +3405,7 @@ class Query_sso_updata(Settings):
         while n < max_count:        # 这里用到了一个while循环，穿越过来的
             ord = ','.join(orderId[n:n + 500])
             n = n + 500
-            data =self._gp_order(ord)
+            data =self._gp_order(ord, proxy_handle, proxy_id)
             if data is not None and len(data) > 0:
                 dlist.append(data)
         dp = df.append(dlist, ignore_index=True)
@@ -3426,7 +3426,7 @@ class Query_sso_updata(Settings):
         dt.to_excel(file_path, sheet_name='台湾', index=False, engine='xlsxwriter')
         print('----已写入excel ')
     # 改派-查询未发货的订单（新后台的获取）
-    def _gp_order(self, ord):  # 进入订单检索界面
+    def _gp_order(self, ord, proxy_handle, proxy_id):  # 进入订单检索界面
         print('+++正在查询 信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -3438,9 +3438,11 @@ class Query_sso_updata(Settings):
                 'orderStatus': None, 'tuan': None,  'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
                 'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None,
                 'estimateWeightEnd': None, 'order': None, 'sortField': None, 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None}
-        proxy = '192.168.13.89:37467'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
-        req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
         # req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
