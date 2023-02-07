@@ -266,8 +266,8 @@ class QueryTwo(Settings, Settings_sso):
             req = self.session.post(url=url, headers=r_header, data=data)
         # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
-        print(req)
-        print(5)
+        # print(req)
+        # print(5)
         print(req['data'])
         if req['data'] == []:
             data = self._order_online_data(ord, 0, proxy_handle, proxy_id)

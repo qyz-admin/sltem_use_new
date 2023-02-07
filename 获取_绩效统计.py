@@ -2082,7 +2082,7 @@ class QueryOrder(Settings, Settings_sso):
             dp = df.append(dlist, ignore_index=True)
             dp = dp[['id', 'order_number', 'redeemType', 'oldOrderStatus', 'oldLogisticsStatus', 'oldAmount', 'orderStatus','logisticsStatus','amount','logisticsName','operatorName','create_time','save_money','currencyName', 'delOperatorName','del_reason']]
             dp.columns = ['id', '订单编号', '挽单类型', '原订单状态', '原物流状态', '原订单金额', '当前订单状态', '当前物流状态','当前订单金额','当前物流渠道','创建人','创建时间','挽单金额','币种', '删除人', '删除原因']
-            dp.to_excel('G:\\输出文件\\绩效挽单-查询{}.xlsx'.format(rq), sheet_name='挽单', index=False, engine='xlsxwriter')
+            dp.to_excel('G:\\输出文件\\挽单列表-查询{}.xlsx'.format(rq), sheet_name='挽单', index=False, engine='xlsxwriter')
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
             sql = '''REPLACE INTO 挽单列表_创建时间(id, 订单编号,币种, 创建时间, 创建人, 挽单类型, 挽单金额, 当前订单状态, 当前物流状态, 回款状态, 删除人, 删除原因, 统计月份,记录时间) 
                     SELECT id, 订单编号,币种, 创建时间, 创建人, 挽单类型, 挽单金额, 当前订单状态, 当前物流状态,NULL as 回款状态, 删除人, 删除原因, DATE_FORMAT(创建时间,'%Y%m') 统计月份,NOW() 记录时间 
@@ -2156,7 +2156,7 @@ class QueryOrder(Settings, Settings_sso):
                 in_count = math.ceil(max_count/90)
                 n = 1
                 while n <= in_count:  # 这里用到了一个while循环，穿越过来的
-                    data = self._service_id_ssale(timeStart, timeEnd, n, proxy_handle, proxy_id,order_time)                     # 分页获取详情
+                    data = self._service_id_ssale(timeStart, timeEnd, n, proxy_handle, proxy_id, order_time)                     # 分页获取详情
                     dlist.append(data)
                     print('剩余查询次数' + str(in_count - n))
                     n = n + 1
@@ -2166,7 +2166,7 @@ class QueryOrder(Settings, Settings_sso):
                 dp.to_excel('G:\\输出文件\\采购问题件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='采购', index=False, engine='xlsxwriter')
                 dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
                 sql = '''REPLACE INTO {0}(订单编号,币种,下单时间,订单状态,物流状态,处理时间,处理人, 处理结果, 反馈描述, 创建时间, 采购反馈人,客服处理时间,客服处理人, 客服处理结果,客服反馈描述,统计月份,记录时间) 
-                         SELECT 订单编号,币种,下单时间,订单状态,物流状态,处理时间,处理人, 处理结果, 反馈描述, 创建时间, 采购反馈人,NULL 客服处理时间,NULL 客服处理人, NULL 客服处理结果,NULL 客服反馈描述,DATE_FORMAT(创建时间,'%Y%m') 统计月份, NOW() 记录时间 
+                         SELECT 订单编号,币种,下单时间,订单状态,物流状态,处理时间,处理人, 处理结果, 反馈描述, 创建时间, 采购反馈人,NULL 客服处理时间,NULL 客服处理人, NULL 客服处理结果,NULL 客服反馈描述,DATE_FORMAT({1},'%Y%m') 统计月份, NOW() 记录时间 
                         FROM cache_check;'''.format(data_woks, data_woks2)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                 print('写入成功......')
@@ -2206,7 +2206,7 @@ class QueryOrder(Settings, Settings_sso):
         print('*' * 50)
         return data
     # 绩效-查询 采购异常 补充查询             （二.1.2）
-    def service_id_ssale_info(self, proxy_handle, proxy_id):
+    def service_id_ssale_info(self, proxy_handle, proxy_id, data_name):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('采购异常-绩效 处理详情 获取中......')
         sql2 = '''SELECT 订单编号 FROM cache_check s1;'''
@@ -2220,15 +2220,14 @@ class QueryOrder(Settings, Settings_sso):
             for ord in orderId:
                 # print(ord)
                 data = self._service_id_ssale_info(ord, proxy_handle, proxy_id)
-                print(data)
+                # print(data)
                 if data is not None and len(data) > 0:
                     dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
-            dp.to_excel('G:\\输出文件\\绩效采购-查询详情{}.xlsx'.format(rq), sheet_name='采购', index=False, engine='xlsxwriter')
-
+            # dp.to_excel('G:\\输出文件\\绩效采购-查询详情{}.xlsx'.format(rq), sheet_name='采购', index=False, engine='xlsxwriter')
             dp = dp[['orderNumber', 'addTime', 'name', 'dealProcess', 'content']]
             dp.columns = ['订单编号', '客服处理时间', '客服处理人', '客服处理结果', '客服反馈描述']
-            dp.to_excel('G:\\输出文件\\绩效采购-查询{}.xlsx'.format(rq), sheet_name='采购', index=False, engine='xlsxwriter')
+            dp.to_excel('G:\\输出文件\\采购问题件-补充查询{}.xlsx'.format(rq), sheet_name='采购', index=False, engine='xlsxwriter')
             dp.to_sql('cache_check_cp', con=self.engine1, index=False, if_exists='replace')
             print('正在更新表处理详情中......')
             sql = '''update {0} a, {1} b
@@ -2236,7 +2235,7 @@ class QueryOrder(Settings, Settings_sso):
                                        a.`客服处理人`= IF(b.`客服处理人` = '', NULL,  b.`客服处理人`),
                                        a.`客服处理结果`= IF(b.`客服处理结果` = '', NULL, b.`客服处理结果`),
                                        a.`客服反馈描述`= IF(b.`客服反馈描述` = '', NULL, b.`客服反馈描述`)
-                           where a.`订单编号`=b.`订单编号`;'''.format('采购异常_创建时间','cache_check_cp')
+                           where a.`订单编号`=b.`订单编号`;'''.format(data_name, 'cache_check_cp')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('更新成功......')
     def _service_id_ssale_info(self, ord, proxy_handle, proxy_id):  # 进入采购问题件界面
@@ -2384,7 +2383,7 @@ class QueryOrder(Settings, Settings_sso):
                         result['deal_Content'] = ''
                         result['trace_UserName'] = ''
                         for record in trace_record:
-                            if '物流' not in record:
+                            if '物流' not in record and '香港立邦' not in record:
                                 if record.split("#处理结果：")[1] != '':
                                     result['deal_time'] = record.split()[0]
                                     rec = record.split("#处理结果：")[1]
@@ -2399,8 +2398,8 @@ class QueryOrder(Settings, Settings_sso):
                                         result['trace_UserName'] = recname.replace('(客服)', '')
                         ordersDict.append(result.copy())
                     else:
-                        print(44)
-                        print(result['order_number'])
+                        # print(44)
+                        # print(result['order_number'])
                         result['deal_time'] = ''
                         result['result_reson'] = ''
                         result['result_info'] = ''
@@ -2622,6 +2621,7 @@ class QueryOrder(Settings, Settings_sso):
                     dlist.append(data)
                     print('剩余查询次数' + str(in_count - n))
                     n = n + 1
+                    time.sleep(1)
                 dp = df.append(dlist, ignore_index=True)
                 dp = dp[['id','order_number',  'currency', 'addtime', 'orderStatus', 'logisticsStatus', 'logisticsName','create_time', 'lastQuestionName', 'contactName','userName', 'traceName',  'content', 'traceTime', 'failNum', 'questionAddtime', 'questionTypeName']]
                 dp.columns = ['id','订单编号', '币种', '下单时间', '订单状态', '物流状态', '物流渠道','创建时间', '派送问题类型', '联系方式', '最新处理人', '最新处理状态', '最新处理结果', '处理时间', '派送次数', '最新抓取时间', '最新问题类型']
@@ -2664,6 +2664,8 @@ class QueryOrder(Settings, Settings_sso):
         try:
             if req['data'] !=[]:
                 for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
+                    print(result['order_number'])
+                    # result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
                     ordersDict.append(result.copy())
             else:
                 return None
@@ -2722,9 +2724,10 @@ class QueryOrder(Settings, Settings_sso):
             n = 1
             while n <= in_count:  # 这里用到了一个while循环，穿越过来的
                 print('剩余查询次数' + str(in_count - n))
-                data = self._service_id_order_js_Query(timeStart, timeEnd, n, proxy_handle, proxy_id)
+                data = self._service_id_order_js_Query(timeStart, timeEnd, n, proxy_handle, proxy_id, order_time)
                 n = n + 1
                 dlist.append(data)
+                time.sleep(3)
             dp = df.append(dlist, ignore_index=True)
             dp = dp[['id', '订单编号', 'currency', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'percentInfo.arriveCount', 'addTime', 'finishTime', 'tel_phone', 'shipInfo.shipPhone', 'ip','cloneUser', 'newCloneUser', 'newCloneStatus', 'newCloneLogisticsStatus', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
             dp.columns = ['id', '订单编号', '币种', '订单总量', '拒收量', '签收量','下单时间', '完成时间', '电话', '联系电话', 'ip','本单克隆人', '新单克隆人', '新单订单状态', '新单物流状态', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果', '是否需要商品']
@@ -2739,7 +2742,7 @@ class QueryOrder(Settings, Settings_sso):
         else:
             print('****** 没有信息！！！')
         print('*' * 50)
-    def _service_id_order_js_Query(self, timeStart, timeEnd, n, proxy_handle, proxy_id):  # 进入拒收问题件界面
+    def _service_id_order_js_Query(self, timeStart, timeEnd, n, proxy_handle, proxy_id, order_time):  # 进入拒收问题件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRejectList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -2894,67 +2897,156 @@ class QueryOrder(Settings, Settings_sso):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         listT = []
         print('促单-绩效 获取中......')
-        sql2 = '''SELECT 订单编号, 币种, 代下单客服, 克隆人, 订单状态,  物流状态
-                FROM ( SELECT *, DATE_FORMAT(统计日期,'%Y%m') AS 月份
-                        FROM 促单_绩效 cd
-                ) s1
-                WHERE  s1.`月份` = DATE_FORMAT(CURDATE(),'%Y%m');;'''
+        sql2 = '''SELECT *
+                FROM 促单_下单时间 s1
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
         df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
         listT.append(df2)
 
         print('采购异常-绩效 获取中......')
-        sql3 = '''SELECT 订单编号, 币种, 下单时间, 处理时间, 处理人, 处理结果, 订单状态,  物流状态
-                FROM (  SELECT *, DATE_FORMAT(统计日期,'%Y%m') AS 月份
-                        FROM 采购异常_绩效 cg
-                ) s1
-                WHERE  s1.`月份` = DATE_FORMAT(CURDATE(),'%Y%m');'''
+        sql3 = '''SELECT *
+                FROM 采购异常_创建时间 s1
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
         df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
         listT.append(df3)
 
-        sql4 = '''SELECT EXTRACT(DAY FROM 下单时间) AS 天, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 日期, 代下单客服, COUNT(订单编号) as 总代下单量,
-        							SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量
-                            FROM ( SELECT *
-                                    FROM `cache` s
-                                    WHERE s.克隆人 IS NULL OR s.克隆人 = ""
-                            ) ss1
-                            GROUP BY 天, 代下单客服
-                            WITH ROLLUP 
-                            ORDER BY 天,
-        					FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
-        df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
-        listT.append(df4)
-
         print('挽单列表-绩效 获取中......')
-        sql5 = '''SELECT 订单编号,当前订单状态, 当前物流状态, 回款状态, 挽单
+        sql40 = '''SELECT 订单编号,当前订单状态, 当前物流状态, 回款状态, 挽单
                 FROM ( SELECT * , IF(挽单类型 = '拒收挽单','拒收挽单',IF(挽单类型 = '取消挽单' OR 挽单类型 = '未支付/支付失败挽单' ,'促单',IF(挽单类型 = '退换补挽单','退货挽单',挽单类型))) AS 挽单, DATE_FORMAT(统计日期,'%Y%m') AS 月份
                         FROM 挽单列表_绩效 
                         WHERE id IN (SELECT MAX(id) FROM 挽单列表_绩效 w WHERE w.删除人 = "" GROUP BY 订单编号) 
                         ORDER BY id
                 ) s1
                 WHERE s1.`月份` = DATE_FORMAT(CURDATE(),'%Y%m');'''
+        sql4 = '''SELECT *
+                FROM 挽单列表_创建时间 s1
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
+        df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
+        listT.append(df4)
+
+        print('派送问题-绩效 获取中......')
+        sql50 = '''SELECT 订单编号,当前订单状态, 当前物流状态, 回款状态, 挽单
+                FROM ( SELECT * , IF(挽单类型 = '拒收挽单','拒收挽单',IF(挽单类型 = '取消挽单' OR 挽单类型 = '未支付/支付失败挽单' ,'促单',IF(挽单类型 = '退换补挽单','退货挽单',挽单类型))) AS 挽单, DATE_FORMAT(统计日期,'%Y%m') AS 月份
+                        FROM 挽单列表_绩效 
+                        WHERE id IN (SELECT MAX(id) FROM 挽单列表_绩效 w WHERE w.删除人 = "" GROUP BY 订单编号) 
+                        ORDER BY id
+                ) s1
+                WHERE s1.`月份` = DATE_FORMAT(CURDATE(),'%Y%m');'''
+        sql5 = '''SELECT *
+                FROM 派送问题件_处理时间 s1
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m');'''
         df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
         listT.append(df5)
 
+        print('物流客诉-绩效 获取中......')
+        sql6 = '''SELECT *
+                FROM 物流客诉件_创建时间 s1
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
+        df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
+        listT.append(df6)
+
+        print('物流问题-绩效 获取中......')
+        sql7 = '''SELECT *
+                FROM 物流问题件_跟进时间 s1
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
+        df7 = pd.read_sql_query(sql=sql7, con=self.engine1)
+        listT.append(df7)
+
+        print('压单核实-绩效 获取中......')
+        sql8 = '''SELECT *
+                FROM 压单核实_跟进时间 s1
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
+        df8 = pd.read_sql_query(sql=sql8, con=self.engine1)
+        listT.append(df8)
+
         print('拒收问题件-绩效 获取中......')
-        sql6 = '''SELECT 订单编号, 再次克隆下单, 新单克隆人, 新单订单状态, 新单物流状态, 处理人
+        sql90 = '''SELECT 订单编号, 再次克隆下单, 新单克隆人, 新单订单状态, 新单物流状态, 处理人
                     FROM (
                             SELECT *, DATE_FORMAT(统计日期,'%Y%m') AS 月份
                             FROM 拒收问题件_绩效 js
                     ) s1
                     WHERE s1.`再次克隆下单` IS NOT NULL AND s1.`月份` = DATE_FORMAT(CURDATE(),'%Y%m');'''
-        df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
-        listT.append(df6)
+        sql9 = '''SELECT *
+                FROM 拒收问题件_跟进时间 s1
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m');'''
+        df9 = pd.read_sql_query(sql=sql9, con=self.engine1)
+        listT.append(df9)
 
-        file_path = 'G:\\输出文件\\促单查询 {}.xlsx'.format(rq)
+        print('促单-绩效 计算中......')
+        user_name = "'于海洋','马育慧','周浩迪','刘文君','杨昊','曲开拓','闫凯歌','曹可可'"
+        sql111 = '''SELECT 代下单客服, 订单编号,系统物流状态, NULL 回款状态
+                    FROM ( SELECT *, IF(克隆人 = "" AND 代下单客服 in ({0}),"促单","") AS 有效促单, 
+                                     IF(物流状态 = "",订单状态,IF(物流状态 = "已签收" AND 订单状态 = "已退货(销售)","已退货(销售)",物流状态)) AS 系统物流状态
+                            FROM 促单_下单时间 s1
+                            WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d')
+                    ) s 
+                    WHERE s.有效促单 = "促单"; '''.format(user_name)
+        df111 = pd.read_sql_query(sql=sql111, con=self.engine1)
+        listT.append(df111)
+        sql112 = '''SELECT 代下单客服, 
+									IF(待审核已审核 = 0,NULL,待审核已审核) "待审核/已审核",
+									IF(未发货 = 0,NULL,未发货) 未发货,
+									IF(截单 = 0,NULL,截单) 截单,
+									IF(客户取消 = 0,NULL,客户取消) 客户取消,
+									IF(未支付支付失败 = 0,NULL,未支付支付失败) "未支付/支付失败",
+									IF(已删除 = 0,NULL,已删除) 已删除,
+									IF(待发货 = 0,NULL,待发货) 待发货,
+									IF(问题订单 = 0,NULL,问题订单) 问题订单,
+									IF(已转采购 = 0,NULL,已转采购) 已转采购,
+									
+									IF(发货中 = 0,NULL,发货中) 发货中,
+									IF(签收 = 0,NULL,签收) 签收,
+									IF(拒收 = 0,NULL,拒收) 拒收,
+									IF(已退货 = 0,NULL,已退货) 已退货,
+									IF(理赔 = 0,NULL,理赔) 理赔,
+									IF(自发头程丢件 = 0,NULL,自发头程丢件) 自发头程丢件,
+									IF(已退货销售 = 0,NULL,已退货销售) "已退货(销售)",
+									IF(已退货物流 = 0,NULL,已退货物流) "已退货(物流)"
+                    FROM ( SELECT 代下单客服, 
+                                SUM(IF(系统物流状态 = "未发货",1,0)) AS 未发货,
+                                SUM(IF(系统物流状态 IN ("截单", "截单中(面单已打印,等待仓库审核)"),1,0)) AS 截单,
+                                SUM(IF(系统物流状态 IN ( "客户取消","已取消"),1,0)) AS 客户取消,
+                                SUM(IF(系统物流状态 = "已删除",1,0)) AS 已删除,
+                                SUM(IF(系统物流状态 = "待发货",1,0)) AS 待发货,
+                                SUM(IF(系统物流状态 = "已转采购",1,0)) AS 已转采购,
+                                SUM(IF(系统物流状态 IN ("问题订单审核", "问题订单"),1,0)) AS 问题订单,
+                                SUM(IF(系统物流状态 IN ("未支付","支付失败"),1,0)) AS 未支付支付失败,
+                                SUM(IF(系统物流状态 IN ( "待审核","已审核","待发货转审核"),1,0)) AS 待审核已审核,
+                                
+                                SUM(IF(系统物流状态 IN ("发货中", "已发货"),1,0)) AS 发货中,
+                                SUM(IF(系统物流状态 = "签收",1,0)) AS 签收,
+                                SUM(IF(系统物流状态 = "拒收",1,0)) AS 拒收,
+                                SUM(IF(系统物流状态 = "已退货",1,0)) AS 已退货,
+                                SUM(IF(系统物流状态 = "理赔",1,0)) AS 理赔,
+                                SUM(IF(系统物流状态 = "自发头程丢件",1,0)) AS 自发头程丢件,
+                                SUM(IF(系统物流状态 = "已退货(销售)",1,0)) AS 已退货销售,
+                                SUM(IF(系统物流状态 IN ("已退货(物流)", "已退货(不拆包物流)"),1,0)) AS 已退货物流
+                            FROM (
+                                    SELECT *, IF(克隆人 = "" AND 代下单客服 in ({0}),"促单","") AS 有效促单, 
+                                                        IF(物流状态 = "",订单状态,IF(物流状态 = "已签收" AND 订单状态 = "已退货(销售)","已退货(销售)",物流状态)) AS 系统物流状态
+                                    FROM 促单_下单时间 s1
+                                    WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') =  DATE_FORMAT(CURDATE(),'%Y%m%d')
+                            ) s 
+                            WHERE s.有效促单 = "促单"
+                            GROUP BY 代下单客服
+						) ss;'''.format(user_name)
+        df112 = pd.read_sql_query(sql=sql112, con=self.engine1)
+        listT.append(df112)
+
+        file_path = 'G:\\输出文件\\绩效数据 {}.xlsx'.format(rq)
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
         book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
         writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        listT[2].to_excel(excel_writer=writer, sheet_name='明细', index=False)
-        listT[3].to_excel(excel_writer=writer, sheet_name='汇总', index=False)
-        listT[0].to_excel(excel_writer=writer, sheet_name='有效单量', index=False)
-        listT[1].to_excel(excel_writer=writer, sheet_name='总下单量', index=False)
+        listT[0].to_excel(excel_writer=writer, sheet_name='促单', index=False)
+        listT[1].to_excel(excel_writer=writer, sheet_name='采购异常', index=False)
+        listT[2].to_excel(excel_writer=writer, sheet_name='挽单列表', index=False)
+        listT[3].to_excel(excel_writer=writer, sheet_name='派送问题', index=False)
+        listT[4].to_excel(excel_writer=writer, sheet_name='物流客诉', index=False)
+        listT[5].to_excel(excel_writer=writer, sheet_name='物流问题', index=False)
+        listT[6].to_excel(excel_writer=writer, sheet_name='压单核实', index=False)
+        listT[7].to_excel(excel_writer=writer, sheet_name='拒收问题', index=False)
         if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
             del book['Sheet1']
         writer.save()
@@ -3037,18 +3129,19 @@ if __name__ == '__main__':
 
         # m.service_id_order(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)      # 促单查询；下单时间 @~@ok
 
-        # order_time = '跟进时间'
-        # m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；处理时间 （一、获取订单内容）@~@ok
-        # m.service_id_ssale_info(proxy_handle, proxy_id)                             # 采购查询；处理时间 （二、获取处理详情）@~@ok
         # order_time = '创建时间'
         # m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；创建时间 （一、获取订单内容）@~@ok
-        # m.service_id_ssale_info(proxy_handle, proxy_id)                             # 采购查询；创建时间 （二、获取处理详情）@~@ok
+        # m.service_id_ssale_info(proxy_handle, proxy_id, '采购异常_创建时间')                             # 采购查询；创建时间 （二、获取处理详情）@~@ok
+        # order_time = '跟进时间'
+        # m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；处理时间 （一、获取订单内容）@~@ok
+        # m.service_id_ssale_info(proxy_handle, proxy_id, '采购问题件_跟进时间')                             # 采购查询；处理时间 （二、获取处理详情）@~@ok
 
         # m.service_id_getRedeemOrderList(timeStart, timeEnd, proxy_handle, proxy_id)  # 挽单列表  查询@~@ok
 
-        # order_time = '处理时间'                                                                 # 派送问题  处理时间:登记结果处理时间； 创建时间： 订单放入时间@~@ok
-        # m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
-        # order_time = '创建时间'                                                                 # 派送问题   创建时间： 订单放入时间（每次导出时需要更新数据）@~@ok
+        # order_time = '处理时间'                                                                 # 派送问题  处理时间:登记结果处理时间； 创建时间： 订单放入时间@~@
+        # m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)    # (需处理两次)
+        # m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)    # (需处理两次)
+        # order_time = '创建时间'                                                                 # 派送问题   创建时间： 订单放入时间（每次导出时需要更新数据）@~@
         # m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
 
         # order_time = '跟进时间'
@@ -3060,15 +3153,18 @@ if __name__ == '__main__':
         # m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
         # order_time = '创建时间'
         # m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
-
-        order_time = '跟进时间'
-        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
-        order_time = '下单跟进时间'
-        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
-        order_time = '下单时间'
-        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
         #
-        # m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)            # 系统问题件  查询；订单检索
+        # order_time = '跟进时间'                                                                  # 拒收问题  查询；订单检索@~@ok
+        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # (需处理两次)
+        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # (需处理两次)
+        # order_time = '下单跟进时间'
+        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
+        # order_time = '下单时间'
+        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
+
+        m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)            # 系统问题件  查询；订单检索
+
+        m.service_check()
 
     elif int(select) == 9:
         m.del_order_day()

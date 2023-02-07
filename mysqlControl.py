@@ -2937,7 +2937,7 @@ class MysqlControl(Settings):
                 dict_info['订单状态'] = x['orderStatus']
                 dict_info['转化时间'] = x['updateTime']
                 dict_info['备注'] = x['remark']
-                dict_info['转化人'] = ""
+                dict_info['转化人'] = '0'
                 dict[order_Number] = dict_info
                 print(dict)
                 print(dict_info)
@@ -2955,18 +2955,25 @@ class MysqlControl(Settings):
                 remark_Status_last = dict[order_Number]['备注']
                 name_Status = x['name']
                 name_Status_last = dict[order_Number]['转化人']
+                print(name_Status_last)
                 if '已删除' not in order_Status and '待发货' not in order_Status:
                     print('已删除不在')
-                    print(name_Status_last)
+                    print('转化人:' + str(name_Status_last))
                     dict_info['订单编号'] = x['orderNumber']
                     dict_info['id'] = x['id']
                     dict_info['订单状态'] = x['orderStatus']
                     dict_info['转化时间'] = x['updateTime']
                     dict_info['备注'] = x['remark']
                     if order_Status == '问题订单':
-                        dict_info['转化人'] = x['name']
+                        if name_Status_last != '' and name_Status_last != '0' and name_Status_last != 0:
+                            if name_Status_last == '蔡利英' or name_Status_last == '杨嘉仪' or name_Status_last == '张陈平':
+                                dict_info['转化人'] = name_Status_last
+                            else:
+                                dict_info['转化人'] = x['name']
+                        else:
+                            dict_info['转化人'] = x['name']
                     else:
-                        dict_info['转化人'] = ""
+                        dict_info['转化人'] = '0'
                     dict[order_Number] = dict_info
                 elif '已删除' in order_Status or '待发货' in order_Status:
                     print('已删除在')

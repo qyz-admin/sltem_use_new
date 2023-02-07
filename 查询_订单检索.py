@@ -151,10 +151,10 @@ class QueryOrder(Settings, Settings_sso):
                                 ord = ','.join(orderId[n:n + 500])
                                 data = self.orderInfoQuery(ord, searchType, proxy_id, proxy_handle)
                                 dlist.append(data)
-                                print('正在写入......')
                                 # print(dlist)
                                 dp = df.append(dlist, ignore_index=True)
                                 if to_sql == '写入':
+                                    print('正在写入......')
                                     dp = dp[['orderNumber', 'area', 'shipInfo.shipEmail', 'addTime','logisticsStatus','orderStatus']]
                                     dp.columns = ['订单编号', '运营团队', '邮箱', '下单时间','物流状态','订单状态']
                                     dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
@@ -2491,7 +2491,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 5                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
