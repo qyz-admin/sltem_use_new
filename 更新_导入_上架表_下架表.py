@@ -253,7 +253,7 @@ class Updata_return_bill(Settings, Settings_sso):
                                 db = db[['物流渠道', '订单编号', '运单编号', '退货单号', '退货上架货架', '上架时间', '仓库名称', '在仓天数', '末条状态']]
                             else:
                                 team = 'gat_return_bill'
-                                db.rename(columns={'订单号': '订单编号', '承运单号': '运单编号', '上架日期': '上架时间', '所属仓': '仓库名称', '所属仓库':'仓库名称', '仓库':'仓库名称'}, inplace=True)
+                                db.rename(columns={'订单号': '订单编号', '承运单号': '运单编号', '上架日期': '上架时间','退回时间': '上架时间', '所属仓': '仓库名称', '所属仓库':'仓库名称', '仓库':'仓库名称'}, inplace=True)
                                 db.insert(0, '物流渠道', tem_data)
                                 db.insert(0, '退货单号', '')
                                 db.insert(0, '退货上架货架', '')

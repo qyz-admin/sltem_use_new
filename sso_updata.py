@@ -2755,7 +2755,7 @@ class Query_sso_updata(Settings):
             dp = dp[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'shipInfo.shipCity','shipInfo.shipName', 'shipInfo.shipAddress','wayBillNumber','saleId', 'saleProduct', 'productId','spec','quantity', 'orderStatus',
                      'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime','transferTime', 'onlineTime', 'deliveryTime','finishTime','stateTime', 'logisticsUpdateTime', 'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName',
                      'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks', 'auto_VerifyTip',
-                     'percentInfo.arriveCount', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'tel_phone', 'percent','warehouse','cloneTypeName']]
+                     'percentInfo.arriveCount', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'tel_phone', 'percent','warehouse','cloneTypeName', 'isBlindBox', 'mainOrderNumber']]
             print(dp)
             # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
             # dp.to_excel('H:\\桌面\\需要用到的文件\\\输出文件\\派送问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
@@ -2772,6 +2772,7 @@ class Query_sso_updata(Settings):
                                     IF(h.`logisticsStatus` in ('发货中'), null, h.`logisticsStatus`) 系统物流状态,
                                     IF(h.`reassignmentTypeName` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
                                     TRIM(h.payType) 付款方式,
+                                    IF(TRIM(h.payType) NOT LIKE '%货到付款%','在线付款','货到付款') AS 支付类型,
                                     TRIM(h.logisticsName) 物流方式,
                                     dim_trans_way.simple_name 物流名称,
                                     IF(h.`dpeStyle` = 'P 普通货', 'P', IF(h.`dpeStyle` = 'T 特殊货', 'T', h.`dpeStyle`)) 货物类型,
@@ -2811,7 +2812,9 @@ class Query_sso_updata(Settings):
                                     h.`tel_phone` 标准电话,
                                     h.`percent` 下单拒收率,
                                     h.`warehouse` 发货仓库,
-                                    h.`cloneTypeName` 克隆类型
+                                    h.`cloneTypeName` 克隆类型,
+                                    h.`isBlindBox` 是否盲盒,
+                                    h.`mainOrderNumber` 主订单
                                    FROM d1_cpy h
                                        LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
                                        LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -2833,6 +2836,7 @@ class Query_sso_updata(Settings):
                                        a.`系统物流状态`= IF(b.`系统物流状态` = '', NULL, b.`系统物流状态`),
                                        a.`是否改派`= b.`是否改派`,
                                        a.`付款方式`= IF(b.`付款方式` = '',NULL, b.`付款方式`),
+                                       a.`支付类型`= IF(b.`支付类型` = '',NULL, b.`支付类型`),
                                        a.`物流方式`= IF(b.`物流方式` = '',NULL, b.`物流方式`),
                                        a.`物流名称`= IF(b.`物流名称` = '', NULL, b.`物流名称`),
                                        a.`货物类型`= IF(b.`货物类型` = '', NULL, b.`货物类型`),
@@ -2869,7 +2873,9 @@ class Query_sso_updata(Settings):
                                        a.`标准电话`= IF(b.`标准电话` = '', NULL,  b.`标准电话`),
                                        a.`下单拒收率`= IF(b.`下单拒收率` = '', NULL,  b.`下单拒收率`),
                                        a.`发货仓库`= IF(b.`发货仓库` = '', NULL,  b.`发货仓库`),
-                                       a.`克隆类型`= IF(b.`克隆类型` = '', NULL,  b.`克隆类型`)
+                                       a.`克隆类型`= IF(b.`克隆类型` = '', NULL,  b.`克隆类型`),
+                                       a.`是否盲盒`= IF(b.`是否盲盒` = '', NULL,  b.`是否盲盒`),
+                                       a.`主订单`= IF(b.`主订单` = '', NULL,  b.`主订单`)
                            where a.`订单编号`=b.`订单编号`;'''.format('gat_order_list')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         else:
@@ -3379,13 +3385,14 @@ class Query_sso_updata(Settings):
         print('正在获取 改派未发货…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
         sql = '''SELECT xj.订单编号, xj.下单时间, xj.新运单号 运单编号, xj.查件单号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, b.物流状态, c.标准物流状态,b.状态时间, NULL 系统订单状态, NULL 系统物流状态, 
-                        IF(统计时间 >=CURDATE() ,'未发货',NULL) AS 状态
+                        IF(统计时间 >=CURDATE() ,'未发货',NULL) AS 状态, g.工单类型, g.是否完成,g.提交形式, g.提交时间, g.登记人, g.运单编号 AS 运单号, g.最新处理人, g.最新处理时间, g.最新处理结果, g.同步操作记录
                 FROM ( SELECT *
                        FROM 已下架表 x
                        WHERE x.记录时间 >= TIMESTAMP ( CURDATE( ) ) AND x.币种 = '台币'
                 ) xj
                 LEFT JOIN gat_wl_data b ON xj.`查件单号` = b.`运单编号`
-                LEFT JOIN gat_logisitis_match c ON b.物流状态 = c.签收表物流状态;'''
+                LEFT JOIN gat_logisitis_match c ON b.物流状态 = c.签收表物流状态      
+                LEFT JOIN 工单列表 g ON xj.`订单编号` = g.`订单编号`;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df = df.loc[df["币种"] == "台币"]
         df.to_sql('cache', con=self.engine1, index=False, if_exists='replace')

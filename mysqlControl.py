@@ -438,6 +438,7 @@ class MysqlControl(Settings):
                             dim_cate.pname 二级分类,
                             dim_cate.name 三级分类,
                             dim_payment.pay_name 付款方式,
+                            IF(dim_payment.pay_name NOT LIKE '%货到付款%','在线付款','货到付款') AS 支付类型,
                             a.amount 价格,
                             a.addtime 下单时间,
                             a.verity_time 审核时间,
@@ -486,7 +487,9 @@ class MysqlControl(Settings):
                             null 标准电话,
                             null 下单拒收率,
                             null 发货仓库,
-                            null 克隆类型
+                            null 克隆类型,
+                            null 是否盲盒,
+                            null 主订单
                     FROM gk_order a
                             LEFT JOIN dim_area ON dim_area.id = a.area_id
                             LEFT JOIN dim_payment ON dim_payment.id = a.payment_id
@@ -2852,7 +2855,6 @@ class MysqlControl(Settings):
         # file_path = r'F:\\神龙签收率\\B促单指标\\{0} 日统计.xlsx'.format(datetime.datetime.now().strftime('%m.%d'))
         # df = pd.DataFrame([])
         # df.to_excel(file_path, sheet_name='日统计', index=False, engine='xlsxwriter')
-
 
         time_path: datetime = datetime.datetime.now()
         mkpath = "F:\\神龙签收率\\" + time_path.strftime('%m.%d')

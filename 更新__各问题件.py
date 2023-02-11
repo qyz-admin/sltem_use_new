@@ -1664,19 +1664,19 @@ class QueryTwo(Settings, Settings_sso):
                 dp = self._getOrderCollectionList(timeStart, timeEnd, n, proxy_handle, proxy_id)
             dp = dp[['order_number','area_name','currency_name','waybill_number','ship_phone','payType','order_status','logistics_status','logistics_name','reassignmentTypeName','addtime','delivery_time',
                     'finishtime','question_type','step','channel','source','intime','serviceName','operator','collectionType','dealOperatorName','deal_time',
-                    'dealContent','dealStatus','traceRecord','sync_operator','sync_data.deal_id','sync_data.create_time','sync_data.sync_type','sync_data_all']]
+                    'dealContent','dealStatus','traceRecord', 'do_status','sync_operator','sync_data.deal_id','sync_data.create_time','sync_data.sync_type','sync_data_all']]
             dp.columns = ['订单编号','所属团队','币种','运单编号','电话','支付方式','订单状态','物流状态','物流渠道','订单类型','下单时间','发货时间',
                           '完成时间','问题类型','环节问题','来源渠道','提交形式','提交时间','受理客服','登记人','工单类型','最新处理人','最新处理时间',
-                          '最新处理描述','最新处理结果','处理记录','同步人','同步状态','同步时间','同步类型','同步操作记录']
+                          '最新处理描述','最新处理结果','处理记录','是否完成','同步人','同步状态','同步时间','同步类型','同步操作记录']
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\工单列表-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO 工单列表(订单编号,所属团队,币种,运单编号,电话,支付方式,订单状态,物流状态,物流渠道,订单类型,下单时间,
 			                    发货时间,完成时间,问题类型,环节问题,来源渠道,提交形式,提交时间,受理客服,登记人,工单类型,
-			                    最新处理人,最新处理时间,最新处理描述,最新处理结果,处理记录,同步人,同步状态,同步时间,同步类型,同步操作记录,记录时间)
+			                    最新处理人,最新处理时间,最新处理描述,最新处理结果,处理记录,是否完成,同步人,同步状态,同步时间,同步类型,同步操作记录,记录时间)
                     SELECT 订单编号,所属团队,币种,运单编号,电话,支付方式,订单状态,物流状态,物流渠道,订单类型,下单时间,IF(发货时间 = '',NULL, 发货时间) AS 发货时间,IF(完成时间 = '',NULL, 完成时间) AS 完成时间,
                                 问题类型,环节问题,来源渠道,提交形式,IF(提交时间 = '',NULL, 提交时间) AS 提交时间,受理客服,登记人,工单类型,最新处理人,IF(最新处理时间 = '',NULL, 最新处理时间) AS 最新处理时间,最新处理描述,
-                                最新处理结果,处理记录,同步人,同步状态,IF(同步时间 = '',NULL, 同步时间) AS 同步时间,同步类型,同步操作记录,NOW() 记录时间
+                                最新处理结果,处理记录,是否完成,同步人,同步状态,IF(同步时间 = '',NULL, 同步时间) AS 同步时间,同步类型,同步操作记录,NOW() 记录时间
                     FROM  customer;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
