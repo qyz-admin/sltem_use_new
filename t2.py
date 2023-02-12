@@ -23,7 +23,9 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
                         set global event_scheduler=0;（关闭定时器）;
 备注：  港台 需整理的表：香港立邦>(明细再copy一份保存) ； 台湾龟山改派>(copy保存为xlsx格式);
 说明：  日本 需整理的表：1、吉客印神龙直发签收表=密码：‘JKTSL’>(明细再copy保存；改派明细不需要);2、直发签收表>(明细再copy保存；3、状态更新需要copy保存);
+
 '''
+
 # 初始化时间设置
 updata = '全部'           #  后台获取全部（两月）、部分更新（近五天）
 if team == 'gat':
@@ -47,6 +49,7 @@ else:
     month_begin = '2022-11-01'
 print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
+print('****** 导出      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
 print('****** 导出      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
 
 # 库的引用
