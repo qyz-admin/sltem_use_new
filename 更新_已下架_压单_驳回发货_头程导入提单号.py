@@ -377,7 +377,7 @@ class QueryTwoLower(Settings, Settings_sso):
     # 进入 压单反馈 界面 （仓储的获取）
     def order_spec(self):  # 进入   压单反馈  界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        timeStart = ((datetime.datetime.now() + datetime.timedelta(days=1)) - relativedelta(months=2)).strftime('%Y-%m-%d')
+        timeStart = ((datetime.datetime.now() + datetime.timedelta(days=1)) - relativedelta(months=3)).strftime('%Y-%m-%d')
         timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
         print('正在查询 港台 压单订单信息中......')
         url = r'http://gwms-v3.giikin.cn/order/pressure/index'

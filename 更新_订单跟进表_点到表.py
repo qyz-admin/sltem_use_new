@@ -546,9 +546,12 @@ if __name__ == '__main__':
 
     elif int(select) == 4:
         team = 'gat_waybill_list'
-        handle = '手0动'
+        handle = '手动0'
+        login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
+        proxy_handle = '代理服务器0'
+        proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
         m.readFormHost(team)
-        m.waybill_info('login_TmpCode', handle)
+        m.waybill_info('login_TmpCode', handle, proxy_handle, proxy_id)
         m.chuhuo_info('login_TmpCode', 'login_TmpCode2', handle)
 
     elif int(select) == 5:

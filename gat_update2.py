@@ -658,7 +658,6 @@ class QueryUpdate(Settings):
                    and gz.`审核时间` >= '{0} 00:00:00' AND gz.`日期` >= '{1}';'''.format(month_yesterday, month_last)
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('已清除不参与计算的今日改派订单…………')
-
     # 导出总的签收表---各家族-港澳台(三)
     def EportOrderBook(self, team, month_last, month_yesterday):
         today = datetime.date.today().strftime('%Y.%m.%d')
@@ -11060,7 +11059,7 @@ if __name__ == '__main__':
         m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
 
         currency_id = '全部付款'
-        m.gat_new(team, month_last, month_yesterday, currency_id)      # 获取-货到付款& 在线付款 签收率-报表
+        # m.gat_new(team, month_last, month_yesterday, currency_id)      # 获取-货到付款& 在线付款 签收率-报表
         m.qsb_new(team, month_old)                                  # 获取-每日-报表
         m.EportOrderBook(team, month_last, month_yesterday)         # 导出-总的-签收
         m.phone_report('handle', month_last, month_yesterday)                                    # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）

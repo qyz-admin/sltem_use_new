@@ -869,7 +869,7 @@ class QueryOrder(Settings, Settings_sso):
             while n < in_count:  # 这里用到了一个while循环，穿越过来的
                 print('剩余查询次数' + str(in_count - n))
                 n = n + 1
-                data = self._timeQuery(timeStart, timeEnd, n, areaId, query)
+                data = self._timeQuery(timeStart, timeEnd, n, areaId, query, proxy_id, proxy_handle)
                 dlist.append(data)
             print('正在写入......')
             dp = df.append(dlist, ignore_index=True)
@@ -2509,17 +2509,17 @@ if __name__ == '__main__':
         m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd', to_sql, proxy_id, proxy_handle)  # 导入；，更新--->>数据更新切换
 
     elif int(select) == 3:
-        print("2-->>> 正在按下单时间查询+++")
-        timeStart = '2022-10-01'
-        timeEnd = '2022-11-14'
+        print("1-->>> 正在按下单时间查询+++")
+        timeStart = '2023-02-10'
+        timeEnd = '2023-02-10'
         areaId = ''
         query = '下单时间'
         m.order_TimeQuery(timeStart, timeEnd, areaId, query, proxy_id, proxy_handle)
 
     elif int(select) == 33:
         print("2-->>> 正在按完成时间查询+++")
-        timeStart = '2022-09-15'
-        timeEnd = '2022-09-15'
+        timeStart = '2023-02-11'
+        timeEnd = '2023-02-12'
         areaId = ''
         query = '完成时间'
         m.order_TimeQuery(timeStart, timeEnd, areaId, query, proxy_id, proxy_handle)

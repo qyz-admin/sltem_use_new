@@ -1150,63 +1150,25 @@ class QueryTwo(Settings, Settings_sso):
         # print(req)
         ordersDict = []
         if max_count != 0:
-            try:
-                for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
-                    # print(result['orderNumber'])
-                    result['订单编号'] = result['orderNumber']
-                    result['再次克隆下单'] = result['newCloneNumber']
-                    result['跟进人'] = ''
-                    result['时间'] = ''
-                    result['内容'] = ''
-                    result['联系方式'] = ''
-                    result['问题类型'] = ''
-                    result['问题原因'] = ''
-                    result['处理结果'] = ''
-                    result['是否需要商品'] = ''
-                    if result['traceItems'] != []:
-                        for res in result['traceItems']:
-                            resval = res.split(':')[0]
-                            if '跟进人' in resval:
-                                result['跟进人'] = (res.split('跟进人:')[1]).strip()  # 跟进人
-                            if '时间' in resval and '跟进' not in resval:
-                                result['时间'] = (res.split('时间:')[1]).strip()  # 跟进人
-                            if '内容' in resval:
-                                result['内容'] = (res.split('内容:')[1]).strip()  # 跟进人
-                            if '联系方式' in resval:
-                                result['联系方式'] = (res.split('联系方式:')[1]).strip()  # 跟进人
-                            if '问题类型' in resval:
-                                result['问题类型'] = (res.split('问题类型:')[1]).strip()  # 跟进人
-                            if '问题原因' in resval:
-                                result['问题原因'] = (res.split('问题原因:')[1]).strip()  # 跟进人
-                            if '处理结果' in res:
-                                result['处理结果'] = (res.split('处理结果:')[1]).strip()  # 跟进人
-                            if '是否需要商品' in res:
-                                result['是否需要商品'] = (res.split('是否需要商品:')[1]).strip()  # 跟进人
-                    ordersDict.append(result.copy())
-            except Exception as e:
-                print('转化失败： 重新获取中', str(Exception) + str(e))
-            df = pd.json_normalize(ordersDict)
-            print('*' * 50)
-            if max_count > 500:
-                in_count = math.ceil(max_count/500)
-                dlist = []
-                n = 1
-                while n < in_count:  # 这里用到了一个while循环，穿越过来的
-                    print('剩余查询次数' + str(in_count - n))
-                    n = n + 1
-                    data = self._order_js_Query(timeStart, timeEnd, n, proxy_handle, proxy_id)
-                    dlist.append(data)
-                dp = df.append(dlist, ignore_index=True)
-            else:
-                dp = df
+            df = pd.DataFrame([])
+            in_count = math.ceil(max_count / 500)
+            dlist = []
+            n = 1
+            while n <= in_count:  # 这里用到了一个while循环，穿越过来的
+                print('剩余查询次数' + str(in_count - n))
+                data = self._order_js_Query(timeStart, timeEnd, n, proxy_handle, proxy_id)
+                n = n + 1
+                dlist.append(data)
+                time.sleep(3)
+            dp = df.append(dlist, ignore_index=True)
             dp.to_excel('G:\\输出文件\\拒收问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            dp = dp[['订单编号', 'currency', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'percentInfo.arriveCount', 'addTime', 'finishTime', 'tel_phone', 'shipInfo.shipPhone', 'ip','newCloneUser', 'newCloneStatus', 'newCloneLogisticsStatus', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
-            dp.columns = ['订单编号', '币种', '订单总量', '拒收量', '签收量','下单时间', '完成时间', '电话', '联系电话', 'ip','新单克隆人', '新单订单状态', '新单物流状态', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果', '是否需要商品']
+            dp = dp[['id', '订单编号', 'currency', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'percentInfo.arriveCount', 'addTime', 'finishTime', 'tel_phone', 'shipInfo.shipPhone', 'ip','cloneUser', 'newCloneUser', 'newCloneStatus', 'newCloneLogisticsStatus', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
+            dp.columns = ['id', '订单编号', '币种', '订单总量', '拒收量', '签收量','下单时间', '完成时间', '电话', '联系电话', 'ip','本单克隆人', '新单克隆人', '新单订单状态', '新单物流状态', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果', '是否需要商品']
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO 拒收问题件(订单编号,币种,订单总量, 拒收量, 签收量, 下单时间, 完成时间, 电话, 联系电话, ip, 新单克隆人, 新单订单状态, 新单物流状态, 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果, 是否需要商品,记录时间)
-                    SELECT 订单编号,币种, 订单总量, 拒收量, 签收量, 下单时间, 完成时间, IF(电话 LIKE "852%",RIGHT(电话,LENGTH(电话)-3),IF(电话 LIKE "886%",RIGHT(电话,LENGTH(电话)-3),电话)) 电话, 联系电话, ip,新单克隆人, 新单订单状态, 新单物流状态,  IF(再次克隆下单 = '',NULL,再次克隆下单) 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果,是否需要商品, NOW() 记录时间
-                    FROM customer;'''
+            sql = '''REPLACE INTO 拒收问题件(id, 订单编号,币种, 订单总量, 拒收量, 签收量, 下单时间, 完成时间, 电话, 联系电话, ip, 本单克隆人, 新单克隆人, 新单订单状态, 新单物流状态, 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果, 是否需要商品,记录时间)
+                     SELECT id, 订单编号,币种, 订单总量, 拒收量, 签收量, 下单时间, 完成时间, IF(电话 LIKE "852%",RIGHT(电话,LENGTH(电话)-3),IF(电话 LIKE "886%",RIGHT(电话,LENGTH(电话)-3),电话)) 电话, 联系电话, ip, 本单克隆人, 新单克隆人, 新单订单状态, 新单物流状态,  IF(再次克隆下单 = '',NULL,再次克隆下单) 再次克隆下单,处理人,IF(处理时间 = '',NULL,处理时间) AS 处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果,是否需要商品,NOW() 记录时间
+                    FROM customer;'''.format("", "")
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
 
@@ -1245,11 +1207,15 @@ class QueryTwo(Settings, Settings_sso):
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         else:
             req = self.session.post(url=url, headers=r_header, data=data)
-        print('+++已成功发送请求......')
-        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print('+++已成功发送请求......')
+        try:
+            req = json.loads(req.text)  # json类型数据转换为dict字典
+        except Exception as e:
+            print('转化失败： 请求失败', str(Exception) + str(e))
         ordersDict = []
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
+                # print(result['orderNumber'])
                 result['订单编号'] = result['orderNumber']
                 result['再次克隆下单'] = result['newCloneNumber']
                 result['跟进人'] = ''
@@ -1281,7 +1247,7 @@ class QueryTwo(Settings, Settings_sso):
                             result['是否需要商品'] = (res.split('是否需要商品:')[1]).strip()  # 跟进人
                 ordersDict.append(result.copy())
         except Exception as e:
-            print('转化失败： 重新获取中', str(Exception) + str(e))
+            print('转化失败： 请检查出错点！！！', str(Exception) + str(e))
         data = pd.json_normalize(ordersDict)
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
