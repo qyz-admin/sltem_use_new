@@ -623,7 +623,7 @@ class QueryUpdate(Settings):
                             省洲,市区,数量, a.下架时间, a.物流提货时间, a.完结状态, a.回款时间, a.支付类型, a.是否盲盒, a.克隆类型, a.主订单
                         FROM (SELECT * 
 							FROM {0}_order_list g
-							WHERE g.日期 >= '{2}' AND g.日期 <= '{3}' AND g.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
+							WHERE g.日期 >= '{2}' AND g.日期 <= '{3}' AND g.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)') and g.物流方式 <> '盲盒专用物流渠道'
 						) a
                         LEFT JOIN gat_wl_data b ON a.`查件单号` = b.`运单编号`
                         LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
@@ -653,6 +653,16 @@ class QueryUpdate(Settings):
         print('正在写入' + match[team] + ' 全部签收表中…………')
         sql = 'REPLACE INTO {0}_zqsb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        try:
+            print('正在 回滚更新总表......')
+            sql = '''update {0}_order_list a, d1_gat b
+                            set a.`系统物流状态`= IF(b.`最终状态` = '', NULL, b.`最终状态`),
+                                a.`上线时间`= IFNULL(a.`上线时间`, IF(b.`上线时间` = '' or b.`上线时间` = '0000-00-00 00:00:00', NULL,  b.`上线时间`))
+                    where a.`订单编号`= b.`订单编号`;'''.format(team)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        except Exception as e:
+            print('更新失败：', str(Exception) + str(e))
+
         sql = '''DELETE FROM gat_zqsb gz 
                  WHERE gz.`系统订单状态` = '已转采购' and gz.`是否改派` = '改派'
                    and gz.`审核时间` >= '{0} 00:00:00' AND gz.`日期` >= '{1}';'''.format(month_yesterday, month_last)

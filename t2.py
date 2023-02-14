@@ -38,9 +38,9 @@ if team == 'gat0':
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    data_begin = datetime.date(2023, 2, 1)  # 数据库更新
-    begin = datetime.date(2023, 2, 1)      # 单点更新
-    end = datetime.date(2023, 2, 14)
+    data_begin = datetime.date(2022, 11, 1)  # 数据库更新
+    begin = datetime.date(2022, 11, 1)      # 单点更新
+    end = datetime.date(2023, 1, 1)
     # 导出时间
     month_last = '2022-12-01'
     month_yesterday = '2023-02-14'
