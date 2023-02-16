@@ -235,21 +235,31 @@ class QueryTwo(Settings, Settings_sso):
                     print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
                     orderId = list(db['订单编号'])
                     max_count = len(orderId)                                    # 使用len()获取列表的长度，上节学的
-                    if max_count > 10:
-                        ord = ','.join(orderId[0:10])
-                        df = self.orderInfoQuery(ord, searchType)
-                        dlist = []
-                        n = 0
-                        while n < max_count-10:                                # 这里用到了一个while循环，穿越过来的
-                            n = n + 10
-                            ord = ','.join(orderId[n:n + 10])
-                            data = self.orderInfoQuery(ord, searchType)
-                            dlist.append(data)
-                        print('正在写入......')
-                        dp = df.append(dlist, ignore_index=True)
-                    else:
-                        ord = ','.join(orderId[0:max_count])
-                        dp = self.orderInfoQuery(ord, searchType)
+                    # if max_count > 10:
+                    #     df = self.orderInfoQuery(ord, searchType)
+                    #     dlist = []
+                    #     n = 0
+                    #     while n < max_count-10:                                # 这里用到了一个while循环，穿越过来的
+                    #         n = n + 10
+                    #         ord = ','.join(orderId[n:n + 10])
+                    #         data = self.orderInfoQuery(ord, searchType)
+                    #         dlist.append(data)
+                    #     print('正在写入......')
+                    #     dp = df.append(dlist, ignore_index=True)
+                    # else:
+                    #     ord = ','.join(orderId[0:max_count])
+                    #     dp = self.orderInfoQuery(ord, searchType)
+
+                    df = pd.DataFrame([])
+                    n = 0
+                    dlist = []
+                    while n <= max_count + 10:  # 这里用到了一个while循环，穿越过来的
+                        ord = ','.join(orderId[n:n + 10])
+                        data = self.orderInfoQuery(ord, searchType)
+                        dlist.append(data)
+                        n = n + 10
+                    dp = df.append(dlist, ignore_index=True)
+
                     dp.to_excel('G:\\输出文件\\订单操作日志-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
                     print('查询已导出+++')
                 else:
@@ -296,14 +306,99 @@ class QueryTwo(Settings, Settings_sso):
         return data
 
 
+    def getOrderLog_write(self, proxy_handle, proxy_id, data_name, orderNumber, data_name2):
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        sql = '''SELECT {1}
+                FROM {0} s
+                WHERE {1} NOT IN (SELECT DISTINCT {1} FROM {2});'''.format(data_name, orderNumber, data_name2)
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        if ordersDict.empty:
+            print('无需要更新订单信息！！！')
+            return
+        orderId = list(ordersDict[orderNumber])
+        # print(orderId)
+        max_count = len(orderId)                 # 使用len()获取列表的长度，上节学的
+        if max_count != 0:
+            print('++++++本次需查询;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+            tt = 0
+            while tt <= max_count + 1000:
+                order_data = orderId[tt:tt + 1000]
+                self._getOrderLog_write(order_data, proxy_handle, proxy_id)
+                tt = tt + 1000
+                print('正在查询：第' + str(tt) + ' - ' + str(tt) + ' 条信息+++++++')
+            print('查询结束+++++++')
+
+    def _getOrderLog_write(self, order_data, proxy_handle, proxy_id):
+        n = 0
+        c_count = len(order_data)
+        while n <= c_count + 10:  # 这里用到了一个while循环，穿越过来的
+            order = order_data[n:n + 10]
+            df = pd.DataFrame([])                # 创建空的dataframe数据框
+            dlist = []
+            for ord in order:
+                data = self._getOrder_Log_write(ord, proxy_handle, proxy_id)
+                if data is not None and len(data) > 0:
+                    dlist.append(data)
+            dp = df.append(dlist, ignore_index=True)
+            print(dp)
+            dp.to_sql('order_log_cache', con=self.engine1, index=False, if_exists='replace')
+            columns = list(dp.columns)
+            columns = ','.join(columns)
+            sql = '''REPLACE INTO {0}({1}) SELECT * FROM order_log_cache;'''.format(data_name2, columns)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('查询已导出+++')
+            print('*' * 50)
+            n = n + 10
+            print('剩余：' + str(c_count - n) + ' 条信息+++++++')
+
+    def _getOrder_Log_write(self, ord, proxy_handle, proxy_id):  # 进入订单检索界面
+        print('+++正在查询订单信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.order&action=getOrderLog'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'orderKey': ord}
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        ordersdict = []
+        try:
+            for result in req['data']:
+                ordersdict.append(result)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        data = pd.json_normalize(ordersdict)
+        print('++++++本批次查询成功+++++++')
+        print('*' * 50)
+        return data
+
+
 if __name__ == '__main__':
+    proxy_handle = '代理服务器0'
+    proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
+    handle = '手0动'
+    login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
     m = QueryTwo('+86-18538110674', 'qyz35100416')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # 1、手动导入状态
-    for team in ['gat']:
-        searchType = '订单号'         # 导入；，更新--->>数据更新切换
-        m.readFormHost(team, searchType)
+    select = 9
+    if select == 1:
+        for team in ['gat']:
+            searchType = '订单号'         # 导入；，更新--->>数据更新切换
+            m.readFormHost(team, searchType)
+    elif select == 9:                    # 写入数据库；，更新--->>数据更新切换
+        searchType = '订单号'              # 查询的关键词
+        # data_name = 'order_log'             # 关键词的表
+        data_name = 'sheet1'             # 关键词的表
+        data_name2 = 'gat_order_list_log_cp'        # 结果存放的表
+        orderNumber = '订单编号'
+        m.getOrderLog_write(proxy_handle, proxy_id, data_name, orderNumber, data_name2)
 
     print('查询耗时：', datetime.datetime.now() - start)

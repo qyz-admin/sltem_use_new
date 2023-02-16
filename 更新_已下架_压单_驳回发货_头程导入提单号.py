@@ -453,13 +453,40 @@ class QueryTwoLower(Settings, Settings_sso):
                     ) s3 ON s.订单编号 = s3.订单号
                     ORDER BY 压单天数;'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
+            sql2 = '''SELECT *  FROM 压单表 g WHERE g.`记录时间` >= CURDATE();'''
+            df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
+            sql3 = '''SELECT  币种, 团队,压单天数, COUNT(订单编号) AS 单量
+                    FROM (
+                           SELECT s.订单编号,s.产品ID,s.产品名称,NULL SKU,NULL 产品规格,NULL 运单号,s.币种,家族 AS 团队,'港台' AS 团队2, NULL 状态,s.反馈时间,s.压单原因,s.其他原因,	s.采购员, 品类, s.入库时间,s.下单时间,s.是否下架,
+                                s.下架时间,s.记录时间,NULL 备注,  DATEDIFF(curdate(),入库时间) 压单天数, DATE_FORMAT(入库时间,'%Y-%m-%d') 入库
+                        FROM ( SELECT * , IF(团队 LIKE '火凤凰-港%','火凤凰-港澳台',IF(团队 LIKE '金蝉家族%','金蝉家族',IF(团队 LIKE '金蝉家族%','金蝉家族',团队))) AS 家族
+                                FROM 压单表 g
+                                WHERE g.`记录时间` >= CURDATE() and g.是否下架 <> '已下架'
+                        ) s
+                        ORDER BY 压单天数
+                    ) ss
+                    GROUP BY 币种, 团队, 压单天数
+                    ORDER BY 币种, 团队, 压单天数
+                    ;'''
+
             isExists = os.path.exists(mkpath)
             if not isExists:
                 os.makedirs(mkpath)
             else:
                 print(mkpath + ' 目录已存在')
             file_path = mkpath + '\\压单反馈 {0}.xlsx'.format(rq)
-            df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
+            df0 = pd.DataFrame([])                                  # 创建空的dataframe数据框
+            df0.to_excel(file_path, index=False)                    # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            writer = pd.ExcelWriter(file_path, engine='openpyxl')   # 初始化写入对象
+            book = load_workbook(file_path)                         # 可以向不同的sheet写入数据（对现有工作表的追加）
+            writer.book = book                                      # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            df.to_excel(excel_writer=writer, sheet_name='查询', index=False)
+            df2.to_excel(excel_writer=writer, sheet_name='明细', index=False)
+            if 'Sheet1' in book.sheetnames:                         # 删除新建文档时的第一个工作表
+                del book['Sheet1']
+            writer.save()
+            writer.close()
+
             print('输出成功......')
             print('*' * 50)
         else:

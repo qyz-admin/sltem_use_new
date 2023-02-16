@@ -1741,7 +1741,7 @@ if __name__ == '__main__':
             # m.orderReturnList_Query(team, '2022-05-20', '2022-06-05')         # 查询更新-退换货
 
         timeStart, timeEnd = m.readInfo('拒收问题件')
-        m.order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id)                                    # 查询更新-拒收问题件-·123456
+        m.order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id)                         # 查询更新-拒收问题件 @--ok
         # m.order_js_Query('2022-08-01', '2022-08-31')                          # 查询更新-拒收问题件-·123456
 
         timeStart, timeEnd = m.readInfo('派送问题件')
@@ -1752,7 +1752,7 @@ if __name__ == '__main__':
         m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'), proxy_handle, proxy_id)                        # 查询更新-采购问题件（一、简单查询）
 
         timeStart, timeEnd = m.readInfo('短信模板')
-        m.getMessage_Log(timeStart, timeEnd, proxy_handle, proxy_id)  # 查询更新-短信模板
+        m.getMessage_Log(timeStart, timeEnd, proxy_handle, proxy_id)                        # 查询更新-短信模板 @--ok
 
         # m.ssale_Query('2022-04-28', datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
         # m.sale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'))                        # 查询更新-采购问题件（一、简单查询）
