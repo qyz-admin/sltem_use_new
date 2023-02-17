@@ -764,7 +764,7 @@ class QueryOrder(Settings, Settings_sso):
         else:
             data = {'page': 1, 'pageSize': 500, 'order_number': None, 'shippingNumber': None,
                     'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                    'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None,
+                    'saleIds': None, 'payType': None, 'logisticsId': '85,348,199,356', 'logisticsStyle': None, 'logisticsMode': None,
                     'type': None, 'collId': None, 'isClone': None,
                     'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '',
                     'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
@@ -1012,7 +1012,7 @@ class QueryOrder(Settings, Settings_sso):
         else:
             data = {'page': n, 'pageSize': 500, 'order_number': None, 'shippingNumber': None,
                     'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                    'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None,
+                    'saleIds': None, 'payType': None, 'logisticsId': '85,348,199,356', 'logisticsStyle': None, 'logisticsMode': None,
                     'type': None, 'collId': None, 'isClone': None,
                     'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '',
                     'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
@@ -2473,6 +2473,38 @@ class QueryOrder(Settings, Settings_sso):
 
 if __name__ == '__main__':
     # TODO------------------------------------单点更新配置------------------------------------
+    ''' 198.台湾-天马-711
+        199.台湾-天马-新竹
+        229.台湾-天马-顺丰
+        356.台湾-天马-新竹改派
+        376.台湾-天马-顺丰改派
+        380.台湾-天马-黑猫
+        
+        85.台湾-速派-新竹
+        191.台湾-速派-711超商
+        348.台湾-速派-新竹改派
+        703.台湾-速派宅配通
+        711.台湾-速派宅配通-改派
+        722.台湾-速派-黑猫
+        
+        555.台湾-铱熙无敌-新竹普货
+        556.台湾-衣熙无敌-新竹特货
+        557.台湾-铱熙无敌-新竹改派
+        724.台湾-铱熙无敌-711敏感货
+        768.台湾-铱熙无敌-黑猫普货
+        769.台湾-铱熙无敌-黑猫特货
+        770台湾-铱熙无敌-黑猫改派
+        802台湾-铱熙无敌-黑猫改派备货
+        
+        230.香港-立邦-顺丰
+        277香港-立邦-改派
+        
+        665.香港-圆通
+        693.香港-圆通-改派
+        
+        374台湾-立邦普货头程-森鸿尾程
+        383.台湾-立邦普货头程-易速配尾程 
+    '''
     proxy_handle = '代理服务器0'
     proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
     handle = '手0动'
@@ -2491,7 +2523,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 33                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
@@ -2510,19 +2542,23 @@ if __name__ == '__main__':
 
     elif int(select) == 3:
         print("1-->>> 正在按下单时间查询+++")
-        timeStart = '2023-02-10'
+        timeStart = '2023-02-08'
         timeEnd = '2023-02-10'
         areaId = ''
         query = '下单时间'
-        m.order_TimeQuery(timeStart, timeEnd, areaId, query, proxy_id, proxy_handle)
+        logisticsId = "85,348,199,356"      # 物流名称
+        currencyId = "13"                     # 币种名称：13台湾，6香港
+        m.order_TimeQuery(timeStart, timeEnd, areaId, query, proxy_id, proxy_handle, logisticsId, currencyId)
 
     elif int(select) == 33:
         print("2-->>> 正在按完成时间查询+++")
-        timeStart = '2023-02-11'
-        timeEnd = '2023-02-12'
+        timeStart = '2023-02-09'
+        timeEnd = '2023-02-10'
         areaId = ''
         query = '完成时间'
-        m.order_TimeQuery(timeStart, timeEnd, areaId, query, proxy_id, proxy_handle)
+        logisticsId = "85,348,199,356"      # 物流名称
+        currencyId = "13"                     # 币种名称
+        m.order_TimeQuery(timeStart, timeEnd, areaId, query, proxy_id, proxy_handle, logisticsId, currencyId)
 
     elif int(select) == 4:
         print("1-->>> 正在按电话查询+++")

@@ -121,8 +121,8 @@ if team == 'gat' and updata == '全部':
     print('更新耗时：', datetime.datetime.now() - start)
 
     print('---------------------------------- 导出部分：--------------------------------')
-    export = '导表'
-    check = '是0'
+    export = '导表0'
+    check = '是'
     qu.EportOrder(team, month_last, month_yesterday, month_begin, check, export, handle, proxy_handle, proxy_id)     # 最近两个月的更新信息导出
     print('输出耗时：', datetime.datetime.now() - start)
 
