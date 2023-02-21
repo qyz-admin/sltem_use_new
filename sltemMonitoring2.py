@@ -1528,6 +1528,326 @@ class SltemMonitoring(Settings):
         listT.append(sqltime72)
         show_name.append(' 月(改派各月)时效…………')
 
+        # 物流分旬签收率(整体 本月)--- 查询
+        sqltime82 = '''SELECT s.币种 AS 上币种, '{4}' AS 上年月, s.旬 AS 上旬, s.是否改派 AS 上是否改派, s.物流方式 AS 上物流方式,
+                            IF(上签收量=0,NULL,上签收量) as 上签收量,
+                            IF(上拒收量=0,NULL,上拒收量) as 上拒收量,
+                            IF(上在途量=0,NULL,上在途量) as 上在途量,
+                            IF(上未发货量=0,NULL,上未发货量) as 上未发货量,
+                            IF(上未上线量=0,NULL,上未上线量) as 上未上线量,
+                            IF(上已退货量=0,NULL,上已退货量) as 上已退货量,
+                            IF(上理赔量=0,NULL,上理赔量) as 上理赔量,
+                            IF(上自发头程丢件量=0,NULL,上自发头程丢件量) as 上自发头程丢件量,
+                            IF((上单量-上未发货量)=0,NULL,(上单量-上未发货量)) as 上已发货量,
+                            IF(上完成量=0,NULL,上完成量) as 上完成量,
+                            IF(上单量=0,NULL,上单量) as 上单量,
+                            concat(ROUND(IFNULL(上签收量 / 上完成量,0) * 100,2),'%') as 上完成签收,
+                            concat(ROUND(IFNULL(上签收量 / 上单量,0) * 100,2),'%') as 上总计签收,
+                            concat(ROUND(IFNULL(上完成量 / 上单量,0) * 100,2),'%') as 上完成占比,
+                            concat(ROUND(IFNULL(上完成量 / (上单量-上未发货量),0) * 100,2),'%') as 上已完成已发货,
+                            concat(ROUND(IFNULL(上已退货量 / 上单量,0) * 100,2),'%') as 上退货率,
+                            concat(ROUND(IFNULL(上签收金额 / 上完成金额,0) * 100,2),'%') as 上完成签收金额,
+                            concat(ROUND(IFNULL(上签收金额 / 上总金额,0) * 100,2),'%') as 上总计签收金额,
+                            concat(ROUND(IFNULL(上完成金额 / 上总金额,0) * 100,2),'%') as 上完成占比金额,
+                            concat(ROUND(IFNULL(上完成金额 / (上总金额-上未发货金额),0) * 100,2),'%') as 上已完成已发货金额,
+                            concat(ROUND(IFNULL(上退货金额 / 上总金额,0) * 100,2),'%') as 上退货率金额,
+
+                            NULL, s.币种, '{2}' AS 年月, s.旬, s.是否改派, s.物流方式,
+                            IF(签收量=0,NULL,签收量) as 签收量,
+                            IF(拒收量=0,NULL,拒收量) as 拒收量,
+                            IF(在途量=0,NULL,在途量) as 在途量,
+                            IF(未发货量=0,NULL,未发货量) as 未发货量,
+                            IF(未上线量=0,NULL,未上线量) as 未上线量,
+                            IF(已退货量=0,NULL,已退货量) as 已退货量,
+                            IF(理赔量=0,NULL,理赔量) as 理赔量,
+                            IF(自发头程丢件量=0,NULL,自发头程丢件量) as 自发头程丢件量,
+                            IF((单量-未发货量)=0,NULL,(单量-未发货量)) as 已发货量,
+                            IF(完成量=0,NULL,完成量) as 完成量,
+                            IF(单量=0,NULL,单量) as 单量,
+                            concat(ROUND(IFNULL(签收量 / 完成量,0) * 100,2),'%') as 完成签收,
+                            concat(ROUND(IFNULL(签收量 / 单量,0) * 100,2),'%') as 总计签收,
+                            concat(ROUND(IFNULL(完成量 / 单量,0) * 100,2),'%') as 完成占比,
+                            concat(ROUND(IFNULL(完成量 / (单量-未发货量),0) * 100,2),'%') as 已完成已发货,
+                            concat(ROUND(IFNULL(已退货量 / 单量,0) * 100,2),'%') as 退货率,
+                            concat(ROUND(IFNULL(签收金额 / 完成金额,0) * 100,2),'%') as 完成签收金额,
+                            concat(ROUND(IFNULL(签收金额 / 总金额,0) * 100,2),'%') as 总计签收金额,
+                            concat(ROUND(IFNULL(完成金额 / 总金额,0) * 100,2),'%') as 完成占比金额,
+                            concat(ROUND(IFNULL(完成金额 / (总金额-未发货金额),0) * 100,2),'%') as 已完成已发货金额,
+                            concat(ROUND(IFNULL(退货金额 / 总金额,0) * 100,2),'%') as 退货率金额
+                        FROM( SELECT IFNULL(币种,'合计') 币种,IFNULL(团队,'合计') 团队,IFNULL(年月,'合计') 年月,
+                                    IFNULL(旬,'合计') 旬,IFNULL(是否改派,'合计') 是否改派,IFNULL(物流方式,'合计') 物流方式,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '已签收',1,0)) AS 上签收量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '拒收',1,0)) AS 上拒收量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '在途',1,0)) AS 上在途量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '未发货',1,0)) AS 上未发货量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '未上线',1,0)) AS 上未上线量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '已退货',1,0)) AS 上已退货量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '理赔',1,0)) AS 上理赔量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '自发头程丢件',1,0)) AS 上自发头程丢件量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上完成量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}',1,0)) AS 上单量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '已签收',`价格RMB`,0)) AS 上签收金额,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '已退货',`价格RMB`,0)) AS 上退货金额,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '未发货',`价格RMB`,0)) AS 上未发货金额,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),`价格RMB`,0))  as 上完成金额,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}',`价格RMB`,0)) AS 上总金额,
+
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '已签收',1,0)) AS 签收量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '拒收',1,0)) AS 拒收量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '在途',1,0)) AS 在途量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '未发货',1,0)) AS 未发货量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '未上线',1,0)) AS 未上线量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '已退货',1,0)) AS 已退货量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '理赔',1,0)) AS 理赔量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '自发头程丢件',1,0)) AS 自发头程丢件量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 完成量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}',1,0)) AS 单量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '已签收',`价格RMB`,0)) AS 签收金额,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '已退货',`价格RMB`,0)) AS 退货金额,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '未发货',`价格RMB`,0)) AS 未发货金额,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),`价格RMB`,0))  as 完成金额,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}',`价格RMB`,0)) AS 总金额
+                                FROM {0} sl_cx
+                                WHERE  ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}')
+                                    AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
+                                GROUP BY 币种, 团队, 旬, 是否改派, 物流方式
+                                with rollup 
+                        ) s
+                        LEFT JOIN (SELECT 币种,SUM(IF(年月 = '{4}',1,0)) AS 上月单量,SUM(IF(年月 = '{2}',1,0)) AS 月单量
+                                    FROM {0} sl_cx
+                                    WHERE ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}')
+                                        AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
+                        ) ss  ON s.币种 = ss.币种;;'''.format(family, now_month, now_month_new, last_month, last_month_new, currency, match[team])
+        sqltime82 = '''SELECT s.币种, s.年月, IF(s.旬 =1,'上旬',IF(s.旬 =2,'中旬',IF(s.旬 =3,'下旬',s.旬))) AS 旬, s.是否改派, s.物流方式,
+                                IF(签收量=0,NULL,签收量) as 签收,
+                                IF(拒收量=0,NULL,拒收量) as 拒收,
+                                IF(在途量=0,NULL,在途量) as 在途,
+                                IF(未发货量=0,NULL,未发货量) as 未发货,
+                                IF(未上线量=0,NULL,未上线量) as 未上线,
+                                IF(已退货量=0,NULL,已退货量) as 已退货,
+                                IF(理赔量=0,NULL,理赔量) as 理赔,
+                                IF(自发头程丢件量=0,NULL,自发头程丢件量) as 自发头程丢件,
+                                IF((单量-未发货量)=0,NULL,(单量-未发货量)) as 已发货,
+                                IF(完成量=0,NULL,完成量) as 已完成,
+                                IF(单量=0,NULL,单量) as 全部,
+                                concat(ROUND(IFNULL(签收量 / 完成量,0) * 100,2),'%') as 完成签收,
+                                concat(ROUND(IFNULL(签收量 / 单量,0) * 100,2),'%') as 总计签收,
+                                concat(ROUND(IFNULL(完成量 / 单量,0) * 100,2),'%') as 完成占比,
+                                concat(ROUND(IFNULL(完成量 / (单量-未发货量),0) * 100,2),'%') as '已完成/已发货',
+                                concat(ROUND(IFNULL(已退货量 / 单量,0) * 100,2),'%') as 退货率,
+                                concat(ROUND(IFNULL(签收金额 / 完成金额,0) * 100,2),'%') as '完成签收(金额)',
+                                concat(ROUND(IFNULL(签收金额 / 总金额,0) * 100,2),'%') as '总计签收(金额)',
+                                concat(ROUND(IFNULL(完成金额 / 总金额,0) * 100,2),'%') as '完成占比(金额)',
+                                concat(ROUND(IFNULL(完成金额 / (总金额-未发货金额),0) * 100,2),'%') as '已完成/已发货(金额)',
+                                concat(ROUND(IFNULL(退货金额 / 总金额,0) * 100,2),'%') as '退货率(金额)'
+                        FROM( SELECT IFNULL(币种,'合计') 币种,IFNULL(团队,'合计') 团队,IFNULL(年月,'合计') 年月,
+                                    IFNULL(旬,'合计') 旬,IFNULL(是否改派,'合计') 是否改派,IFNULL(物流方式,'合计') 物流方式,
+                                    SUM(IF(最终状态 = '已签收',1,0)) AS 签收量,
+                                    SUM(IF(最终状态 = '拒收',1,0)) AS 拒收量,
+                                    SUM(IF(最终状态 = '在途',1,0)) AS 在途量,
+                                    SUM(IF(最终状态 = '未发货',1,0)) AS 未发货量,
+                                    SUM(IF(最终状态 = '未上线',1,0)) AS 未上线量,
+                                    SUM(IF(最终状态 = '已退货',1,0)) AS 已退货量,
+                                    SUM(IF(最终状态 = '理赔',1,0)) AS 理赔量,
+                                    SUM(IF(最终状态 = '自发头程丢件',1,0)) AS 自发头程丢件量,
+                                    SUM(IF(最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 完成量,
+                                    COUNT(订单编号) AS 单量,
+                                    SUM(IF(最终状态 = '已签收',`价格RMB`,0)) AS 签收金额,
+                                    SUM(IF(最终状态 = '已退货',`价格RMB`,0)) AS 退货金额,
+                                    SUM(IF(最终状态 = '未发货',`价格RMB`,0)) AS 未发货金额,
+                                    SUM(IF(最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),`价格RMB`,0))  as 完成金额,
+                                    SUM(`价格RMB`) AS 总金额
+                                FROM {0} sl_cx
+                                WHERE  ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
+								GROUP BY 币种, 团队, 年月, 旬, 是否改派, 物流方式
+                                with rollup 
+                        ) s
+                        LEFT JOIN (SELECT 币种, 年月,COUNT(订单编号) AS 月单量
+                                    FROM qsb_gat sl_cx
+                                    WHERE ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
+                                    GROUP BY 币种, 团队, 年月
+                        ) ss  ON s.币种 = ss.币种 AND s.年月 = ss.年月
+                        WHERE s.年月 <> '合计' 
+                        ORDER BY FIELD(s.`币种`,'合计'), 
+                                FIELD(s.`年月`,'{2}','{4}','合计'),
+                                FIELD(s.`旬`,1,2,3,'上旬','中旬','下旬','合计'),
+                                FIELD(s.`是否改派`,'改派','直发','合计'),
+                                FIELD(s.`物流方式`, "台湾-森鸿-新竹-自发头程", "台湾-森鸿-新竹","台湾-大黄蜂普货头程-森鸿尾程","台湾-立邦普货头程-森鸿尾程",
+                                                    "台湾-立邦普货头程-易速配尾程","台湾-大黄蜂普货头程-易速配尾程",  
+                                                    "台湾-易速配-新竹", "台湾-易速配-TW海快", "台湾-易速配-海快头程【易速配尾程】",
+                                                    "台湾-铱熙无敌-711超商","台湾-铱熙无敌-新竹", "台湾-铱熙无敌-黑猫", 
+                                                    "台湾-速派-711超商", "台湾-速派-新竹", "台湾-速派-黑猫", "台湾-速派宅配通",
+                                                    "台湾-天马-新竹","台湾-天马-顺丰","台湾-天马-黑猫",
+                                                    "香港-圆通", "香港-立邦-顺丰","香港-森鸿物流", "香港-森鸿-SH渠道","香港-森鸿-顺丰渠道","香港-易速配-顺丰",
+                                                    "森鸿","龟山",
+                                                    "速派新竹", "速派黑猫", "速派宅配通",
+                                                    "台湾-铱熙无敌-新竹改派", "台湾-铱熙无敌-黑猫改派",
+                                                    "天马顺丰","天马黑猫","天马新竹",
+                                                    "香港-圆通-改派","香港-立邦-改派","香港-森鸿-改派","香港-易速配-改派","合计")
+                        ;'''.format(family, now_month, now_month_new, last_month, last_month_new, currency, match[team])
+        listT.append(sqltime82)
+        show_name.append(' 物流分旬签收率(整体 本月)…………')
+
+        # 物流分旬签收率(整体 上月)--- 查询
+        sqltime82 = '''SELECT s.币种 AS 上币种, '{4}' AS 上年月, s.旬 AS 上旬, s.是否改派 AS 上是否改派, s.物流方式 AS 上物流方式,
+                            IF(上签收量=0,NULL,上签收量) as 上签收量,
+                            IF(上拒收量=0,NULL,上拒收量) as 上拒收量,
+                            IF(上在途量=0,NULL,上在途量) as 上在途量,
+                            IF(上未发货量=0,NULL,上未发货量) as 上未发货量,
+                            IF(上未上线量=0,NULL,上未上线量) as 上未上线量,
+                            IF(上已退货量=0,NULL,上已退货量) as 上已退货量,
+                            IF(上理赔量=0,NULL,上理赔量) as 上理赔量,
+                            IF(上自发头程丢件量=0,NULL,上自发头程丢件量) as 上自发头程丢件量,
+                            IF((上单量-上未发货量)=0,NULL,(上单量-上未发货量)) as 上已发货量,
+                            IF(上完成量=0,NULL,上完成量) as 上完成量,
+                            IF(上单量=0,NULL,上单量) as 上单量,
+                            concat(ROUND(IFNULL(上签收量 / 上完成量,0) * 100,2),'%') as 上完成签收,
+                            concat(ROUND(IFNULL(上签收量 / 上单量,0) * 100,2),'%') as 上总计签收,
+                            concat(ROUND(IFNULL(上完成量 / 上单量,0) * 100,2),'%') as 上完成占比,
+                            concat(ROUND(IFNULL(上完成量 / (上单量-上未发货量),0) * 100,2),'%') as 上已完成已发货,
+                            concat(ROUND(IFNULL(上已退货量 / 上单量,0) * 100,2),'%') as 上退货率,
+                            concat(ROUND(IFNULL(上签收金额 / 上完成金额,0) * 100,2),'%') as 上完成签收金额,
+                            concat(ROUND(IFNULL(上签收金额 / 上总金额,0) * 100,2),'%') as 上总计签收金额,
+                            concat(ROUND(IFNULL(上完成金额 / 上总金额,0) * 100,2),'%') as 上完成占比金额,
+                            concat(ROUND(IFNULL(上完成金额 / (上总金额-上未发货金额),0) * 100,2),'%') as 上已完成已发货金额,
+                            concat(ROUND(IFNULL(上退货金额 / 上总金额,0) * 100,2),'%') as 上退货率金额,
+
+                            NULL, s.币种, '{2}' AS 年月, s.旬, s.是否改派, s.物流方式,
+                            IF(签收量=0,NULL,签收量) as 签收量,
+                            IF(拒收量=0,NULL,拒收量) as 拒收量,
+                            IF(在途量=0,NULL,在途量) as 在途量,
+                            IF(未发货量=0,NULL,未发货量) as 未发货量,
+                            IF(未上线量=0,NULL,未上线量) as 未上线量,
+                            IF(已退货量=0,NULL,已退货量) as 已退货量,
+                            IF(理赔量=0,NULL,理赔量) as 理赔量,
+                            IF(自发头程丢件量=0,NULL,自发头程丢件量) as 自发头程丢件量,
+                            IF((单量-未发货量)=0,NULL,(单量-未发货量)) as 已发货量,
+                            IF(完成量=0,NULL,完成量) as 完成量,
+                            IF(单量=0,NULL,单量) as 单量,
+                            concat(ROUND(IFNULL(签收量 / 完成量,0) * 100,2),'%') as 完成签收,
+                            concat(ROUND(IFNULL(签收量 / 单量,0) * 100,2),'%') as 总计签收,
+                            concat(ROUND(IFNULL(完成量 / 单量,0) * 100,2),'%') as 完成占比,
+                            concat(ROUND(IFNULL(完成量 / (单量-未发货量),0) * 100,2),'%') as 已完成已发货,
+                            concat(ROUND(IFNULL(已退货量 / 单量,0) * 100,2),'%') as 退货率,
+                            concat(ROUND(IFNULL(签收金额 / 完成金额,0) * 100,2),'%') as 完成签收金额,
+                            concat(ROUND(IFNULL(签收金额 / 总金额,0) * 100,2),'%') as 总计签收金额,
+                            concat(ROUND(IFNULL(完成金额 / 总金额,0) * 100,2),'%') as 完成占比金额,
+                            concat(ROUND(IFNULL(完成金额 / (总金额-未发货金额),0) * 100,2),'%') as 已完成已发货金额,
+                            concat(ROUND(IFNULL(退货金额 / 总金额,0) * 100,2),'%') as 退货率金额
+                        FROM( SELECT IFNULL(币种,'合计') 币种,IFNULL(团队,'合计') 团队,IFNULL(年月,'合计') 年月,
+                                    IFNULL(旬,'合计') 旬,IFNULL(是否改派,'合计') 是否改派,IFNULL(物流方式,'合计') 物流方式,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '已签收',1,0)) AS 上签收量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '拒收',1,0)) AS 上拒收量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '在途',1,0)) AS 上在途量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '未发货',1,0)) AS 上未发货量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '未上线',1,0)) AS 上未上线量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '已退货',1,0)) AS 上已退货量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '理赔',1,0)) AS 上理赔量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '自发头程丢件',1,0)) AS 上自发头程丢件量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 上完成量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}',1,0)) AS 上单量,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '已签收',`价格RMB`,0)) AS 上签收金额,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '已退货',`价格RMB`,0)) AS 上退货金额,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 = '未发货',`价格RMB`,0)) AS 上未发货金额,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),`价格RMB`,0))  as 上完成金额,
+                                    SUM(IF(记录时间= '{3}' AND 年月 = '{4}',`价格RMB`,0)) AS 上总金额,
+
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '已签收',1,0)) AS 签收量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '拒收',1,0)) AS 拒收量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '在途',1,0)) AS 在途量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '未发货',1,0)) AS 未发货量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '未上线',1,0)) AS 未上线量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '已退货',1,0)) AS 已退货量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '理赔',1,0)) AS 理赔量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '自发头程丢件',1,0)) AS 自发头程丢件量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 完成量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}',1,0)) AS 单量,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '已签收',`价格RMB`,0)) AS 签收金额,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '已退货',`价格RMB`,0)) AS 退货金额,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 = '未发货',`价格RMB`,0)) AS 未发货金额,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}' and 最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),`价格RMB`,0))  as 完成金额,
+                                    SUM(IF(记录时间= '{1}' AND 年月 = '{2}',`价格RMB`,0)) AS 总金额
+                                FROM {0} sl_cx
+                                WHERE  ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}')
+                                    AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
+                                GROUP BY 币种, 团队, 旬, 是否改派, 物流方式
+                                with rollup 
+                        ) s
+                        LEFT JOIN (SELECT 币种,SUM(IF(年月 = '{4}',1,0)) AS 上月单量,SUM(IF(年月 = '{2}',1,0)) AS 月单量
+                                    FROM {0} sl_cx
+                                    WHERE ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}')
+                                        AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
+                        ) ss  ON s.币种 = ss.币种;;'''.format(family, now_month, now_month_old, last_month, last_month_old, currency, match[team])
+        sqltime82 = '''SELECT s.币种, s.年月, IF(s.旬 =1,'上旬',IF(s.旬 =2,'中旬',IF(s.旬 =3,'下旬',s.旬))) AS 旬, s.是否改派, s.物流方式,
+                                IF(签收量=0,NULL,签收量) as 签收,
+                                IF(拒收量=0,NULL,拒收量) as 拒收,
+                                IF(在途量=0,NULL,在途量) as 在途,
+                                IF(未发货量=0,NULL,未发货量) as 未发货,
+                                IF(未上线量=0,NULL,未上线量) as 未上线,
+                                IF(已退货量=0,NULL,已退货量) as 已退货,
+                                IF(理赔量=0,NULL,理赔量) as 理赔,
+                                IF(自发头程丢件量=0,NULL,自发头程丢件量) as 自发头程丢件,
+                                IF((单量-未发货量)=0,NULL,(单量-未发货量)) as 已发货,
+                                IF(完成量=0,NULL,完成量) as 已完成,
+                                IF(单量=0,NULL,单量) as 全部,
+                                concat(ROUND(IFNULL(签收量 / 完成量,0) * 100,2),'%') as 完成签收,
+                                concat(ROUND(IFNULL(签收量 / 单量,0) * 100,2),'%') as 总计签收,
+                                concat(ROUND(IFNULL(完成量 / 单量,0) * 100,2),'%') as 完成占比,
+                                concat(ROUND(IFNULL(完成量 / (单量-未发货量),0) * 100,2),'%') as '已完成/已发货',
+                                concat(ROUND(IFNULL(已退货量 / 单量,0) * 100,2),'%') as 退货率,
+                                concat(ROUND(IFNULL(签收金额 / 完成金额,0) * 100,2),'%') as '完成签收(金额)',
+                                concat(ROUND(IFNULL(签收金额 / 总金额,0) * 100,2),'%') as '总计签收(金额)',
+                                concat(ROUND(IFNULL(完成金额 / 总金额,0) * 100,2),'%') as '完成占比(金额)',
+                                concat(ROUND(IFNULL(完成金额 / (总金额-未发货金额),0) * 100,2),'%') as '已完成/已发货(金额)',
+                                concat(ROUND(IFNULL(退货金额 / 总金额,0) * 100,2),'%') as '退货率(金额)'
+                        FROM( SELECT IFNULL(币种,'合计') 币种,IFNULL(团队,'合计') 团队,IFNULL(年月,'合计') 年月,
+                                    IFNULL(旬,'合计') 旬,IFNULL(是否改派,'合计') 是否改派,IFNULL(物流方式,'合计') 物流方式,
+                                    SUM(IF(最终状态 = '已签收',1,0)) AS 签收量,
+                                    SUM(IF(最终状态 = '拒收',1,0)) AS 拒收量,
+                                    SUM(IF(最终状态 = '在途',1,0)) AS 在途量,
+                                    SUM(IF(最终状态 = '未发货',1,0)) AS 未发货量,
+                                    SUM(IF(最终状态 = '未上线',1,0)) AS 未上线量,
+                                    SUM(IF(最终状态 = '已退货',1,0)) AS 已退货量,
+                                    SUM(IF(最终状态 = '理赔',1,0)) AS 理赔量,
+                                    SUM(IF(最终状态 = '自发头程丢件',1,0)) AS 自发头程丢件量,
+                                    SUM(IF(最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0))  as 完成量,
+                                    COUNT(订单编号) AS 单量,
+                                    SUM(IF(最终状态 = '已签收',`价格RMB`,0)) AS 签收金额,
+                                    SUM(IF(最终状态 = '已退货',`价格RMB`,0)) AS 退货金额,
+                                    SUM(IF(最终状态 = '未发货',`价格RMB`,0)) AS 未发货金额,
+                                    SUM(IF(最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),`价格RMB`,0))  as 完成金额,
+                                    SUM(`价格RMB`) AS 总金额
+                                FROM {0} sl_cx
+                                WHERE  ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
+								GROUP BY 币种, 团队, 年月, 旬, 是否改派, 物流方式
+                                with rollup 
+                        ) s
+                        LEFT JOIN (SELECT 币种, 年月,COUNT(订单编号) AS 月单量
+                                    FROM qsb_gat sl_cx
+                                    WHERE ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
+                                    GROUP BY 币种, 团队, 年月
+                        ) ss  ON s.币种 = ss.币种 AND s.年月 = ss.年月
+                        WHERE s.年月 <> '合计'
+                        ORDER BY FIELD(s.`币种`,'合计'), 
+                                FIELD(s.`年月`,'{2}','{4}','合计'),
+                                FIELD(s.`旬`,1,2,3,'上旬','中旬','下旬','合计'),
+                                FIELD(s.`是否改派`,'改派','直发','合计'),
+                                FIELD(s.`物流方式`, "台湾-森鸿-新竹-自发头程", "台湾-森鸿-新竹","台湾-大黄蜂普货头程-森鸿尾程","台湾-立邦普货头程-森鸿尾程",
+                                                    "台湾-立邦普货头程-易速配尾程","台湾-大黄蜂普货头程-易速配尾程",  
+                                                    "台湾-易速配-新竹", "台湾-易速配-TW海快", "台湾-易速配-海快头程【易速配尾程】",
+                                                    "台湾-铱熙无敌-711超商","台湾-铱熙无敌-新竹", "台湾-铱熙无敌-黑猫", 
+                                                    "台湾-速派-711超商", "台湾-速派-新竹", "台湾-速派-黑猫", "台湾-速派宅配通",
+                                                    "台湾-天马-新竹","台湾-天马-顺丰","台湾-天马-黑猫",
+                                                    "香港-圆通", "香港-立邦-顺丰","香港-森鸿物流", "香港-森鸿-SH渠道","香港-森鸿-顺丰渠道","香港-易速配-顺丰",
+                                                    "森鸿","龟山",
+                                                    "速派新竹", "速派黑猫", "速派宅配通",
+                                                    "台湾-铱熙无敌-新竹改派", "台湾-铱熙无敌-黑猫改派",
+                                                    "天马顺丰","天马黑猫","天马新竹",
+                                                    "香港-圆通-改派","香港-立邦-改派","香港-森鸿-改派","香港-易速配-改派","合计")
+                        ;'''.format(family, now_month, now_month_old, last_month, last_month_old, currency, match[team])
+        listT.append(sqltime82)
+        show_name.append(' 物流分旬签收率(整体 上月)…………')
+
         listTValue = []  # 查询sql的结果 存放池
         for i, sql in enumerate(listT):
             print('正在获取 ' + team + show_name[i])
@@ -1549,7 +1869,8 @@ class SltemMonitoring(Settings):
             listTValue.append(df)
         print('查询耗时：', datetime.datetime.now() - start)
         today = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        sheet_name = ['签率(天)_', '签率(月)_', '签率(旬)_', '签率(总)_', '物流(天)_', '物流(月)_', '时效(天)_', '时效(月)_', '时效(旬)_', '时效(月旬)_', '时效(品类)_', '时效(月品类)_','时效(总)_', '时效(改派天)_', '时效(改派月)_','时效(改派旬)_', '时效(改派月旬)_', '时效(改派总)_']  # 生成的工作表的表名
+        sheet_name = ['签率(天)_', '签率(月)_', '签率(旬)_', '签率(总)_', '物流(天)_', '物流(月)_', '时效(天)_', '时效(月)_', '时效(旬)_', '时效(月旬)_', '时效(品类)_', '时效(月品类)_','时效(总)_',
+                      '时效(改派天)_', '时效(改派月)_','时效(改派旬)_', '时效(改派月旬)_', '时效(改派总)_', '物流分旬签收率_', '物流分旬签收率上月_']  # 生成的工作表的表名
         file_Path = []  # 发送邮箱文件使用
         filePath = ''
         if "品牌" in team:
@@ -1567,6 +1888,12 @@ class SltemMonitoring(Settings):
         book = load_workbook(filePath)                          # 可以向不同的sheet写入数据（对现有工作表的追加）
         writer.book = book                                      # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
         for i in range(len(listTValue)):
+            # if sheet_name[i] == '物流分旬签收率_' or sheet_name[i] == '物流分旬签收率上月_':
+            #     if sheet_name[i] == '物流分旬签收率_':
+            #         listTValue[i].to_excel(excel_writer=writer, sheet_name='物流分旬签收率' + team, index=False)
+            #     if sheet_name[i] == '物流分旬签收率上月_':
+            #         listTValue[i].to_excel(excel_writer=writer, sheet_name='物流分旬签收率' + team, index=False, startcol=28)
+            # else:
             listTValue[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i] + team, index=False)
         if 'Sheet1' in book.sheetnames:                         # 删除新建文档时的第一个工作表
             del book['Sheet1']
@@ -1667,18 +1994,20 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2023.01.28'
-    now_month = '2023.02.17'
+    last_month = '2023.01.30'
+    now_month = '2023.02.21'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传
 
+
     # 测试监控运行（二）-- 第一种手动方式
-    m.order_Monitoring('港台')        # 各月缓存（整体一）、
-    # for team in ['神龙-台湾', '神龙-香港', '神龙运营1组-台湾', '火凤凰-台湾', '火凤凰-香港', '小虎队-台湾']:
-    for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '金蝉家族-台湾', '金蝉家族-香港', '神龙运营1组-台湾']:
-    # for team in [ '火凤凰-台湾', '火凤凰-香港']:
-    # for team in [ '神龙-台湾', '神龙-香港']:
+    # m.order_Monitoring('港台')        # 各月缓存（整体一）、
+    # for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '金蝉家族-台湾', '金蝉家族-香港', '神龙运营1组-台湾']:
+    for team in [ '火凤凰-香港']:
+    # for team in [ '火凤凰-香港']:
+    # for team in [ '神龙-香港']:
+    # for team in [ '神龙-香港']:
         now_month = now_month.replace('.', '-')           # 修改配置时间
         last_month = last_month.replace('.', '-')
         m.sl_Monitoring(team, now_month, last_month, '本期宏')      # 输出数据--每月正常使用的时间（二）、
@@ -1686,6 +2015,7 @@ if __name__ == '__main__':
         # m.sl_Monitoring(team, now_month, last_month, '本期上月宏')      # 输出数据--每月正常使用的时间（二）
 
         # m.sl_Monitoring(team, now_month, last_month, '上期宏')      # 输出数据--每月正常使用的时间（二）
+
 
     # for team in ['火凤凰-台湾', '火凤凰-香港', '神龙-台湾', '神龙-香港', '神龙运营1组-台湾', '港台-台湾']:
     #     now_month = now_month.replace('.', '-')           # 修改配置时间

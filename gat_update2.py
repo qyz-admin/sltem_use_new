@@ -714,7 +714,7 @@ class QueryUpdate(Settings):
         try:
             print('正在转存中' + month_yesterday + '最近两个月的订单......')
             sql = '''SELECT 年月, 旬, 日期, 团队,币种, 订单来源, 订单编号, 出货时间, IF(`状态时间` = '',NULL,状态时间) as 状态时间, 上线时间, 最终状态,是否改派,物流方式,
-                            产品id,父级分类,二级分类,三级分类,下单时间, 审核时间,仓储扫描时间,下架时间, 物流提货时间, 完结状态, 完结状态时间,回款时间, 价格RMB, curdate() 记录时间
+                            产品id,父级分类,二级分类,三级分类,下单时间, 审核时间,仓储扫描时间,下架时间, 物流提货时间, 完结状态, 完结状态时间,回款时间, 价格RMB, 运单编号, curdate() 记录时间
                     FROM d1_{0} a WHERE a.`运单编号` is not null ;'''.format(team)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             print('正在添加缓存中......')
@@ -5163,16 +5163,16 @@ class QueryUpdate(Settings):
             file_path = 'G:\\输出文件\\{} {} 物流品类-签收率-COD.xlsx'.format(today, match[team])
         elif currency_id == '在线付款':
             file_path = 'G:\\输出文件\\{} {} 物流品类-签收率-在线.xlsx'.format(today, match[team])
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        df0 = pd.DataFrame([])                                    # 创建空的dataframe数据框
+        df0.to_excel(file_path, index=False)                         # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        writer = pd.ExcelWriter(file_path, engine='openpyxl')        # 初始化写入对象
+        book = load_workbook(file_path)                             # 可以向不同的sheet写入数据（对现有工作表的追加）
+        writer.book = book                                          # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
         listT[0].to_excel(excel_writer=writer, sheet_name=sheet_name[0], index=False)
         listT[1].to_excel(excel_writer=writer, sheet_name=sheet_name[1], index=False)
         listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
         listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        if 'Sheet1' in book.sheetnames:                                 # 删除新建文档时的第一个工作表
             del book['Sheet1']
         writer.save()
         writer.close()

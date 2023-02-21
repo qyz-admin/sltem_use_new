@@ -461,7 +461,7 @@ class QueryOrder(Settings, Settings_sso):
         print('*' * 50)
         # return df
 
-    # 一、订单——查询更新（新后台的获取）
+    # 一、订单——查询更新（单点获取）
     def orderInfoQuery(self, ord, searchType, proxy_id, proxy_handle):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
@@ -479,11 +479,9 @@ class QueryOrder(Settings, Settings_sso):
                 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
                 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None}
         if searchType == '订单号':
-            data.update({'orderPrefix': ord,
-                         'shippingNumber': None})
+            data.update({'orderPrefix': ord, 'shippingNumber': None})
         elif searchType == '运单号':
-            data.update({'order_number': None,
-                         'shippingNumber': ord})
+            data.update({'order_number': None, 'shippingNumber': ord})
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -549,27 +547,18 @@ class QueryOrder(Settings, Settings_sso):
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         return df
-
-    # 一、订单——客服查询（新后台的获取）
+    # 一、订单——客服查询（单点获取）
     def orderInfo_pople(self, ord, searchType, proxy_id, proxy_handle):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getQueryOrder'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
-        data = {'page': 1, 'pageSize': 90,
-                'orderPrefix': None,
-                'shippingNumber': None,
-                'phone': None,
-                'email': None,
-                'ip': None
-                }
+        data = {'page': 1, 'pageSize': 90, 'orderPrefix': None, 'shippingNumber': None, 'phone': None, 'email': None, 'ip': None }
         if searchType == '订单号':
-            data.update({'orderPrefix': ord,
-                         'shippingNumber': None})
+            data.update({'orderPrefix': ord, 'shippingNumber': None})
         elif searchType == '运单号':
-            data.update({'order_number': None,
-                         'shippingNumber': ord})
+            data.update({'order_number': None, 'shippingNumber': ord})
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -632,30 +621,23 @@ class QueryOrder(Settings, Settings_sso):
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         return data
-    # 一、订单——电话查询（新后台的获取）
+    # 一、订单——电话查询（单点获取）
     def orderInfo_iphone(self, ord, searchType, timeStart, timeEnd, proxy_id, proxy_handle):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
-        data = {'page': 1, 'pageSize': 500, 'orderPrefix': None,'shippingNumber': None,
-                'orderNumberFuzzy': None, 'shipUsername': None, 'phone': ord, 'email': None, 'ip': None, 'productIds': None,
-                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None,
-                'type': None, 'collId': None, 'isClone': None,
-                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '',
-                'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
-                'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
-                'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None,
-                'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
-                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
-                'isChangeMark': None, 'percentStart': None, 'percentEnd': None, 'userid': None, 'questionId': None, 'delUserId': None, 'transferNumber': None,
-                'smsStatus': None, 'designer_id': None, 'logistics_remarks': None, 'clone_type': None, 'categoryId': None, 'addressType': None,
-                'timeStart': timeStart,  'timeEnd': timeEnd
-        }
+        data = {'page': 1, 'pageSize': 500, 'orderPrefix': None,'shippingNumber': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': ord, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None, 'emailStatus': None,
+                'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '','warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
+                'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,'service_id': None, 'autoVerifyStatus': None, 'shipZip': None,
+                'remark': None, 'shipState': None, 'weightStart': None,'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
+                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None, 'percentStart': None, 'percentEnd': None, 'userid': None, 'questionId': None,
+                'delUserId': None, 'transferNumber': None, 'smsStatus': None, 'designer_id': None, 'logistics_remarks': None, 'clone_type': None, 'categoryId': None, 'addressType': None,
+                'timeStart': timeStart,  'timeEnd': timeEnd }
         proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
+        proxies = {'http': 'socks5://' + proxy,  'https': 'socks5://' + proxy}
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -735,54 +717,24 @@ class QueryOrder(Settings, Settings_sso):
         return df
 
 
-    # 二、时间-查询更新（新后台的获取 line运营）
+    # 单点获取 line运营  时间-查询
     def order_TimeQuery(self, timeStart, timeEnd, areaId, query, proxy_id, proxy_handle):  # 进入订单检索界面
         print('+++正在查询订单信息中起止： ' + timeStart + ':' + timeEnd)
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
-        if areaId == 179:
-            data = {'page': 1, 'pageSize': 500, 'order_number': None, 'shippingNumber': None,
-                    'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None,
-                    'productIds': None,
-                    'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None,
-                    'logisticsMode': None,
-                    'type': None, 'collId': None, 'isClone': None,
-                    'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': areaId, 'reassignmentType': None,
-                    'lowerstatus': '',
-                    'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None,
-                    'tuan': None,
-                    'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None,
-                    'volumeStart': None, 'chooser_id': None,
-                    'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None,
-                    'weightStart': None,
-                    'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None,
-                    'sortField': None,
-                    'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
-                    'timeStart': timeStart + '00:00:00', 'timeEnd': timeEnd + '23:59:59'}
-        else:
-            data = {'page': 1, 'pageSize': 500, 'order_number': None, 'shippingNumber': None,
-                    'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                    'saleIds': None, 'payType': None, 'logisticsId': '85,348,199,356', 'logisticsStyle': None, 'logisticsMode': None,
-                    'type': None, 'collId': None, 'isClone': None,
-                    'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '',
-                    'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
-                    'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
-                    'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None,
-                    'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
-                    'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
-                    'timeStart': timeStart + '00:00:00', 'timeEnd': timeEnd + '23:59:59'}
+        data = {'page': 1, 'pageSize': 500, 'order_number': None, 'shippingNumber': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': '85,348,199,356', 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                'emailStatus': None, 'befrom': None, 'areaId': areaId, 'reassignmentType': None, 'lowerstatus': '', 'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None,
+                'tuan': None,'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None, 'service_id': None, 'autoVerifyStatus': None,
+                'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
+                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'timeStart': timeStart + '00:00:00', 'timeEnd': timeEnd + '23:59:59'}
         if query == '下单时间':
-            data.update({'timeStart': timeStart + '00:00:00',
-                         'timeEnd': timeEnd + '23:59:59',
-                         'finishTimeStart': None,
-                         'finishTimeEnd': None})
+            data.update({'timeStart': timeStart + '00:00:00', 'timeEnd': timeEnd + '23:59:59', 'finishTimeStart': None, 'finishTimeEnd': None})
         elif query == '完成时间':
-            data.update({'timeStart': None,
-                         'timeEnd': None,
-                         'finishTimeStart': timeStart + '00:00:00',
-                         'finishTimeEnd': timeEnd + '23:59:59'})
+            data.update({'timeStart': None, 'timeEnd': None, 'finishTimeStart': timeStart + '00:00:00', 'finishTimeEnd': timeEnd + '23:59:59'})
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -790,83 +742,14 @@ class QueryOrder(Settings, Settings_sso):
             req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
-        ordersdict = []
-        try:
-            for result in req['data']['list']:
-                # print(result)
-                if result['specs'] != '':
-                    result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
-                    result['saleName'] = 0
-                    result['productId'] = 0
-                    result['saleProduct'] = 0
-                    result['spec'] = 0
-                    result['chooser'] = 0
-                    result['saleId'] = result['specs'][0]['saleId']
-                    result['saleName'] = result['specs'][0]['saleName']
-                    result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
-                    result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
-                    result['spec'] = result['specs'][0]['spec']
-                    result['chooser'] = result['specs'][0]['chooser']
-                else:
-                    result['saleId'] = ''
-                    result['saleProduct'] = ''
-                    result['productId'] = ''
-                    result['spec'] = ''
-                    result['chooser'] = ''
-                quest = ''
-                for re in result['questionReason']:
-                    quest = quest + ';' + re
-                result['questionReason'] = quest
-                delr = ''
-                for re in result['delReason']:
-                    delr = delr + ';' + re
-                result['delReason'] = delr
-                auto = ''
-                for re in result['autoVerify']:
-                    auto = auto + ';' + re
-                result['autoVerify'] = auto
-                ordersdict.append(result)
-        except Exception as e:
-            print('转化失败： 重新获取中', str(Exception) + str(e))
-        data = pd.json_normalize(ordersdict)
-        df = None
-        try:
-            if areaId == 179:
-                df = data[['orderNumber', 'befrom', 'currency', 'area', 'productId', 'saleProduct', 'shipInfo.shipPhone', 'percent', 'shipZip', 'amount', 'quantity', 'orderStatus',
-                           'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime', 'logisticsName', 'dpeStyle', 'reassignmentTypeName', 'logisticsStatus', 'weight', 'delReason',
-                           'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime', 'finishTime', 'hasLowPrice', 'collId', 'saleId', 'refundTime',
-                           'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer','autoVerify', 'cloneUser', 'isClone', 'warehouse',
-                           'logisticsControl','logisticsRefuse', 'logisticsUpdateTime', 'stateTime','collDomain', 'typeName', 'update_time']]
-                df.columns = ['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '联系电话', '拉黑率', '邮编', '应付金额', '数量', '订单状态',
-                              '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型', '订单类型', '物流状态', '重量', '删除原因',
-                              '问题原因', '下单人', '转采购时间', '发货时间', '上线时间', '完成时间', '是否低价', '站点ID', '商品ID', '销售退货时间',
-                              '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型','克隆人',  '克隆ID', '发货仓库',
-                              '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间']
-            else:
-                df = data[['orderNumber', 'befrom', 'currency', 'area', 'productId', 'saleProduct', 'saleName', 'spec',
-                        'shipInfo.shipName', 'shipInfo.shipPhone', 'percent', 'phoneLength', 'shipInfo.shipAddress',
-                        'amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime',
-                        'logisticsName', 'dpeStyle', 'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName',
-                        'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime',
-                        'finishTime', 'refundTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer',
-                        'autoVerify', 'autoVerifyTip', 'cloneUser', 'isClone', 'warehouse', 'smsStatus', 'logisticsControl',
-                        'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName',  'update_time']]
-                df.columns = ['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '拉黑率', '电话长度',
-                              '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
-                              '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
-                              '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
-                              '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间']
-        except Exception as e:
-            print('------查询为空')
-        print('******首次查询成功******')
-        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         max_count = req['data']['count']
         print(max_count)
-        if max_count > 500:
+        if max_count > 0:
             in_count = math.ceil(max_count/500)
+            df = pd.DataFrame([])
             dlist = []
             n = 1
-            while n < in_count:  # 这里用到了一个while循环，穿越过来的
+            while n <= in_count:  # 这里用到了一个while循环，穿越过来的
                 print('剩余查询次数' + str(in_count - n))
                 n = n + 1
                 data = self._timeQuery(timeStart, timeEnd, n, areaId, query, proxy_id, proxy_handle)
@@ -876,47 +759,25 @@ class QueryOrder(Settings, Settings_sso):
             dp.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
             print('查询已导出+++')
         else:
-            df.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
-            print('查询已导出+++')
+            print('查询无资料+++')
 
-    # 二、时间-查询更新（新后台的获取 全部 & 昨日订单删除分析）
-    def order_TimeQueryT(self, timeStart, timeEnd, areaId, select, query, proxy_id, proxy_handle):  # 进入订单检索界面
-        print('+++正在查询 ' + timeStart + ' 到 ' + timeEnd + ' 号订单信息中')
+    # 单点获取 全部昨日订单 分析 头程渠道 & 天马711 渠道
+    def order_Query_Yiwudi(self, timeStart, timeEnd, areaId, query, proxy_id, proxy_handle):  # 进入订单检索界面
+        print('+++正在获取 ' + timeStart + ' 到 ' + timeEnd + ' 号订单明细......')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
-        if areaId == 179:
-            data = {'page': 1, 'pageSize': 500, 'order_number': None, 'shippingNumber': None,
-                    'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None,
-                    'productIds': None,
-                    'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None,
-                    'logisticsMode': None,
-                    'type': None, 'collId': None, 'isClone': None,
-                    'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': areaId, 'reassignmentType': None,
-                    'lowerstatus': '',
-                    'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None,
-                    'tuan': None,
-                    'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None,
-                    'volumeStart': None, 'chooser_id': None,
-                    'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None,
-                    'weightStart': None,
-                    'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None,
-                    'sortField': None,
-                    'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
-                    'timeStart': timeStart + '00:00:00', 'timeEnd': timeEnd + '23:59:59'}
-        else:
-            data = {'page': 1, 'pageSize': 500, 'order_number': None, 'shippingNumber': None,
-                    'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                    'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None,
-                    'type': None, 'collId': None, 'isClone': None,
-                    'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '',
-                    'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
-                    'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
-                    'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None,
-                    'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
-                    'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
-                    'timeStart': timeStart + '00:00:00', 'timeEnd': timeEnd + '23:59:59'}
+        data = {'page': 1, 'pageSize': 500, 'order_number': None, 'shippingNumber': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None, 'emailStatus': None,
+                'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '', 'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
+                'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None, 'service_id': None, 'autoVerifyStatus': None, 'shipZip': None,
+                'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
+                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'timeStart':None, 'timeEnd': None}
+        if query == '下单时间':
+            data.update({'timeStart': timeStart + '00:00:00', 'timeEnd': timeEnd + '23:59:59', 'finishTimeStart': None, 'finishTimeEnd': None})
+        elif query == '完成时间':
+            data.update({'timeStart': None,'timeEnd': None,  'finishTimeStart': timeStart + '00:00:00', 'finishTimeEnd': timeEnd + '23:59:59'})
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -924,8 +785,6 @@ class QueryOrder(Settings, Settings_sso):
             req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
-        df = None
-        print('******首次查询成功******')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         max_count = req['data']['count']
         print(max_count)
@@ -941,96 +800,61 @@ class QueryOrder(Settings, Settings_sso):
                 n = n + 1
             print('正在写入......')
             dp = df.append(dlist, ignore_index=True)
-            dp.to_excel('G:\\输出文件\\订单检索-{0}{1}.xlsx'.format('昨日明细', rq), sheet_name='查询', index=False, engine='xlsxwriter')
+
             print('检查渠道：天马711')
             db9 = dp[(dp['订单类型'].str.contains('直发下架|未下架未改派'))]
-            db9 = db9[(db9['物流渠道'].str.contains('台湾-天马-711'))]
-            db9.to_excel('G:\\输出文件\\订单检索-{0}{1}.xlsx'.format('昨日明细-天马711', rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            if select != '':
-                if select.split('|')[0] == '检查头程直发渠道':
-                    db1 = dp[(dp['币种'].str.contains('台币'))]
-                    db2 = db1[(db1['订单类型'].str.contains('直发下架|未下架未改派'))]
-                    db3 = db2[(db2['订单状态'].str.contains('已转采购|截单中(面单已打印,等待仓库审核)|待审核|待发货|问题订单|问题订单审核|截单'))]
-                    db4 = db3[(db3['物流渠道'].str.contains('台湾-铱熙无敌-新竹特货|台湾-铱熙无敌-新竹普货|台湾-立邦普货头程-易速配尾程|台湾-铱熙无敌-黑猫改派|台湾-铱熙无敌-黑猫特货|台湾-铱熙无敌-黑猫普货|台湾-铱熙无敌-711敏感货'))]
-                    # print(db)
-                    wb_name = '检查头程直发渠道'
-                    db4.to_excel('G:\\输出文件\\订单检索-{0}{1}.xlsx'.format(wb_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
-                if select.split('|')[1] == '删单原因':
-                    # db1 = dp[(dp['订单状态'].str.contains('已删除'))]
-                    db0 = dp[(dp['运营团队'].str.contains('神龙家族-港澳台|火凤凰-港澳台|火凤凰-港台(繁体)'))]
-                    wb_name = '删单原因'
-
-                    print('正在导入临时表中......')
-                    db0 = db0[['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '收货人', '联系电话', '拉黑率','配送地址', '应付金额', '数量',
-                               '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型', '订单类型', '物流状态',  '重量',
-                               '删除原因', '问题原因', '下单人', '备注', 'IP', '体积', '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库',
-                               '拒收原因', '物流更新时间', '状态时间', '更新时间']]
-                    db0.insert(0, '删除人', '')
-                    db0.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
-                    # 更新删除订单的原因
-                    sql = '''DELETE FROM `cache` gt WHERE gt.`订单编号` IN (SELECT * FROM gat_地址邮编错误);'''
-                    pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
-                    self.del_people(proxy_id, proxy_handle)
-                    self.del_order_day()
-                    sql = '''SELECT * FROM {0};'''.format('cache')
-                    db00 = pd.read_sql_query(sql=sql, con=self.engine1)
-                    db00.to_excel('G:\\输出文件\\神龙-火凤凰 昨日删单明细{1}.xlsx'.format(wb_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            db91 = db9[(db9['订单状态'].str.contains('已转采购|截单中(面单已打印,等待仓库审核)|待审核|待发货|问题订单|问题订单审核|截单'))]
+            db92 = db91[(db91['物流渠道'].str.contains('台湾-天马-711'))]
+            if len(db92) > 0:
+                print('天马-711超商 订单出现，请拦截！！！')
             else:
-                wb_name ='时间查询'
-                dp.to_excel('G:\\输出文件\\订单检索-{0}{1}.xlsx'.format(wb_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+                print('---无 天马-711超商 订单')
+
+            print('检查渠道：头程直发渠道')
+            db1 = dp[(dp['币种'].str.contains('台币'))]
+            db12 = db1[(db1['订单类型'].str.contains('直发下架|未下架未改派'))]
+            db13 = db12[(db12['订单状态'].str.contains('已转采购|截单中(面单已打印,等待仓库审核)|待审核|待发货|问题订单|问题订单审核|截单'))]
+            db14 = db13[(db13['物流渠道'].str.contains('台湾-铱熙无敌-新竹特货|台湾-铱熙无敌-新竹普货|台湾-立邦普货头程-易速配尾程|台湾-铱熙无敌-黑猫改派|台湾-铱熙无敌-黑猫特货|台湾-铱熙无敌-黑猫普货|台湾-铱熙无敌-711敏感货'))]
+            if len(db14) > 0:
+                print('铱熙无敌 订单出现，请拦截！！！')
+            else:
+                print('---无 铱熙无敌 订单')
+
+            file_path = 'G:\\输出文件\\订单检索-{0}{1}.xlsx'.format('昨日明细', rq)
+            df0 = pd.DataFrame([])                                  # 创建空的dataframe数据框
+            df0.to_excel(file_path, index=False)                    # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            writer = pd.ExcelWriter(file_path, engine='openpyxl')   # 初始化写入对象
+            book = load_workbook(file_path)                         # 可以向不同的sheet写入数据（对现有工作表的追加）
+            writer.book = book                                      # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            dp.to_excel(excel_writer=writer, sheet_name='明细', index=False)
+            db92.to_excel(excel_writer=writer, sheet_name='天马711', index=False)
+            db14.to_excel(excel_writer=writer, sheet_name='协来运直发', index=False)
+            if 'Sheet1' in book.sheetnames:                         # 删除新建文档时的第一个工作表
+                del book['Sheet1']
+            writer.save()
+            writer.close()
+
             print('查询已导出+++')
         else:
             print('无信息+++')
 
-    # 订单检索 时间查询的公用函数
+    #   --  -- --  --  -- -- 时间查询的公用函数  --  订单检索 --  -- --  --  -- --  --  -- --  --  -- --
     def _timeQuery(self, timeStart, timeEnd, n, areaId, query, proxy_id, proxy_handle):  # 进入订单检索界面
         # print('......正在查询信息中......')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
-        if areaId == 179:
-            data = {'page': n, 'pageSize': 500, 'order_number': None, 'shippingNumber': None,
-                    'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None,
-                    'productIds': None,
-                    'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None,
-                    'logisticsMode': None,
-                    'type': None, 'collId': None, 'isClone': None,
-                    'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': areaId, 'reassignmentType': None,
-                    'lowerstatus': '',
-                    'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None,
-                    'tuan': None,
-                    'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None,
-                    'volumeStart': None, 'chooser_id': None,
-                    'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None,
-                    'weightStart': None,
-                    'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None,
-                    'sortField': None,
-                    'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
-                    'timeStart': timeStart + '00:00:00', 'timeEnd': timeEnd + '23:59:59'}
-        else:
-            data = {'page': n, 'pageSize': 500, 'order_number': None, 'shippingNumber': None,
-                    'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                    'saleIds': None, 'payType': None, 'logisticsId': '85,348,199,356', 'logisticsStyle': None, 'logisticsMode': None,
-                    'type': None, 'collId': None, 'isClone': None,
-                    'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '',
-                    'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
-                    'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
-                    'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None,
-                    'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
-                    'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
-                    'timeStart': timeStart + '00:00:00', 'timeEnd': timeEnd + '23:59:59'}
+        data = {'page': n, 'pageSize': 500, 'order_number': None, 'shippingNumber': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                'emailStatus': None,  'befrom': None, 'areaId': areaId, 'reassignmentType': None, 'lowerstatus': '', 'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None,
+                'orderStatus': None, 'tuan': None,'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None, 'service_id': None,
+                'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None,
+                'order': None, 'sortField': None, 'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'timeStart': None, 'timeEnd': None}
         if query == '下单时间':
-            data.update({'timeStart': timeStart + '00:00:00',
-                         'timeEnd': timeEnd + '23:59:59',
-                         'finishTimeStart': None,
-                         'finishTimeEnd': None})
+            data.update({'timeStart': timeStart + '00:00:00', 'timeEnd': timeEnd + '23:59:59', 'finishTimeStart': None, 'finishTimeEnd': None})
         elif query == '完成时间':
-            data.update({'timeStart': None,
-                         'timeEnd': None,
-                         'finishTimeStart': timeStart + '00:00:00',
-                         'finishTimeEnd': timeEnd + '23:59:59'})
+            data.update({'timeStart': None,'timeEnd': None,  'finishTimeStart': timeStart + '00:00:00', 'finishTimeEnd': timeEnd + '23:59:59'})
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -1038,9 +862,11 @@ class QueryOrder(Settings, Settings_sso):
             req = self.session.post(url=url, headers=r_header, data=data)
         # print('......已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
         ordersdict = []
         try:
             for result in req['data']['list']:
+                # print(result['orderNumber'])
                 if result['specs'] != '':
                     result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
                     result['saleName'] = 0
@@ -1075,36 +901,81 @@ class QueryOrder(Settings, Settings_sso):
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
         data = pd.json_normalize(ordersdict)
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        # data.to_excel('G:\\输出文件\\明细{0}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         df = None
         try:
-            if areaId == 179:
-                df = data[['orderNumber', 'befrom', 'currency', 'area', 'productId', 'saleProduct', 'shipInfo.shipPhone', 'percent', 'shipZip', 'amount', 'quantity', 'orderStatus',
-                           'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime', 'logisticsName', 'dpeStyle', 'reassignmentTypeName', 'logisticsStatus', 'weight', 'delReason',
-                           'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime', 'finishTime', 'hasLowPrice', 'collId', 'saleId', 'refundTime',
-                           'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer','autoVerify', 'cloneUser', 'isClone', 'warehouse',
-                           'logisticsControl','logisticsRefuse', 'logisticsUpdateTime', 'stateTime','collDomain', 'typeName', 'update_time']]
-                df.columns = ['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '联系电话', '拉黑率', '邮编', '应付金额', '数量', '订单状态',
-                              '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型', '订单类型', '物流状态', '重量', '删除原因',
-                              '问题原因', '下单人', '转采购时间', '发货时间', '上线时间', '完成时间', '是否低价', '站点ID', '商品ID', '销售退货时间',
-                              '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型','克隆人',  '克隆ID', '发货仓库',
-                              '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间']
-            else:
-                df = data[['orderNumber', 'befrom', 'currency', 'area', 'productId', 'saleProduct', 'saleName', 'spec', 'shipInfo.shipName', 'shipInfo.shipPhone', 'percent', 'phoneLength',
-                           'shipInfo.shipAddress', 'amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime','logisticsName', 'dpeStyle',
-                           'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName', 'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime',
-                           'finishTime', 'refundTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer', 'autoVerify', 'autoVerifyTip', 'cloneUser', 'isClone', 'warehouse', 'smsStatus',
-                           'logisticsControl', 'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName','update_time']]
-                df.columns = ['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '拉黑率', '电话长度',
-                              '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
-                              '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
-                              '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
-                              '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型',  '更新时间']
+            df = data[['orderNumber', 'befrom', 'currency', 'area', 'productId', 'saleProduct', 'saleName', 'spec', 'shipInfo.shipName', 'shipInfo.shipPhone', 'tel_phone','percent', 'phoneLength',
+                       'shipInfo.shipAddress', 'amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime','logisticsName', 'dpeStyle',
+                       'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName', 'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime',
+                       'finishTime', 'refundTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer', 'autoVerify', 'autoVerifyTip', 'cloneUser', 'isClone', 'warehouse', 'smsStatus',
+                       'logisticsControl', 'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName','update_time']]
+            df.columns = ['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '标准电话','拉黑率', '电话长度',
+                          '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
+                          '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
+                          '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
+                          '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型',  '更新时间']
         except Exception as e:
-            print('------查询为空')
+            print('！！！！！！ 转化失败，请检查过程 ！！！！！！')
         print('******本批次查询成功')
         return df
 
-    # 更新删除订单的原因
+
+    #  1.1 单点获取 最近三天订单 删除原因分析
+    def order_Query_Delete(self, timeStart, timeEnd, areaId, query, proxy_id, proxy_handle):  # 进入订单检索界面
+        print('+++正在检查 ' + timeStart + ' 到 ' + timeEnd + ' 号订单信息中')
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'page': 1, 'pageSize': 500, 'order_number': None, 'shippingNumber': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None, 'emailStatus': None,
+                'befrom': None, 'areaId': areaId, 'reassignmentType': None, 'lowerstatus': '', 'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
+                'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None, 'service_id': None, 'autoVerifyStatus': None, 'shipZip': None,
+                'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
+                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'timeStart': timeStart +' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59'}
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        max_count = req['data']['count']
+        print(max_count)
+        if max_count > 0:
+            in_count = math.ceil(max_count/500)
+            df = pd.DataFrame([])
+            dlist = []
+            n = 1
+            while n <= in_count:  # 这里用到了一个while循环，穿越过来的
+                print('查询第 ' + str(n) + ' 页中，剩余次数' + str(in_count - n))
+                data = self._timeQuery(timeStart, timeEnd, n, areaId, query, proxy_id, proxy_handle)
+                dlist.append(data)
+                n = n + 1
+            print('正在写入......')
+            dp = df.append(dlist, ignore_index=True)
+            db0 = dp[(dp['运营团队'].str.contains('神龙家族-港澳台|火凤凰-港澳台|火凤凰-港台(繁体)'))]
+            print('正在导入临时表中......')
+            db0 = db0[['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '收货人', '联系电话', '标准电话', '拉黑率', '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式',
+                       '下单时间', '审核人', '审核时间', '物流渠道', '货物类型', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '备注', 'IP', '体积',
+                       '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库', '拒收原因', '物流更新时间', '状态时间', '更新时间']]
+            db0.insert(0, '删除人', '')
+            db0.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+            db0.to_excel('G:\\输出文件\\神龙-火凤凰 昨日删单明细{0}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+
+            print('正在分析订单删除的原因......')
+            sql = '''DELETE FROM `cache` gt WHERE gt.`订单编号` IN (SELECT * FROM gat_地址邮编错误);'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            self.del_people(proxy_id, proxy_handle)
+            self.del_order_day()
+
+            print('查询已导出+++')
+        else:
+            print('无信息+++')
+
+    # 1.2 分析订单删除的原因
     def del_people(self, proxy_id, proxy_handle):
         print('正在更新 订单删除 信息……………………………………………………………………………………………………………………………………………………………………………………')
         start = datetime.datetime.now()
@@ -1116,25 +987,26 @@ class QueryOrder(Settings, Settings_sso):
         print(db['订单编号'][0])
         orderId = list(db['订单编号'])
         max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
-        if max_count > 500:
-            ord = ', '.join(orderId[0:500])
-            df = self._del_people(ord, '', proxy_id, proxy_handle)
+        if max_count > 0:
+            df = pd.DataFrame([])
             dlist = []
-            n = 0
-            while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
-                n = n + 500
-                ord = ','.join(orderId[n:n + 500])
-                data = self._del_people(ord, '', proxy_id, proxy_handle)
+            n = 1
+            in_count = math.ceil(max_count / 100)
+            while n <= in_count:  # 这里用到了一个while循环，穿越过来的
+                print('查询第 ' + str(n) + ' 页中，剩余次数' + str(in_count - n))
+                data = self._del_people(n, None, proxy_id, proxy_handle)
                 dlist.append(data)
+                n = n + 1
             print('正在写入......')
             dp = df.append(dlist, ignore_index=True)
-        else:
-            ord = ','.join(orderId[0:max_count])
-            dp = self._del_people(ord, '', proxy_id, proxy_handle)
-        if dp is None or len(dp) == 0:
-            print('查询为空，不需更新+++')
-        else:
-            # print(dp)
+            # n = 0
+            # while n <= max_count:  # 这里用到了一个while循环，穿越过来的
+            #     n = n + 500
+            #     ord = ','.join(orderId[n:n + 500])
+            #     data = self._del_people(n, ord, None, proxy_id, proxy_handle)
+            #     dlist.append(data)
+            # print('正在写入......')
+            # dp = df.append(dlist, ignore_index=True)
             dp.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
             print('正在更新删除原因中......')
             sql = '''update cache a, cache_cp b set a.`删除人`= IF(b.`删除人` = '', NULL, b.`删除人`) where a.`订单编号`=b.`订单编号`;'''
@@ -1149,23 +1021,19 @@ class QueryOrder(Settings, Settings_sso):
                         a.`IP` = IF( a.`IP` = '', NULL, a.`IP` ),
                         a.`删除原因` = IF(a.`删除原因` LIKE ';%', RIGHT(a.`删除原因`,CHAR_LENGTH(a.`删除原因`)-1), a.`删除原因`);'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        else:
+            print('查询为空，不需更新+++')
         print('查询耗时：', datetime.datetime.now() - start)
-    def _del_people(self, ord, areaId, proxy_id, proxy_handle):  # 进入订单检索界面
+    def _del_people(self, n, areaId, proxy_id, proxy_handle):  # 进入订单检索界面
         # print('......正在查询信息中......')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRemoveOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/deletedOrder'}
-        if areaId == 179:
-            data = {'page': 1, 'pageSize': 500, 'orderPrefix': ord, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
-                    'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
-                    'emailStatus': None, 'befrom': None, 'areaId': areaId, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None,
-                    'questionId': None, 'reassignmentType': None, 'delUserId': None, 'delReasonIds': None,'delTimeStart':None, 'delTimeEnd': None}
-        else:
-            data = {'page': 1, 'pageSize': 500, 'orderPrefix': ord, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
-                    'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
-                    'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None,
-                    'questionId': None, 'reassignmentType': None, 'delUserId': None, 'delReasonIds': None,'delTimeStart':None, 'delTimeEnd': None}
+        data = {'page': n, 'pageSize': 100, 'orderPrefix': None, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
+                'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                'emailStatus': None, 'befrom': None, 'areaId': areaId, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None,
+                'questionId': None, 'reassignmentType': None, 'delUserId': None, 'delReasonIds': None,'delTimeStart':None, 'delTimeEnd': None}
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -1183,20 +1051,13 @@ class QueryOrder(Settings, Settings_sso):
         data = pd.json_normalize(ordersdict)
         df = None
         try:
-            # df = data[['orderNumber', 'currency', 'area', 'orderStatus', 'addTime', 'username', 'verifyTime',
-            #            'dpeStyle', 'reassignmentTypeName', 'logisticsStatus', 'delReason', 'questionReason',
-            #            'transferTime', 'deliveryTime', 'hasLowPrice', 'remark', 'ip', 'autoVerify', 'warehouse']]
-            # df.columns = ['订单编号', '币种', '运营团队', '订单状态', '下单时间', '操作人', '审核时间',
-            #               '货物类型', '订单类型', '物流状态', '删除原因', '问题原因',
-            #               '转采购时间', '发货时间', '是否低价', '备注', 'IP', '审单类型', '发货仓库']
             df = data[['orderNumber', 'username']]
             df.columns = ['订单编号', '删除人']
         except Exception as e:
             print('------查询为空')
         print('******本批次查询成功')
         return df # 更新删除订单的原因 -函数调用
-
-    # 删除订单的  分析导出
+    # 1.3 分析订单删除的  分析导出
     def del_order_day(self):
         print('正在分析 昨日 删单原因中')
         sql ='''SELECT *,concat(ROUND(SUM(IF(删单原因 IS NULL OR 删单原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
@@ -2247,7 +2108,8 @@ class QueryOrder(Settings, Settings_sso):
         # writer2.close()
         # print()
 
-    def order_track_Query(self, hanlde, timeStart, timeEnd, proxy_id, proxy_handle):    # 进入订单检索界面     促单查询
+    # 进入订单检索界面     促单查询
+    def order_track_Query(self, hanlde, timeStart, timeEnd, proxy_id, proxy_handle):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         if hanlde == '自动':
             if (datetime.datetime.now()).strftime('%d') == 1:
@@ -2523,7 +2385,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 33                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'

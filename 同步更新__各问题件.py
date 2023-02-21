@@ -1713,7 +1713,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 99
+    select = 909
     if int(select) == 99:
         handle = '手动0'
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
@@ -1766,23 +1766,32 @@ if __name__ == '__main__':
         m.getOrderCollectionList(time_Start, time_End, proxy_handle, proxy_id)  # 工单列表-物流客诉件
         print('查询耗时：', datetime.datetime.now() - start)
     '''
-    # -----------------------------------------------自动获取 单点 昨日头程直发渠道的订单明细 状态运行（二）-----------------------------------------
+    # -----------------------------------------------自动获取 单点 昨日头程直发渠道的订单明细  | 删单原因 状态运行（二）-----------------------------------------
     '''
-    if int(select) == 99:
+    if int(select) == 909:
         proxy_handle = '代理服务器0'
         proxy_id = '192.168.13.89:37467'                            # 输入代理服务器节点和端口
-        login_TmpCode = '517e55c6fb6c34ca99a69874aaf5ec25'          # 输入登录口令Tkoen
         handle = '手0动'
-        query = '下单时间'
+        login_TmpCode = '517e55c6fb6c34ca99a69874aaf5ec25'          # 输入登录口令Tkoen
+
         js = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
         time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         time_now = time_yesterday
-        js.order_TimeQueryT(time_yesterday, time_now, '',  '检查头程直发渠道|删单原因', query, proxy_handle, proxy_id)   # 检查头程直发渠道|删单原0因
+        query = '下单时间'
+        areaId = None                                   # 团队id
+        js.order_Query_Yiwudi(time_yesterday, time_now, areaId, query, proxy_handle, proxy_id)   # 检查 头程直发渠道 & 天马711
+
+        time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        time_now = time_yesterday
+        query = '下单时间'
+        areaId = None                                   # 团队id
+        js.order_Query_Delete(time_yesterday, time_now, areaId, query, proxy_handle, proxy_id)   # 最近三天删单原因
+
 
         hanlde = '自动'
         timeStart = '2022-09-19'
         timeEnd = '2022-09-19'
-        js.order_track_Query(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)  # 促单查询；订单检索
+        # js.order_track_Query(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)  # 促单查询；订单检索
 
     '''
     # -----------------------------------------------自动获取 数据库 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------
