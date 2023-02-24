@@ -77,6 +77,8 @@ class QueryUpdate(Settings):
                 print(filePath)
                 if '需发货的改派订单' in dir or '需发货改派订单' in dir:
                     write = '需发货'
+                elif '线上支付重复订单' in dir:
+                    write = '线付重复'
                 self.wbsheetHost(filePath, team, write, last_time, up_time)
                 os.remove(filePath)
                 print('已清除上传文件…………')
@@ -97,7 +99,7 @@ class QueryUpdate(Settings):
             for sht in wb.sheets:
                 db = None
                 try:
-                    db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
+                    db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False, keep_default_na=False).value
                 except Exception as e:
                     print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                 if db is not None and len(db) > 0:
@@ -134,6 +136,35 @@ class QueryUpdate(Settings):
                             db = db[['订单编号', '退款时间', '退款原因', '详细原因', '具体原因', '退款金额', '订单金额', '剩余金额', '申请退款人']]
                             print(db)
                             self._online_paly(pay, db)
+                    elif write == '线付重复':
+                        if '明细' in sht.name:
+                            # print(db)
+                            # print(db.columns)
+                            list = []
+                            for lt in db.columns:
+                                dt = lt.replace("\n", "")
+                                lt_data = ''
+                                if '订单编号' in lt and '此单是重复单' in lt:
+                                    lt_data = '订单编号此单是重复单'
+                                elif '是否联系处理' in lt:
+                                    lt_data = '是否联系处理'
+                                elif '备注' in lt and '处理明细' in lt:
+                                    lt_data = '备注处理明细'
+                                elif '转走日期' in lt:
+                                    lt_data = '转走日期'
+                                elif '同一客人' in lt and '是/否' in lt:
+                                    lt_data = '同一客人是否'
+                                elif '订单编号' in lt and '最近的上笔' in lt:
+                                    lt_data = '订单编号最近的上笔'
+                                else:
+                                    lt_data = lt
+                                list.append(lt_data)
+                            # print(list)
+                            db.columns = list
+                            db.dropna(axis=0, how='any', inplace=True, subset=['订单编号此单是重复单'])  # 空值（缺失值），将空值所在的行/列删除后
+                            print(db.columns)
+                            self.double_online_paly(db)
+
                     print('++++----->>>' + sht.name + '：订单更新完成++++')
                 else:
                     print('----------数据为空导入失败：' + sht.name)
@@ -245,6 +276,108 @@ class QueryUpdate(Settings):
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
 
+    # 线付重复订单  核实&签收率
+    def double_online_paly(self, db):
+        print('正在写入......')
+        rq = datetime.datetime.now().strftime('%Y%m%d')
+        db.to_sql('线付缓存', con=self.engine1, index=False, if_exists='replace')  # 将返回的dateFrame导入数据库的临时表
+        columns = list(db.columns)
+        columns = ','.join(columns)
+        sql = 'REPLACE INTO 线付重复订单({0}, 记录时间) SELECT *, NOW() 记录时间 FROM 线付缓存; '.format(columns)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
+        listT = []
+        sqltime82 = '''SELECT *, concat(ROUND(签收 / 完成 * 100,2),'%') AS 完成签收
+                        FROM (
+                                SELECT 年月, COUNT(订单编号) AS 单量,
+                                            SUM(IF(系统订单状态 NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 有效订单,
+                                            SUM(IF(系统物流状态 = '已签收',1,0)) AS 签收,
+                                            SUM(IF(系统物流状态 = '拒收',1,0)) AS 拒收,
+                                            SUM(IF(系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) AS 完成
+                                FROM (
+                                        SELECT DISTINCT 订单编号此单是重复单
+                                        FROM 线付重复订单 x1
+                                ) x
+                                LEFT JOIN (
+                                            SELECT * 
+                                            FROM gat_order_list s1 
+                                            WHERE s1.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m')
+                                ) s ON x.订单编号此单是重复单 = s.订单编号
+                                GROUP BY 年月
+                        ) ss ;'''
+        df82 = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(df82)
+        print('线付重复 此单订单的 签收率')
+
+        sqltime83 = '''SELECT *, concat(ROUND(签收 / 完成 * 100,2),'%') AS 完成签收
+                        FROM (
+                                    SELECT 年月, COUNT(订单编号) AS 单量,
+                                                SUM(IF(系统订单状态 NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 有效订单,
+                                                SUM(IF(系统物流状态 = '已签收',1,0)) AS 签收,
+                                                SUM(IF(系统物流状态 = '拒收',1,0)) AS 拒收,
+                                                SUM(IF(系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) AS 完成
+                                    FROM (
+                                                SELECT DISTINCT 订单编号最近的上笔
+                                                FROM 线付重复订单 x2
+                                                WHERE x2.订单编号最近的上笔 IS NOT NULL
+                                    ) x
+                                    LEFT JOIN (
+                                                            SELECT * 
+                                                            FROM gat_order_list s1 
+                                                            WHERE s1.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m')
+                                    ) s ON x.订单编号最近的上笔 = s.订单编号
+                                    GROUP BY 年月
+                        ) ss;'''
+        df83 = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(sqltime83)
+        print('线付重复 上笔订单的 签收率')
+
+        sqltime84 = '''SELECT *, concat(ROUND(签收 / 完成 * 100,2),'%') AS 完成签收
+                        FROM (
+                                    SELECT 年月, COUNT(订单编号) AS 单量,
+                                                SUM(IF(系统订单状态 NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 有效订单,
+                                                SUM(IF(系统物流状态 = '已签收',1,0)) AS 签收,
+                                                SUM(IF(系统物流状态 = '拒收',1,0)) AS 拒收,
+                                                SUM(IF(系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) AS 完成
+                                    FROM (
+                                                    (
+                                                        SELECT 订单编号此单是重复单
+                                                        FROM 线付重复订单 x1
+                                                    )
+                                                    UNION 
+                                                    (
+                                                        SELECT 订单编号最近的上笔
+                                                        FROM 线付重复订单 x2
+                                                        WHERE x2.订单编号最近的上笔 IS NOT NULL
+                                                    )
+                                    ) x
+                                    LEFT JOIN (
+                                                            SELECT * 
+                                                            FROM gat_order_list s1 
+                                                            WHERE s1.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m')
+                                    ) s ON x.订单编号此单是重复单 = s.订单编号
+                                    GROUP BY 年月
+                        ) ss;'''
+        df84 = pd.read_sql_query(sql=sql, con=self.engine1)
+        listT.append(sqltime84)
+        print('线付重复 此单和上笔  去除重复订单的 签收率')
+
+        file_path = 'G:\\输出文件\\线付重复订单签收率 {}.xlsx'.format(rq)
+        df0 = pd.DataFrame([])
+        df0.to_excel(file_path, index=False)
+        writer = pd.ExcelWriter(file_path, engine='openpyxl')
+        book = load_workbook(file_path)
+        writer.book = book
+        listT[0].to_excel(excel_writer=writer, sheet_name='线付', index=False)
+        listT[1].to_excel(excel_writer=writer, sheet_name='线付', index=False, startcol=9)  # 明细
+        listT[2].to_excel(excel_writer=writer, sheet_name='线付', index=False, startcol=19)  # 有效单量
+        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            del book['Sheet1']
+        writer.save()
+        writer.close()
+
+        print('输出成功......')
+
 
     # 在线支付情况
     def _online_paly(self, pay, db):
@@ -260,7 +393,7 @@ class QueryUpdate(Settings):
             columns = ','.join(columns)
             sql = 'REPLACE INTO 交易清单({0}, 记录时间) SELECT *, NOW() 记录时间 FROM 线付缓存_cache ORDER BY 订单编号, 交易创建时间; '.format(columns)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        elif pay == '线付退款记录':                                      
+        elif pay == '线付退款记录':
             sql = '''update 交易清单 a, 线付缓存 b
                     set a.`退款时间`= b.`退款时间`,
                         a.`退款原因`= b.`退款原因`,
@@ -607,7 +740,8 @@ class QueryUpdate(Settings):
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('正在获取---' + match[team] + '---更新数据内容…………')
             sql = '''SELECT 年月, 旬, 日期, 团队, 币种, null 区域, 订单来源, a.订单编号, 电话号码, a.运单编号,
-                            IF(出货时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), a.仓储扫描时间, 出货时间) 出货时间,
+                            -- IF(ISNULL(a.仓储扫描时间), IF(出货时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), null, 出货时间), a.仓储扫描时间) 出货时间,
+                            IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                             IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
                             IF(状态时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), '', 状态时间) 状态时间,
                             IF(ISNULL(a.上线时间), IF(b.上线时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), null,b.上线时间), a.上线时间) 上线时间, 系统订单状态,
@@ -654,7 +788,7 @@ class QueryUpdate(Settings):
         sql = 'REPLACE INTO {0}_zqsb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         try:
-            print('正在 回滚更新总表......')
+            print('正在 回滚更新订单总表......')
             sql = '''update {0}_order_list a, d1_gat b
                             set a.`系统物流状态`= IF(b.`最终状态` = '', NULL, b.`最终状态`),
                                 a.`上线时间`= IF(a.`上线时间` = '0000-00-00 00:00:00' OR a.`上线时间` IS NULL, IF(b.`上线时间` = '0000-00-00 00:00:00', NULL, b.`上线时间`), a.`上线时间`)
@@ -8242,7 +8376,8 @@ class QueryUpdate(Settings):
                 print('运行失败：', str(Exception) + str(e))
             print('----已写入excel ')
 
-        if week.isoweekday() == 3 or handle == '手动':
+        # if week.isoweekday() == 3 or handle == '手动':
+        if handle == '手动':
             listT = []  # 查询sql的结果 存放池
             print("正在获取 在线签收率" + month_last + "-" + month_yesterday + " 数据内容…………")
             sql = '''SELECT s2.家族,s2.币种,s2.年月,s2.是否改派,s2.物流方式,
@@ -11067,10 +11202,10 @@ if __name__ == '__main__':
         m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
 
         currency_id = '全部付款'
-        m.gat_new(team, month_last, month_yesterday, currency_id)      # 获取-货到付款& 在线付款 签收率-报表
-        m.qsb_new(team, month_old)                                  # 获取-每日-报表
+        # m.gat_new(team, month_last, month_yesterday, currency_id)   # 获取-货到付款& 在线付款 签收率-报表
+        # m.qsb_new(team, month_old)                                  # 获取-每日-报表
         m.EportOrderBook(team, month_last, month_yesterday)         # 导出-总的-签收
-        m.phone_report('handle', month_last, month_yesterday)                                    # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）
+        m.phone_report('handle', month_last, month_yesterday)       # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）
 
         # currency_id = '在线付款'
         # m.gat_new(team, month_last, month_yesterday, currency_id)  # 获取-在线付款 签收率-报表
@@ -11096,6 +11231,12 @@ if __name__ == '__main__':
         write = '在线支付'
         m.readFormHost(team, write, last_time, up_time)  # 在线支付 读表---港澳台（一）
         m.online_paly()                                  # 在线支付 获取
+
+    elif int(select) == 3:
+        last_time = '2021-01-01'
+        up_time = '2022-10-20'
+        write = '线付重复订单'
+        m.readFormHost(team, write, last_time, up_time)  # 线付重复订单 读表---港澳台（一）
 
 
     print('耗时：', datetime.datetime.now() - start)

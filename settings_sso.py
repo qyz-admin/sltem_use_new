@@ -832,6 +832,17 @@ class Settings_sso():
                         "isAtAll": True
                     }
                     }
+        if isAtAll == '单个':
+            data = {"msgtype": "text",
+                    "text": {  # 要发送的内容【支持markdown】【！注意：content内容要包含机器人自定义关键字，不然消息不会发送出去，这个案例中是test字段】
+                        "content": content
+                    },
+                    "at": {
+                        # "atMobiles": mobile_list, @所有人写True并且将上面atMobiles注释掉
+                        # 是否@所有人
+                        "isAtAll": False
+                    }
+                    }
         else:
             data = {
                 "msgtype": "text",
@@ -854,7 +865,7 @@ class Settings_sso():
         r = requests.post(url, headers=headers, data=json.dumps(data))
         req = json.loads(r.text)  # json类型数据转换为dict字典
         print(req['errmsg'])
-        return req['errmsg']
+        # return req['errmsg']
 
     # 自动输入token
     def sso_online_cang_auto(self):  # 登录系统保持会话状态

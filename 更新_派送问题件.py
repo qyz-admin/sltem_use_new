@@ -1618,7 +1618,7 @@ if __name__ == '__main__':
         # m.getOrderList_T('2022-06-01', '2022-06-30')
         logisticsN_begin = '2022-07-11'                             # 送达客户不在/客户长期不在  物流轨迹查询时间
         logisticsN_end = '2022-07-31'
-        m.outport_getDeliveryList('2022-10-01', '2022-12-11', logisticsN_begin, logisticsN_end)
+        m.outport_getDeliveryList('2022-10-01', '2023-02-21', logisticsN_begin, logisticsN_end)
         # m.getMessageLog('2022-07-01', '2022-07-15')
 
 

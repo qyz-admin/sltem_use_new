@@ -40,12 +40,12 @@ if team == 'gat':
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    data_begin = datetime.date(2023, 1, 20)  # 数据库更新
+    data_begin = datetime.date(2023, 2, 4)  # 数据库更新
     begin = datetime.date(2023, 1, 1)      # 单点更新
-    end = datetime.date(2023, 2, 20)
+    end = datetime.date(2023, 2, 23)
     # 导出时间
     month_last = '2022-12-01'
-    month_yesterday = '2023-02-20'
+    month_yesterday = '2023-02-23'
     month_begin = '2022-11-01'
 print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
@@ -98,7 +98,7 @@ print('导入耗时：', datetime.datetime.now() - start)
 print('---------------------------------- 数据库更新部分：--------------------------------')
 m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
 
-# qu.EportOrder(team, month_last, month_yesterday, month_begin, '是', '导表','手0动','代理服务器0','192.168.13.89:37466')     # 最近两个月的更新信息导出
+# qu.EportOrder(team, month_last, month_yesterday, month_begin, '是', '导表0','手0动','代理服务器0','192.168.13.89:37466')     # 最近两个月的更新信息导出
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
     m.creatMyOrderSlTWO(team, begin, end)                               # 停用 最近两个月的 部分内容 更新信息
@@ -106,12 +106,12 @@ print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
 
 # TODO------------------------------------单点更新配置------------------------------------
-proxy_handle = '代理服务器0'
+proxy_handle = '代理服务器'
 proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
 handle = '手动0'
 login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
 
-if team == 'gat' and updata == '全部':
+if team == 'gat0' and updata == '全部':
     print('---------------------------------- 单点更新部分：--------------------------------')
     sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', login_TmpCode, handle, proxy_handle, proxy_id)
     for i in range((end - begin).days):                             # 按天循环获取订单状态

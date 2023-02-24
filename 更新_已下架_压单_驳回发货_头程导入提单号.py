@@ -438,7 +438,7 @@ class QueryTwoLower(Settings, Settings_sso):
             mkpath = r"F:\神龙签收率\(未发货) 直发-仓库-压单\\" + time_path.strftime('%m') + '月'
             sql = '''SELECT s.订单编号,s.产品ID,s.产品名称,NULL SKU,NULL 产品规格,NULL 运单号,s.币种,家族 AS 团队,'港台' AS 团队2, NULL 状态,s.反馈时间,s.压单原因,s.其他原因,	s.采购员, 品类, s.入库时间,s.下单时间,s.是否下架,
                             s.下架时间,s.记录时间, s1.处理结果,s1.处理时间,NULL 备注,  DATEDIFF(curdate(),入库时间) 压单天数, DATE_FORMAT(入库时间,'%Y-%m-%d') 入库,采购异常, 处理进度, 详细处理时间,反馈内容, 压单短信发送时间
-                     FROM ( SELECT * , IF(团队 LIKE '火凤凰-港%','火凤凰-港澳台',IF(团队 LIKE '金蝉家族%','金蝉家族',IF(团队 LIKE '金蝉家族%','金蝉家族',团队))) AS 家族
+                     FROM ( SELECT * , IF(团队 LIKE '火凤凰-港%','火凤凰-港澳台',团队) AS 家族
                             FROM 压单表 g
                             WHERE g.`记录时间` >= CURDATE() and g.是否下架 <> '已下架'
                     ) s
@@ -459,7 +459,7 @@ class QueryTwoLower(Settings, Settings_sso):
                     FROM (
                            SELECT s.订单编号,s.产品ID,s.产品名称,NULL SKU,NULL 产品规格,NULL 运单号,s.币种,家族 AS 团队,'港台' AS 团队2, NULL 状态,s.反馈时间,s.压单原因,s.其他原因,	s.采购员, 品类, s.入库时间,s.下单时间,s.是否下架,
                                 s.下架时间,s.记录时间,NULL 备注,  DATEDIFF(curdate(),入库时间) 压单天数, DATE_FORMAT(入库时间,'%Y-%m-%d') 入库
-                        FROM ( SELECT * , IF(团队 LIKE '火凤凰-港%','火凤凰-港澳台',IF(团队 LIKE '金蝉家族%','金蝉家族',IF(团队 LIKE '金蝉家族%','金蝉家族',团队))) AS 家族
+                        FROM ( SELECT * , IF(团队 LIKE '火凤凰-港%','火凤凰-港澳台',团队) AS 家族
                                 FROM 压单表 g
                                 WHERE g.`记录时间` >= CURDATE() and g.是否下架 <> '已下架'
                         ) s

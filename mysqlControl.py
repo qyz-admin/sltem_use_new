@@ -2959,7 +2959,7 @@ class MysqlControl(Settings):
                 name_Status_last = dict[order_Number]['转化人']
                 print(name_Status_last)
                 if '已删除' not in order_Status and '待发货' not in order_Status:
-                    print('已删除不在')
+                    print('已删除 待发货不在')
                     print('转化人:' + str(name_Status_last))
                     dict_info['订单编号'] = x['orderNumber']
                     dict_info['id'] = x['id']
