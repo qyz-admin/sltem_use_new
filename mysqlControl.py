@@ -2941,6 +2941,7 @@ class MysqlControl(Settings):
                 dict_info['备注'] = x['remark']
                 dict_info['转化人'] = '0'
                 dict[order_Number] = dict_info
+                step = 0
                 print(dict)
                 print(dict_info)
                 print('新增' + str(x['id']))
@@ -2958,7 +2959,12 @@ class MysqlControl(Settings):
                 name_Status = x['name']
                 name_Status_last = dict[order_Number]['转化人']
                 print(name_Status_last)
-                if '已删除' not in order_Status and '待发货' not in order_Status:
+                if '已转采购' in order_Status:
+                    step = 1
+                    continue
+                if step >= 1:
+                    continue
+                if order_Status == '问题订单':
                     print('已删除 待发货不在')
                     print('转化人:' + str(name_Status_last))
                     dict_info['订单编号'] = x['orderNumber']
@@ -2966,24 +2972,46 @@ class MysqlControl(Settings):
                     dict_info['订单状态'] = x['orderStatus']
                     dict_info['转化时间'] = x['updateTime']
                     dict_info['备注'] = x['remark']
-                    if order_Status == '问题订单':
-                        if name_Status_last != '' and name_Status_last != '0' and name_Status_last != 0:
-                            if name_Status_last == '蔡利英' or name_Status_last == '杨嘉仪' or name_Status_last == '张陈平':
-                                dict_info['转化人'] = name_Status_last
-                            else:
-                                dict_info['转化人'] = x['name']
+                    if name_Status_last != '0':
+                        if name_Status_last == '蔡利英' or name_Status_last == '杨嘉仪' or name_Status_last == '张陈平':
+                            dict_info['转化人'] = name_Status_last
                         else:
                             dict_info['转化人'] = x['name']
                     else:
-                        dict_info['转化人'] = '0'
+                        dict_info['转化人'] = x['name']
                     dict[order_Number] = dict_info
+                    
+                # if '已删除' not in order_Status and '待发货' not in order_Status:
+                #     print('已删除 待发货不在')
+                #     print('转化人:' + str(name_Status_last))
+                #     dict_info['订单编号'] = x['orderNumber']
+                #     dict_info['id'] = x['id']
+                #     dict_info['订单状态'] = x['orderStatus']
+                #     dict_info['转化时间'] = x['updateTime']
+                #     dict_info['备注'] = x['remark']
+                #     if order_Status == '问题订单':
+                #         print('已删除 待发货不在')
+                #         print('转化人:' + str(name_Status_last))
+                #         dict_info['订单编号'] = x['orderNumber']
+                #         dict_info['id'] = x['id']
+                #         dict_info['订单状态'] = x['orderStatus']
+                #         dict_info['转化时间'] = x['updateTime']
+                #         dict_info['备注'] = x['remark']
+                #         if name_Status_last != '0':
+                #             if name_Status_last == '蔡利英' or name_Status_last == '杨嘉仪' or name_Status_last == '张陈平':
+                #                 dict_info['转化人'] = name_Status_last
+                #             else:
+                #                 dict_info['转化人'] = x['name']
+                #         else:
+                #             dict_info['转化人'] = x['name']
+                #     else:
+                #         dict_info['转化人'] = '0'
+                #     dict[order_Number] = dict_info
                 elif '已删除' in order_Status or '待发货' in order_Status:
+                    step = step + 1
                     print('已删除在')
                     if order_Status_last == "问题订单":
                         if '修改order_status' in remark_Status:
-                            print(order_Status_last)
-                            print(remark_Status)
-                            print(name_Status)
                             if '蔡利英' in name_Status or '杨嘉仪' in name_Status or '张陈平' in name_Status:
                                 dict_info['订单编号'] = x['orderNumber']
                                 dict_info['id'] = x['id']
@@ -2991,7 +3019,7 @@ class MysqlControl(Settings):
                                 dict_info['转化时间'] = x['updateTime']
                                 dict_info['备注'] = x['remark']
                                 dict_info['转化人'] = x['name']
-                            elif '蔡利英' not in name_Status and '杨嘉仪' not in name_Status and '张陈平' not in name_Status:
+                            else:
                                 if '修改remark,->张' in remark_Status_last or '修改remark,->楊' in remark_Status_last or '修改remark,->英' in remark_Status_last:
                                     dict_info['订单编号'] = order_Number_last
                                     dict_info['id'] = id_Status_last
@@ -2999,6 +3027,41 @@ class MysqlControl(Settings):
                                     dict_info['转化时间'] = update_Time_last
                                     dict_info['备注'] = remark_Status_last
                                     dict_info['转化人'] = name_Status_last
+                                # else:
+                                #     dict_info['订单状态'] = x['orderStatus']
+                            pass
+                        else:
+                            pass
+                    else:
+                        pass
+                    
+                    
+                    
+                    
+                    # if order_Status_last == "问题订单":
+                    #     if '修改order_status' in remark_Status:
+                    #         print(order_Status_last)
+                    #         print(remark_Status)
+                    #         print(name_Status)
+                    #         if '蔡利英' in name_Status or '杨嘉仪' in name_Status or '张陈平' in name_Status:
+                    #             dict_info['订单编号'] = x['orderNumber']
+                    #             dict_info['id'] = x['id']
+                    #             dict_info['订单状态'] = x['orderStatus']
+                    #             dict_info['转化时间'] = x['updateTime']
+                    #             dict_info['备注'] = x['remark']
+                    #             dict_info['转化人'] = x['name']
+                    #         elif '蔡利英' not in name_Status and '杨嘉仪' not in name_Status and '张陈平' not in name_Status:
+                    #             if '修改remark,->张' in remark_Status_last or '修改remark,->楊' in remark_Status_last or '修改remark,->英' in remark_Status_last:
+                    #                 dict_info['订单编号'] = order_Number_last
+                    #                 dict_info['id'] = id_Status_last
+                    #                 dict_info['订单状态'] = order_Status_last
+                    #                 dict_info['转化时间'] = update_Time_last
+                    #                 dict_info['备注'] = remark_Status_last
+                    #                 dict_info['转化人'] = name_Status_last
+                                # else:
+                                #     dict_info['订单状态'] = x['orderStatus']
+                    # else:
+                    #     dict_info['订单状态'] = x['orderStatus']
                     print(dict_info)
                     if dict_info != {}:
                         dict[order_Number] = dict_info

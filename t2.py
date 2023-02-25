@@ -111,7 +111,7 @@ proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
 handle = '手动0'
 login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
 
-if team == 'gat0' and updata == '全部':
+if team == 'gat' and updata == '全部':
     print('---------------------------------- 单点更新部分：--------------------------------')
     sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', login_TmpCode, handle, proxy_handle, proxy_id)
     for i in range((end - begin).days):                             # 按天循环获取订单状态
