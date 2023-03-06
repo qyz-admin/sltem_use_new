@@ -201,7 +201,8 @@ class QueryTwo(Settings, Settings_sso):
         sql = '''update {0} a, customer b
                         set a.`运单编号`= IF(b.`运单号` = '', NULL, b.`运单号`),
                             a.`订单状态`= IF(b.`订单状态` = '', NULL, b.`订单状态`),
-                            a.`物流状态`= IF(b.`物流状态` = '', NULL, b.`物流状态`)
+                            a.`物流状态`= IF(b.`物流状态` = '', NULL, b.`物流状态`),
+                            a.`物流`= IF(b.`物流渠道` = '', NULL, b.`物流渠道`)
                             -- a.`上线时间`= IF(a.`上线时间` IS NULL, IF(b.`上线时间` ="", NULL, b.`上线时间`), a.`上线时间`),
                             -- a.`完成时间`= IF(a.`完成时间` IS NULL, b.`完成时间`, a.`完成时间`),
                             -- a.`标记`= IF(b.`上线时间` <> "" or b.`完成时间` IS NOT NULL, '修改', '')

@@ -244,7 +244,7 @@ class MysqlControl(Settings):
 
 
     def creatMyOrderSl(self, team, begin, end) :  # 最近五天的全部订单信息
-        match = {'gat': '"神龙家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "红杉家族-港澳台", "火凤凰-港澳台", "火凤凰-港台(繁体)", "金鹏家族-4组", "神龙-运营1组", "奥创队", "客服中心-港台","研发部-研发团队","Line运营", "神龙-主页运营", "翼虎家族-mercadolibre","金蝉家族公共团队","金蝉家族优化组","金蝉项目组","APP运营","郑州-北美"',
+        match = {'gat': '"神龙家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "红杉家族-港澳台", "火凤凰-台湾", "火凤凰-香港", "金鹏家族-4组", "神龙-运营1组", "奥创队", "客服中心-港台","研发部-研发团队","Line运营", "神龙-主页运营", "翼虎家族-mercadolibre","金蝉家族公共团队","金蝉家族优化组","金蝉项目组","APP运营","郑州-北美"',
                  'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"'
                  }
@@ -2918,14 +2918,9 @@ class MysqlControl(Settings):
         print('+++正在查询订单信息中')
         sql = '''SELECT *
                 FROM cache_ch c
-                WHERE c.orderStatus IS NOT NULL AND c.orderStatus <> "" AND c.orderNumber IN ("GT221116204644K77LU6","GT221116145531UH72J7","GT221115222604DBI7Z7",
-                "GT221115103948XV6SK2","GT221115025453CGNYG9","GT221114210256PDHX00","GT221114172616UWA8I9","GT2211140051244I6CD2","GT221113170252FWCV26",
-                "GT2211131601079FKZZ2","GT221113152410AMR0T2","GT221112203329X0KJ00","GT2211121006051BC813","GT221111143809X8LNE5","GT221109140155YMF6Q9",
-                "GT221108194100GPNBC3","GT2211081929204XYFF2","GT2211081433122FU9T1","GT221105125025YVEJJ9","GT221104160753PX4G20","GT221104151545IU4R31",
-                "GT221104133047PLK0V4","GT221103181157SKIQ36","GT221103142449YMF7P8","GT221102114210YDL3G8","GT221101164810BY4V45",
-                "GT221101114824DL3E19","GT221014060435374U39","GT211211114575966","GP221122210514L2K755")
+                WHERE c.orderStatus IS NOT NULL AND c.orderStatus <> ""
                 ORDER BY orderNumber, id
-                LIMIT 20000'''
+                LIMIT 3000;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print(df)
         dict = {}
@@ -2942,10 +2937,11 @@ class MysqlControl(Settings):
                 dict_info['转化人'] = '0'
                 dict[order_Number] = dict_info
                 step = 0
-                print(dict)
                 print(dict_info)
                 print('新增' + str(x['id']))
             else:
+                if step >= 1:
+                    continue
                 print(x['id'])
                 order_Number_last = dict[order_Number]['订单编号']
                 id_Status = x['id']
@@ -2959,11 +2955,8 @@ class MysqlControl(Settings):
                 name_Status = x['name']
                 name_Status_last = dict[order_Number]['转化人']
                 print(name_Status_last)
-                if '已转采购' in order_Status:
-                    step = 1
-                    continue
-                if step >= 1:
-                    continue
+                if order_Number_last == 'GT221105125025YVEJJ9':
+                    print(1)
                 if order_Status == '问题订单':
                     print('已删除 待发货不在')
                     print('转化人:' + str(name_Status_last))
@@ -2974,6 +2967,11 @@ class MysqlControl(Settings):
                     dict_info['备注'] = x['remark']
                     if name_Status_last != '0':
                         if name_Status_last == '蔡利英' or name_Status_last == '杨嘉仪' or name_Status_last == '张陈平':
+                            dict_info['id'] = id_Status_last
+                            dict_info['订单编号'] = order_Number_last
+                            dict_info['订单状态'] = order_Status_last
+                            dict_info['转化时间'] = update_Time_last
+                            dict_info['备注'] = remark_Status_last
                             dict_info['转化人'] = name_Status_last
                         else:
                             dict_info['转化人'] = x['name']
@@ -3008,13 +3006,13 @@ class MysqlControl(Settings):
                 #         dict_info['转化人'] = '0'
                 #     dict[order_Number] = dict_info
                 elif '已删除' in order_Status or '待发货' in order_Status:
-                    step = step + 1
                     print('已删除在')
                     if order_Status_last == "问题订单":
+                        step = step + 1
                         if '修改order_status' in remark_Status:
                             if '蔡利英' in name_Status or '杨嘉仪' in name_Status or '张陈平' in name_Status:
-                                dict_info['订单编号'] = x['orderNumber']
                                 dict_info['id'] = x['id']
+                                dict_info['订单编号'] = x['orderNumber']
                                 dict_info['订单状态'] = x['orderStatus']
                                 dict_info['转化时间'] = x['updateTime']
                                 dict_info['备注'] = x['remark']
@@ -3027,17 +3025,19 @@ class MysqlControl(Settings):
                                     dict_info['转化时间'] = update_Time_last
                                     dict_info['备注'] = remark_Status_last
                                     dict_info['转化人'] = name_Status_last
-                                # else:
-                                #     dict_info['订单状态'] = x['orderStatus']
+                                else:
+                                    dict_info['id'] = x['id']
+                                    dict_info['订单编号'] = x['orderNumber']
+                                    dict_info['订单状态'] = x['orderStatus']
+                                    dict_info['转化时间'] = x['updateTime']
+                                    dict_info['备注'] = x['remark']
+                                    dict_info['转化人'] = x['name']
                             pass
                         else:
                             pass
                     else:
                         pass
-                    
-                    
-                    
-                    
+
                     # if order_Status_last == "问题订单":
                     #     if '修改order_status' in remark_Status:
                     #         print(order_Status_last)
@@ -3065,16 +3065,17 @@ class MysqlControl(Settings):
                     print(dict_info)
                     if dict_info != {}:
                         dict[order_Number] = dict_info
-                        print(88)
-                        print(dict)
                         print(808)
         print('*' * 52)
         print(dict)
+        # data = pd.json_normalize(dict)
+        # print(dict)
         print('*' * 52)
-        dict = list(dict.values())
-        dict = pd.json_normalize(dict)
-        print(dict)
-        dict.to_excel('G:\\输出文件\\列表-查询{22}.xlsx', sheet_name='查询', index=False, engine='xlsxwriter')
+        data = list(dict.values())
+        print(data)
+        data = pd.json_normalize(data)
+        print(data)
+        data.to_excel('G:\\输出文件\\列表-查询{22}.xlsx', sheet_name='查询', index=False, engine='xlsxwriter')
 
 
 if __name__ == '__main__':

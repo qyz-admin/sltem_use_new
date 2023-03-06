@@ -7,6 +7,7 @@ import xlwings
 import xlsxwriter
 import math
 import requests
+from requests.adapters import HTTPAdapter
 import json
 import sys
 import zhconv          # transform2_zh_hant：转为繁体;transform2_zh_hans：转为简体
@@ -633,7 +634,7 @@ class QueryOrder(Settings, Settings_sso):
                         result['trace_UserName'] = ''
                         for record in trace_record:
                             if '物流' not in record and '香港立邦' not in record:
-                                if record.split("#处理结果：")[1] != '':
+                                if record.split("#处理结果：")[1] != '' and len(record.split("#处理结果：")[1]) > 1:
                                     result['deal_time'] = record.split()[0]
                                     rec = record.split("#处理结果：")[1]
                                     if len(rec.split()) > 2:
@@ -938,6 +939,8 @@ class QueryOrder(Settings, Settings_sso):
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
                 'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': None, 'finishTimeStart': None,
                 'finishTimeEnd': None, 'traceTimeStart': None, 'traceTimeEnd': None,'newCloneNumber': None}
+        self.session.mount('http://', HTTPAdapter(max_retries=5))
+        self.session.mount('https://', HTTPAdapter(max_retries=5))
         data_woks = None
         data_woks2 = None
         if order_time == '跟进时间':
@@ -1002,6 +1005,8 @@ class QueryOrder(Settings, Settings_sso):
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
                 'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': None, 'finishTimeStart': None,
                 'finishTimeEnd': None, 'traceTimeStart': None, 'traceTimeEnd': None,'newCloneNumber': None}
+        self.session.mount('http://', HTTPAdapter(max_retries=5))
+        self.session.mount('https://', HTTPAdapter(max_retries=5))
         if order_time == '跟进时间':
             data.update({'traceItemIds': -1, 'traceTimeStart': timeStart + ' 00:00:00,', 'traceTimeEnd': timeEnd + ' 23:59:59'})
         elif order_time == '下单跟进时间':
@@ -1025,6 +1030,7 @@ class QueryOrder(Settings, Settings_sso):
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
                 # print(result['orderNumber'])
+                # print(55)
                 result['订单编号'] = result['orderNumber']
                 result['再次克隆下单'] = result['newCloneNumber']
                 result['跟进人'] = ''
@@ -1316,7 +1322,7 @@ if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
     handle = '手动0'
     login_TmpCode = '4b84b336ab9739218a563cde0be598ee'  # 输入登录口令Tkoen
-    proxy_handle = '代理服务器0'
+    proxy_handle = '代理服务器'
     proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
     m = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
@@ -1331,7 +1337,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 99                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 9                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
@@ -1357,51 +1363,53 @@ if __name__ == '__main__':
                 timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
                 timeEnd = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         else:
-            timeStart = '2023-01-01'
-            timeEnd = '2023-01-31'
+            timeStart = '2023-02-01'
+            timeEnd = '2023-02-28'
         print(timeStart + "---" + timeEnd)
 
         # m.service_id_order(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)      # 促单查询；下单时间 @~@ok
-
+        #
         # order_time = '创建时间'
         # m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；创建时间 （一、获取订单内容）@~@ok
         # m.service_id_ssale_info(proxy_handle, proxy_id, '采购异常_创建时间')                             # 采购查询；创建时间 （二、获取处理详情）@~@ok
         # order_time = '跟进时间'
         # m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；处理时间 （一、获取订单内容）@~@ok
         # m.service_id_ssale_info(proxy_handle, proxy_id, '采购问题件_跟进时间')                             # 采购查询；处理时间 （二、获取处理详情）@~@ok
-
+        #
         # m.service_id_getRedeemOrderList(timeStart, timeEnd, proxy_handle, proxy_id)  # 挽单列表  查询@~@ok
-
+        #
         # order_time = '处理时间'                                                                 # 派送问题  处理时间:登记结果处理时间； 创建时间： 订单放入时间@~@
-        m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)    # (需处理两次)
+        # m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)    # (需处理两次)
         # m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)    # (需处理两次)
         # order_time = '创建时间'                                                                 # 派送问题   创建时间： 订单放入时间（每次导出时需要更新数据）@~@
         # m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
-
-        # order_time = '跟进时间'
-        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
-        # order_time = '创建时间'
-        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
-
-        # order_time = '跟进时间'
-        # m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
-        # order_time = '创建时间'
-        # m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
         #
+        # order_time = '跟进时间'
+        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
+        # order_time = '创建时间'
+        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
+        #
+        # order_time = '跟进时间'
+        # m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
+        # order_time = '创建时间'
+        # m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
+
+
         # order_time = '跟进时间'                                                                  # 拒收问题  查询；订单检索@~@ok
         # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # (需处理两次)
         # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # (需处理两次)
         # order_time = '下单跟进时间'
         # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
-        # order_time = '下单时间'
-        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
+        order_time = '下单时间'
+        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
 
         m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)            # 系统问题件  查询；订单检索
 
-        m.service_check()
+        # m.service_check()
 
     elif int(select) == 9:
-        m.del_order_day()
+        # m.del_order_day()
+        m.service_check()
 
 
 

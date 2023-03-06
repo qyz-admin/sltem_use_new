@@ -77,6 +77,8 @@ class QueryUpdate(Settings):
                 print(filePath)
                 if '需发货的改派订单' in dir or '需发货改派订单' in dir:
                     write = '需发货'
+                elif 'Payment_list' in dir or '港台线付退款' in dir or '拒付统计' in dir:
+                    write = '在线支付'
                 elif '线上支付重复订单' in dir:
                     write = '线付重复'
                 self.wbsheetHost(filePath, team, write, last_time, up_time)
@@ -124,18 +126,25 @@ class QueryUpdate(Settings):
                     elif write == '在线支付':
                         pay = ''
                         if 'Payment_list' in filePath:
-                            if '交易清单' in sht.name:
+                            if '交易清单' in sht.name or 'Sheet' in sht.name:
                                 pay = '交易清单'
                                 db.rename(columns={'订单号': '订单编号', '退款金额': '交易退款金额'}, inplace=True)
-                                db = db[['订单编号', '交易币种', '交易金额', '交易状态', '交易创建时间', '交易退款金额', '支付方式']]
+                                db = db[['交易编号','订单编号', '交易币种', '交易金额', '交易状态', '交易创建时间', '订单创建时间', '交易退款金额', '支付方式']]
                                 print(db)
                                 self._online_paly(pay, db)
                         elif '线付退款记录' in filePath:
-                            # print(db.columns)
-                            pay = '线付退款记录'
-                            db = db[['订单编号', '退款时间', '退款原因', '详细原因', '具体原因', '退款金额', '订单金额', '剩余金额', '申请退款人']]
-                            print(db)
-                            self._online_paly(pay, db)
+                            if '港台' in sht.name:
+                                pay = '线付退款记录'
+                                db = db[['订单编号', '退款时间', '退款原因', '具体原因', '退款金额', '订单金额', '剩余金额', '申请退款人']]
+                                print(db)
+                                self._online_paly(pay, db)
+                        elif '拒付统计' in filePath:
+                            if '港台' in sht.name:
+                                pay = '拒付统计'
+                                print(db.columns)
+                                db = db[['订单编号', '拒付时间']]
+                                print(db)
+                                self._online_paly(pay, db)
                     elif write == '线付重复':
                         if '明细' in sht.name:
                             # print(db)
@@ -163,7 +172,7 @@ class QueryUpdate(Settings):
                             db.columns = list
                             db.dropna(axis=0, how='any', inplace=True, subset=['订单编号此单是重复单'])  # 空值（缺失值），将空值所在的行/列删除后
                             print(db.columns)
-                            self.double_online_paly(db)
+                            # self.double_online_paly(db)
 
                     print('++++----->>>' + sht.name + '：订单更新完成++++')
                 else:
@@ -276,115 +285,33 @@ class QueryUpdate(Settings):
             print('更新失败：', str(Exception) + str(e))
         print('更新成功…………')
 
-    # 线付重复订单  核实&签收率
-    def double_online_paly(self, db):
-        print('正在写入......')
-        rq = datetime.datetime.now().strftime('%Y%m%d')
-        db.to_sql('线付缓存', con=self.engine1, index=False, if_exists='replace')  # 将返回的dateFrame导入数据库的临时表
-        columns = list(db.columns)
-        columns = ','.join(columns)
-        sql = 'REPLACE INTO 线付重复订单({0}, 记录时间) SELECT *, NOW() 记录时间 FROM 线付缓存; '.format(columns)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
-        listT = []
-        sqltime82 = '''SELECT *, concat(ROUND(签收 / 完成 * 100,2),'%') AS 完成签收
-                        FROM (
-                                SELECT 年月, COUNT(订单编号) AS 单量,
-                                            SUM(IF(系统订单状态 NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 有效订单,
-                                            SUM(IF(系统物流状态 = '已签收',1,0)) AS 签收,
-                                            SUM(IF(系统物流状态 = '拒收',1,0)) AS 拒收,
-                                            SUM(IF(系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) AS 完成
-                                FROM (
-                                        SELECT DISTINCT 订单编号此单是重复单
-                                        FROM 线付重复订单 x1
-                                ) x
-                                LEFT JOIN (
-                                            SELECT * 
-                                            FROM gat_order_list s1 
-                                            WHERE s1.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m')
-                                ) s ON x.订单编号此单是重复单 = s.订单编号
-                                GROUP BY 年月
-                        ) ss ;'''
-        df82 = pd.read_sql_query(sql=sql, con=self.engine1)
-        listT.append(df82)
-        print('线付重复 此单订单的 签收率')
-
-        sqltime83 = '''SELECT *, concat(ROUND(签收 / 完成 * 100,2),'%') AS 完成签收
-                        FROM (
-                                    SELECT 年月, COUNT(订单编号) AS 单量,
-                                                SUM(IF(系统订单状态 NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 有效订单,
-                                                SUM(IF(系统物流状态 = '已签收',1,0)) AS 签收,
-                                                SUM(IF(系统物流状态 = '拒收',1,0)) AS 拒收,
-                                                SUM(IF(系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) AS 完成
-                                    FROM (
-                                                SELECT DISTINCT 订单编号最近的上笔
-                                                FROM 线付重复订单 x2
-                                                WHERE x2.订单编号最近的上笔 IS NOT NULL
-                                    ) x
-                                    LEFT JOIN (
-                                                            SELECT * 
-                                                            FROM gat_order_list s1 
-                                                            WHERE s1.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m')
-                                    ) s ON x.订单编号最近的上笔 = s.订单编号
-                                    GROUP BY 年月
-                        ) ss;'''
-        df83 = pd.read_sql_query(sql=sql, con=self.engine1)
-        listT.append(sqltime83)
-        print('线付重复 上笔订单的 签收率')
-
-        sqltime84 = '''SELECT *, concat(ROUND(签收 / 完成 * 100,2),'%') AS 完成签收
-                        FROM (
-                                    SELECT 年月, COUNT(订单编号) AS 单量,
-                                                SUM(IF(系统订单状态 NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 有效订单,
-                                                SUM(IF(系统物流状态 = '已签收',1,0)) AS 签收,
-                                                SUM(IF(系统物流状态 = '拒收',1,0)) AS 拒收,
-                                                SUM(IF(系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) AS 完成
-                                    FROM (
-                                                    (
-                                                        SELECT 订单编号此单是重复单
-                                                        FROM 线付重复订单 x1
-                                                    )
-                                                    UNION 
-                                                    (
-                                                        SELECT 订单编号最近的上笔
-                                                        FROM 线付重复订单 x2
-                                                        WHERE x2.订单编号最近的上笔 IS NOT NULL
-                                                    )
-                                    ) x
-                                    LEFT JOIN (
-                                                            SELECT * 
-                                                            FROM gat_order_list s1 
-                                                            WHERE s1.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m')
-                                    ) s ON x.订单编号此单是重复单 = s.订单编号
-                                    GROUP BY 年月
-                        ) ss;'''
-        df84 = pd.read_sql_query(sql=sql, con=self.engine1)
-        listT.append(sqltime84)
-        print('线付重复 此单和上笔  去除重复订单的 签收率')
-
-        file_path = 'G:\\输出文件\\线付重复订单签收率 {}.xlsx'.format(rq)
-        df0 = pd.DataFrame([])
-        df0.to_excel(file_path, index=False)
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')
-        book = load_workbook(file_path)
-        writer.book = book
-        listT[0].to_excel(excel_writer=writer, sheet_name='线付', index=False)
-        listT[1].to_excel(excel_writer=writer, sheet_name='线付', index=False, startcol=9)  # 明细
-        listT[2].to_excel(excel_writer=writer, sheet_name='线付', index=False, startcol=19)  # 有效单量
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
-
-        print('输出成功......')
-
 
     # 在线支付情况
     def _online_paly(self, pay, db):
         print('正在写入......')
-        db.to_sql('线付缓存', con=self.engine1, index=False, if_exists='replace')
+        db.to_sql('pay_cache', con=self.engine1, index=False, if_exists='replace')
         if pay == '交易清单':
-            sql = '''SELECT 订单编号, 交易币种, 交易金额, 交易状态, left(交易创建时间,LENGTH(交易创建时间)-8) AS 交易创建时间, 交易退款金额, 支付方式, 
+            columns = list(db.columns)
+            columns = ','.join(columns)
+            sql = 'REPLACE INTO 交易清单({0}, 记录时间) SELECT *, NOW() 记录时间 FROM pay_cache x  WHERE x.交易编号 IS NOT NULL; '.format(columns)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
+        elif pay == '线付退款记录':
+            columns = list(db.columns)
+            columns = ','.join(columns)
+            sql = 'REPLACE INTO 线付退款记录({0}, 记录时间) SELECT *, NOW() 记录时间 FROM pay_cache x  WHERE x.订单编号 IS NOT NULL; '.format(columns)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
+        elif pay == '拒付统计':
+            columns = list(db.columns)
+            columns = ','.join(columns)
+            sql = 'REPLACE INTO 拒付统计({0}, 记录时间) SELECT 订单编号, left(拒付时间,LENGTH(拒付时间)-8) AS 拒付时间, NOW() 记录时间 FROM pay_cache x  WHERE x.订单编号 IS NOT NULL; '.format(columns)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
+
+        elif pay == '交易清单0':
+            sql = '''SELECT 交易编号,订单编号, 交易币种, 交易金额, 交易状态, 交易创建时间, 订单创建时间, 交易退款金额, 支付方式
+            订单编号, 交易币种, 交易金额, 交易状态, left(交易创建时间,LENGTH(交易创建时间)-8) AS 交易创建时间, 交易退款金额, 支付方式, 
                             NULL 退款时间, NULL 退款原因, NULL 详细原因, NULL 具体原因, IF(交易退款金额 IS NOT NULL AND 交易退款金额 <> '','已退款',NULL) 是否退款, NULL 退款金额, NULL 订单金额, NULL 剩余金额, NULL 申请退款人
                     FROM 线付缓存;'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -393,7 +320,7 @@ class QueryUpdate(Settings):
             columns = ','.join(columns)
             sql = 'REPLACE INTO 交易清单({0}, 记录时间) SELECT *, NOW() 记录时间 FROM 线付缓存_cache ORDER BY 订单编号, 交易创建时间; '.format(columns)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        elif pay == '线付退款记录':
+        elif pay == '线付退款记录0':
             sql = '''update 交易清单 a, 线付缓存 b
                     set a.`退款时间`= b.`退款时间`,
                         a.`退款原因`= b.`退款原因`,
@@ -599,6 +526,147 @@ class QueryUpdate(Settings):
         # sheet.column_dimensions['B'].width = 8.38
         # wb.save(file_path)
         print('写入成功......')
+
+    # 线付重复订单  核实&签收率
+    def double_online_paly(self, db):
+        print('正在写入......')
+        rq = datetime.datetime.now().strftime('%Y.%m.%d')
+        # db.to_sql('线付缓存', con=self.engine1, index=False, if_exists='replace')  # 将返回的dateFrame导入数据库的临时表
+        # columns = list(db.columns)
+        # columns = ','.join(columns)
+        # sql = 'REPLACE INTO 线付重复订单({0}, 记录时间) SELECT *, NOW() 记录时间 FROM 线付缓存; '.format(columns)
+        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
+        db.to_sql('线付重复订单', con=self.engine1, index=False, if_exists='replace')  # 将返回的dateFrame导入数据库的临时表
+        listT = []
+        sqltime82 = '''SELECT NULL AS '此单是重复订单', IFNULL(年月,'总计') as 年月,单量, 有效订单,
+                            concat(ROUND(有效订单 / 单量 * 100,2),'%') AS 有效订单率,签收,拒收,完成,
+                            concat(ROUND(签收 / 完成 * 100,2),'%') AS 完成签收,
+                            concat(ROUND(完成 / 有效订单 * 100,2),'%') AS 完成占比
+                        FROM (
+                                SELECT 年月, COUNT(订单编号) AS 单量,
+                                            SUM(IF(系统订单状态 NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 有效订单,
+                                            SUM(IF(系统物流状态 = '已签收',1,0)) AS 签收,
+                                            SUM(IF(系统物流状态 = '拒收',1,0)) AS 拒收,
+                                            SUM(IF(系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) AS 完成
+                                FROM (
+                                        SELECT DISTINCT 订单编号此单是重复单
+                                        FROM 线付重复订单 x1
+                                ) x
+                                LEFT JOIN (
+                                            SELECT * 
+                                            FROM gat_order_list s1 
+                                            WHERE s1.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m')
+                                ) s ON x.订单编号此单是重复单 = s.订单编号
+                                WHERE s.年月 IS NOT NULL AND s.日期 <= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                                GROUP BY 年月
+                                WITH ROLLUP
+                        ) ss ;'''
+        df82 = pd.read_sql_query(sql=sqltime82, con=self.engine1)
+        listT.append(df82)
+        print('线付重复 此单订单的 签收率')
+
+        sqltime83 = '''SELECT NULL AS '上笔订单', IFNULL(年月,'总计') as 年月,单量, 有效订单,
+                            concat(ROUND(有效订单 / 单量 * 100,2),'%') AS 有效订单率,签收,拒收,完成,
+                            concat(ROUND(签收 / 完成 * 100,2),'%') AS 完成签收,
+                            concat(ROUND(完成 / 有效订单 * 100,2),'%') AS 完成占比
+                        FROM (
+                                SELECT 年月, COUNT(订单编号) AS 单量,
+                                            SUM(IF(系统订单状态 NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 有效订单,
+                                            SUM(IF(系统物流状态 = '已签收',1,0)) AS 签收,
+                                            SUM(IF(系统物流状态 = '拒收',1,0)) AS 拒收,
+                                            SUM(IF(系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) AS 完成
+                                FROM (
+                                            SELECT DISTINCT 订单编号最近的上笔
+                                            FROM 线付重复订单 x2
+                                            WHERE x2.订单编号最近的上笔 IS NOT NULL
+                                ) x
+                                LEFT JOIN (
+                                                        SELECT * 
+                                                        FROM gat_order_list s1 
+                                                        WHERE s1.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m')
+                                ) s ON x.订单编号最近的上笔 = s.订单编号
+                                WHERE s.年月 IS NOT NULL AND s.日期 <= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                                GROUP BY 年月
+                                WITH ROLLUP
+                        ) ss;'''
+        df83 = pd.read_sql_query(sql=sqltime83, con=self.engine1)
+        listT.append(df83)
+        print('线付重复 上笔订单的 签收率')
+
+        sqltime84 = '''SELECT NULL AS '合并订单', IFNULL(年月,'总计') as 年月,单量, 有效订单,
+                            concat(ROUND(有效订单 / 单量 * 100,2),'%') AS 有效订单率, 签收,拒收,完成,
+                            concat(ROUND(签收 / 完成 * 100,2),'%') AS 完成签收,
+                            concat(ROUND(完成 / 有效订单 * 100,2),'%') AS 完成占比
+                        FROM (
+                                SELECT 年月, COUNT(订单编号) AS 单量,
+                                            SUM(IF(系统订单状态 NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 有效订单,
+                                            SUM(IF(系统物流状态 = '已签收',1,0)) AS 签收,
+                                            SUM(IF(系统物流状态 = '拒收',1,0)) AS 拒收,
+                                            SUM(IF(系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) AS 完成
+                                FROM (
+                                        (
+                                            SELECT 订单编号此单是重复单
+                                            FROM 线付重复订单 x1
+                                        )
+                                        UNION 
+                                        (
+                                            SELECT 订单编号最近的上笔
+                                            FROM 线付重复订单 x2
+                                            WHERE x2.订单编号最近的上笔 IS NOT NULL
+                                        )
+                                ) x
+                                LEFT JOIN (
+                                            SELECT * 
+                                            FROM gat_order_list s1 
+                                            WHERE s1.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m')
+                                ) s ON x.订单编号此单是重复单 = s.订单编号
+                                WHERE s.年月 IS NOT NULL AND s.日期 <= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                                GROUP BY 年月
+                                WITH ROLLUP
+                        ) ss;'''
+        df84 = pd.read_sql_query(sql=sqltime84, con=self.engine1)
+        listT.append(df84)
+        print('线付重复 此单和上笔 去除重复订单的 签收率')
+
+        sqltime85 = '''SELECT * FROM 线付重复订单 x1;'''
+        df85 = pd.read_sql_query(sql=sqltime85, con=self.engine1)
+        listT.append(df85)
+        print('线付重复 此单和上笔 去除重复订单的 签收率')
+
+        sqltime86 = '''SELECT y.交易编号, y.订单编号, y.交易币种, y.交易金额, y.交易状态, y.交易创建时间, y.订单创建时间, y.交易退款金额, y.支付方式,
+							j.拒付时间,
+							t.退款时间, t.退款原因, t.具体原因, t.退款金额, t.订单金额, t.剩余金额, t.申请退款人, t.是否退款, g.团队, g.币种,g.年月,
+							IF(交易状态 = 'CREATED','已创建', 
+                            IF(交易状态 = 'FAILED','支付失败', 
+                            IF(交易状态 = 'SUCCEEDED','支付成功', 
+                            IF(交易状态 = 'FULLY REFUNDED','全额退款', 
+                            IF(交易状态 = 'DISPUTED','拒付',
+                            IF(交易状态 = 'PARTIALLY REFUNDED','部分退款',交易状态)))))) AS 中文交易状态
+                    FROM 交易清单 y
+                    LEFT JOIN 拒付统计 j ON y.订单编号 = j.订单编号
+                    LEFT JOIN (SELECT *,  IF(退款金额/订单金额 < 0.2,'不退款','已退款') AS 是否退款 FROM 线付退款记录) t ON t.订单编号 = j.订单编号
+                    LEFT JOIN (SELECT * FROM gat_order_list WHERE 年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m')) g ON g.订单编号 = y.订单编号;'''
+        df86 = pd.read_sql_query(sql=sqltime86, con=self.engine1)
+        print('线付订单明细')
+        df86.to_excel('G:\\输出文件\\{0} 线付订单明细.xlsx', sheet_name='查询', index=False, engine='xlsxwriter').format(rq)
+
+        file_path = 'G:\\输出文件\\{} 线付重复订单签收率.xlsx'.format(rq)
+        df0 = pd.DataFrame([])
+        df0.to_excel(file_path, index=False)
+        writer = pd.ExcelWriter(file_path, engine='openpyxl')
+        book = load_workbook(file_path)
+        writer.book = book
+        listT[0].to_excel(excel_writer=writer, sheet_name='签收率', index=False)
+        listT[1].to_excel(excel_writer=writer, sheet_name='签收率', index=False, startcol=10)  # 明细
+        listT[2].to_excel(excel_writer=writer, sheet_name='签收率', index=False, startcol=20)  # 有效单量
+        listT[3].to_excel(excel_writer=writer, sheet_name='线付明细', index=False)  # 有效单量
+        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            del book['Sheet1']
+        writer.save()
+        writer.close()
+
+        print('输出成功......')
 
 
     # 导出总签收表---修改 物流渠道 使用(一)
@@ -1097,7 +1165,7 @@ class QueryUpdate(Settings):
         elif currency_id == '在线付款':
             currency = '"Pacypay信用卡支付【波兰】","钱海支付","gleepay","AsiaBill信用卡支付","Asiabill信用卡直接支付","Asiabill信用卡2.5方支付","Asiabill2.5方支付","paypal快捷支付","Cropay信用卡支付","空中云汇直连信用卡"'
         logistics_name = '''
-                            "台湾-森鸿-新竹-自发头程", "台湾-森鸿-新竹","台湾-大黄蜂普货头程-森鸿尾程","台湾-立邦普货头程-森鸿尾程",
+                            "台湾-森鸿-新竹-自发头程", "台湾-森鸿-新竹","台湾-大黄蜂普货头程-森鸿尾程","台湾-立邦普货头程-森鸿尾程", "台湾-易速配头程-铱熙无敌尾",
                             "台湾-立邦普货头程-易速配尾程","台湾-大黄蜂普货头程-易速配尾程",  
                             "台湾-易速配-新竹", "台湾-易速配-TW海快", "台湾-易速配-海快头程【易速配尾程】",
                             "台湾-铱熙无敌-711超商","台湾-铱熙无敌-新竹", "台湾-铱熙无敌-黑猫", 
@@ -1679,6 +1747,16 @@ class QueryUpdate(Settings):
 					    	concat(ROUND(SUM(s1.铱熙无敌黑猫已完成) / SUM(s1.铱熙无敌黑猫总订单) * 100,2),'%') as '铱熙无敌-黑猫完成占比',
 					    	concat(ROUND(SUM(s1.铱熙无敌黑猫已退货) / SUM(s1.铱熙无敌黑猫总订单) * 100,2),'%') as '铱熙无敌-黑猫退货率',
 					    	concat(ROUND(SUM(s1.铱熙无敌黑猫拒收) / SUM(s1.铱熙无敌黑猫已完成) * 100,2),'%') as '铱熙无敌-黑猫拒收率',
+						SUM(s1.铱熙无敌尾已签收) as '易速配头程-铱熙无敌尾已签收',
+					    	SUM(s1.铱熙无敌尾拒收) as '易速配头程-铱熙无敌尾拒收',
+					    	SUM(s1.铱熙无敌尾已退货) as '易速配头程-铱熙无敌尾已退货',
+					    	SUM(s1.铱熙无敌尾已完成) as '易速配头程-铱熙无敌尾已完成',
+					    	SUM(s1.铱熙无敌尾总订单) as '易速配头程-铱熙无敌尾总订单',
+					    	concat(ROUND(SUM(s1.铱熙无敌尾已签收) / SUM(s1.铱熙无敌尾已完成) * 100,2),'%') as '易速配头程-铱熙无敌尾完成签收',
+					    	concat(ROUND(SUM(s1.铱熙无敌尾已签收) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾总计签收',
+					    	concat(ROUND(SUM(s1.铱熙无敌尾已完成) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾完成占比',
+					    	concat(ROUND(SUM(s1.铱熙无敌尾已退货) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾退货率',
+					    	concat(ROUND(SUM(s1.铱熙无敌尾拒收) / SUM(s1.铱熙无敌尾已完成) * 100,2),'%') as '易速配头程-铱熙无敌尾拒收率',
 						SUM(s1.龟山改派已签收) as '龟山改派已签收',
 					    	SUM(s1.龟山改派拒收) as '龟山改派拒收',
 					    	SUM(s1.龟山改派已退货) as '龟山改派已退货',
@@ -1881,6 +1959,11 @@ class QueryUpdate(Settings):
 								SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 = "拒收",1,0)) as 铱熙无敌黑猫拒收,
 								SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 = "已退货",1,0)) as 铱熙无敌黑猫已退货,
 								SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌黑猫已完成,
+							SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" ,1,0)) AS 铱熙无敌尾总订单,
+								SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "已签收",1,0)) as 铱熙无敌尾已签收,
+								SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "拒收",1,0)) as 铱熙无敌尾拒收,
+								SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "已退货",1,0)) as 铱熙无敌尾已退货,
+								SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌尾已完成,
 							SUM(IF(cx.物流方式 = "龟山" ,1,0)) AS 龟山改派总订单,
 								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已签收",1,0)) as 龟山改派已签收,
 								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "拒收",1,0)) as 龟山改派拒收,
@@ -2136,6 +2219,16 @@ class QueryUpdate(Settings):
                         concat(ROUND(SUM(s1.铱熙无敌黑猫已完成) / SUM(s1.铱熙无敌黑猫总订单) * 100,2),'%') as '铱熙无敌-黑猫完成占比',
                         concat(ROUND(SUM(s1.铱熙无敌黑猫已退货) / SUM(s1.铱熙无敌黑猫总订单) * 100,2),'%') as '铱熙无敌-黑猫退货率',
                         concat(ROUND(SUM(s1.铱熙无敌黑猫拒收) / SUM(s1.铱熙无敌黑猫已完成) * 100,2),'%') as '铱熙无敌-黑猫拒收率',
+                    SUM(s1.铱熙无敌尾已签收) as '易速配头程-铱熙无敌尾已签收',
+                        SUM(s1.铱熙无敌尾拒收) as '易速配头程-铱熙无敌尾拒收',
+                        SUM(s1.铱熙无敌尾已退货) as '易速配头程-铱熙无敌尾已退货',
+                        SUM(s1.铱熙无敌尾已完成) as '易速配头程-铱熙无敌尾已完成',
+                        SUM(s1.铱熙无敌尾总订单) as '易速配头程-铱熙无敌尾总订单',
+                        concat(ROUND(SUM(s1.铱熙无敌尾已签收) / SUM(s1.铱熙无敌尾已完成) * 100,2),'%') as '易速配头程-铱熙无敌尾完成签收',
+                        concat(ROUND(SUM(s1.铱熙无敌尾已签收) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾总计签收',
+                        concat(ROUND(SUM(s1.铱熙无敌尾已完成) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾完成占比',
+                        concat(ROUND(SUM(s1.铱熙无敌尾已退货) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾退货率',
+                        concat(ROUND(SUM(s1.铱熙无敌尾拒收) / SUM(s1.铱熙无敌尾已完成) * 100,2),'%') as '易速配头程-铱熙无敌尾拒收率',
                     SUM(s1.龟山改派已签收) as '龟山改派已签收',
                         SUM(s1.龟山改派拒收) as '龟山改派拒收',
                         SUM(s1.龟山改派已退货) as '龟山改派已退货',
@@ -2339,6 +2432,11 @@ class QueryUpdate(Settings):
 								SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 = "拒收",1,0)) as 铱熙无敌黑猫拒收,
 								SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 = "已退货",1,0)) as 铱熙无敌黑猫已退货,
 								SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌黑猫已完成,
+							SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" ,1,0)) AS 铱熙无敌尾总订单,
+								SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "已签收",1,0)) as 铱熙无敌尾已签收,
+								SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "拒收",1,0)) as 铱熙无敌尾拒收,
+								SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "已退货",1,0)) as 铱熙无敌尾已退货,
+								SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌尾已完成,
 							SUM(IF(cx.物流方式 = "龟山" ,1,0)) AS 龟山改派总订单,
 								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已签收",1,0)) as 龟山改派已签收,
 								SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "拒收",1,0)) as 龟山改派拒收,
@@ -2955,6 +3053,16 @@ class QueryUpdate(Settings):
                                     concat(ROUND(SUM(s1.铱熙无敌黑猫已完成) / SUM(s1.铱熙无敌黑猫总订单) * 100,2),'%') as '铱熙无敌-黑猫完成占比',
                                     concat(ROUND(SUM(s1.铱熙无敌黑猫已退货) / SUM(s1.铱熙无敌黑猫总订单) * 100,2),'%') as '铱熙无敌-黑猫退货率',
                                     concat(ROUND(SUM(s1.铱熙无敌黑猫拒收) / SUM(s1.铱熙无敌黑猫已完成) * 100,2),'%') as '铱熙无敌-黑猫拒收率',
+                                SUM(s1.铱熙无敌尾已签收) as '易速配头程-铱熙无敌尾已签收',
+                                    SUM(s1.铱熙无敌尾拒收) as '易速配头程-铱熙无敌尾拒收',
+                                    SUM(s1.铱熙无敌尾已退货) as '易速配头程-铱熙无敌尾已退货',
+                                    SUM(s1.铱熙无敌尾已完成) as '易速配头程-铱熙无敌尾已完成',
+                                    SUM(s1.铱熙无敌尾总订单) as '易速配头程-铱熙无敌尾总订单',
+                                    concat(ROUND(SUM(s1.铱熙无敌尾已签收) / SUM(s1.铱熙无敌尾已完成) * 100,2),'%') as '易速配头程-铱熙无敌尾完成签收',
+                                    concat(ROUND(SUM(s1.铱熙无敌尾已签收) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾总计签收',
+                                    concat(ROUND(SUM(s1.铱熙无敌尾已完成) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾完成占比',
+                                    concat(ROUND(SUM(s1.铱熙无敌尾已退货) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾退货率',
+                                    concat(ROUND(SUM(s1.铱熙无敌尾拒收) / SUM(s1.铱熙无敌尾已完成) * 100,2),'%') as '易速配头程-铱熙无敌尾拒收率',
                                 SUM(s1.龟山改派已签收) as '龟山改派已签收',
                                     SUM(s1.龟山改派拒收) as '龟山改派拒收',
                                     SUM(s1.龟山改派已退货) as '龟山改派已退货',
@@ -3157,6 +3265,11 @@ class QueryUpdate(Settings):
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 = "拒收",1,0)) as 铱熙无敌黑猫拒收,
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 = "已退货",1,0)) as 铱熙无敌黑猫已退货,
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌黑猫已完成,
+                                    SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" ,1,0)) AS 铱熙无敌尾总订单,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "已签收",1,0)) as 铱熙无敌尾已签收,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "拒收",1,0)) as 铱熙无敌尾拒收,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "已退货",1,0)) as 铱熙无敌尾已退货,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌尾已完成,
                                     SUM(IF(cx.物流方式 = "龟山" ,1,0)) AS 龟山改派总订单,
                                         SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已签收",1,0)) as 龟山改派已签收,
                                         SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "拒收",1,0)) as 龟山改派拒收,
@@ -3412,6 +3525,16 @@ class QueryUpdate(Settings):
                                 concat(ROUND(SUM(s1.铱熙无敌黑猫已完成) / SUM(s1.铱熙无敌黑猫总订单) * 100,2),'%') as '铱熙无敌-黑猫完成占比',
                                 concat(ROUND(SUM(s1.铱熙无敌黑猫已退货) / SUM(s1.铱熙无敌黑猫总订单) * 100,2),'%') as '铱熙无敌-黑猫退货率',
                                 concat(ROUND(SUM(s1.铱熙无敌黑猫拒收) / SUM(s1.铱熙无敌黑猫已完成) * 100,2),'%') as '铱熙无敌-黑猫拒收率',
+                            SUM(s1.铱熙无敌尾已签收) as '易速配头程-铱熙无敌尾已签收',
+                                SUM(s1.铱熙无敌尾拒收) as '易速配头程-铱熙无敌尾拒收',
+                                SUM(s1.铱熙无敌尾已退货) as '易速配头程-铱熙无敌尾已退货',
+                                SUM(s1.铱熙无敌尾已完成) as '易速配头程-铱熙无敌尾已完成',
+                                SUM(s1.铱熙无敌尾总订单) as '易速配头程-铱熙无敌尾总订单',
+                                concat(ROUND(SUM(s1.铱熙无敌尾已签收) / SUM(s1.铱熙无敌尾已完成) * 100,2),'%') as '易速配头程-铱熙无敌尾完成签收',
+                                concat(ROUND(SUM(s1.铱熙无敌尾已签收) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾总计签收',
+                                concat(ROUND(SUM(s1.铱熙无敌尾已完成) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾完成占比',
+                                concat(ROUND(SUM(s1.铱熙无敌尾已退货) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾退货率',
+                                concat(ROUND(SUM(s1.铱熙无敌尾拒收) / SUM(s1.铱熙无敌尾已完成) * 100,2),'%') as '易速配头程-铱熙无敌尾拒收率',
                             SUM(s1.龟山改派已签收) as '龟山改派已签收',
                                 SUM(s1.龟山改派拒收) as '龟山改派拒收',
                                 SUM(s1.龟山改派已退货) as '龟山改派已退货',
@@ -3615,6 +3738,11 @@ class QueryUpdate(Settings):
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 = "拒收",1,0)) as 铱熙无敌黑猫拒收,
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 = "已退货",1,0)) as 铱熙无敌黑猫已退货,
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌黑猫已完成,
+                                    SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" ,1,0)) AS 铱熙无敌尾总订单,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "已签收",1,0)) as 铱熙无敌尾已签收,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "拒收",1,0)) as 铱熙无敌尾拒收,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "已退货",1,0)) as 铱熙无敌尾已退货,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌尾已完成,
                                     SUM(IF(cx.物流方式 = "龟山" ,1,0)) AS 龟山改派总订单,
                                         SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已签收",1,0)) as 龟山改派已签收,
                                         SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "拒收",1,0)) as 龟山改派拒收,
@@ -3872,6 +4000,16 @@ class QueryUpdate(Settings):
                                     concat(ROUND(SUM(s1.铱熙无敌黑猫已完成) / SUM(s1.铱熙无敌黑猫总订单) * 100,2),'%') as '铱熙无敌-黑猫完成占比',
                                     concat(ROUND(SUM(s1.铱熙无敌黑猫已退货) / SUM(s1.铱熙无敌黑猫总订单) * 100,2),'%') as '铱熙无敌-黑猫退货率',
                                     concat(ROUND(SUM(s1.铱熙无敌黑猫拒收) / SUM(s1.铱熙无敌黑猫已完成) * 100,2),'%') as '铱熙无敌-黑猫拒收率',
+                                SUM(s1.铱熙无敌尾已签收) as '易速配头程-铱熙无敌尾已签收',
+                                    SUM(s1.铱熙无敌尾拒收) as '易速配头程-铱熙无敌尾拒收',
+                                    SUM(s1.铱熙无敌尾已退货) as '易速配头程-铱熙无敌尾已退货',
+                                    SUM(s1.铱熙无敌尾已完成) as '易速配头程-铱熙无敌尾已完成',
+                                    SUM(s1.铱熙无敌尾总订单) as '易速配头程-铱熙无敌尾总订单',
+                                    concat(ROUND(SUM(s1.铱熙无敌尾已签收) / SUM(s1.铱熙无敌尾已完成) * 100,2),'%') as '易速配头程-铱熙无敌尾完成签收',
+                                    concat(ROUND(SUM(s1.铱熙无敌尾已签收) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾总计签收',
+                                    concat(ROUND(SUM(s1.铱熙无敌尾已完成) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾完成占比',
+                                    concat(ROUND(SUM(s1.铱熙无敌尾已退货) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾退货率',
+                                    concat(ROUND(SUM(s1.铱熙无敌尾拒收) / SUM(s1.铱熙无敌尾已完成) * 100,2),'%') as '易速配头程-铱熙无敌尾拒收率',
                                 SUM(s1.龟山改派已签收) as '龟山改派已签收',
                                     SUM(s1.龟山改派拒收) as '龟山改派拒收',
                                     SUM(s1.龟山改派已退货) as '龟山改派已退货',
@@ -4074,6 +4212,11 @@ class QueryUpdate(Settings):
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 = "拒收",1,0)) as 铱熙无敌黑猫拒收,
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 = "已退货",1,0)) as 铱熙无敌黑猫已退货,
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌黑猫已完成,
+                                    SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" ,1,0)) AS 铱熙无敌尾总订单,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "已签收",1,0)) as 铱熙无敌尾已签收,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "拒收",1,0)) as 铱熙无敌尾拒收,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "已退货",1,0)) as 铱熙无敌尾已退货,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌尾已完成,
                                     SUM(IF(cx.物流方式 = "龟山" ,1,0)) AS 龟山改派总订单,
                                         SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已签收",1,0)) as 龟山改派已签收,
                                         SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "拒收",1,0)) as 龟山改派拒收,
@@ -4329,6 +4472,16 @@ class QueryUpdate(Settings):
                                 concat(ROUND(SUM(s1.铱熙无敌黑猫已完成) / SUM(s1.铱熙无敌黑猫总订单) * 100,2),'%') as '铱熙无敌-黑猫完成占比',
                                 concat(ROUND(SUM(s1.铱熙无敌黑猫已退货) / SUM(s1.铱熙无敌黑猫总订单) * 100,2),'%') as '铱熙无敌-黑猫退货率',
                                 concat(ROUND(SUM(s1.铱熙无敌黑猫拒收) / SUM(s1.铱熙无敌黑猫已完成) * 100,2),'%') as '铱熙无敌-黑猫拒收率',
+                            SUM(s1.铱熙无敌尾已签收) as '易速配头程-铱熙无敌尾已签收',
+                                SUM(s1.铱熙无敌尾拒收) as '易速配头程-铱熙无敌尾拒收',
+                                SUM(s1.铱熙无敌尾已退货) as '易速配头程-铱熙无敌尾已退货',
+                                SUM(s1.铱熙无敌尾已完成) as '易速配头程-铱熙无敌尾已完成',
+                                SUM(s1.铱熙无敌尾总订单) as '易速配头程-铱熙无敌尾总订单',
+                                concat(ROUND(SUM(s1.铱熙无敌尾已签收) / SUM(s1.铱熙无敌尾已完成) * 100,2),'%') as '易速配头程-铱熙无敌尾完成签收',
+                                concat(ROUND(SUM(s1.铱熙无敌尾已签收) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾总计签收',
+                                concat(ROUND(SUM(s1.铱熙无敌尾已完成) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾完成占比',
+                                concat(ROUND(SUM(s1.铱熙无敌尾已退货) / SUM(s1.铱熙无敌尾总订单) * 100,2),'%') as '易速配头程-铱熙无敌尾退货率',
+                                concat(ROUND(SUM(s1.铱熙无敌尾拒收) / SUM(s1.铱熙无敌尾已完成) * 100,2),'%') as '易速配头程-铱熙无敌尾拒收率',
                             SUM(s1.龟山改派已签收) as '龟山改派已签收',
                                 SUM(s1.龟山改派拒收) as '龟山改派拒收',
                                 SUM(s1.龟山改派已退货) as '龟山改派已退货',
@@ -4532,6 +4685,11 @@ class QueryUpdate(Settings):
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 = "拒收",1,0)) as 铱熙无敌黑猫拒收,
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 = "已退货",1,0)) as 铱熙无敌黑猫已退货,
                                         SUM(IF(cx.物流方式 = "台湾-铱熙无敌-黑猫" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌黑猫已完成,
+                                    SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" ,1,0)) AS 铱熙无敌尾总订单,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "已签收",1,0)) as 铱熙无敌尾已签收,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "拒收",1,0)) as 铱熙无敌尾拒收,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 = "已退货",1,0)) as 铱熙无敌尾已退货,
+                                        SUM(IF(cx.物流方式 = "台湾-易速配头程-铱熙无敌尾" AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 铱熙无敌尾已完成,
                                     SUM(IF(cx.物流方式 = "龟山" ,1,0)) AS 龟山改派总订单,
                                         SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "已签收",1,0)) as 龟山改派已签收,
                                         SUM(IF(cx.物流方式 = "龟山" AND 最终状态 = "拒收",1,0)) as 龟山改派拒收,
@@ -8377,7 +8535,7 @@ class QueryUpdate(Settings):
             print('----已写入excel ')
 
         # if week.isoweekday() == 3 or handle == '手动':
-        if handle == '手动':
+        if week.isoweekday() != 0 or handle == '手动':
             listT = []  # 查询sql的结果 存放池
             print("正在获取 在线签收率" + month_last + "-" + month_yesterday + " 数据内容…………")
             sql = '''SELECT s2.家族,s2.币种,s2.年月,s2.是否改派,s2.物流方式,
@@ -11185,20 +11343,19 @@ if __name__ == '__main__':
     '''
     select = 99
     if int(select) == 99:
-        if team == 'gat':
+        if team == 'gat0':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
         else:
-            month_last = '2022-12-01'
-            month_old = '2022-12-01'  # 获取-每日-报表 开始的时间
-            month_yesterday = '2023-01-31'
+            month_last = '2023-01-01'
+            month_old = '2023-01-01'  # 获取-每日-报表 开始的时间
+            month_yesterday = '2023-02-28'
 
         last_time = '2021-01-01'
         up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期
         write = '本期'
-        # write = '手动更新数据库'
         m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
 
         currency_id = '全部付款'
@@ -11230,11 +11387,13 @@ if __name__ == '__main__':
         up_time = '2022-10-20'
         write = '在线支付'
         m.readFormHost(team, write, last_time, up_time)  # 在线支付 读表---港澳台（一）
-        m.online_paly()                                  # 在线支付 获取
+        # m.online_paly()                                  # 在线支付 获取
 
     elif int(select) == 3:
         last_time = '2021-01-01'
         up_time = '2022-10-20'
+        write = '在线支付'
+        m.readFormHost(team, write, last_time, up_time)  # 在线支付 读表---港澳台（一）
         write = '线付重复订单'
         m.readFormHost(team, write, last_time, up_time)  # 线付重复订单 读表---港澳台（一）
 
