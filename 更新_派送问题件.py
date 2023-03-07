@@ -1561,7 +1561,7 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 问题件 状态运行（一）-----------------------------------------
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     '''
-    select = 99
+    select = 1
     if int(select) == 99:
         handle = '手动0'
         login_TmpCode = '2bb2a3ecea7932ddb588d29b39c8d8ba'          # 输入登录口令Tkoen
@@ -1618,7 +1618,7 @@ if __name__ == '__main__':
         # m.getOrderList_T('2022-06-01', '2022-06-30')
         logisticsN_begin = '2022-07-11'                             # 送达客户不在/客户长期不在  物流轨迹查询时间
         logisticsN_end = '2022-07-31'
-        m.outport_getDeliveryList('2022-10-01', '2023-02-21', logisticsN_begin, logisticsN_end)
+        m.outport_getDeliveryList('2023-01-01', '2023-03-07', logisticsN_begin, logisticsN_end)
         # m.getMessageLog('2022-07-01', '2022-07-15')
 
 

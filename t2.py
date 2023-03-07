@@ -42,10 +42,10 @@ else:
     # 更新时间
     data_begin = datetime.date(2023, 1, 1)  # 数据库更新
     begin = datetime.date(2023, 1, 1)      # 单点更新
-    end = datetime.date(2023, 3, 6)
+    end = datetime.date(2023, 3, 7)
     # 导出时间
     month_last = '2022-12-01'
-    month_yesterday = '2023-03-06'
+    month_yesterday = '2023-03-07'
     month_begin = '2022-11-01'
 print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')

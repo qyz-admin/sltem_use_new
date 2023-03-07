@@ -1150,6 +1150,7 @@ class QueryOrder(Settings, Settings_sso):
     # 绩效-汇总输出
     def service_check(self):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        rq_month = datetime.datetime.now().strftime('%Y%m')
         listT = []
         print('促单-绩效 获取中......')
         sql2 = '''SELECT *
@@ -1298,7 +1299,7 @@ class QueryOrder(Settings, Settings_sso):
         df112 = pd.read_sql_query(sql=sql112, con=self.engine1)
         listT.append(df112)
 
-        file_path = 'G:\\输出文件\\绩效数据 {}.xlsx'.format(rq)
+        file_path = r'''G:\\输出文件\\{0}绩效数据明细 {1}.xlsx'''.format(rq_month, rq)
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
@@ -1396,6 +1397,12 @@ if __name__ == '__main__':
 
 
         # order_time = '跟进时间'                                                                  # 拒收问题  查询；订单检索@~@ok
+        timeStart = datetime.date(2023, 2, 1)
+        timeEnd = datetime.date(2023, 2, 28)
+        for i in range((timeEnd - timeStart).days):  # 按天循环获取订单状态
+            day = timeStart + datetime.timedelta(days=i)
+            day_time = str(day)
+            print('****** 更新      起止时间：' + day_time + ' - ' + day_time + ' ******')
         # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # (需处理两次)
         # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # (需处理两次)
         # order_time = '下单跟进时间'
