@@ -1169,11 +1169,11 @@ class QueryTwo(Settings, Settings_sso):
             dp = df.append(dlist, ignore_index=True)
             dp.to_excel('G:\\输出文件\\拒收问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp = dp[['id', '订单编号', 'currency', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'percentInfo.arriveCount', 'addTime', 'finishTime', 'tel_phone', 'shipInfo.shipPhone', 'ip','cloneUser', 'newCloneUser', 'newCloneStatus', 'newCloneLogisticsStatus', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
-            dp.columns = ['id', '订单编号', '币种', '订单总量', '拒收量', '签收量','下单时间', '完成时间', '电话', '联系电话', 'ip','本单克隆人', '新单克隆人', '新单订单状态', '新单物流状态', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果', '是否需要商品']
+            dp.columns = ['订单id', '订单编号', '币种', '订单总量', '拒收量', '签收量','下单时间', '完成时间', '电话', '联系电话', 'ip','本单克隆人', '新单克隆人', '新单订单状态', '新单物流状态', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果', '是否需要商品']
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO 拒收问题件(id, 订单编号,币种, 订单总量, 拒收量, 签收量, 下单时间, 完成时间, 电话, 联系电话, ip, 本单克隆人, 新单克隆人, 新单订单状态, 新单物流状态, 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果, 是否需要商品,记录时间)
-                     SELECT id, 订单编号,币种, 订单总量, 拒收量, 签收量, 下单时间, 完成时间, IF(电话 LIKE "852%",RIGHT(电话,LENGTH(电话)-3),IF(电话 LIKE "886%",RIGHT(电话,LENGTH(电话)-3),电话)) 电话, 联系电话, ip, 本单克隆人, 新单克隆人, 新单订单状态, 新单物流状态,  IF(再次克隆下单 = '',NULL,再次克隆下单) 再次克隆下单,处理人,IF(处理时间 = '',NULL,处理时间) AS 处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果,是否需要商品,NOW() 记录时间
+            sql = '''REPLACE INTO 拒收问题件(id, 订单id, 订单编号,币种, 订单总量, 拒收量, 签收量, 下单时间, 完成时间, 电话, 联系电话, ip, 本单克隆人, 新单克隆人, 新单订单状态, 新单物流状态, 再次克隆下单,处理人,处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果, 是否需要商品,记录时间)
+                     SELECT null id, 订单id, 订单编号,币种, 订单总量, 拒收量, 签收量, 下单时间, 完成时间, IF(电话 LIKE "852%",RIGHT(电话,LENGTH(电话)-3),IF(电话 LIKE "886%",RIGHT(电话,LENGTH(电话)-3),电话)) 电话, 联系电话, ip, 本单克隆人, 新单克隆人, 新单订单状态, 新单物流状态,  IF(再次克隆下单 = '',NULL,再次克隆下单) 再次克隆下单,处理人,IF(处理时间 = '',NULL,处理时间) AS 处理时间,联系方式, 核实原因, 具体原因, 备注, 处理结果,是否需要商品,NOW() 记录时间
                     FROM customer;'''.format("", "")
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -1723,7 +1723,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 909
+    select = 99
     if int(select) == 99:
         handle = '手动0'
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
@@ -1752,7 +1752,7 @@ if __name__ == '__main__':
 
         timeStart, timeEnd = m.readInfo('拒收问题件')
         m.order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id)                         # 查询更新-拒收问题件 @--ok
-        # m.order_js_Query('2022-08-01', '2022-08-31')                          # 查询更新-拒收问题件-·123456
+        # m.order_js_Query('2022-08-01', '2022-08-31')                                       # 查询更新-拒收问题件-·123456
 
         timeStart, timeEnd = m.readInfo('派送问题件')
         m.waybill_deliveryList(timeStart, timeEnd, proxy_handle, proxy_id)                              # 查询更新-派送问题件、
@@ -1825,6 +1825,14 @@ if __name__ == '__main__':
         lw.readFile(1)                                        # 上传每日压单核实结果
         lw.order_spec()                                       # 压单         更新；压单反馈  （备注（压单核实是否需要））
 
+        handle = '手动'
+        timeStart = datetime.date(2023, 3, 1)
+        timeEnd = datetime.date(2023, 3, 12)
+        for i in range((timeEnd - timeStart).days):                  # 按天循环获取订单状态
+            day = timeStart + datetime.timedelta(days=i)
+            day_time = str(day)
+            # lw.second_sendorder(handle, day_time, day_time)          # 获取 订单列表的 二次改派原运单号 信息
+
         # lw.stockcompose_upload()                              # 获取 桃园仓重出、
         # lw.get_take_delivery_no()                             # 头程物流跟踪 更新； 获取最近10天的信息
         print('查询耗时：', datetime.datetime.now() - start)
@@ -1838,12 +1846,12 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    handle = '手动0'
-    login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
-    proxy_handle = '代理服务器0'
-    proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
-    m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
-    start: datetime = datetime.datetime.now()
+    # handle = '手动0'
+    # login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
+    # proxy_handle = '代理服务器0'
+    # proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
+    # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+    # start: datetime = datetime.datetime.now()
     #
     # timeStart, timeEnd = m.readInfo('压单表_已核实')
     # m.waybill_InfoQuery_yadan(timeStart, timeEnd)  # 查询更新-物流问题件 - 压单核实
@@ -1853,13 +1861,13 @@ if __name__ == '__main__':
     # m.getMessage_Log('2022-01-01', '2022-02-28', proxy_handle, proxy_id)  # 查询更新-短信模板
 
 
-    begin = datetime.date(2022, 1, 1)
-    end = datetime.date(2022, 7, 1)
-    for i in range((end - begin).days):                             # 按天循环获取订单状态
-        day = begin + datetime.timedelta(days=i)
-        day_time = str(day)
-        print('****** 更新      起止时间：' + day_time + ' - ' + day_time + ' ******')
-        m.getMessage_Log(day_time, day_time, proxy_handle, proxy_id)  # 查询更新-短信模板
+    # begin = datetime.date(2022, 1, 1)
+    # end = datetime.date(2022, 7, 1)
+    # for i in range((end - begin).days):                             # 按天循环获取订单状态
+    #     day = begin + datetime.timedelta(days=i)
+    #     day_time = str(day)
+    #     print('****** 更新      起止时间：' + day_time + ' - ' + day_time + ' ******')
+    #     m.getMessage_Log(day_time, day_time, proxy_handle, proxy_id)  # 查询更新-短信模板
 
     #
     # begin = datetime.date(2022, 10, 1)

@@ -244,7 +244,7 @@ class MysqlControl(Settings):
 
 
     def creatMyOrderSl(self, team, begin, end) :  # 最近五天的全部订单信息
-        match = {'gat': '"神龙家族-港澳台", "红杉家族-港澳台2", "金狮-港澳台", "红杉家族-港澳台", "火凤凰-台湾", "火凤凰-香港", "金鹏家族-4组", "神龙-运营1组", "奥创队", "客服中心-港台","研发部-研发团队","Line运营", "神龙-主页运营", "翼虎家族-mercadolibre","金蝉家族公共团队","金蝉家族优化组","金蝉项目组","APP运营","郑州-北美"',
+        match = {'gat': '"神龙家族-台湾", "红杉家族-港澳台2", "金狮-港澳台", "红杉家族-港澳台", "火凤凰-台湾", "火凤凰-香港", "金鹏家族-4组", "神龙-香港", "奥创队", "客服中心-港台","研发部-研发团队","Line运营", "神龙-主页运营", "翼虎家族-mercadolibre","金蝉家族公共团队","金蝉家族优化组","金蝉项目组","APP运营","郑州-北美"',
                  'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"'
                  }
@@ -489,7 +489,8 @@ class MysqlControl(Settings):
                             null 发货仓库,
                             null 克隆类型,
                             null 是否盲盒,
-                            null 主订单
+                            null 主订单,
+                            null 改派原运单号
                     FROM gk_order a
                             LEFT JOIN dim_area ON dim_area.id = a.area_id
                             LEFT JOIN dim_payment ON dim_payment.id = a.payment_id
@@ -2919,8 +2920,7 @@ class MysqlControl(Settings):
         sql = '''SELECT *
                 FROM cache_ch c
                 WHERE c.orderStatus IS NOT NULL AND c.orderStatus <> ""
-                ORDER BY orderNumber, id
-                LIMIT 3000;'''
+                ORDER BY orderNumber, id;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print(df)
         dict = {}

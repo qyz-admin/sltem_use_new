@@ -2755,7 +2755,7 @@ class Query_sso_updata(Settings):
             dp = dp[['orderNumber', 'currency', 'area', 'shipInfo.shipPhone', 'shipInfo.shipState', 'shipInfo.shipCity','shipInfo.shipName', 'shipInfo.shipAddress','wayBillNumber','saleId', 'saleProduct', 'productId','spec','quantity', 'orderStatus',
                      'logisticsStatus', 'logisticsName', 'addTime', 'verifyTime','transferTime', 'onlineTime', 'deliveryTime','finishTime','stateTime', 'logisticsUpdateTime', 'cloneUser', 'logisticsUpdateTime', 'reassignmentTypeName',
                      'dpeStyle', 'amount', 'payType', 'weight', 'autoVerify', 'delReason', 'delTime', 'questionReason', 'questionTime', 'service', 'chooser', 'logisticsRemarks', 'auto_VerifyTip',
-                     'percentInfo.arriveCount', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'tel_phone', 'percent','warehouse','cloneTypeName', 'isBlindBox', 'mainOrderNumber']]
+                     'percentInfo.arriveCount', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'tel_phone', 'percent','warehouse','cloneTypeName', 'isBlindBox', 'mainOrderNumber', 'pre_second_numbers']]
             print(dp)
             # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
             # dp.to_excel('H:\\桌面\\需要用到的文件\\\输出文件\\派送问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
@@ -2814,7 +2814,8 @@ class Query_sso_updata(Settings):
                                     h.`warehouse` 发货仓库,
                                     h.`cloneTypeName` 克隆类型,
                                     h.`isBlindBox` 是否盲盒,
-                                    h.`mainOrderNumber` 主订单
+                                    h.`mainOrderNumber` 主订单,
+                                    h.`pre_second_numbers` 改派原运单号
                                    FROM d1_cpy h
                                        LEFT JOIN dim_product ON  dim_product.sale_id = h.saleId
                                        LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
@@ -2877,6 +2878,13 @@ class Query_sso_updata(Settings):
                                        a.`是否盲盒`= IF(b.`是否盲盒` = '', NULL,  b.`是否盲盒`),
                                        a.`主订单`= IF(b.`主订单` = '', NULL,  b.`主订单`)
                            where a.`订单编号`=b.`订单编号`;'''.format('gat_order_list')
+            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
+
+            print('正在更新表总表中......')
+            sql = '''update {0} a, d1_cpy_cp b
+                        set a.`改派原运单号`= b.`改派原运单号`
+                     where a.`订单编号`=b.`订单编号`;'''.format('gat_order_list')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         else:
             print('没有需要获取的信息！！！')

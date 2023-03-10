@@ -28,7 +28,7 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
 
 # 初始化时间设置
 updata = '全部'           #  后台获取全部（两月）、部分更新（近五天）
-if team == 'gat0':
+if team == 'gat':
     # 更新时间
     timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
     data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
@@ -40,9 +40,9 @@ if team == 'gat0':
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    data_begin = datetime.date(2023, 1, 1)  # 数据库更新
-    begin = datetime.date(2023, 1, 1)      # 单点更新
-    end = datetime.date(2023, 3, 7)
+    data_begin = datetime.date(2022, 10, 23)  # 数据库更新
+    begin = datetime.date(2022, 10, 23)      # 单点更新
+    end = datetime.date(2023, 2, 1)
     # 导出时间
     month_last = '2022-12-01'
     month_yesterday = '2023-03-07'

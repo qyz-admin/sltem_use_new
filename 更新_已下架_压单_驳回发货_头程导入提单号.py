@@ -15,6 +15,7 @@ import pandas.io.formats.excel
 import win32api,win32con
 import win32com.client as win32
 import win32com.client
+from urllib.parse import urlencode      # body中的data参数是用urlencoded形式传过去的，用urlencode处理一下
 
 from sqlalchemy import create_engine
 from settings import Settings
@@ -527,6 +528,105 @@ class QueryTwoLower(Settings, Settings_sso):
         return data
 
 
+    # 进入 二次改派订单 界面 （仓储的获取）
+    def second_sendorder(self, handle, timeStart, timeEnd):  # 进入   压单反馈  界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        if handle == '手动':
+            timeStart = timeStart
+            timeEnd = timeEnd
+        else:
+            timeStart = ((datetime.datetime.now() + datetime.timedelta(days=1)) - relativedelta(months=3)).strftime('%Y-%m-%d')
+            timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
+        print('正在查询  改派原运单号： ' + timeStart + ' - ' + timeEnd + '信息中......')
+        url = r'http://gwms-v3.giikin.cn/order/order/secondsendorder'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Host': 'gwms-v3.giikin.cn',
+                    'origin': 'http://gwms-v3.giikin.cn',
+                    'Referer': 'http://gwms-v3.giikin.cn/order/order/secondsendorder'}
+        data = {'page': 1,
+                'limit': 20,
+                'startDate': timeStart + ' 00:00:00',
+                'endDate': timeEnd + ' 23:59:59',
+                'selectStr': '1=1'}
+        print(data)
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=urlencode(data))
+        print(req.headers)
+        print(req.text)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
+        print(req)
+        max_count = req['count']
+        print('++++++本次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+        if max_count != [] and max_count != 0:
+            in_count = math.ceil(max_count/500)
+            dlist = []
+            df = pd.DataFrame([])
+            n = 1
+            while n <= in_count:  # 这里用到了一个while循环，穿越过来的
+                print('剩余查询次数' + str(in_count - n))
+                data = self._second_sendorder(timeStart, timeEnd, n)                     # 分页获取详情
+                dlist.append(data)
+                n = n + 1
+            dp = df.append(dlist, ignore_index=True)
+            print('正在写入......')
+            # dp = dp[['order_number', 'goods_id', 'goods_name', 'currency_id', 'area_id', 'ydtime', 'purid', 'other_reason', 'buyer', 'intime', 'addtime', 'is_lower', 'below_time', 'cate']]
+            # dp.columns = ['订单编号', '产品ID', '产品名称', '币种', '团队', '反馈时间', '压单原因', '其他原因', '采购员', '入库时间', '下单时间', '是否下架', '下架时间', '品类']
+            # dp = dp[(dp['币种'].str.contains('港币|台币', na=False))]
+            # print(dp)
+            dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+            sql = '''REPLACE INTO 压单表(订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, 下架时间, 品类, 记录时间) 
+                    SELECT 订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, IF(下架时间 = '',NULL,下架时间) 下架时间, 品类, NOW() 记录时间
+                    FROM customer'''
+            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('共有 ' + str(len(dp)) + '条 成功写入数据库+++++++')
+
+            print('正在更新表总表中......')
+            sql = '''update {0} a, cache b
+                        set a.`改派原运单号`= b.`改派原运单号`
+                     where a.`订单编号`=b.`订单编号`;'''.format('gat_order_list')
+            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('更新成功......')
+            print('*' * 50)
+        else:
+            print('****** 没有新增的改派订单！！！')
+            return None
+        print('*' * 50)
+    def _second_sendorder(self, timeStart, timeEnd, n):  # 进入压单检索界面
+        print('+++正在查询订单信息中')
+        url = r'http://gwms-v3.giikin.cn/order/order/secondsendorder'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'http://gwms-v3.giikin.cn',
+                    'Referer': 'http://gwms-v3.giikin.cn/order/order/secondsendorder'}
+        data = {'page': n,
+                'limit': 500,
+                'startDate': timeStart + ' 00:00:00',
+                'endDate': timeEnd + ' 23:59:59',
+                'selectStr': '1=1'}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
+        max_count = req['count']
+        if max_count != [] or max_count != 0:
+            ordersdict = []
+            try:
+                for result in req['data']:
+                    ordersdict.append(result)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            data = pd.json_normalize(ordersdict)
+        else:
+            data = None
+            print('****** 没有信息！！！')
+        return data
+
 
     # 进入 已下架 界面  （仓储的获取）（一）
     def order_lower(self, timeStart, timeEnd, auto_time):  # 进入已下架界面
@@ -591,7 +691,6 @@ class QueryTwoLower(Settings, Settings_sso):
                     self._order_lower_info(match2[tem], 2, timeStart, timeEnd, tem, '组合库存')
         print('查询耗时：', datetime.datetime.now() - start)
     # 进入 已下架 界面
-
     def _order_lower_info(self, tem, tem_type, timeStart, timeEnd, tem_name, type_name):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         # print('+++正在查询信息中')
