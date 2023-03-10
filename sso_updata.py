@@ -2876,15 +2876,9 @@ class Query_sso_updata(Settings):
                                        a.`发货仓库`= IF(b.`发货仓库` = '', NULL,  b.`发货仓库`),
                                        a.`克隆类型`= IF(b.`克隆类型` = '', NULL,  b.`克隆类型`),
                                        a.`是否盲盒`= IF(b.`是否盲盒` = '', NULL,  b.`是否盲盒`),
-                                       a.`主订单`= IF(b.`主订单` = '', NULL,  b.`主订单`)
+                                       a.`主订单`= IF(b.`主订单` = '', NULL,  b.`主订单`),
+                                       a.`改派原运单号`= IF(b.`改派原运单号` = '', NULL,  b.`改派原运单号`)
                            where a.`订单编号`=b.`订单编号`;'''.format('gat_order_list')
-            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
-
-            print('正在更新表总表中......')
-            sql = '''update {0} a, d1_cpy_cp b
-                        set a.`改派原运单号`= b.`改派原运单号`
-                     where a.`订单编号`=b.`订单编号`;'''.format('gat_order_list')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         else:
             print('没有需要获取的信息！！！')
