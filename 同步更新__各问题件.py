@@ -1285,47 +1285,17 @@ class QueryTwo(Settings, Settings_sso):
         req = json.loads(req.text)  # json类型数据转换为dict字典
         max_count = req['data']['count']
         print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
-        ordersDict = []
         if max_count != 0:
-            try:
-                for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
-                    orderInfo_count = 0
-                    for dt in result['orderDetails']:
-                        if dt != []:
-                            all_index = [substr.start() for substr in re.finditer('』x', dt['spec'])]  # 得到所有  '』x' 下标[6, 18, 27, 34, 39]
-                            for index in all_index:
-                                orderInfo_count = orderInfo_count + int(dt['spec'][index + 2:index + 3])    # 对下标推移位置，获取个数进行加  『白色,均码』x1,『黑色,均码』x1
-                    result['orderInfo_count'] = orderInfo_count
-                    result['orderInfo.order_number'] = ''
-                    result['orderInfo.currency'] = ''
-                    result['orderInfo.area'] = ''
-                    result['orderInfo.amount'] = ''
-                    result['orderInfoAfter.order_number'] = ''
-                    result['orderInfoAfter.amount'] = ''
-                    result['orderInfo.order_number'] = result['orderInfo']['order_number']
-                    result['orderInfo.currency'] = result['orderInfo']['currency']
-                    result['orderInfo.area'] = result['orderInfo']['area']
-                    result['orderInfo.amount'] = result['orderInfo']['amount']
-                    if result['orderInfoAfter'] != []:
-                        result['orderInfoAfter.order_number'] = result['orderInfoAfter']['order_number']
-                        result['orderInfoAfter.amount'] = result['orderInfoAfter']['amount']
-                    ordersDict.append(result.copy())
-            except Exception as e:
-                print('转化失败： 重新获取中', str(Exception) + str(e))
-            df = pd.json_normalize(ordersDict)
-            print('*' * 50)
-            if max_count > 90:
-                in_count = math.ceil(max_count/90)
-                dlist = []
-                n = 1
-                while n < in_count:  # 这里用到了一个while循环，穿越过来的
-                    print('剩余查询次数' + str(in_count - n))
-                    n = n + 1
-                    data = self._orderReturnList_Query(team, timeStart, timeEnd, n, proxy_handle, proxy_id)
-                    dlist.append(data)
-                dp = df.append(dlist, ignore_index=True)
-            else:
-                dp = df
+            in_count = math.ceil(max_count/90)
+            dlist = []
+            df = pd.DataFrame([])
+            n = 1
+            while n <= in_count:  # 这里用到了一个while循环，穿越过来的
+                print('剩余查询次数' + str(in_count - n))
+                data = self._orderReturnList_Query(team, timeStart, timeEnd, n, proxy_handle, proxy_id)
+                dlist.append(data)
+                n = n + 1
+            dp = df.append(dlist, ignore_index=True)
             dp = dp[['orderInfo.order_number',  'orderInfo.currency', 'orderInfo.area', 'orderInfo.amount', 'orderInfo_count', 'feedback_type', 'question_type',
                     'orderInfoAfter.order_number', 'orderInfoAfter.amount', 'refund_amount', 'create_time', 'user', 'deal_time', 'deal_user', 'type']]
             dp.columns = ['订单编号', '币种', '团队', '金额', '数量', '反馈方式', '反馈问题类型', '新订单编号', '克隆后金额', '退款金额', '导入时间',
@@ -1361,6 +1331,7 @@ class QueryTwo(Settings, Settings_sso):
         ordersDict = []
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
+                # print(result['id'])
                 orderInfo_count = 0
                 for dt in result['orderDetails']:
                     if dt != []:
@@ -1378,8 +1349,9 @@ class QueryTwo(Settings, Settings_sso):
                 result['orderInfo.currency'] = result['orderInfo']['currency']
                 result['orderInfo.area'] = result['orderInfo']['area']
                 result['orderInfo.amount'] = result['orderInfo']['amount']
-                result['orderInfoAfter.order_number'] = result['orderInfoAfter']['order_number']
-                result['orderInfoAfter.amount'] = result['orderInfoAfter']['amount']
+                if result['orderInfoAfter'] != []:
+                    result['orderInfoAfter.order_number'] = result['orderInfoAfter']['order_number']
+                    result['orderInfoAfter.amount'] = result['orderInfoAfter']['amount']
                 ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))

@@ -206,6 +206,30 @@ class QueryUpdate(Settings):
                                     a.`系统物流状态`= IF(b.`系统物流状态` = '', NULL, b.`系统物流状态`),
         		                    a.`是否改派`= IF(b.`是否改派` = '', NULL, b.`是否改派`),
         		                    a.`物流方式`= IF(b.`物流方式` = '', NULL, b.`物流方式`),
+        		                    a.`物流渠道`= IF(b.`是否改派` ='直发',
+                                                        IF(b.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', 
+                                                            IF(b.`物流方式` LIKE '台湾-天马-711%' or b.`物流方式` LIKE '台湾-天马-新竹%','台湾-天马-新竹', 
+                                                            IF(b.`物流方式` LIKE '台湾-铱熙无敌-新竹%' or b.`物流方式` LIKE '%优美宇通-新竹%','台湾-铱熙无敌-新竹', 
+                                                            IF(b.`物流方式` LIKE '台湾-铱熙无敌-黑猫%','台湾-铱熙无敌-黑猫', 
+                                                            IF(b.`物流方式` LIKE '台湾-铱熙无敌-711%','台湾-铱熙无敌-711超商', 
+                                                            IF(b.`物流方式` LIKE '台湾-速派-新竹%','台湾-速派-新竹', 
+                                                            IF(b.`物流方式` LIKE '香港-立邦-改派','香港-立邦-顺丰', 
+                                                            IF(b.`物流方式` LIKE '香港-圆通-改派','香港-圆通', b.`物流方式`)))))) )),
+                                                        IF(b.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
+                                                            IF(b.`物流方式` LIKE '香港-立邦-顺丰%','香港-立邦-改派',
+                                                            IF(b.`物流方式` LIKE '香港-易速配%','香港-易速配-改派',
+                                                            IF(b.`物流方式` LIKE '台湾-立邦普货头程-森鸿尾程%' OR b.`物流方式` LIKE '台湾-大黄蜂普货头程-森鸿尾程%' OR b.`物流方式` LIKE '台湾-森鸿-新竹%','森鸿',
+                                                            IF(b.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%' OR b.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%','龟山',
+                                                            IF(b.`物流方式` LIKE '台湾-易速配-龟山%' OR b.`物流方式` LIKE '台湾-易速配-新竹%' OR b.`物流方式` LIKE '新易速配-台湾-改派%' OR b.`物流方式` = '易速配','龟山',
+                                                            IF(b.`物流方式` LIKE '台湾-天马-顺丰%','天马顺丰',
+                                                            IF(b.`物流方式` LIKE '台湾-天马-新竹%' OR b.`物流方式` LIKE '台湾-天马-711%','天马新竹',
+                                                            IF(b.`物流方式` LIKE '台湾-天马-黑猫%','天马黑猫',
+                                                            IF(b.`物流方式` LIKE '台湾-速派-新竹%' OR b.`物流方式` LIKE '台湾-速派-711超商%','速派新竹',
+                                                            IF(b.`物流方式` LIKE '台湾-速派宅配通%','速派宅配通',
+                                                            IF(b.`物流方式` LIKE '台湾-速派-黑猫%','速派黑猫',
+                                                            IF(b.`物流方式` LIKE '香港-圆通%','香港-圆通-改派',
+                                                            IF(b.`物流方式` LIKE '台湾-优美宇通-新竹%','台湾-铱熙无敌-新竹改派',
+                                                            IF(b.`物流方式` LIKE '台湾-铱熙无敌-黑猫普货' or b.`物流方式` LIKE '台湾-铱熙无敌-黑猫特货','台湾-铱熙无敌-黑猫改派',b.`物流方式`)))))))))))))))),
         		                    a.`物流名称`= IF(b.`物流名称` = '', NULL, b.`物流名称`),
         		                    a.`付款方式`= IF(b.`付款方式` = '', NULL, b.`付款方式`),
         		                    a.`产品id`= IF(b.`产品id` = '', NULL, b.`产品id`),
@@ -222,6 +246,30 @@ class QueryUpdate(Settings):
                                                 a.`最终状态`= IF(b.`最终状态` = '', NULL, b.`最终状态`),
                     		                    a.`是否改派`= IF(b.`是否改派` = '', NULL, b.`是否改派`),
                     		                    a.`物流方式`= IF(b.`物流方式` = '', NULL, b.`物流方式`),
+                                                a.`物流渠道`= IF(b.`是否改派` ='直发',
+                                                                IF(b.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', 
+                                                                    IF(b.`物流方式` LIKE '台湾-天马-711%' or b.`物流方式` LIKE '台湾-天马-新竹%','台湾-天马-新竹', 
+                                                                    IF(b.`物流方式` LIKE '台湾-铱熙无敌-新竹%' or b.`物流方式` LIKE '%优美宇通-新竹%','台湾-铱熙无敌-新竹', 
+                                                                    IF(b.`物流方式` LIKE '台湾-铱熙无敌-黑猫%','台湾-铱熙无敌-黑猫', 
+                                                                    IF(b.`物流方式` LIKE '台湾-铱熙无敌-711%','台湾-铱熙无敌-711超商', 
+                                                                    IF(b.`物流方式` LIKE '台湾-速派-新竹%','台湾-速派-新竹', 
+                                                                    IF(b.`物流方式` LIKE '香港-立邦-改派','香港-立邦-顺丰', 
+                                                                    IF(b.`物流方式` LIKE '香港-圆通-改派','香港-圆通', b.`物流方式`)))))) )),
+                                                                IF(b.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
+                                                                    IF(b.`物流方式` LIKE '香港-立邦-顺丰%','香港-立邦-改派',
+                                                                    IF(b.`物流方式` LIKE '香港-易速配%','香港-易速配-改派',
+                                                                    IF(b.`物流方式` LIKE '台湾-立邦普货头程-森鸿尾程%' OR b.`物流方式` LIKE '台湾-大黄蜂普货头程-森鸿尾程%' OR b.`物流方式` LIKE '台湾-森鸿-新竹%','森鸿',
+                                                                    IF(b.`物流方式` LIKE '台湾-立邦普货头程-易速配尾程%' OR b.`物流方式` LIKE '台湾-大黄蜂普货头程-易速配尾程%','龟山',
+                                                                    IF(b.`物流方式` LIKE '台湾-易速配-龟山%' OR b.`物流方式` LIKE '台湾-易速配-新竹%' OR b.`物流方式` LIKE '新易速配-台湾-改派%' OR b.`物流方式` = '易速配','龟山',
+                                                                    IF(b.`物流方式` LIKE '台湾-天马-顺丰%','天马顺丰',
+                                                                    IF(b.`物流方式` LIKE '台湾-天马-新竹%' OR b.`物流方式` LIKE '台湾-天马-711%','天马新竹',
+                                                                    IF(b.`物流方式` LIKE '台湾-天马-黑猫%','天马黑猫',
+                                                                    IF(b.`物流方式` LIKE '台湾-速派-新竹%' OR b.`物流方式` LIKE '台湾-速派-711超商%','速派新竹',
+                                                                    IF(b.`物流方式` LIKE '台湾-速派宅配通%','速派宅配通',
+                                                                    IF(b.`物流方式` LIKE '台湾-速派-黑猫%','速派黑猫',
+                                                                    IF(b.`物流方式` LIKE '香港-圆通%','香港-圆通-改派',
+                                                                    IF(b.`物流方式` LIKE '台湾-优美宇通-新竹%','台湾-铱熙无敌-新竹改派',
+                                                                    IF(b.`物流方式` LIKE '台湾-铱熙无敌-黑猫普货' or b.`物流方式` LIKE '台湾-铱熙无敌-黑猫特货','台湾-铱熙无敌-黑猫改派',b.`物流方式`)))))))))))))))),
                     		                    a.`物流名称`= IF(b.`物流名称` = '', NULL, b.`物流名称`),
                     		                    a.`付款方式`= IF(b.`付款方式` = '', NULL, b.`付款方式`),
                     		                    a.`产品id`= IF(b.`产品id` = '', NULL, b.`产品id`),
@@ -705,10 +753,8 @@ class QueryUpdate(Settings):
 
     # 导出需要更新的签收表---港澳台(二)
     def EportOrder(self, team, month_last, month_yesterday, month_begin, check, export, handle, proxy_handle, proxy_id):
-        match = {'gat': '港台',
-                 'slsc': '品牌'}
-        emailAdd = {'gat': 'giikinliujun@163.com',
-                    'slsc': 'sunyaru@giikin.com'}
+        match = {'gat': '港台','slsc': '品牌'}
+        emailAdd = {'gat': 'giikinliujun@163.com', 'slsc': 'sunyaru@giikin.com'}
         today = datetime.date.today().strftime('%Y.%m.%d')
         if check == '是':
             print('正在第一次检查父级分类为空的信息---')
@@ -807,7 +853,7 @@ class QueryUpdate(Settings):
             print('正在清除港澳台-总表的可能删除了的订单…………')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('正在获取---' + match[team] + '---更新数据内容…………')
-            sql = '''SELECT 年月, 旬, 日期, 团队, 币种, null 区域, 订单来源, a.订单编号, 电话号码, a.运单编号,
+            sql = '''SELECT 年月, 旬, 日期, 团队, 所属团队, 币种, null 区域, 订单来源, a.订单编号, 电话号码, a.运单编号,
                             -- IF(ISNULL(a.仓储扫描时间), IF(出货时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), null, 出货时间), a.仓储扫描时间) 出货时间,
                             IF(出货时间='1990-01-01 00:00:00' or 出货时间='1899-12-29 00:00:00' or 出货时间='1899-12-30 00:00:00' or 出货时间='0000-00-00 00:00:00', a.仓储扫描时间, 出货时间) 出货时间,
                             IF(ISNULL(c.标准物流状态), b.物流状态, c.标准物流状态) 物流状态, c.`物流状态代码` 物流状态代码,
@@ -820,7 +866,7 @@ class QueryUpdate(Settings):
                                                             IF(物流方式 like '%天马%' and c.签收表物流状态 = '在途','未上线', c.标准物流状态)
                                                         ), 系统物流状态), '已退货') 最终状态,
                             IF(是否改派='二次改派', '改派', 是否改派) 是否改派,
-                            物流方式,物流名称,null 运输方式,null 货物类型,是否低价,付款方式,产品id,产品名称,父级分类, 二级分类,三级分类, 下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB, null 价格区间, null 包裹重量, null 包裹体积,null 邮编, 
+                            物流方式,物流渠道,物流名称,null 运输方式,null 货物类型,是否低价,付款方式,产品id,产品名称,父级分类, 二级分类,三级分类, 下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB, null 价格区间, null 包裹重量, null 包裹体积,null 邮编, 
                             IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, null 签收表订单编号, null 签收表运单编号, null 原运单号, b.物流状态 签收表物流状态, null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, 添加物流单号时间,
                             省洲,市区,数量, a.下架时间, a.物流提货时间, a.完结状态, a.回款时间, a.支付类型, a.是否盲盒, a.克隆类型, a.主订单
                         FROM (SELECT * 
@@ -836,13 +882,12 @@ class QueryUpdate(Settings):
             df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
             if export == '导表':
                 print('正在写入excel…………')
-                df = df[['日期', '团队', '币种', '订单编号', '电话号码', '运单编号', '出货时间', '物流状态', '物流状态代码', '状态时间', '上线时间',
-                         '系统订单状态', '系统物流状态', '最终状态', '是否改派', '物流方式', '物流名称', '签收表物流状态', '付款方式', '产品id', '产品名称',
-                         '父级分类', '二级分类', '下单时间', '审核时间', '仓储扫描时间', '完结状态时间']]
+                df = df[['日期', '团队', '所属团队', '币种', '订单编号', '电话号码', '运单编号', '出货时间', '物流状态', '物流状态代码', '状态时间', '上线时间', '系统订单状态', '系统物流状态', '最终状态',
+                         '是否改派', '物流方式', '物流渠道', '物流名称', '签收表物流状态', '付款方式', '产品id', '产品名称','父级分类', '二级分类', '下单时间', '审核时间', '仓储扫描时间', '完结状态时间']]
                 old_path = 'G:\\输出文件\\{} {} 更新-签收表.xlsx'.format(today, match[team])
                 df.to_excel(old_path, sheet_name=match[team], index=False)
                 new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\{} {} 更新-签收表.xlsx'.format(today,match[team])
-                shutil.copyfile(old_path, new_path)     # copy到指定位置
+                shutil.copyfile(old_path, new_path)             # copy到指定位置
                 print('----已写入excel; 并复制到指定文件夹中')
             else:
                 print('不 写入excel…………')
@@ -873,24 +918,7 @@ class QueryUpdate(Settings):
     # 导出总的签收表---各家族-港澳台(三)
     def EportOrderBook(self, team, month_last, month_yesterday):
         today = datetime.date.today().strftime('%Y.%m.%d')
-        match = {'slgat': '神龙-港台',
-                 'slgat_hfh': '火凤凰-港台',
-                 'slgat_hs': '红杉-港台',
-                 'slgat_js': '金狮-港台',
-                 'slgat_jp': '小虎队-港台',
-                 'slgat_run': '神龙-香港',
-                 'gat': '港台',
-                 'slsc': '品牌',
-                 'slrb': '神龙-日本',
-                 'slrb_jl': '精灵-日本',
-                 'slrb_js': '金狮-日本',
-                 'slrb_hs': '红杉-日本'}
-        # if team in ('gat9'):
-        #     month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-        #     month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
-        # else:
-        #     month_last = '2021-08-01'
-        #     month_yesterday = '2021-10-01'
+        match = {'gat': '港台','slsc': '品牌'}
         print(month_last)
         print(month_yesterday)
         print('正在修改-港澳台-物流渠道…………')
@@ -915,7 +943,7 @@ class QueryUpdate(Settings):
             print(tem + '----已写入excel; 并复制到指定文件夹中')
         try:
             print('正在转存中' + month_yesterday + '最近两个月的订单......')
-            sql = '''SELECT 年月, 旬, 日期, 团队,币种, 订单来源, 订单编号, 出货时间, IF(`状态时间` = '',NULL,状态时间) as 状态时间, 上线时间, 最终状态,是否改派,物流方式,
+            sql = '''SELECT 年月, 旬, 日期, 团队,所属团队,币种, 订单来源, 订单编号, 出货时间, IF(`状态时间` = '',NULL,状态时间) as 状态时间, 上线时间, 最终状态,是否改派,物流方式,物流渠道,
                             产品id,父级分类,二级分类,三级分类,下单时间, 审核时间,仓储扫描时间,下架时间, 物流提货时间, 完结状态, 完结状态时间,回款时间, 价格RMB, 运单编号, curdate() 记录时间
                     FROM d1_{0} a WHERE a.`运单编号` is not null ;'''.format(team)
             df = pd.read_sql_query(sql=sql, con=self.engine1)

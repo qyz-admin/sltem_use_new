@@ -19,7 +19,8 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
          'slsc': r'D:\Users\Administrator\Desktop\需要用到的文件\品牌',
          'gat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
          'gat_upload': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表 - 单独上传'}
-'''    msyql 语法:      show processlist（查看当前进程）;                        在cmd中键入命令（清理DNS）：ipconfig /flushdns
+'''    msyql 语法:      show processlist;（查看当前进程）;      select * from information_schema.innodb_trx; (检查当前sql是否有锁定的)
+                        在cmd中键入命令（清理DNS）：ipconfig /flushdns
                         set global event_scheduler=0;（关闭定时器）;
 备注：  港台 需整理的表：香港立邦>(明细再copy一份保存) ； 台湾龟山改派>(copy保存为xlsx格式);
 说明：  日本 需整理的表：1、吉客印神龙直发签收表=密码：‘JKTSL’>(明细再copy保存；改派明细不需要);2、直发签收表>(明细再copy保存；3、状态更新需要copy保存);
@@ -40,13 +41,13 @@ if team == 'gat':
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    data_begin = datetime.date(2022, 10, 23)  # 数据库更新
-    begin = datetime.date(2022, 10, 23)      # 单点更新
-    end = datetime.date(2023, 2, 1)
+    data_begin = datetime.date(2022, 12, 30)  # 数据库更新
+    begin = datetime.date(2022, 12, 30)      # 单点更新
+    end = datetime.date(2022, 12, 31)
     # 导出时间
-    month_last = '2022-12-01'
-    month_yesterday = '2023-03-07'
-    month_begin = '2022-11-01'
+    month_last = '2023-01-01'
+    month_yesterday = '2023-03-10'
+    month_begin = '2022-12-01'
 print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 导出      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
@@ -106,7 +107,7 @@ print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
 
 # TODO------------------------------------单点更新配置------------------------------------
-proxy_handle = '代理服务器'
+proxy_handle = '代理服务器0'
 proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
 handle = '手动0'
 login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen

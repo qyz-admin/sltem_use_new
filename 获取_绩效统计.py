@@ -95,7 +95,6 @@ class QueryOrder(Settings, Settings_sso):
                 self.wbsheetHost(filePath, team, searchType)
                 # self.cs_wbsheetHost(filePath, team, searchType)
         print('处理耗时：', datetime.datetime.now() - start)
-
     # 工作表的订单信息
     def wbsheetHost(self, filePath, team, searchType):
         fileType = os.path.splitext(filePath)[1]
@@ -1090,16 +1089,15 @@ class QueryOrder(Settings, Settings_sso):
                 print('剩余查询次数' + str(math.ceil((max_count - n) / 10)))
                 n = n + 10
             dp = df.append(dlist, ignore_index=True)
-            # dp = dp[['order_number',  'currency', 'addtime', 'orderStatus', 'logisticsStatus', 'create_time', 'lastQuestionName', 'userName', 'traceName',  'content', 'traceTime']]
-            # dp.columns = ['订单编号', '币种', '下单时间', '订单状态', '物流状态', '创建时间', '派送问题类型', '最新处理人', '最新处理状态', '最新处理结果',  '处理时间']
             print('正在写入......')
             dp.to_sql('cache_ch', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\绩效系统问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO 派送问题件_绩效(订单编号,币种, 下单时间,订单状态,物流状态,创建时间,派送问题类型, 最新处理人, 最新处理状态, 最新处理结果,处理时间,统计日期, 记录时间) 
+            sql = '''REPLACE INTO gat_order_list_log(订单编号,币种, 下单时间,订单状态,物流状态,创建时间,派送问题类型, 最新处理人, 最新处理状态, 最新处理结果,处理时间,统计日期, 记录时间) 
                                            SELECT 订单编号,币种, 下单时间,订单状态,物流状态,创建时间,派送问题类型, 最新处理人, 最新处理状态, 最新处理结果,处理时间,DATE_FORMAT(NOW(),'%Y-%m-%d') 统计日期, NOW() 记录时间 
-                    FROM cache_check;'''
-            # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                    FROM cache_ch;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
+            self._service_id_orderInfoTWO()
         else:
             print('无需查询......')
     def _service_id_orderInfo(self, ord, proxy_handle, proxy_id):  # 进入订单检索界面
@@ -1114,7 +1112,6 @@ class QueryOrder(Settings, Settings_sso):
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         else:
             req = self.session.post(url=url, headers=r_header, data=data)
-        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         # print(req)
         ordersdict = []
@@ -1127,25 +1124,114 @@ class QueryOrder(Settings, Settings_sso):
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         return data
-    def _service_id_orderInfoTWO(self, ord):  # 进入订单检索界面
+    def _service_id_orderInfoTWO(self):  # 进入订单检索界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('+++正在查询订单信息中')
         sql = '''SELECT *
                 FROM cache_ch c
                 WHERE c.orderStatus IS NOT NULL AND c.orderStatus <> ""
-                ORDER BY orderNumber, id'''
+                ORDER BY orderNumber, id;'''
+        sql = '''SELECT *
+                FROM gat_order_list_log c
+                WHERE c.orderStatus IS NOT NULL AND c.orderStatus <> ""
+                ORDER BY orderNumber, id;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print(df)
-        # ordersdict = []
-        # try:
-        #     for result in req['data']:
-        #         ordersdict.append(result)
-        # except Exception as e:
-        #     print('转化失败： 重新获取中', str(Exception) + str(e))
-        # data = pd.json_normalize(ordersdict)
-        # print('++++++本批次查询成功+++++++')
-        # print('*' * 50)
-        # return data
-
+        dict = {}
+        for index, x in df.iterrows():
+            print(index, x['id'], x['orderNumber'], x['orderStatus'], x['updateTime'], x['remark'], x['name'])
+            order_Number = x['orderNumber']
+            dict_info = {}
+            if order_Number not in dict:
+                dict_info['订单编号'] = x['orderNumber']
+                dict_info['id'] = x['id']
+                dict_info['订单状态'] = x['orderStatus']
+                dict_info['转化时间'] = x['updateTime']
+                dict_info['备注'] = x['remark']
+                dict_info['转化人'] = '0'
+                dict[order_Number] = dict_info
+                step = 0
+            else:
+                if step >= 1:
+                    continue
+                order_Number_last = dict[order_Number]['订单编号']
+                id_Status = x['id']
+                id_Status_last = dict[order_Number]['id']
+                order_Status = x['orderStatus']
+                order_Status_last = dict[order_Number]['订单状态']
+                update_Time = x['updateTime']
+                update_Time_last = dict[order_Number]['转化时间']
+                remark_Status = x['remark']
+                remark_Status_last = dict[order_Number]['备注']
+                name_Status = x['name']
+                name_Status_last = dict[order_Number]['转化人']
+                # print(name_Status_last)
+                if order_Status == '问题订单':
+                    # print('已删除 待发货不在')
+                    # print('转化人:' + str(name_Status_last))
+                    dict_info['订单编号'] = x['orderNumber']
+                    dict_info['id'] = x['id']
+                    dict_info['订单状态'] = x['orderStatus']
+                    dict_info['转化时间'] = x['updateTime']
+                    dict_info['备注'] = x['remark']
+                    if name_Status_last != '0':
+                        if name_Status_last == '蔡利英' or name_Status_last == '杨嘉仪' or name_Status_last == '张陈平':
+                            dict_info['id'] = id_Status_last
+                            dict_info['订单编号'] = order_Number_last
+                            dict_info['订单状态'] = order_Status_last
+                            dict_info['转化时间'] = update_Time_last
+                            dict_info['备注'] = remark_Status_last
+                            dict_info['转化人'] = name_Status_last
+                        else:
+                            dict_info['转化人'] = x['name']
+                    else:
+                        dict_info['转化人'] = x['name']
+                    dict[order_Number] = dict_info
+                elif '已删除' in order_Status or '待发货' in order_Status:
+                    if order_Status_last == "问题订单":
+                        step = step + 1
+                        if '修改order_status' in remark_Status:
+                            if '蔡利英' in name_Status or '杨嘉仪' in name_Status or '张陈平' in name_Status:
+                                dict_info['id'] = x['id']
+                                dict_info['订单编号'] = x['orderNumber']
+                                dict_info['订单状态'] = x['orderStatus']
+                                dict_info['转化时间'] = x['updateTime']
+                                dict_info['备注'] = x['remark']
+                                dict_info['转化人'] = x['name']
+                            else:
+                                if '修改remark,->张' in remark_Status_last or '修改remark,->楊' in remark_Status_last or '修改remark,->英' in remark_Status_last:
+                                    dict_info['订单编号'] = order_Number_last
+                                    dict_info['id'] = id_Status_last
+                                    dict_info['订单状态'] = order_Status_last
+                                    dict_info['转化时间'] = update_Time_last
+                                    dict_info['备注'] = remark_Status_last
+                                    dict_info['转化人'] = name_Status_last
+                                else:
+                                    dict_info['id'] = x['id']
+                                    dict_info['订单编号'] = x['orderNumber']
+                                    dict_info['订单状态'] = x['orderStatus']
+                                    dict_info['转化时间'] = x['updateTime']
+                                    dict_info['备注'] = x['remark']
+                                    dict_info['转化人'] = x['name']
+                            pass
+                        else:
+                            pass
+                    else:
+                        pass
+                    # print(dict_info)
+                    if dict_info != {}:
+                        dict[order_Number] = dict_info
+        print('*' * 52)
+        data = list(dict.values())
+        data = pd.json_normalize(data)
+        print(data)
+        data.to_excel('G:\\输出文件\\系统问题件-绩效{0}.xlsx', sheet_name='查询', index=False, engine='xlsxwriter').format(rq)
+        data.to_sql('cache_ch', con=self.engine1, index=False, if_exists='replace')
+        sql = '''REPLACE INTO 系统问题件_下单时间( id,orderId, orderNumber,orderStatus,updateTime,uid,remark, name, 统计月份,记录时间) 
+                 SELECT id, orderId, orderNumber, orderStatus, updateTime, uid, remark, name, DATE_FORMAT(NOW(),'%Y%m') 统计月份, NOW() 记录时间 
+                 FROM cache_ch;'''
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        print('写入成功......')
 
     # 绩效-汇总输出
     def service_check(self):
@@ -1329,30 +1415,18 @@ if __name__ == '__main__':
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
-    # -----------------------------------------------查询状态运行（一）-----------------------------------------
-    # 1、按订单查询状态
-    # team = 'gat'
-    # searchType = '订单号'运单号
-    # m.readFormHost(team, searchType)        # 导入；，更新--->>数据更新切换
-    # 2、按时间查询状态
-    # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
-    # m.del_reson()
+    '''
+        # -----------------------------------------------查询状态运行（一）-----------------------------------------
+    '''
 
-    select = 9                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+
+    select = 99                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
         searchType = '订单号'
         pople_Query = '订单检索'                # 客服查询；订单检索
         m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd')        # 导入；，更新--->>数据更新切换
-
-    elif int(select) == 2:
-        print("1-->>> 正在按运单号查询+++")
-        team = 'gat'
-        searchType = '订单号'
-        pople_Query = '客服查询'  # 客服查询；订单检索 运单号
-        m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd')  # 导入；，更新--->>数据更新切换
-
 
     elif int(select) == 99:
         hanlde = '自0动'
@@ -1364,8 +1438,8 @@ if __name__ == '__main__':
                 timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
                 timeEnd = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         else:
-            timeStart = '2023-02-01'
-            timeEnd = '2023-02-28'
+            timeStart = '2022-11-01'
+            timeEnd = '2022-11-30'
         print(timeStart + "---" + timeEnd)
 
         # m.service_id_order(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)      # 促单查询；下单时间 @~@ok
@@ -1395,6 +1469,7 @@ if __name__ == '__main__':
         # order_time = '创建时间'
         # m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
 
+        m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)            # 系统问题件  查询；订单检索
 
         # order_time = '跟进时间'                                                                  # 拒收问题  查询；订单检索@~@ok
         timeStart = datetime.date(2023, 2, 1)
@@ -1407,16 +1482,15 @@ if __name__ == '__main__':
         # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # (需处理两次)
         # order_time = '下单跟进时间'
         # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
-        order_time = '下单时间'
-        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
+        # order_time = '下单时间'
+        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
 
-        m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)            # 系统问题件  查询；订单检索
-
-        # m.service_check()
 
     elif int(select) == 9:
         # m.del_order_day()
         m.service_check()
+
+
 
 
 

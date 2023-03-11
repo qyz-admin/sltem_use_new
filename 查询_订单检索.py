@@ -966,7 +966,8 @@ class QueryOrder(Settings, Settings_sso):
                 n = n + 1
             print('正在写入......')
             dp = df.append(dlist, ignore_index=True)
-            db0 = dp[(dp['运营团队'].str.contains('神龙家族-港澳台|火凤凰-台湾|火凤凰-香港'))]
+            db0 = dp[(dp['运营团队'].str.contains('神龙家族-台湾|神龙-香港|火凤凰-台湾|火凤凰-香港'))]
+            db0 = dp[(dp['币种'].str.contains('台币'))]
             print('正在导入临时表中......')
             db0 = db0[['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '收货人', '联系电话', '标准电话', '拉黑率', '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式',
                        '下单时间', '审核人', '审核时间', '物流渠道', '货物类型', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '备注', 'IP', '体积',
@@ -1085,10 +1086,10 @@ class QueryOrder(Settings, Settings_sso):
                       ) s2 
                       ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
                 ) s
-                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾','火凤凰-香港')
+                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港')
                 GROUP BY 币种,运营团队,删单原因
                 ORDER BY FIELD(币种,'台币','港币','合计'),
-                         FIELD(运营团队,'神龙家族-港澳台','火凤凰-台湾','火凤凰-香港','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
+                         FIELD(运营团队,'神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
                          订单量 DESC;'''
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
         # print(df1)
@@ -1099,16 +1100,16 @@ class QueryOrder(Settings, Settings_sso):
             tem = getattr(row, '运营团队')
             delreson = getattr(row, '删单原因')
             count = getattr(row, '订单量')
-            if tem == '神龙家族-港澳台' and delreson == None:
+            if tem == '神龙家族-台湾' and delreson == None:
                 sl_tem = '*神  龙:   昨日单量：' + str(int(getattr(row, '总订单量'))) + '；删单量：' + str(int(getattr(row, '总删单量'))) + '；删单率：' + str(getattr(row, '删单率')) + '；系统删单量：' + str(int(getattr(row, '系统删单量'))) + '单;'
                 # print(sl_tem)
-            elif tem == '神龙家族-港澳台' and '拉黑率订单' == delreson:
+            elif tem == '神龙家族-台湾' and '拉黑率订单' == delreson:
                 sl_tem_lh = '，\n            其中占比较多的是：拉黑率订单：' + str(int(count)) + '单, '
                 # print(sl_tem_lh)
-            elif tem == '神龙家族-港澳台' and '恶意订单' == delreson:
+            elif tem == '神龙家族-台湾' and '恶意订单' == delreson:
                 sl_tem_ey = '恶意订单：' + str(int(count)) + '单, '
                 # print(sl_tem_ey)
-            elif tem == '神龙家族-港澳台' and '重复订单' == delreson:
+            elif tem == '神龙家族-台湾' and '重复订单' == delreson:
                 sl_tem_cf = '重复订单：' + str(int(count)) + '单;'
                 # print(sl_tem_cf)
 
@@ -1135,7 +1136,7 @@ class QueryOrder(Settings, Settings_sso):
 					    FROM (SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(联系电话,'总计') 联系电话, COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
                                 FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                         FROM `cache` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '拉黑率%'
+                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '拉黑率%'
                                 ) w
                                 GROUP BY 币种,删单原因, 联系电话
                                 WITH ROLLUP
@@ -1150,7 +1151,7 @@ class QueryOrder(Settings, Settings_sso):
                         FROM (  SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(ip,'总计') ip, COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
                                 FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                         FROM `cache` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '拉黑率%'
+                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '拉黑率%'
                                 ) w
                                 GROUP BY 币种,删单原因, ip
                                 WITH ROLLUP
@@ -1219,7 +1220,7 @@ class QueryOrder(Settings, Settings_sso):
                         FROM (  SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(联系电话,'总计') 联系电话,COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
                                 FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                         FROM `cache` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '恶意%'
+                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '恶意%'
                                 ) w
                                 GROUP BY 币种,删单原因, 联系电话
                                 WITH ROLLUP
@@ -1234,7 +1235,7 @@ class QueryOrder(Settings, Settings_sso):
                         FROM (  SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(ip,'总计') ip,COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
                                 FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                         FROM `cache` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '恶意%'
+                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '恶意%'
                                 ) w
                                 GROUP BY 币种,删单原因, ip
                                 WITH ROLLUP
@@ -1298,7 +1299,7 @@ class QueryOrder(Settings, Settings_sso):
         sql = '''SELECT IFNULL(币种,'币种') 币种,IFNULL(删单原因,'总计') 重复删除,COUNT(订单编号) AS 订单量
                     FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                             FROM `cache` c
-                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '重复订单%'
+                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '重复订单%'
                     ) w
                 GROUP BY 币种,删单原因;'''
         df4 = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -1318,7 +1319,7 @@ class QueryOrder(Settings, Settings_sso):
                                     FROM (SELECT IFNULL(币种,'币种') 币种,IFNULL(删单原因,'总计') 系统删除,COUNT(订单编号) AS 订单量
                                             FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                                     FROM `cache` c
-                                                    WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除人 IS NULL
+                                                    WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除人 IS NULL
                                             ) w
                                             GROUP BY 币种,删单原因
                                             WITH ROLLUP
@@ -1331,7 +1332,7 @@ class QueryOrder(Settings, Settings_sso):
                                  ( SELECT 币种,联系电话 AS 系统删除,COUNT(订单编号) AS 订单量
                                     FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                             FROM `cache` c
-                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除人 IS NULL
+                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除人 IS NULL
                                     ) w
                                     GROUP BY 币种,联系电话
                                     ORDER BY 订单量 DESC
@@ -1341,7 +1342,7 @@ class QueryOrder(Settings, Settings_sso):
                                 (SELECT 币种,ip AS 系统删除,COUNT(订单编号) AS 订单量
                                     FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                             FROM `cache` c
-                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除人 IS NULL
+                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除人 IS NULL
                                     ) w
                                     GROUP BY 币种,ip
                                     ORDER BY 订单量 DESC
@@ -1495,10 +1496,10 @@ class QueryOrder(Settings, Settings_sso):
                       ) s2 
                       ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
                 ) s
-                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾')
+                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾')
                 GROUP BY 币种,运营团队,删单原因
                 ORDER BY FIELD(币种,'台币','港币','合计'),
-                         FIELD(运营团队,'神龙家族-港澳台','火凤凰-台湾','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
+                         FIELD(运营团队,'神龙家族-台湾','火凤凰-台湾','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
                          订单量 DESC;'''
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
         # print(df1)
@@ -1509,16 +1510,16 @@ class QueryOrder(Settings, Settings_sso):
             tem = getattr(row, '运营团队')
             delreson = getattr(row, '删单原因')
             count = getattr(row, '订单量')
-            if tem == '神龙家族-港澳台' and delreson == None:
+            if tem == '神龙家族-台湾' and delreson == None:
                 sl_tem = '*神  龙:   昨日单量：' + str(int(getattr(row, '总订单量'))) + '；删单量：' + str(int(getattr(row, '总删单量'))) + '；删单率：' + str(getattr(row, '删单率')) + '；系统删单量：' + str(int(getattr(row, '系统删单量'))) + '单;'
                 # print(sl_tem)
-            elif tem == '神龙家族-港澳台' and '拉黑率订单' == delreson:
+            elif tem == '神龙家族-台湾' and '拉黑率订单' == delreson:
                 sl_tem_lh = '，\n            其中占比较多的是：拉黑率订单：' + str(int(count)) + '单, '
                 # print(sl_tem_lh)
-            elif tem == '神龙家族-港澳台' and '恶意订单' == delreson:
+            elif tem == '神龙家族-台湾' and '恶意订单' == delreson:
                 sl_tem_ey = '恶意订单：' + str(int(count)) + '单, '
                 # print(sl_tem_ey)
-            elif tem == '神龙家族-港澳台' and '重复订单' == delreson:
+            elif tem == '神龙家族-台湾' and '重复订单' == delreson:
                 sl_tem_cf = '重复订单：' + str(int(count)) + '单;'
                 # print(sl_tem_cf)
 
@@ -1545,7 +1546,7 @@ class QueryOrder(Settings, Settings_sso):
 					    FROM (SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(联系电话,'总计') 联系电话, COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
                                 FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                         FROM `cache` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '拉黑率%'
+                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '拉黑率%'
                                 ) w
                                 GROUP BY 币种,删单原因, 联系电话
                                 WITH ROLLUP
@@ -1560,7 +1561,7 @@ class QueryOrder(Settings, Settings_sso):
                         FROM (  SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(ip,'总计') ip, COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
                                 FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                         FROM `cache` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '拉黑率%'
+                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '拉黑率%'
                                 ) w
                                 GROUP BY 币种,删单原因, ip
                                 WITH ROLLUP
@@ -1629,7 +1630,7 @@ class QueryOrder(Settings, Settings_sso):
                         FROM (  SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(联系电话,'总计') 联系电话,COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
                                 FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                         FROM `cache` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '恶意%'
+                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '恶意%'
                                 ) w
                                 GROUP BY 币种,删单原因, 联系电话
                                 WITH ROLLUP
@@ -1644,7 +1645,7 @@ class QueryOrder(Settings, Settings_sso):
                         FROM (  SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(ip,'总计') ip,COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
                                 FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                         FROM `cache` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '恶意%'
+                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '恶意%'
                                 ) w
                                 GROUP BY 币种,删单原因, ip
                                 WITH ROLLUP
@@ -1708,7 +1709,7 @@ class QueryOrder(Settings, Settings_sso):
         sql = '''SELECT IFNULL(币种,'币种') 币种,IFNULL(删单原因,'总计') 重复删除,COUNT(订单编号) AS 订单量
                     FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                             FROM `cache` c
-                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '重复订单%'
+                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '重复订单%'
                     ) w
                 GROUP BY 币种,删单原因;'''
         df4 = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -1728,7 +1729,7 @@ class QueryOrder(Settings, Settings_sso):
                                     FROM (SELECT IFNULL(币种,'币种') 币种,IFNULL(删单原因,'总计') 系统删除,COUNT(订单编号) AS 订单量
                                             FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                                     FROM `cache` c
-                                                    WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除人 IS NULL
+                                                    WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除人 IS NULL
                                             ) w
                                             GROUP BY 币种,删单原因
                                             WITH ROLLUP
@@ -1741,7 +1742,7 @@ class QueryOrder(Settings, Settings_sso):
                                  ( SELECT 币种,联系电话 AS 系统删除,COUNT(订单编号) AS 订单量
                                     FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                             FROM `cache` c
-                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除人 IS NULL
+                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除人 IS NULL
                                     ) w
                                     GROUP BY 币种,联系电话
                                     ORDER BY 订单量 DESC
@@ -1751,7 +1752,7 @@ class QueryOrder(Settings, Settings_sso):
                                 (SELECT 币种,ip AS 系统删除,COUNT(订单编号) AS 订单量
                                     FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                             FROM `cache` c
-                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除人 IS NULL
+                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除人 IS NULL
                                     ) w
                                     GROUP BY 币种,ip
                                     ORDER BY 订单量 DESC
@@ -1905,10 +1906,10 @@ class QueryOrder(Settings, Settings_sso):
                       ) s2 
                       ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
                 ) s
-                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾')
+                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾')
                 GROUP BY 币种,运营团队,删单原因
                 ORDER BY FIELD(币种,'台币','港币','合计'),
-                         FIELD(运营团队,'神龙家族-港澳台','火凤凰-台湾','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
+                         FIELD(运营团队,'神龙家族-台湾','火凤凰-台湾','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
                          订单量 DESC;'''
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
         # print(df1)
@@ -1919,16 +1920,16 @@ class QueryOrder(Settings, Settings_sso):
             tem = getattr(row, '运营团队')
             delreson = getattr(row, '删单原因')
             count = getattr(row, '订单量')
-            if tem == '神龙家族-港澳台' and delreson == None:
+            if tem == '神龙家族-台湾' and delreson == None:
                 sl_tem = '*神  龙:   昨日单量：' + str(int(getattr(row, '总订单量'))) + '；删单量：' + str(int(getattr(row, '总删单量'))) + '；删单率：' + str(getattr(row, '删单率')) + '；系统删单量：' + str(int(getattr(row, '系统删单量'))) + '单;'
                 # print(sl_tem)
-            elif tem == '神龙家族-港澳台' and '拉黑率订单' in delreson:
+            elif tem == '神龙家族-台湾' and '拉黑率订单' in delreson:
                 sl_tem_lh = '，\n            其中占比较多的是：拉黑率订单：' + str(int(count)) + '单, '
                 # print(sl_tem_lh)
-            elif tem == '神龙家族-港澳台' and '恶意订单' in delreson:
+            elif tem == '神龙家族-台湾' and '恶意订单' in delreson:
                 sl_tem_ey = '恶意订单：' + str(int(count)) + '单, '
                 # print(sl_tem_ey)
-            elif tem == '神龙家族-港澳台' and '重复订单' in delreson:
+            elif tem == '神龙家族-台湾' and '重复订单' in delreson:
                 sl_tem_cf = '重复订单：' + str(int(count)) + '单;'
                 # print(sl_tem_cf)
 
@@ -1955,7 +1956,7 @@ class QueryOrder(Settings, Settings_sso):
                         FROM (  SELECT 币种,删单原因, 联系电话,COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
                                 FROM (SELECT *,IF(删除原因 LIKE '拉黑率%','拉黑率订单',删除原因) 删单原因
                                         FROM `worksheet` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '拉黑率%'
+                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '拉黑率%'
                                 ) w
                                 GROUP BY 币种,删单原因, 联系电话
                                 WITH ROLLUP
@@ -1970,7 +1971,7 @@ class QueryOrder(Settings, Settings_sso):
                         FROM (  SELECT 币种,删单原因, ip,COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
                                 FROM (SELECT *,IF(删除原因 LIKE '拉黑率%','拉黑率订单',删除原因) 删单原因
                                         FROM `worksheet` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '拉黑率%'
+                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '拉黑率%'
                                 ) w
                                 GROUP BY 币种,删单原因, ip
                                 WITH ROLLUP
@@ -2036,7 +2037,7 @@ class QueryOrder(Settings, Settings_sso):
                         FROM (  SELECT 币种,删单原因, 联系电话,COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
                                 FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',删除原因) 删单原因
                                         FROM `worksheet` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '恶意%'
+                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '恶意%'
                                 ) w
                                 GROUP BY 币种,删单原因, 联系电话
                                 WITH ROLLUP
@@ -2051,7 +2052,7 @@ class QueryOrder(Settings, Settings_sso):
                         FROM (  SELECT 币种,删单原因, ip,COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
                                 FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',删除原因) 删单原因
                                         FROM `worksheet` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '恶意%'
+                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '恶意%'
                                 ) w
                                 GROUP BY 币种,删单原因, ip
                                 WITH ROLLUP
@@ -2110,7 +2111,7 @@ class QueryOrder(Settings, Settings_sso):
         sql = '''SELECT IFNULL(币种,'币种') 币种,IFNULL(删单原因,'总计') 重复删除,COUNT(订单编号) AS 订单量
                     FROM (SELECT *,IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '恶意%','恶意订单',删除原因)) 删单原因
                             FROM `worksheet` c
-                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '重复订单%'
+                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '重复订单%'
                     ) w
                 GROUP BY 币种,删单原因;'''
         df4 = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -2131,7 +2132,7 @@ class QueryOrder(Settings, Settings_sso):
                                     FROM (SELECT IFNULL(币种,'币种') 币种,IFNULL(删单原因,'总计') 系统删除,COUNT(订单编号) AS 订单量
                                             FROM (SELECT *,IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '恶意%','恶意订单',删除原因)) 删单原因
                                                     FROM `worksheet` c
-                                                    WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除人 IS NULL
+                                                    WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除人 IS NULL
                                             ) w
                                             GROUP BY 币种,删单原因
                                             WITH ROLLUP
@@ -2144,7 +2145,7 @@ class QueryOrder(Settings, Settings_sso):
                                  ( SELECT 币种,联系电话 AS 系统删除,COUNT(订单编号) AS 订单量
                                     FROM (SELECT *,IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '恶意%','恶意订单',删除原因)) 删单原因
                                             FROM `worksheet` c
-                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除人 IS NULL
+                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除人 IS NULL
                                     ) w
                                     GROUP BY 币种,联系电话
                                     ORDER BY 订单量 DESC
@@ -2154,7 +2155,7 @@ class QueryOrder(Settings, Settings_sso):
                                 (SELECT 币种,ip AS 系统删除,COUNT(订单编号) AS 订单量
                                     FROM (SELECT *,IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '恶意%','恶意订单',删除原因)) 删单原因
                                             FROM `worksheet` c
-                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除人 IS NULL
+                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除人 IS NULL
                                     ) w
                                     GROUP BY 币种,ip
                                     ORDER BY 订单量 DESC
@@ -2285,7 +2286,7 @@ class QueryOrder(Settings, Settings_sso):
         print('+++正在分析 昨日 删单原因中')
         listT = []  # 查询sql的结果 存放池
         print('正在获取 删单明细…………')
-        # sql ='''SELECT * FROM `cache` c  WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾');'''
+        # sql ='''SELECT * FROM `cache` c  WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾');'''
         # df0 = pd.read_sql_query(sql=sql, con=self.engine1)
         # listT.append(df0)
 
@@ -2308,10 +2309,10 @@ class QueryOrder(Settings, Settings_sso):
                             GROUP BY 币种,运营团队
                       ) s2 ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
                 ) s
-                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾')
+                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾')
                 GROUP BY 币种,运营团队,删单原因
                 ORDER BY FIELD(币种,'台币','港币','合计'),
-                         FIELD(运营团队,'神龙家族-港澳台','火凤凰-台湾','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
+                         FIELD(运营团队,'神龙家族-台湾','火凤凰-台湾','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
                          订单量 DESC;'''
         sql ='''SELECT 币种,运营团队,删单原因2 AS '删单原因(单)',订单量2 AS '删单量(单)',删单率
 FROM (
@@ -2339,11 +2340,11 @@ SELECT 币种,运营团队,
                             GROUP BY 币种,运营团队
                       ) s2 ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
                 ) s
-                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾')
+                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾')
                 GROUP BY 币种,运营团队,删单原因
 --                 WITH rollup
                 ORDER BY FIELD(币种,'台币','港币','合计'),
-                         FIELD(运营团队,'神龙家族-港澳台','火凤凰-台湾','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
+                         FIELD(运营团队,'神龙家族-台湾','火凤凰-台湾','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
                          订单量 DESC
 ) ss;'''
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -2355,7 +2356,7 @@ SELECT 币种,运营团队,
         for row in df1.itertuples():
             tem = getattr(row, '运营团队')
             delreson = getattr(row, '删单原因')
-            if tem == '神龙家族-港澳台' and delreson == None:
+            if tem == '神龙家族-台湾' and delreson == None:
                 tem_count = getattr(row, '总订单量')
                 tem_count2 = getattr(row, '总删单量')
                 tem_count3 = getattr(row, '删单率')
@@ -2389,7 +2390,7 @@ SELECT 币种,运营团队,
 							SUM(IF(拉黑率 < 80 ,1,0)) AS 拉黑率80以下
                     FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
                                             FROM `cache` c
-                                            WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾')
+                                            WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾')
                                 ) w
                     GROUP BY 币种,删单原因
               )  s1
@@ -2404,7 +2405,7 @@ SELECT 币种,运营团队,
         sql ='''SELECT 币种,删单原因,联系电话,COUNT(订单编号) AS 订单量
                 FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
                       FROM `cache` c
-                      WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '%恶意%'
+                      WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '%恶意%'
                     ) w
                 GROUP BY 币种,`联系电话`
 				ORDER BY 订单量 desc;'''
@@ -2414,7 +2415,7 @@ SELECT 币种,运营团队,
         sql = '''SELECT 币种,删单原因,IP,COUNT(订单编号) AS 订单量
                         FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
                               FROM `cache` c
-                              WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '%恶意%'
+                              WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '%恶意%'
                             ) w
                         GROUP BY 币种,`IP`
         				ORDER BY 订单量 desc;'''
@@ -2425,7 +2426,7 @@ SELECT 币种,运营团队,
         sql = '''SELECT 币种,删单原因,联系电话,COUNT(订单编号) AS 订单量
                         FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
                               FROM `cache` c
-                              WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '%拉黑率%'
+                              WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '%拉黑率%'
                             ) w
                         GROUP BY 币种,`联系电话`
         				ORDER BY 订单量 desc;'''
@@ -2435,7 +2436,7 @@ SELECT 币种,运营团队,
         sql = '''SELECT 币种,删单原因,IP,COUNT(订单编号) AS 订单量
                                 FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
                                       FROM `cache` c
-                                      WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '%拉黑率%'
+                                      WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '%拉黑率%'
                                     ) w
                                 GROUP BY 币种,`IP`
                 				ORDER BY 订单量 desc;'''
@@ -2446,7 +2447,7 @@ SELECT 币种,运营团队,
         sql = '''SELECT 币种,删单原因,COUNT(订单编号) AS 订单量
                 FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
                      FROM `cache` c
-                     WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND `删除人` IS NULL
+                     WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND `删除人` IS NULL
                 ) w
                 GROUP BY 币种,`删单原因`
 				ORDER BY 订单量 desc;'''
@@ -2456,7 +2457,7 @@ SELECT 币种,运营团队,
         sql = '''SELECT 币种,删单原因,IP,COUNT(订单编号) AS 订单量
                 FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
                      FROM `cache` c
-                     WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND `删除人` IS NULL
+                     WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND `删除人` IS NULL
                 ) w
                 GROUP BY 币种,`IP`
                 ORDER BY 订单量 desc;'''
@@ -2466,7 +2467,7 @@ SELECT 币种,运营团队,
         sql = '''SELECT 币种,删单原因,联系电话,COUNT(订单编号) AS 订单量
                 FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
                      FROM `cache` c
-                     WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND `删除人` IS NULL
+                     WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND `删除人` IS NULL
                 ) w
                 GROUP BY 币种,`联系电话`
                 ORDER BY 订单量 desc;'''
@@ -2477,7 +2478,7 @@ SELECT 币种,运营团队,
         sql = '''SELECT 币种,删单原因,联系电话,COUNT(订单编号) AS 订单量
                         FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
                               FROM `cache` c
-                              WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '%恶意%'
+                              WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '%恶意%'
                             ) w
                         GROUP BY 币种,`联系电话`
         				ORDER BY 订单量 desc;'''
@@ -2487,7 +2488,7 @@ SELECT 币种,运营团队,
         sql = '''SELECT 币种,删单原因,IP,COUNT(订单编号) AS 订单量
                                 FROM (SELECT *,IF(删除原因 LIKE '%恶意%',';恶意订单',IF(删除原因 LIKE '%拉黑率%',';拉黑率订单',删除原因)) 删单原因
                                       FROM `cache` c
-                                      WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-港澳台','火凤凰-台湾') AND 删除原因 LIKE '%恶意%'
+                                      WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','火凤凰-台湾') AND 删除原因 LIKE '%恶意%'
                                     ) w
                                 GROUP BY 币种,`IP`
                 				ORDER BY 订单量 desc;'''
