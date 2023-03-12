@@ -1185,25 +1185,8 @@ class QueryUpdate(Settings):
             currency = '"货到付款","货到付款（含税）"'
         elif currency_id == '在线付款':
             currency = '"Pacypay信用卡支付【波兰】","钱海支付","gleepay","AsiaBill信用卡支付","Asiabill信用卡直接支付","Asiabill信用卡2.5方支付","Asiabill2.5方支付","paypal快捷支付","Cropay信用卡支付","空中云汇直连信用卡"'
-        logistics_name = '''
-                            "台湾-森鸿-新竹-自发头程", "台湾-森鸿-新竹","台湾-大黄蜂普货头程-森鸿尾程","台湾-立邦普货头程-森鸿尾程", "台湾-易速配头程-铱熙无敌尾",
-                            "台湾-立邦普货头程-易速配尾程","台湾-大黄蜂普货头程-易速配尾程",  
-                            "台湾-易速配-新竹", "台湾-易速配-TW海快", "台湾-易速配-海快头程【易速配尾程】",
-                            "台湾-铱熙无敌-711超商","台湾-铱熙无敌-新竹", "台湾-铱熙无敌-黑猫", 
-                            "台湾-速派-711超商", "台湾-速派-新竹", "台湾-速派-黑猫", "台湾-速派宅配通",
-                            "台湾-天马-新竹","台湾-天马-顺丰","台湾-天马-黑猫",
-                            "香港-圆通", "香港-立邦-顺丰","香港-森鸿物流", "香港-森鸿-SH渠道","香港-森鸿-顺丰渠道","香港-易速配-顺丰",
-                            "森鸿","龟山",
-                            "速派新竹", "速派黑猫", "速派宅配通",
-                            "台湾-铱熙无敌-新竹改派", "台湾-铱熙无敌-黑猫改派",
-                            "天马顺丰","天马黑猫","天马新竹",
-                            "香港-圆通-改派","香港-立邦-改派","香港-森鸿-改派","香港-易速配-改派","合计"
-                        '''
-        team_name2 = '''
-                        "神龙港台","火凤凰港台","金蝉项目组","金蝉家族优化组","金蝉家族公共团队","客服中心港台","奥创队","神龙主页运营","APP运营","Line运营","红杉港台","郑州北美""研发部港台","金鹏港台","金狮港台","翼虎港台","合计"
-                    '''
-        print('正在修改-港澳台-物流渠道…………')
-        self.update_logistics_name()
+        # print('正在修改-港澳台-物流渠道…………')
+        # self.update_logistics_name()
 
         filePath = []
         listT = []  # 查询sql的结果 存放池
@@ -1258,12 +1241,12 @@ class QueryUpdate(Settings):
                 ) s2
                 GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`是否改派`, s2.`物流方式` 
                 HAVING s2.年月 <> '合计'
-                ORDER BY FIELD(s2.`家族`, {5}),
+                ORDER BY FIELD(s2.`家族`, {5},'合计'),
                         FIELD(s2.`币种`,'台湾','香港','合计'),
                         s2.`年月`,
                         FIELD(s2.`是否改派`,'改派','直发','合计'),
-                        FIELD(s2.`物流方式`, {6}),
-                        s2.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2, logistics_name)
+                        FIELD(s2.`物流方式`, {6},'合计'),
+                        s2.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2, self.logistics_name)
         df0 = pd.read_sql_query(sql=sql0, con=self.engine1)
         listT.append(df0)
         # 物流分旬
@@ -1328,13 +1311,13 @@ class QueryUpdate(Settings):
                 ) s2
                 GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`是否改派`, s2.`物流方式` , s2.`旬` 
                 HAVING s2.是否改派 <> '合计'
-                ORDER BY FIELD(s2.`家族`, {5}),
+                ORDER BY FIELD(s2.`家族`, {5},'合计'),
                         FIELD(s2.`币种`,'台湾','香港','合计'),
                         s2.`年月`,
                         FIELD(s2.`是否改派`,'改派','直发','合计'),
-                        FIELD(s2.`物流方式`, {6}),
+                        FIELD(s2.`物流方式`, {6},'合计'),
                         FIELD(s2.`旬`,'上旬','中旬','下旬','合计'),
-                        s2.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2, logistics_name)
+                        s2.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2, self.logistics_name)
         df11 = pd.read_sql_query(sql=sql11, con=self.engine1)
         listT.append(df11)
 
@@ -1401,12 +1384,12 @@ class QueryUpdate(Settings):
                         ) s2
                         GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`父级分类` , s2.`旬` 
                         HAVING s2.年月 <> '合计'
-                        ORDER BY FIELD(s2.`家族`, {5}),
+                        ORDER BY FIELD(s2.`家族`, {5},'合计'),
                                 FIELD(s2.`币种`,'台湾','香港','合计'),
                                 s2.`年月`,
                                 FIELD(s2.父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','包材类', '合计' ),
                                 FIELD(s2.`旬`,'上旬','中旬','下旬','合计'),
-                                s2.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2)
+                                s2.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2)
 
         df12 = pd.read_sql_query(sql=sql12, con=self.engine1)
         listT.append(df12)
@@ -1472,7 +1455,7 @@ class QueryUpdate(Settings):
                 ) s2
                 GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`父级分类` ,  s2.`二级分类` ,  s2.`旬` 
                 HAVING s2.年月 <> '合计'
-                ORDER BY FIELD(s2.`家族`, {5}),
+                ORDER BY FIELD(s2.`家族`, {5},'合计'),
                         FIELD(s2.`币种`,'台湾','香港','合计'),
                         s2.`年月`,
                         FIELD(s2.父级分类, "居家百货", "电子电器", "服饰", "医药保健", "鞋类", "美容个护", "包类","钟表珠宝","母婴玩具","包材类","合计"),
@@ -1481,7 +1464,7 @@ class QueryUpdate(Settings):
                                            "手表手环","影音娱乐","电脑外设","手机外设","家用电器","个护电器","智能设备","彩妆","护肤","个人洗护",
                                            "保健食品","护理护具","保健器械","药品","成人保健","手表","钟表","饰品","玩具","母婴用品","仓库包材","仓库耗材","合计"),
                         FIELD(s2.`旬`,"上旬","中旬","下旬","合计"),
-                        s2.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2)
+                        s2.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2)
 
         df13 = pd.read_sql_query(sql=sql13, con=self.engine1)
         listT.append(df13)
@@ -1881,11 +1864,11 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                         WITH ROLLUP 
                 ) s HAVING s.月份 != '合计'
-        ORDER BY FIELD(s.`家族`, {5}),
+        ORDER BY FIELD(s.`家族`, {5},'合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`产品id`,'合计'),
-                s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2)
+                s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2)
         df14 = pd.read_sql_query(sql=sql14, con=self.engine1)
         listT.append(df14)
         # 产品分旬 台湾
@@ -2296,12 +2279,12 @@ class QueryUpdate(Settings):
                 GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                 WITH ROLLUP 
             ) s HAVING s.旬 != '合计'
-        ORDER BY FIELD(s.`家族`, {5}),
+        ORDER BY FIELD(s.`家族`, {5},'合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
                 FIELD(s.`产品id`,'合计'),
-                s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2)
+                s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2)
         df15 = pd.read_sql_query(sql=sql15, con=self.engine1)
         listT.append(df15)
 
@@ -2466,11 +2449,11 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                         WITH ROLLUP 
                     ) s HAVING s.月份 != '合计'
-        ORDER BY FIELD(s.`家族`, {5}),
+        ORDER BY FIELD(s.`家族`, {5},'合计'),
                 FIELD(s.`地区`,'台湾','香港','合计'),
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`产品id`,'合计'),
-                s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2)
+                s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2)
         df16 = pd.read_sql_query(sql=sql16, con=self.engine1)
         listT.append(df16)
         # 产品分旬 香港
@@ -2640,7 +2623,7 @@ class QueryUpdate(Settings):
                 FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                 FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
                 FIELD(s.`产品id`,'合计'),
-                s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2)
+                s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2)
         df17 = pd.read_sql_query(sql=sql17, con=self.engine1)
         listT.append(df17)
 
@@ -3100,11 +3083,11 @@ class QueryUpdate(Settings):
                                 GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                 WITH ROLLUP 
                         ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`, {5}),
+                ORDER BY FIELD(s.`家族`, {5},'合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2)
+                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2)
         df18 = pd.read_sql_query(sql=sql18, con=self.engine1)
         listT.append(df18)
         # 产品分旬_直发 台湾
@@ -3569,12 +3552,12 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                         WITH ROLLUP 
                     ) s HAVING s.旬 != '合计'
-                ORDER BY FIELD(s.`家族`,{5}),
+                ORDER BY FIELD(s.`家族`,{5},'合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
                         FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2)
+                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2)
         df19 = pd.read_sql_query(sql=sql19, con=self.engine1)
         listT.append(df19)
 
@@ -4034,11 +4017,11 @@ class QueryUpdate(Settings):
                                 GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                 WITH ROLLUP 
                         ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`,{5}),
+                ORDER BY FIELD(s.`家族`,{5},'合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2)
+                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2)
         df20 = pd.read_sql_query(sql=sql20, con=self.engine1)
         listT.append(df20)
         # 产品分旬_改派 台湾
@@ -4494,12 +4477,12 @@ class QueryUpdate(Settings):
                         GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                         WITH ROLLUP 
                     ) s HAVING s.旬 != '合计'
-                ORDER BY FIELD(s.`家族`,{5}),
+                ORDER BY FIELD(s.`家族`,{5},'合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
                         FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2)
+                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2)
         df21 = pd.read_sql_query(sql=sql21, con=self.engine1)
         listT.append(df21)
 
@@ -4664,11 +4647,11 @@ class QueryUpdate(Settings):
                                 GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                 WITH ROLLUP 
                             ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`,{5}),
+                ORDER BY FIELD(s.`家族`,{5},'合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2)
+                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2)
         df31 = pd.read_sql_query(sql=sql31, con=self.engine1)
         listT.append(df31)
         # 产品分旬-直发 香港
@@ -4833,12 +4816,12 @@ class QueryUpdate(Settings):
                             GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                             WITH ROLLUP 
                     ) s HAVING s.旬 <> '合计'
-                ORDER BY FIELD(s.`家族`,{5}),
+                ORDER BY FIELD(s.`家族`,{5},'合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
                         FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2)
+                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2)
         df32 = pd.read_sql_query(sql=sql32, con=self.engine1)
         listT.append(df32)
 
@@ -4998,11 +4981,11 @@ class QueryUpdate(Settings):
                                 GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                                 WITH ROLLUP 
                             ) s HAVING s.月份 != '合计'
-                ORDER BY FIELD(s.`家族`, {5}),
+                ORDER BY FIELD(s.`家族`, {5},'合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2)
+                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2)
         df41 = pd.read_sql_query(sql=sql41, con=self.engine1)
         listT.append(df41)
         # 产品分旬-改派 香港
@@ -5167,12 +5150,12 @@ class QueryUpdate(Settings):
                             GROUP BY s1.家族,s1.地区,s1.月份,s1.旬,s1.产品id
                             WITH ROLLUP 
                     ) s HAVING s.旬 <> '合计'
-                ORDER BY FIELD(s.`家族`,{5}),
+                ORDER BY FIELD(s.`家族`,{5},'合计'),
                         FIELD(s.`地区`,'台湾','香港','合计'),
                         FIELD(s.`月份`, DATE_FORMAT(curdate(),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 4 MONTH),'%Y%m'),'合计'),
                         FIELD(s.`旬`,'上旬','中旬','下旬','合计'),
                         FIELD(s.`产品id`,'合计'),
-                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', team_name2)
+                        s.总订单 DESC;'''.format(team, month_last, month_yesterday, currency, 'team_name', self.team_name2)
         df42 = pd.read_sql_query(sql=sql42, con=self.engine1)
         listT.append(df42)
 
@@ -5328,23 +5311,6 @@ class QueryUpdate(Settings):
         not_team = '"红杉家族-港澳台","红杉家族-港澳台2",  "APP运营", "金狮-港澳台", "金鹏家族-小虎队", "金鹏家族-4组","Line运营","神龙-主页运营","奥创队","神龙-香港","客服中心-港台","研发部-研发团队","翼虎家族-mercadolibre"'
         not_team = '"客服中心港台","奥创队","神龙主页运营","APP运营","Line运营","红杉港台","郑州北美""研发部港台","金鹏港台","金狮港台","翼虎港台"'
         del_time = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y%m')
-        logistics_name = '''
-                            "台湾-森鸿-新竹-自发头程", "台湾-森鸿-新竹","台湾-大黄蜂普货头程-森鸿尾程","台湾-立邦普货头程-森鸿尾程",
-                            "台湾-立邦普货头程-易速配尾程","台湾-大黄蜂普货头程-易速配尾程",  
-                            "台湾-易速配-新竹", "台湾-易速配-TW海快", "台湾-易速配-海快头程【易速配尾程】",
-                            "台湾-铱熙无敌-711超商","台湾-铱熙无敌-新竹", "台湾-铱熙无敌-黑猫", 
-                            "台湾-速派-711超商", "台湾-速派-新竹", "台湾-速派-黑猫", "台湾-速派宅配通",
-                            "台湾-天马-新竹","台湾-天马-顺丰","台湾-天马-黑猫",
-                            "香港-圆通", "香港-立邦-顺丰","香港-森鸿物流", "香港-森鸿-SH渠道","香港-森鸿-顺丰渠道","香港-易速配-顺丰",
-                            "森鸿","龟山",
-                            "速派新竹", "速派黑猫", "速派宅配通",
-                            "台湾-铱熙无敌-新竹改派", "台湾-铱熙无敌-黑猫改派",
-                            "天马顺丰","天马黑猫","天马新竹",
-                            "香港-圆通-改派","香港-立邦-改派","香港-森鸿-改派","香港-易速配-改派","总计"
-                        '''
-        team_name2 = '''
-                        "神龙港台","火凤凰港台","金蝉项目组","金蝉家族优化组","金蝉家族公共团队","客服中心港台","奥创队","神龙主页运营","APP运营","Line运营","红杉港台","郑州北美""研发部港台","金鹏港台","金狮港台","翼虎港台","总计"
-                    '''
 
         sql = '''DELETE FROM gat_zqsb gt
                 WHERE gt.年月 >= {0}
@@ -5455,8 +5421,8 @@ class QueryUpdate(Settings):
                 ) ss					
                 ORDER BY 月份 DESC,
                         FIELD( 地区, '台湾', '香港', '总计' ),
-                        FIELD( 家族, {4}),
-                        直发总订单 DESC;'''.format(month_last, team, not_team, 'team_name', team_name2)
+                        FIELD( 家族, {4}, '总计'),
+                        直发总订单 DESC;'''.format(month_last, team, not_team, 'team_name', self.team_name2)
         df0 = pd.read_sql_query(sql=sql0, con=self.engine1)
         listT.append(df0)
 
@@ -5531,8 +5497,8 @@ class QueryUpdate(Settings):
                 ) ss			
                 ORDER BY 月份 DESC,
                     FIELD( 地区, '台湾', '香港', '总计' ),
-                    FIELD( 家族, {2}),
-                    总单量 DESC;'''.format(team, not_team, team_name2, gat_time)
+                    FIELD( 家族, {2}, '总计'),
+                    总单量 DESC;'''.format(team, not_team, self.team_name2, gat_time)
         df10 = pd.read_sql_query(sql=sql10, con=self.engine1)
         listT.append(df10)
         # 2、各月各团队---分旬
@@ -5577,7 +5543,7 @@ class QueryUpdate(Settings):
                 ORDER BY 月份 DESC,旬,
                         FIELD( 地区, '台湾', '香港', '总计' ),
                         FIELD( 家族, {2}),
-                        总单量 DESC;'''.format(team, not_team, team_name2, gat_time)
+                        总单量 DESC;'''.format(team, not_team, self.team_name2, gat_time)
         df11 = pd.read_sql_query(sql=sql11, con=self.engine1)
         listT.append(df11)
 
@@ -5634,9 +5600,9 @@ class QueryUpdate(Settings):
             ) ss
 			ORDER BY 月份 DESC,
                     FIELD( 地区, '台湾', '香港', '总计' ),
-                    FIELD( 家族, {3}),
+                    FIELD( 家族, {3}, '总计'),
                     FIELD( 父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','包材类','总计' ),
-                    总单量 DESC;'''.format(month_last, team, not_team, team_name2, gat_time)
+                    总单量 DESC;'''.format(month_last, team, not_team, self.team_name2, gat_time)
         df20 = pd.read_sql_query(sql=sql20, con=self.engine1)
         listT.append(df20)
         # 4、各团队-各物流
@@ -5683,9 +5649,9 @@ class QueryUpdate(Settings):
 			                    DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 6 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 7 MONTH),'%Y%m'), '总计' ),
                             FIELD(地区, '台湾', '香港', '总计' ),
                             FIELD(是否改派, '直发', '改派', '总计' ),
-                            FIELD(家族, {4}),
-                            FIELD(物流方式, {3}),
-                            总单量 DESC;'''.format(month_last, team, not_team, logistics_name, team_name2, gat_time)
+                            FIELD(家族, {4}, '总计'),
+                            FIELD(物流方式, {3}, '总计'),
+                            总单量 DESC;'''.format(month_last, team, not_team, self.logistics_name, self.team_name2, gat_time)
         df21 = pd.read_sql_query(sql=sql21, con=self.engine1)
         listT.append(df21)
 
@@ -5730,13 +5696,13 @@ class QueryUpdate(Settings):
             ) ss
             ORDER BY 月份 DESC,
                     FIELD(地区, '台湾', '香港', '总计' ),
-                    FIELD(家族, {3}),
+                    FIELD(家族, {3}, '总计'),
                     FIELD(平台, "interpark","kol","tiktokpage","mercado","Qoo10","ozon","w_service","s_service","e_service","allegro","hepsi","clone","tikshop","gmarket",
                                 "11st","shopline","aws","pre_sale_clone","coupang","detain_goods","aliexpress","bigo","refuse_clone","line_natural","youtube_natural",
                                 "facebook_natural","instagram_natural","tiktok_natural","postsaleclone","outplay","outbrain","email","shangwutong","lazada","headline",
                                 "shopee","recommend","propellerads","snapchat","tenmax","shopify","Dragon","taboola","naver","mf","速卖通发货","tiktok","topbuzz","Criteo",
                                 "vivishop","sms","edm","facebookpage","line","recomm","native","twitter","yahoo","bing","facebook","google","总计"),
-                    总单量 DESC;'''.format(month_last, team, not_team, team_name2, gat_time)
+                    总单量 DESC;'''.format(month_last, team, not_team, self.team_name2, gat_time)
         df30 = pd.read_sql_query(sql=sql30, con=self.engine1)
         listT.append(df30)
         # 6、各平台-各团队
@@ -5785,8 +5751,8 @@ class QueryUpdate(Settings):
                                 "facebook_natural","instagram_natural","tiktok_natural","postsaleclone","outplay","outbrain","email","shangwutong","lazada","headline",
                                 "shopee","recommend","propellerads","snapchat","tenmax","shopify","Dragon","taboola","naver","mf","速卖通发货","tiktok","topbuzz","Criteo",
                                 "vivishop","sms","edm","facebookpage","line","recomm","native","twitter","yahoo","bing","facebook","google","总计"),
-                    FIELD(家族, {3}),
-                    总单量 DESC;'''.format(month_last, team, not_team, team_name2)
+                    FIELD(家族, {3}, '总计'),
+                    总单量 DESC;'''.format(month_last, team, not_team, self.team_name2)
         df31 = pd.read_sql_query(sql=sql31, con=self.engine1)
         listT.append(df31)
 
@@ -5832,8 +5798,8 @@ class QueryUpdate(Settings):
                 ORDER BY 月份 DESC,
                         FIELD(地区, '台湾', '香港', '总计' ),
                         FIELD(父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','包材类','总计' ),
-                        FIELD(家族, {3}),
-                        总单量 DESC;'''.format(month_last, team,not_team, team_name2)
+                        FIELD(家族, {3}, '总计'),
+                        总单量 DESC;'''.format(month_last, team,not_team, self.team_name2)
         df40 = pd.read_sql_query(sql=sql40, con=self.engine1)
         listT.append(df40)
         # 8、各物流-各团队
@@ -5880,9 +5846,9 @@ class QueryUpdate(Settings):
 			                    DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 6 MONTH),'%Y%m'), DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 7 MONTH),'%Y%m'), '总计' ),
                     FIELD(地区, '台湾', '香港', '总计' ),
                     FIELD(是否改派, '直发', '改派', '总计' ),
-                    FIELD(物流方式, {3}),
-                    FIELD(家族, {4}),
-                    总单量 DESC;'''.format(month_last, team, not_team, logistics_name, team_name2)
+                    FIELD(物流方式, {3}, '总计'),
+                    FIELD(家族, {4}, '总计'),
+                    总单量 DESC;'''.format(month_last, team, not_team, self.logistics_name, self.team_name2)
         df41 = pd.read_sql_query(sql=sql41, con=self.engine1)
         listT.append(df41)
 
@@ -6207,9 +6173,9 @@ class QueryUpdate(Settings):
 					GROUP BY s.家族,s.地区,s.产品id
 					WITH ROLLUP
 				) ss
-                ORDER BY FIELD(ss.`家族`,{14}),
+                ORDER BY FIELD(ss.`家族`,{14}, '总计'),
                         FIELD(ss.地区, '台湾', '香港', '总计' ),
-                        ss.总单量 DESC;'''.format(not_team, t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13, team_name2)
+                        ss.总单量 DESC;'''.format(not_team, t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13, self.team_name2)
         # sql51 = '''SELECT *
         #         FROM (SELECT IFNULL(家族, '总计') 家族, IFNULL(地区, '总计') 地区, IFNULL(产品id, '总计') 产品id,  IFNULL(产品名称, '总计') 产品名称, IFNULL(父级分类, '总计') 父级分类,
 		# 				    SUM(总单量) 总单量,
@@ -6528,13 +6494,13 @@ class QueryUpdate(Settings):
                 ) s
                 ORDER BY 月份 DESC,
                         FIELD( 地区, '台湾', '香港', '总计' ),
-                        FIELD( s.家族, {3}),
+                        FIELD( s.家族, {3}, '总计'),
                         FIELD(s.父级分类, "居家百货", "电子电器", "服饰", "医药保健", "鞋类", "美容个护", "包类","钟表珠宝","母婴玩具","包材类","合计"),
                         FIELD(s.二级分类, "上衣","下装","内衣","套装","裙子","配饰","母婴服饰","凉/拖鞋","皮鞋","休闲运动鞋","靴子",
                                            "单肩包","双肩包","钱包","行李箱包","厨房用品","日用百货","布艺家纺","宠物用品","户外运动","汽车用品","家装建材","办公/文化",
                                            "手表手环","影音娱乐","电脑外设","手机外设","家用电器","个护电器","智能设备","彩妆","护肤","个人洗护",
                                            "保健食品","护理护具","保健器械","药品","成人保健","手表","钟表","饰品","玩具","母婴用品","仓库包材","仓库耗材","合计"),
-                        s.总单量 DESC;'''.format(team, gat_time, not_team, team_name2)
+                        s.总单量 DESC;'''.format(team, gat_time, not_team, self.team_name2)
         # df20 = pd.read_sql_query(sql=sql20, con=self.engine1)
         # listT.append(df20)
 
@@ -6595,25 +6561,7 @@ class QueryUpdate(Settings):
     def address_repot(self, team, month_last, month_yesterday):    # 更新-地区签收率
         today = datetime.date.today().strftime('%Y.%m.%d')
         match = {'gat': '港台'}
-        logistics_name = '''
-                            "台湾-森鸿-新竹-自发头程", "台湾-森鸿-新竹","台湾-大黄蜂普货头程-森鸿尾程","台湾-立邦普货头程-森鸿尾程", "台湾-易速配头程-铱熙无敌尾",
-                            "台湾-立邦普货头程-易速配尾程","台湾-大黄蜂普货头程-易速配尾程",  
-                            "台湾-易速配-新竹", "台湾-易速配-TW海快", "台湾-易速配-海快头程【易速配尾程】",
-                            "台湾-铱熙无敌-711超商","台湾-铱熙无敌-新竹", "台湾-铱熙无敌-黑猫", 
-                            "台湾-速派-711超商", "台湾-速派-新竹", "台湾-速派-黑猫", "台湾-速派宅配通",
-                            "台湾-天马-新竹","台湾-天马-顺丰","台湾-天马-黑猫",
-                            "香港-圆通", "香港-立邦-顺丰","香港-森鸿物流", "香港-森鸿-SH渠道","香港-森鸿-顺丰渠道","香港-易速配-顺丰",
-                            "森鸿","龟山",
-                            "速派新竹", "速派黑猫", "速派宅配通",
-                            "台湾-铱熙无敌-新竹改派", "台湾-铱熙无敌-黑猫改派",
-                            "天马顺丰","天马黑猫","天马新竹",
-                            "香港-圆通-改派","香港-立邦-改派","香港-森鸿-改派","香港-易速配-改派","合计"
-                        '''
-        team_name2 = '''
-                        "神龙港台","火凤凰港台","金蝉项目组","金蝉家族优化组","金蝉家族公共团队","客服中心港台","奥创队","神龙主页运营","APP运营","Line运营","红杉港台","郑州北美""研发部港台","金鹏港台","金狮港台","翼虎港台","合计"
-                    '''
-        print(month_last)
-        print(month_yesterday)
+        print(month_last + '---' + month_yesterday)
         try:
             print('正在更新单表中......')
             sql = '''update {0}_order_list a, gat_update b
@@ -6707,13 +6655,13 @@ class QueryUpdate(Settings):
                     ) s2
                     GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`是否改派`, s2.`省洲`
                     HAVING s2.年月 <> '合计'
-        ORDER BY FIELD(s2.`家族`,{3}),
+        ORDER BY FIELD(s2.`家族`,{3}, '总计'),
                 FIELD(s2.`币种`,'台湾','香港','合计'),
                 s2.`年月`,
                 FIELD(s2.`是否改派`,'改派','直发','合计'),
                 FIELD(s2.`省洲`,'屏东县','高雄市','新竹市','宜兰县','新北市','花莲县','台东县','基隆市','台北市','新竹县',
                                 '桃园市','苗栗县','台中市','彰化县','南投县','嘉义市','嘉义县','云林县','台南市','合计'),
-                s2.总订单 DESC;'''.format(team, month_last, month_yesterday, team_name2)
+                s2.总订单 DESC;'''.format(team, month_last, month_yesterday, self.team_name2)
         df0 = pd.read_sql_query(sql=sql0, con=self.engine1)
         listT.append(df0)
 
@@ -7935,31 +7883,6 @@ class QueryUpdate(Settings):
     def phone_report(self, handle, month_last, month_yesterday):
         today = datetime.date.today().strftime('%Y.%m.%d')
         match = {'gat': '港台'}
-        team_name = '''IF(cc.团队 LIKE "神龙家族%","神龙",
-                        IF(cc.团队 LIKE "火凤凰%","火凤凰", 
-                        IF(cc.团队 LIKE "金狮%","金狮", 
-                        IF(cc.团队 LIKE "红杉%","红杉", 
-                        IF(cc.团队 LIKE "神龙-香港%","神龙香港",
-                        IF(cc.团队 LIKE "金鹏家族%","小虎队", 
-                        IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营", cc.团队))))))) as 家族
-                    '''
-        logistics_name = '''
-                            "台湾-森鸿-新竹-自发头程", "台湾-森鸿-新竹","台湾-大黄蜂普货头程-森鸿尾程","台湾-立邦普货头程-森鸿尾程", "台湾-易速配头程-铱熙无敌尾",
-                            "台湾-立邦普货头程-易速配尾程","台湾-大黄蜂普货头程-易速配尾程",  
-                            "台湾-易速配-新竹", "台湾-易速配-TW海快", "台湾-易速配-海快头程【易速配尾程】",
-                            "台湾-铱熙无敌-711超商","台湾-铱熙无敌-新竹", "台湾-铱熙无敌-黑猫", 
-                            "台湾-速派-711超商", "台湾-速派-新竹", "台湾-速派-黑猫", "台湾-速派宅配通",
-                            "台湾-天马-新竹","台湾-天马-顺丰","台湾-天马-黑猫",
-                            "香港-圆通", "香港-立邦-顺丰","香港-森鸿物流", "香港-森鸿-SH渠道","香港-森鸿-顺丰渠道","香港-易速配-顺丰",
-                            "森鸿","龟山",
-                            "速派新竹", "速派黑猫", "速派宅配通",
-                            "台湾-铱熙无敌-新竹改派", "台湾-铱熙无敌-黑猫改派",
-                            "天马顺丰","天马黑猫","天马新竹",
-                            "香港-圆通-改派","香港-立邦-改派","香港-森鸿-改派","香港-易速配-改派","合计"
-                        '''
-        team_name2 = '''
-                        "神龙港台","火凤凰港台","金蝉项目组","金蝉家族优化组","金蝉家族公共团队","客服中心港台","奥创队","神龙主页运营","APP运营","Line运营","红杉港台","郑州北美""研发部港台","金鹏港台","金狮港台","翼虎港台","合计"
-                    '''
         week: datetime = datetime.datetime.now()
         if week.isoweekday() == 1 or handle == '手动':
             week_time1 = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%m.%d')
@@ -8288,33 +8211,29 @@ class QueryUpdate(Settings):
                             concat(ROUND(IFNULL(SUM(s.总订单) / s.总单量,NULL) * 100,2),'%') as 订单占比
 					FROM ( SELECT ss1.*,ss2.物流方式, ss2.总订单, ss2.签收, ss2.拒收, ss2.已退货, ss2.已完成
 						    FROM ( SELECT s1.币种,s1.家族,s1.年月,s1.产品ID,s1.产品名称, SUM(s1.总订单) as 总单量
-                                    FROM ( SELECT cx.币种,cx.家族,cx.年月,cx.产品ID,cx.产品名称, count(订单编号) as 总订单, IF(count(订单编号) >=100 ,"头部产品",IF(count(订单编号) < 50 ,"尾部产品","中间产品")) 产品类型
-                                            FROM (SELECT *, 所属团队 as 家族
-                                                    FROM gat_zqsb cc 
-                                                    where cc.是否改派 = '直发' AND cc.物流方式 <> '台湾-速派-711超商' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
-                                            ) cx
-                                            GROUP BY cx.`币种`,cx.`家族`, cx.`产品ID`
+                                    FROM ( SELECT cx.币种, cx.所属团队 as 家族, cx.年月, cx.产品ID, cx.产品名称, count(订单编号) as 总订单, IF(count(订单编号) >=100 ,"头部产品",IF(count(订单编号) < 50 ,"尾部产品","中间产品")) 产品类型
+                                            FROM gat_zqsb cx
+                                            WHERE cx.是否改派 = '直发' AND cx.物流方式 <> '台湾-速派-711超商' AND cx.`运单编号` is not null AND cx.日期 >= '{1}' AND cx.日期 <= '{2}'
+                                            GROUP BY cx.`币种`,cx.`所属团队`, cx.`产品ID`
                                     ) s1
 									WHERE s1.`产品类型` IN ("头部产品","中间产品")
                                     GROUP BY s1.`家族`,s1.`币种`,  s1.`产品ID`
                             ) ss1
                             LEFT JOIN 
-                            ( SELECT cx.币种,cx.家族,cx.年月,cx.产品ID, cx.物流方式, 
+                            ( SELECT cx.币种,cx.所属团队 as 家族,cx.年月,cx.产品ID, cx.物流方式, 
                                     count(订单编号) as 总订单, 
                                     SUM(IF(最终状态 = "已签收",1,0)) as 签收,
                                     SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
                                     SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
                                     SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成
-                                FROM (SELECT *, 所属团队 as 家族
-                                      FROM gat_zqsb cc 
-                                      where cc.是否改派 = '直发' AND cc.物流方式 <> '台湾-速派-711超商' AND cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}'
-                                ) cx
-                                GROUP BY cx.`币种`,cx.`家族`,  cx.`产品ID`, cx.`物流方式`
+                                FROM gat_zqsb cx
+                                WHERE cx.是否改派 = '直发' AND cx.物流方式 <> '台湾-速派-711超商' AND cx.`运单编号` is not null AND cx.日期 >= '{1}' AND cx.日期 <= '{2}'
+                                GROUP BY cx.`币种`,cx.`所属团队`,  cx.`产品ID`, cx.`物流方式`
                             ) ss2 ON ss1.币种 = ss2.币种 AND ss1.家族 = ss2.家族 AND ss1.产品ID = ss2.产品ID
 				    ) s
 				    GROUP BY s.家族, s.币种, s.产品ID, s.物流方式
 				    WITH ROLLUP
-				    HAVING s.币种 <> '合计';'''.format(month, time_bengin, time_end, team_name, team_name2)  # 港台查询函数导出
+				    HAVING s.币种 <> '合计';'''.format(month, time_bengin, time_end, 'team_name', self.team_name2)  # 港台查询函数导出
             df5 = pd.read_sql_query(sql=sql, con=self.engine1)
             listT.append(df5)
 
@@ -8415,10 +8334,8 @@ class QueryUpdate(Settings):
                                 SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),`价格RMB`,0)) as 完成金额,
                                 SUM(`价格RMB`) as 总计金额,
                                 SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
-                            FROM (SELECT *,所属团队 as 家族
-                                FROM gat_zqsb cc where cc.`运单编号` is not null AND cc.日期 >= '{0}' AND cc.日期 <= '{1}'
-                            ) cx
-							where cx.支付类型 = '在线付款'
+                            FROM gat_zqsb cx
+							where cx.支付类型 = '在线付款' and cx.`运单编号` is not null AND cx.日期 >= '{0}' AND cx.日期 <= '{1}'
                             GROUP BY cx.`币种`,cx.`所属团队`, cx.`年月`, cx.`是否改派`, cx.`物流方式`
                             ORDER BY cx.`币种`,cx.`所属团队`, cx.`年月`, cx.`是否改派` DESC, 总订单 DESC
                     ) s1
@@ -8426,22 +8343,20 @@ class QueryUpdate(Settings):
                     with rollup
                 ) s2
                 LEFT JOIN 
-                (SELECT IFNULL(币种,'合计') as 币种, IFNULL(家族,'合计') as 家族, IFNULL(年月,'合计') as 年月, IFNULL(是否改派,'合计') as 是否改派, IFNULL(物流方式,'合计') as 物流方式, COUNT(订单编号) AS 总量
-                    FROM ( SELECT *, 所属团队 as 家族
-                            FROM gat_zqsb cc 
-                            where cc.`运单编号` is not null AND cc.日期 >= '{0}' AND cc.日期 <= '{1}'
-                    ) z
-                    GROUP BY 家族, 币种, 年月
+                (  SELECT IFNULL(币种,'合计') as 币种, IFNULL(所属团队,'合计') as 家族, IFNULL(年月,'合计') as 年月, IFNULL(是否改派,'合计') as 是否改派, IFNULL(物流方式,'合计') as 物流方式, COUNT(订单编号) AS 总量
+                    FROM gat_zqsb z
+                    where z.`运单编号` is not null AND z.日期 >= '{0}' AND z.日期 <= '{1}'
+                    GROUP BY 所属团队, 币种, 年月
                     with rollup
                 ) s3 ON  s2.家族 = s3.家族 AND s2.币种 = s3.币种 AND s2.年月 = s3.年月
                 GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`是否改派`,  s2.`物流方式`
                 HAVING s2.年月 <> '合计'
-                ORDER BY FIELD(s2.`家族`,{3}),
+                ORDER BY FIELD(s2.`家族`,{3},'合计'),
                         FIELD(s2.`币种`,'台湾','香港','合计'),
                         s2.`年月`,
                         FIELD(s2.`是否改派`,'改派','直发','合计'),
-                        FIELD(s2.`物流方式`, {4}),
-                        s2.总订单 DESC;'''.format(month_last, month_yesterday,team_name,team_name2,logistics_name)  # 港台查询函数导出
+                        FIELD(s2.`物流方式`, {4},'合计'),
+                        s2.总订单 DESC;'''.format(month_last, month_yesterday, 'team_name',self.team_name2, self.logistics_name)  # 港台查询函数导出
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             listT.append(df)
 
