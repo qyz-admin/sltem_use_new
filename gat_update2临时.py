@@ -130,6 +130,8 @@ class QueryUpdate(Settings):
                                 pay = '交易清单'
                                 db.rename(columns={'订单号': '订单编号', '退款金额': '交易退款金额'}, inplace=True)
                                 db = db[['交易编号','订单编号', '交易币种', '交易金额', '交易状态', '交易创建时间', '订单创建时间', '交易退款金额', '支付方式']]
+                                db.insert(0, 'id', None)
+                                db.sort_values(by=["订单编号","交易创建时间"], axis=0, ascending=True)
                                 print(db)
                                 self._online_paly(pay, db)
                         elif '线付退款记录' in filePath:

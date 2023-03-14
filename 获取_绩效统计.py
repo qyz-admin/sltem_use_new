@@ -1244,6 +1244,12 @@ class QueryOrder(Settings, Settings_sso):
                 WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
         df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
         listT.append(df2)
+        sql22 = '''SELECT *
+                FROM 促单_下单时间 s1
+                WHERE  s1.代下单客服 in ('','','') and s1.克隆人 = '' and s1.物流状态 in ('') and 
+                       s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
+        df22 = pd.read_sql_query(sql=sql22, con=self.engine1)
+        listT.append(df22)
 
         print('采购异常-绩效 获取中......')
         sql3 = '''SELECT *

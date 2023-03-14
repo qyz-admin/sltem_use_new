@@ -12,7 +12,7 @@ from dateutil.relativedelta import relativedelta
 start: datetime = datetime.datetime.now()
 team = 'gat'
 match1 = {'gat': '港台',
-          'slsc': '品牌'}
+          'slsc': '品牌'} 
 match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
          'slgat_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
          'slgat_hs': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',

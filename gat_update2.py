@@ -130,6 +130,8 @@ class QueryUpdate(Settings):
                                 pay = '交易清单'
                                 db.rename(columns={'订单号': '订单编号', '退款金额': '交易退款金额'}, inplace=True)
                                 db = db[['交易编号','订单编号', '交易币种', '交易金额', '交易状态', '交易创建时间', '订单创建时间', '交易退款金额', '支付方式']]
+                                db.insert(0, 'id', None)
+                                db.sort_values(by=["订单编号", "交易创建时间"], axis=0, ascending=True)
                                 print(db)
                                 self._online_paly(pay, db)
                         elif '线付退款记录' in filePath:
@@ -1062,28 +1064,30 @@ class QueryUpdate(Settings):
 							SUM(火凤凰单量) 火凤凰单量, 
                                 concat(ROUND(SUM(火凤凰签收) / SUM(火凤凰总量) * 100,2),'%') as 火凤凰总计签收,
                                 concat(ROUND(SUM(火凤凰完成) / SUM(火凤凰总量) * 100,2),'%') as 火凤凰完成占比,					
-							SUM(神龙香港单量) 神龙香港单量, 
-                                concat(ROUND(SUM(神龙香港签收) / SUM(神龙香港总量) * 100,2),'%') as 神龙香港总计签收,
-                                concat(ROUND(SUM(神龙香港完成) / SUM(神龙香港总量) * 100,2),'%') as 神龙香港完成占比					
+							SUM(金蝉项目组单量) 金蝉项目组单量, 
+                                concat(ROUND(SUM(金蝉项目组签收) / SUM(金蝉项目组总量) * 100,2),'%') as 金蝉项目组总计签收,
+                                concat(ROUND(SUM(金蝉项目组完成) / SUM(金蝉项目组总量) * 100,2),'%') as 金蝉项目组完成占比					
                         FROM(SELECT 年月 月份,币种 地区, 产品id, 产品名称,
-                                    SUM(IF(家族 = '神龙',1,0)) as 神龙单量,
-									SUM(IF(家族 = '神龙',价格,0)) as 神龙总量,
-                                    SUM(IF(家族 = '神龙' AND 最终状态 = "已签收",价格,0)) as 神龙签收,
-                                    SUM(IF(家族 = '神龙' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 神龙完成,
-                                    SUM(IF(家族 = '火凤凰',1,0)) as 火凤凰单量,
-									SUM(IF(家族 = '火凤凰',价格,0)) as 火凤凰总量,
-                                    SUM(IF(家族 = '火凤凰' AND 最终状态 = "已签收",价格,0)) as 火凤凰签收,
-                                    SUM(IF(家族 = '火凤凰' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 火凤凰完成,
-                                    SUM(IF(家族 = '神龙-香港',1,0)) as 神龙香港单量,
-									SUM(IF(家族 = '神龙-香港',价格,0)) as 神龙香港总量,
-                                    SUM(IF(家族 = '神龙-香港' AND 最终状态 = "已签收",价格,0)) as 神龙香港签收,
-                                    SUM(IF(家族 = '神龙-香港' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 神龙香港完成,
+                                    SUM(IF(家族 like '神龙%',1,0)) as 神龙单量,
+									SUM(IF(家族 like '神龙%',价格,0)) as 神龙总量,
+                                    SUM(IF(家族 like '神龙%' AND 最终状态 = "已签收",价格,0)) as 神龙签收,
+                                    SUM(IF(家族 like '神龙%' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 神龙完成,
+                                    SUM(IF(家族 like '火凤凰%',1,0)) as 火凤凰单量,
+									SUM(IF(家族 like '火凤凰%',价格,0)) as 火凤凰总量,
+                                    SUM(IF(家族 like '火凤凰%' AND 最终状态 = "已签收",价格,0)) as 火凤凰签收,
+                                    SUM(IF(家族 like '火凤凰%' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 火凤凰完成,
+                                    SUM(IF(家族 like '金蝉项目组%',1,0)) as 金蝉项目组单量,
+									SUM(IF(家族 like '金蝉项目组%',价格,0)) as 金蝉项目组总量,
+                                    SUM(IF(家族 like '金蝉项目组%' AND 最终状态 = "已签收",价格,0)) as 金蝉项目组签收,
+                                    SUM(IF(家族 like '金蝉项目组%' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 金蝉项目组完成,
                                     SUM(IF(家族 = '小虎队',1,0)) as 小虎队单量,
 									SUM(IF(家族 = '小虎队',价格,0)) as 小虎队总量,
                                     SUM(IF(家族 = '小虎队' AND 最终状态 = "已签收",价格,0)) as 小虎队签收,
                                     SUM(IF(家族 = '小虎队' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 小虎队完成
-                            FROM gat_zqsb_cache cc
-							WHERE cc.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m')
+                            FROM ( SELECT *, 所属团队 as 家族
+                                    FROM gat_zqsb ccc
+							        WHERE ccc.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m')
+                            ) cc
 							GROUP BY cc.年月,cc.币种,cc.产品id
 						) s
 					GROUP BY 月份,地区,产品id		
@@ -1119,27 +1123,30 @@ class QueryUpdate(Settings):
         							SUM(神龙单量) 神龙单量, 
                                         concat(ROUND(SUM(神龙签收) / SUM(神龙总量) * 100,2),'%') as 神龙总计签收,
                                         concat(ROUND(SUM(神龙完成) / SUM(神龙总量) * 100,2),'%') as 神龙完成占比,									
-        							SUM(神龙香港单量) 神龙运营单量, 
-                                        concat(ROUND(SUM(神龙香港签收) / SUM(神龙香港总量) * 100,2),'%') as 神龙香港总计签收,
-                                        concat(ROUND(SUM(神龙香港完成) / SUM(神龙香港总量) * 100,2),'%') as 神龙香港完成占比					
+                                    SUM(金蝉项目组单量) 金蝉项目组单量, 
+                                        concat(ROUND(SUM(金蝉项目组签收) / SUM(金蝉项目组总量) * 100,2),'%') as 金蝉项目组总计签收,
+                                        concat(ROUND(SUM(金蝉项目组完成) / SUM(金蝉项目组总量) * 100,2),'%') as 金蝉项目组完成占比				
                                 FROM(SELECT 年月 月份,币种 地区, 产品id, 产品名称,
-                                            SUM(IF(家族 = '神龙',1,0)) as 神龙单量,
-        									SUM(IF(家族 = '神龙',价格,0)) as 神龙总量,
-                                            SUM(IF(家族 = '神龙' AND 最终状态 = "已签收",价格,0)) as 神龙签收,
-                                            SUM(IF(家族 = '神龙' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 神龙完成,
-                                            SUM(IF(家族 = '火凤凰',1,0)) as 火凤凰单量,
-        									SUM(IF(家族 = '火凤凰',价格,0)) as 火凤凰总量,
-                                            SUM(IF(家族 = '火凤凰' AND 最终状态 = "已签收",价格,0)) as 火凤凰签收,
-                                            SUM(IF(家族 = '火凤凰' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 火凤凰完成,
-                                            SUM(IF(家族 = '神龙-香港',1,0)) as 神龙香港单量,
-        									SUM(IF(家族 = '神龙-香港',价格,0)) as 神龙香港总量,
-                                            SUM(IF(家族 = '神龙-香港' AND 最终状态 = "已签收",价格,0)) as 神龙香港签收,
-                                            SUM(IF(家族 = '神龙-香港' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 神龙香港完成,
+                                            SUM(IF(家族 like '神龙%',1,0)) as 神龙单量,
+                                            SUM(IF(家族 like '神龙%',价格,0)) as 神龙总量,
+                                            SUM(IF(家族 like '神龙%' AND 最终状态 = "已签收",价格,0)) as 神龙签收,
+                                            SUM(IF(家族 like '神龙%' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 神龙完成,
+                                            SUM(IF(家族 like '火凤凰%',1,0)) as 火凤凰单量,
+                                            SUM(IF(家族 like '火凤凰%',价格,0)) as 火凤凰总量,
+                                            SUM(IF(家族 like '火凤凰%' AND 最终状态 = "已签收",价格,0)) as 火凤凰签收,
+                                            SUM(IF(家族 like '火凤凰%' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 火凤凰完成,
+                                            SUM(IF(家族 like '金蝉项目组%',1,0)) as 金蝉项目组单量,
+                                            SUM(IF(家族 like '金蝉项目组%',价格,0)) as 金蝉项目组总量,
+                                            SUM(IF(家族 like '金蝉项目组%' AND 最终状态 = "已签收",价格,0)) as 金蝉项目组签收,
+                                            SUM(IF(家族 like '金蝉项目组%' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 金蝉项目组完成,
                                             SUM(IF(家族 = '小虎队',1,0)) as 小虎队单量,
-        									SUM(IF(家族 = '小虎队',价格,0)) as 小虎队总量,
+                                            SUM(IF(家族 = '小虎队',价格,0)) as 小虎队总量,
                                             SUM(IF(家族 = '小虎队' AND 最终状态 = "已签收",价格,0)) as 小虎队签收,
                                             SUM(IF(家族 = '小虎队' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),价格,0)) as 小虎队完成
-                                    FROM gat_zqsb_cache cc
+                                    FROM ( SELECT *, 所属团队 as 家族
+                                            FROM gat_zqsb ccc
+							                WHERE ccc.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m')
+                                    ) cc
         							WHERE cc.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m')
         							GROUP BY cc.年月,cc.币种,cc.产品id
         						) s
@@ -8122,11 +8129,11 @@ class QueryUpdate(Settings):
     def phone_report(self, handle, month_last, month_yesterday):
         today = datetime.date.today().strftime('%Y.%m.%d')
         match = {'gat': '港台'}
-        team_name = '''IF(cc.团队 LIKE "神龙家族%","神龙",
+        team_name = '''IF(cc.团队 LIKE "神龙-台湾%","神龙",
                         IF(cc.团队 LIKE "火凤凰%","火凤凰", 
                         IF(cc.团队 LIKE "金狮%","金狮", 
                         IF(cc.团队 LIKE "红杉%","红杉", 
-                        IF(cc.团队 LIKE "神龙-香港%","神龙香港",
+                        IF(cc.团队 LIKE "神龙-香港%","神龙",
                         IF(cc.团队 LIKE "金鹏家族%","小虎队", 
                         IF(cc.团队 LIKE "神龙-主页运营%","神龙主页运营", cc.团队))))))) as 家族
                     '''
@@ -11360,8 +11367,8 @@ if __name__ == '__main__':
         m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
 
         currency_id = '全部付款'
-        m.gat_new(team, month_last, month_yesterday, currency_id)   # 获取-货到付款& 在线付款 签收率-报表
-        m.qsb_new(team, month_old)                                  # 获取-每日-报表
+        # m.gat_new(team, month_last, month_yesterday, currency_id)   # 获取-货到付款& 在线付款 签收率-报表
+        # m.qsb_new(team, month_old)                                  # 获取-每日-报表
         m.EportOrderBook(team, month_last, month_yesterday)         # 导出-总的-签收
         m.phone_report('handle', month_last, month_yesterday)       # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）
 

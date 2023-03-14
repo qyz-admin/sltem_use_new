@@ -77,7 +77,7 @@ class QueryTwo(Settings, Settings_sso):
                                                                                     self.mysql2['port'],
                                                                                     self.mysql2['datebase']))
     # 获取签收表内容
-    def readFormHost(self, isReal, proxy_handle, proxy_id):
+    def readFormHost(self, isReal, proxy_handle, proxy_id, cat):
         start = datetime.datetime.now()
         path = r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表'
         dirs = os.listdir(path=path)
@@ -86,10 +86,10 @@ class QueryTwo(Settings, Settings_sso):
             filePath = os.path.join(path, dir)
             if dir[:2] != '~$':
                 print(filePath)
-                self.wbsheetHost(filePath, isReal, proxy_handle, proxy_id)
+                self.wbsheetHost(filePath, isReal, proxy_handle, proxy_id, cat)
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
-    def wbsheetHost(self, filePath, isReal, proxy_handle, proxy_id):
+    def wbsheetHost(self, filePath, isReal, proxy_handle, proxy_id, cat):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
         app.display_alerts = False
@@ -115,6 +115,8 @@ class QueryTwo(Settings, Settings_sso):
                             tem = '查件单号'
                         elif '运单号' in db.columns:
                             tem = '运单号'
+                        elif '物流单号' in db.columns:
+                            tem = '物流单号'
                         db = db[[tem]]
                         db.dropna(axis=0, how='any', inplace=True)                  # 空值（缺失值），将空值所在的行/列删除后
                     except Exception as e:
@@ -123,7 +125,7 @@ class QueryTwo(Settings, Settings_sso):
                         print(db)
                         print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
                         # 将获取到的运单号 查询轨迹
-                        self.Search_online(db, isReal, tem, proxy_handle, proxy_id)
+                        self.Search_online(db, isReal, tem, proxy_handle, proxy_id, cat)
                     else:
                         print('----------数据为空,查询失败：' + sht.name)
                 else:
@@ -132,7 +134,7 @@ class QueryTwo(Settings, Settings_sso):
         app.quit()
 
     #  查询运单轨迹-按订单查询（一）
-    def Search_online(self, db, isReal, tem, proxy_handle, proxy_id):
+    def Search_online(self, db, isReal, tem, proxy_handle, proxy_id, cat):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         orderId = list(db[tem])
         print(orderId)
@@ -148,11 +150,16 @@ class QueryTwo(Settings, Settings_sso):
                 #     print('字符串')
                 # else:
                 #     print(ord[:3])
-                if ord[:3] == '620' or ord[:3] == '901':
-                    print('黑猫查询中')
-                    data = self._SearchGoods_heimao(ord, proxy_handle, proxy_id)
-                else:
-                    print('单点查询中')
+                if cat == 0:
+                    if ord[:3] == '620' or ord[:3] == '901':
+                        print('单独 - 黑猫查询中')
+                        data = self._SearchGoods_heimao(ord, proxy_handle, proxy_id)
+                    else:
+                        print('单独 - 单点查询中')
+                        data = self._order_online(ord, isReal, proxy_handle, proxy_id)
+                        print(data)
+                elif cat == 1:
+                    print('全体 - 单点查询中')
                     data = self._order_online(ord, isReal, proxy_handle, proxy_id)
                     print(data)
                 if data is not None and len(data) > 0:
@@ -162,8 +169,8 @@ class QueryTwo(Settings, Settings_sso):
         else:
             dp = None
         print(dp)
-        dp = dp[['orderNumber', 'wayBillNumber', 'track_date', '出货时间', '上线时间', '保管时间', '完成时间', 'track_info', 'track_status', '负责营业所', '轨迹备注', '序号']]
-        dp.columns = ['订单编号', '运单号', '物流轨迹时间', '出货时间', '上线时间', '保管时间', '完成时间', '物流轨迹', '轨迹代码', '负责营业所', '轨迹备注', '序号']
+        dp = dp[['orderNumber', 'wayBillNumber', 'track_date', '出货时间', '上线时间', '保管时间', '完成时间', 'track_info', 'track_status', '负责营业所', '轨迹备注', '序号', '便利店']]
+        dp.columns = ['订单编号', '运单号', '物流轨迹时间', '出货时间', '上线时间', '保管时间', '完成时间', '物流轨迹', '轨迹代码', '负责营业所', '轨迹备注', '序号', '便利店']
         dp.to_excel('G:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         print('查询已导出+++')
         print('*' * 50)
@@ -294,6 +301,7 @@ class QueryTwo(Settings, Settings_sso):
                             res['保管时间'] = ''
                             res['orderNumber'] = result['order_number']
                             res['wayBillNumber'] = result['track_no']
+                            res['便利店'] = ''
                             if '.' in res['track_date']:
                                 res['track_date'] = res['track_date'].split('.')[0]
                             else:
@@ -325,6 +333,10 @@ class QueryTwo(Settings, Settings_sso):
                                 res['完成时间'] = res['track_date']
 
                             # print(res)track_info
+                            if '所送' in res['track_info']:
+                                vt = res['track_info']
+                                vt2 = vt.replace(to_replace='7-11', value='Seven Eleven')
+                                res['便利店'] = vt2
                             ordersDict.append(res)
             except Exception as e:
                 print('转化失败： 重新获取中', str(Exception) + str(e))
@@ -333,7 +345,7 @@ class QueryTwo(Settings, Settings_sso):
             print('++++++本次获取成功+++++++')
             # print('*' * 50)
             return data
-    #  物流轨迹数据库   （一 、2.单点）
+    #  物流轨迹数据库         （一 、2.单点）
     def _order_online_data(self, ord, isReal, proxy_handle, proxy_id):  # 进入订单检索界面
         print('+++数据库_搜索轨迹信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
@@ -383,6 +395,7 @@ class QueryTwo(Settings, Settings_sso):
                             res['保管时间'] = ''
                             res['orderNumber'] = result['order_number']
                             res['wayBillNumber'] = result['track_no']
+                            res['便利店'] = ''
                             if '.' in res['track_date']:
                                 res['track_date'] = res['track_date'].split('.')[0]
                             else:
@@ -412,6 +425,11 @@ class QueryTwo(Settings, Settings_sso):
                                 res['完成时间'] = res['track_date']
                             elif '退件' in res['track_info'] or '货物退回-已上架' in res['track_info']:
                                 res['完成时间'] = res['track_date']
+
+                            if '送至' in res['track_info']:
+                                vt = res['track_info']
+                                vt2 = vt.replace(to_replace='7-11', value='Seven Eleven')
+                                res['便利店'] = vt2
 
                             ordersDict.append(res)
             except Exception as e:
@@ -484,6 +502,7 @@ class QueryTwo(Settings, Settings_sso):
                 result['track_info'] = ""
                 result['负责营业所'] = ""
                 result['轨迹备注'] = ""
+                result['便利店'] = ''
             if "height" in str(val) and "rowspan" in str(val):       # 查询到货态（一）
                 L_waybill = str(val).split('</span>')[0].split('bl12">')[1]
                 L_time_val = str(val).split('<br/>')
@@ -510,6 +529,7 @@ class QueryTwo(Settings, Settings_sso):
                 result['轨迹备注'] = L_info3
                 result['负责营业所'] = L_info2
                 result['轨迹备注'] = L_info3
+                result['便利店'] = ''
                 if '包裹已經送達收件人' in L_info3:
                     result['完成时间'] = L_time
                 elif '順利送達' in L_info:
@@ -538,6 +558,7 @@ class QueryTwo(Settings, Settings_sso):
                 result['track_info'] = L_info
                 result['负责营业所'] = L_info2
                 result['轨迹备注'] = L_info3
+                result['便利店'] = ''
                 if 'sd已經至寄件人指定地點收到包裹' in L_info3:
                     result['出货时间'] = L_time
                 elif '已集貨' in L_info:
@@ -741,6 +762,104 @@ class QueryTwo(Settings, Settings_sso):
 
 
 
+    # 绩效-查询 派送问题件           （二.4）
+    def getDeliveryList(self, timeStart, timeEnd, order_time, proxy_handle, proxy_id):  # 进入订单检索界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('正在查询 派送问题件(' + order_time + ') 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
+        url = r'https://gimp.giikin.com/service?service=gorder.deliveryQuestion&action=getDeliveryList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/deliveryProblemPackage'}
+        data = {'order_number': None, 'waybill_number': None, 'question_level': None, 'question_type': None,'order_trace_id': None, 'ship_phone': None, 'page': 1,
+                'pageSize': 90,'addtime': None, 'question_time': None, 'trace_time': None,'create_time': None, 'finishtime': None, 'sale_id': None, 'product_id': None,
+                'logistics_id': None, 'area_id': None, 'currency_id': None,'order_status': None, 'logistics_status': None}
+        data_woks = None
+        data_woks2 = None
+        if order_time == '处理时间':
+            data.update({'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
+            data_woks = '派送问题件_处理时间'
+            data_woks2 = '处理时间'
+        elif order_time == '创建时间':
+            data.update({'create_time': timeStart + ',' + timeEnd})
+            data_woks = '派送问题件_创建时间_cp'
+            data_woks2 = '创建时间'
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)          # json类型数据转换为dict字典
+        if req['data'] != []:
+            max_count = req['data']['count']    # 获取 请求订单量
+            print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+            print('*' * 50)
+            if max_count != 0 and max_count != []:
+                df = pd.DataFrame([])               # 创建空的dataframe
+                dlist = []                          # 创建空的列表 放每次查询的结果
+                in_count = math.ceil(max_count / 90)
+                n = 1
+                while n <= in_count:  # 这里用到了一个while循环，穿越过来的
+                    data = self._getDeliveryList(timeStart, timeEnd, n, order_time, proxy_handle, proxy_id)
+                    dlist.append(data)
+                    print('剩余查询次数' + str(in_count - n))
+                    n = n + 1
+                    time.sleep(1)
+                dp = df.append(dlist, ignore_index=True)
+                dp = dp[['id','order_number',  'currency', 'addtime', 'amount','orderStatus', 'logisticsStatus', 'logisticsName','create_time', 'lastQuestionName', 'contactName','userName', 'traceName',  'content', 'traceTime', 'failNum', 'questionAddtime', 'questionTypeName']]
+                dp.columns = ['id','订单编号', '币种', '下单时间', '金额','订单状态', '物流状态', '物流渠道','创建时间', '派送问题类型', '联系方式', '最新处理人', '最新处理状态', '最新处理结果', '处理时间', '派送次数', '最新抓取时间', '最新问题类型']
+                print('正在写入......')
+                dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
+                dp.to_excel('G:\\输出文件\\派送问题件-{0}{1}.xlsx'.format(order_time,rq), sheet_name='查询', index=False, engine='xlsxwriter')
+                sql = '''REPLACE INTO {0}(id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,处理时间,派送次数,最新抓取时间,最新问题类型,统计月份, 物流轨迹时间, 便利店, 商品名, 来源渠道,记录时间) 
+                        SELECT id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,IF(处理时间 = '',NULL,处理时间) 处理时间,派送次数,IF(最新抓取时间 = '',NULL,最新抓取时间) 最新抓取时间,最新问题类型,DATE_FORMAT({1},'%Y%m') 统计月份, null 物流轨迹时间, null  便利店, null  商品名, null  来源渠道,NOW() 记录时间 
+                        FROM cache_check;'''.format(data_woks, data_woks2)
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                print('写入成功......')
+        else:
+            print('没有需要获取的信息！！！')
+            return
+        print('-' * 50)
+        print('-' * 50)
+    def _getDeliveryList(self, timeStart, timeEnd, n, order_time, proxy_handle, proxy_id):  # 进入派送问题件界面
+        print('+++正在查询第 ' + str(n) + ' 页信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.deliveryQuestion&action=getDeliveryList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/deliveryProblemPackage'}
+        data = {'order_number': None, 'waybill_number': None, 'question_level': None, 'question_type': None,'order_trace_id': None, 'ship_phone': None, 'page': n,
+                'pageSize': 90,'addtime': None, 'question_time': None, 'trace_time': None,'create_time': None, 'finishtime': None, 'sale_id': None, 'product_id': None,
+                'logistics_id': None, 'area_id': None, 'currency_id': None,'order_status': None, 'logistics_status': None}
+        if order_time == '处理时间':
+            data.update({'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
+        elif order_time == '创建时间':
+            data.update({'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(88)
+        # print(req)
+        ordersDict = []
+        try:
+            if req['data'] !=[]:
+                for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
+                    print(result['order_number'])
+                    # result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
+                    ordersDict.append(result.copy())
+            else:
+                return None
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        data = pd.json_normalize(ordersDict)
+        print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
+        print('*' * 50)
+        return data
+
+
 if __name__ == '__main__':
     # TODO------------------------------------单点更新配置------------------------------------
     handle = '手动0'
@@ -755,13 +874,14 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
-    # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 
+    # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 ；  cat = 1 、黑猫切换是否使用后台数据  0 、还是官网数据 
     '''
     isReal = 1
     select = 1
+    cat = 0
     if int(select) == 1:
         print("1-->>> 正在按运单号查询+++")
-        m.readFormHost(isReal, proxy_handle, proxy_id)       # 导入；，更新--->>数据更新切换
+        m.readFormHost(isReal, proxy_handle, proxy_id, cat)       # 导入；，更新--->>数据更新切换
 
     elif int(select) == 3:
         print("1-->>> 正在按运单号查询+++")
@@ -769,6 +889,12 @@ if __name__ == '__main__':
 
     elif int(select) == 2:
         print("2-->>> 正在按时间查询+++")
+        m.order_online('2022-01-01', '2022-01-05', isReal, proxy_handle, proxy_id)
+
+    elif int(select) == 5:
+        print("1-->>> 正在按运单号查询+++")
+        m.getDeliveryList('2023-03-10 00:00:00', '2023-03-12 23:59:59', '创建时间', proxy_handle, proxy_id)
+
         m.order_online('2022-01-01', '2022-01-05', isReal, proxy_handle, proxy_id)
 
     # m.order_bind_status('2022-01-01', '2022-01-02')
