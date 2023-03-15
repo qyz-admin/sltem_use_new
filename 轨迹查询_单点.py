@@ -289,6 +289,7 @@ class QueryTwo(Settings, Settings_sso):
                     # print(req['data']['list'])
                     return None
                 else:
+                    step = 0
                     for result in req['data']['list']:
                         # for res in result['list']:
                         for index, res in enumerate(result['list']):
@@ -333,10 +334,20 @@ class QueryTwo(Settings, Settings_sso):
                                 res['完成时间'] = res['track_date']
 
                             # print(res)track_info
-                            if '所送' in res['track_info']:
-                                vt = res['track_info']
-                                vt2 = vt.replace(to_replace='7-11', value='Seven Eleven')
-                                res['便利店'] = vt2
+                            if step >= 1:
+                                continue
+                            else:
+                                if '送至' in res['track_info']:
+                                    vt = res['track_info'].split('送至')[1]
+                                    vt2 = vt.split('(')[0]
+                                    if '7-11' in vt2:
+                                        vt3 = vt2.replace(to_replace='7-11', value='Seven Eleven')
+                                    else:
+                                        vt3 = vt2
+                                    res['便利店'] = vt3
+                                    step = step + 1
+                                elif '與客戶另約時間配送' in res['track_info']:
+                                    res['便利店'] = '与客户另约时间配送'
                             ordersDict.append(res)
             except Exception as e:
                 print('转化失败： 重新获取中', str(Exception) + str(e))
@@ -374,6 +385,7 @@ class QueryTwo(Settings, Settings_sso):
                     # print(req['data']['list'])
                     return None
                 else:
+                    step = 0
                     for result in req['data']['list']:
                         # for res in result['list']:
                         for index, res in enumerate(result['list']):
@@ -426,10 +438,20 @@ class QueryTwo(Settings, Settings_sso):
                             elif '退件' in res['track_info'] or '货物退回-已上架' in res['track_info']:
                                 res['完成时间'] = res['track_date']
 
-                            if '送至' in res['track_info']:
-                                vt = res['track_info']
-                                vt2 = vt.replace(to_replace='7-11', value='Seven Eleven')
-                                res['便利店'] = vt2
+                            if step >= 1:
+                                continue
+                            else:
+                                if '送至' in res['track_info']:
+                                    vt = res['track_info'].split('送至')[1]
+                                    vt2 = vt.split('(')[0]
+                                    if '7-11' in vt2:
+                                        vt3 = vt2.replace(to_replace='7-11', value='Seven Eleven')
+                                    else:
+                                        vt3 = vt2
+                                    res['便利店'] = vt3
+                                    step = step + 1
+                                elif '與客戶另約時間配送' in res['track_info']:
+                                    res['便利店'] = '与客户另约时间配送'
 
                             ordersDict.append(res)
             except Exception as e:
@@ -762,8 +784,8 @@ class QueryTwo(Settings, Settings_sso):
 
 
 
-    # 绩效-查询 派送问题件           （二.4）
-    def getDeliveryList(self, timeStart, timeEnd, order_time, proxy_handle, proxy_id):  # 进入订单检索界面
+    # 语音外呼 派送问题件           （一.1）
+    def getDeliveryList(self, timeStart, timeEnd, order_time, proxy_handle, proxy_id, tm_data):  # 进入订单检索界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 派送问题件(' + order_time + ') 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.deliveryQuestion&action=getDeliveryList'
@@ -781,7 +803,7 @@ class QueryTwo(Settings, Settings_sso):
             data_woks2 = '处理时间'
         elif order_time == '创建时间':
             data.update({'create_time': timeStart + ',' + timeEnd})
-            data_woks = '派送问题件_创建时间_cp'
+            data_woks = '派送问题件_语音外呼'
             data_woks2 = '创建时间'
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
@@ -810,10 +832,11 @@ class QueryTwo(Settings, Settings_sso):
                 dp.columns = ['id','订单编号', '币种', '下单时间', '金额','订单状态', '物流状态', '物流渠道','创建时间', '派送问题类型', '联系方式', '最新处理人', '最新处理状态', '最新处理结果', '处理时间', '派送次数', '最新抓取时间', '最新问题类型']
                 print('正在写入......')
                 dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-                dp.to_excel('G:\\输出文件\\派送问题件-{0}{1}.xlsx'.format(order_time,rq), sheet_name='查询', index=False, engine='xlsxwriter')
-                sql = '''REPLACE INTO {0}(id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,处理时间,派送次数,最新抓取时间,最新问题类型,统计月份, 物流轨迹时间, 便利店, 商品名, 来源渠道,记录时间) 
-                        SELECT id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,IF(处理时间 = '',NULL,处理时间) 处理时间,派送次数,IF(最新抓取时间 = '',NULL,最新抓取时间) 最新抓取时间,最新问题类型,DATE_FORMAT({1},'%Y%m') 统计月份, null 物流轨迹时间, null  便利店, null  商品名, null  来源渠道,NOW() 记录时间 
-                        FROM cache_check;'''.format(data_woks, data_woks2)
+                dp.to_excel('G:\\输出文件\\派送问题件_语音外呼-{0}{1}.xlsx'.format(order_time,rq), sheet_name='查询', index=False, engine='xlsxwriter')
+                sql = '''REPLACE INTO {0}(id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,处理时间,派送次数,最新抓取时间,最新问题类型,统计月份, 物流轨迹时间, 物流轨迹,便利店, 商品名, 来源渠道,姓名,电话,地址,金额,付款类型,团队,时间,记录时间) 
+                        SELECT id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,IF(处理时间 = '',NULL,处理时间) 处理时间,派送次数,IF(最新抓取时间 = '',NULL,最新抓取时间) 最新抓取时间,最新问题类型,DATE_FORMAT({1},'%Y%m%d') 统计月份, 
+                                null 物流轨迹时间, null 物流轨迹, null 便利店, null 商品名, null 来源渠道,null 姓名,null 电话,null 地址,,null 金额,,null 付款类型,null 团队, {1} AS 时间, NOW() 记录时间 
+                        FROM cache_check;'''.format(data_woks, data_woks2, tm_data)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                 print('写入成功......')
         else:
@@ -821,6 +844,7 @@ class QueryTwo(Settings, Settings_sso):
             return
         print('-' * 50)
         print('-' * 50)
+    # 语音外呼 派送问题件           （一.2）
     def _getDeliveryList(self, timeStart, timeEnd, n, order_time, proxy_handle, proxy_id):  # 进入派送问题件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.deliveryQuestion&action=getDeliveryList'
@@ -833,7 +857,7 @@ class QueryTwo(Settings, Settings_sso):
         if order_time == '处理时间':
             data.update({'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
         elif order_time == '创建时间':
-            data.update({'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
+            data.update({'create_time': timeStart + ',' + timeEnd})
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -859,6 +883,218 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
         return data
 
+    # 语音外呼 派送的物流轨迹信息（二.1）
+    def _getDeliveryList_info(self, proxy_handle, proxy_id):
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        sql = '''SELECT id FROM {0} s;'''.format('派送问题件_语音外呼')
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        if ordersDict.empty:
+            print('无需要更新订单信息！！！')
+            return
+        orderId = list(ordersDict['id'])
+        max_count = len(orderId)                 # 使用len()获取列表的长度，上节学的
+        print('++++++本次需查询;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+
+        df = pd.DataFrame([])
+        dict = []
+        for ord in orderId:
+            print(ord)
+            ord = str(ord)
+            print(type(ord))
+            res = {}
+            res['id'] = ord
+            res['物流轨迹'] = ''
+            res['便利店'] = ''
+            ship_info, ship_time, ship_name = self._getDeliveryList_info2(ord, proxy_handle, proxy_id)
+            res['物流轨迹'] = ship_info
+            res['物流轨迹时间'] = ship_time
+            res['便利店'] = ship_name
+            dict.append(res)
+        data = pd.json_normalize(dict)
+        dp = df.append(data, ignore_index=True)
+
+        dp.to_sql('ps', con=self.engine1, index=False, if_exists='replace')
+        sql = '''update 派送问题件_语音外呼 a, ps b
+                        set a.`物流轨迹`= IF(b.`物流轨迹` = '', NULL, b.`物流轨迹`),
+                            a.`物流轨迹时间`= IF(b.`物流轨迹时间` = '', NULL, b.`物流轨迹时间`),
+                            a.`便利店`= IF(b.`便利店` = '', NULL, b.`便利店`)
+                where a.`id`= b.`id`;'''.format('team')
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        print('查询已更新+++')
+        print('*' * 50)
+    # 语音外呼 派送的物流轨迹信息（二.2）
+    def _getDeliveryList_info2(self, ord, proxy_handle, proxy_id):  # 进入派送问题件界面
+        print('+++正在查询 派送轨迹 信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.deliveryQuestion&action=getDeliveryQuestionRecord'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https://gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/deliveryProblemPackage'}
+        data = {'id': ord}
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(88)
+        # print(req)
+        ship_info = ''
+        ship_time = ''
+        ship_name = ''
+        step = 0
+        try:
+            if req['data'] !=[]:
+                for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
+                    print(result)
+                    if step >= 1:
+                        continue
+                    if '送至' in result['track_info']:
+                        vt = result['track_info'].split('送至')[1]
+                        vt2 = vt.split('(')[0]
+                        if '7-11' in vt2:
+                            ship_name = vt2.replace(to_replace='7-11', value='Seven Eleven')
+                        else:
+                            ship_name = vt2
+                        ship_info = result['track_info']
+                        ship_time = result['addtime']
+                        step = step + 1
+                    elif '與客戶另約時間配送' in result['track_info']:
+                        ship_name = '与客户另约时间配送'
+                        ship_info = result['track_info']
+                        ship_time = result['addtime']
+            else:
+                return ship_info, ship_time, ship_name
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        print('*' * 50)
+        return ship_info, ship_time, ship_name
+
+    # 语音外呼 派送的物流轨迹 订单信息（三.1）
+    def _getDeliveryList_order(self, proxy_handle, proxy_id):
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        sql = '''SELECT 订单编号 FROM {0} s;'''.format('派送问题件_语音外呼')
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        if ordersDict.empty:
+            print('无需要更新订单信息！！！')
+            return
+        orderId = list(ordersDict['订单编号'])
+        max_count = len(orderId)                 # 使用len()获取列表的长度，上节学的
+        print('++++++本次需查询;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+
+        df = pd.DataFrame([])
+        dict = []
+        for ord in orderId:
+            print(ord)
+            data = self._getDeliveryList_order2(ord, '订单号', proxy_handle, proxy_id)
+            dict.append(data)
+        dp = df.append(dict, ignore_index=True)
+        dp = dp[['orderNumber', 'currency', 'area', 'befrom', 'amount','tel_phone', 'shipInfo.shipName', 'shipInfo.shipAddress', 'saleName', 'orderStatus', 'logisticsStatus', 'payType']]
+        print(dp)
+        dp.to_sql('ps', con=self.engine1, index=False, if_exists='replace')
+        sql = '''update 派送问题件_语音外呼 a, ps b
+                        set a.`商品名`= IF(b.`saleName` = '', NULL, b.`saleName`),
+                            a.`来源渠道`= IF(b.`befrom` = '', NULL, b.`befrom`),
+                            a.`姓名`= IF(b.`shipInfo.shipName` = '', NULL, b.`shipInfo.shipName`),
+                            a.`电话`= IF(b.`tel_phone` = '', NULL, b.`tel_phone`),
+                            a.`地址`= IF(b.`shipInfo.shipAddress` = '', NULL, b.`shipInfo.shipAddress`),
+                            a.`金额`= IF(b.`amount` = '', NULL, b.`amount`),
+                            a.`付款类型`= IF(b.`payType` = '', NULL, b.`payType`),
+                            a.`订单状态`= IF(b.`orderStatus` = '', NULL, b.`orderStatus`),
+                            a.`物流状态`= IF(b.`logisticsStatus` = '', NULL, b.`logisticsStatus`),
+                            a.`团队`= IF(b.`area` = '', NULL, b.`area`)
+                where a.`订单编号`= b.`orderNumber`;'''.format('team')
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        print('查询已更新+++')
+        print('*' * 50)
+        # 语音外呼 派送的物流轨迹信息（三.2）
+    # 语音外呼 派送的物流轨迹 订单信息（三.2）
+    def _getDeliveryList_order2(self, ord, searchType, proxy_id, proxy_handle):  # 进入订单检索界面
+        print('+++正在查询订单信息中')
+        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'page': 1, 'pageSize': 500,
+                'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None,
+                'type': None, 'collId': None, 'isClone': None,
+                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': '',
+                'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
+                'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
+                'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None,
+                'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
+                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None}
+        if searchType == '订单号':
+            data.update({'orderPrefix': ord, 'shippingNumber': None})
+        elif searchType == '运单号':
+            data.update({'order_number': None, 'shippingNumber': ord})
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        ordersdict = []
+        # print('正在处理json数据转化为dataframe…………')
+        try:
+            for result in req['data']['list']:
+                result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
+                result['saleName'] = 0
+                result['productId'] = 0
+                result['saleProduct'] = 0
+                result['spec'] = 0
+                result['chooser'] = 0
+                result['saleId'] = result['specs'][0]['saleId']
+                result['saleName'] = result['specs'][0]['saleName']
+                result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+                result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
+                result['spec'] = result['specs'][0]['spec']
+                result['chooser'] = result['specs'][0]['chooser']
+                quest = ''
+                for re in result['questionReason']:
+                    quest = quest + ';' + re
+                result['questionReason'] = quest
+                delr = ''
+                for re in result['delReason']:
+                    delr = delr + ';' + re
+                result['delReason'] = delr
+                auto = ''
+                for re in result['autoVerify']:
+                    auto = auto + ';' + re
+                result['autoVerify'] = auto
+
+                result['auto_VerifyTip'] = ''
+                result['auto_VerifyTip_zl'] = ''
+                result['auto_VerifyTip_qs'] = ''
+                result['auto_VerifyTip_js'] = ''
+                if result['autoVerifyTip'] == "":
+                    result['auto_VerifyTip'] = '0.00%'
+                else:
+                    if '未读到拉黑表记录' in result['autoVerifyTip']:
+                        result['auto_VerifyTip'] = '0.00%'
+                    else:
+                        t3 = result['autoVerifyTip']
+                        result['auto_VerifyTip_zl'] = (t3.split('订单配送总量：')[1]).split(',')[0]
+                        result['auto_VerifyTip_qs'] = (t3.split('送达订单量：')[1]).split(',')[0]
+                        result['auto_VerifyTip_js'] = (t3.split('拒收订单量：')[1]).split(',')[0]
+                        if '拉黑率问题' not in result['autoVerifyTip']:
+                            t2 = result['autoVerifyTip'].split(',拉黑率')[1]
+                            result['auto_VerifyTip'] = t2.split('%;')[0] + '%'
+                        else:
+                            t2 = result['autoVerifyTip'].split('拒收订单量：')[1]
+                            t2 = t2.split('%;')[0]
+                            result['auto_VerifyTip'] = t2.split('拉黑率')[1] + '%'
+                ordersdict.append(result)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        df = pd.json_normalize(ordersdict)
+        print('++++++本批次查询成功+++++++')
+        print('*' * 50)
+        return df
+
 
 if __name__ == '__main__':
     # TODO------------------------------------单点更新配置------------------------------------
@@ -876,8 +1112,9 @@ if __name__ == '__main__':
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 ；  cat = 1 、黑猫切换是否使用后台数据  0 、还是官网数据 
     '''
-    isReal = 1
     select = 1
+    ct = 52
+    isReal = 1
     cat = 0
     if int(select) == 1:
         print("1-->>> 正在按运单号查询+++")
@@ -893,9 +1130,22 @@ if __name__ == '__main__':
 
     elif int(select) == 5:
         print("1-->>> 正在按运单号查询+++")
-        m.getDeliveryList('2023-03-10 00:00:00', '2023-03-12 23:59:59', '创建时间', proxy_handle, proxy_id)
+        tm = ''
+        tm2 = ''
+        tm_data = ''
+        if ct == 51:
+            tm = '2023-03-14 16:00:00'
+            tm2 = '2023-03-15 11:00:00'
+            tm_data = 'AM'
+        elif ct == 52:
+            tm = '2023-03-15 11:00:00'
+            tm2 = '2023-03-15 16:00:00'
+            tm_data = 'PM'
+        m.getDeliveryList(tm, tm2, '创建时间', proxy_handle, proxy_id, tm_data)
 
-        m.order_online('2022-01-01', '2022-01-05', isReal, proxy_handle, proxy_id)
+        m._getDeliveryList_info(proxy_handle, proxy_id)
+        m._getDeliveryList_order(proxy_handle, proxy_id)
+
 
     # m.order_bind_status('2022-01-01', '2022-01-02')
 
