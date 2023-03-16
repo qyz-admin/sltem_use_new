@@ -841,7 +841,10 @@ class QueryOrder(Settings, Settings_sso):
             book = load_workbook(file_path)                         # 可以向不同的sheet写入数据（对现有工作表的追加）
             writer.book = book                                      # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
 
-            dp = ILLEGAL_CHARACTERS_RE.sub(r'', dp)
+            # dp = ILLEGAL_CHARACTERS_RE.sub(r'', dp)
+            for column in list(dp.columns):
+                # dp[column] = dp[column].apply(lambda x: format(x, '.2%'))
+                dp[column] = re.sub(ILLEGAL_CHARACTERS_RE, "", dp[column])
             dp.to_excel(excel_writer=writer, sheet_name='明细', index=False)
             db92.to_excel(excel_writer=writer, sheet_name='天马711', index=False)
             db14.to_excel(excel_writer=writer, sheet_name='协来运直发', index=False)

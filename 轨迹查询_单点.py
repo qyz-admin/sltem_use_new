@@ -341,7 +341,7 @@ class QueryTwo(Settings, Settings_sso):
                                     vt = res['track_info'].split('送至')[1]
                                     vt2 = vt.split('(')[0]
                                     if '7-11' in vt2:
-                                        vt3 = vt2.replace(to_replace='7-11', value='Seven Eleven')
+                                        vt3 = vt2.replace('7-11', 'Seven Eleven')
                                     else:
                                         vt3 = vt2
                                     res['便利店'] = vt3
@@ -445,7 +445,7 @@ class QueryTwo(Settings, Settings_sso):
                                     vt = res['track_info'].split('送至')[1]
                                     vt2 = vt.split('(')[0]
                                     if '7-11' in vt2:
-                                        vt3 = vt2.replace(to_replace='7-11', value='Seven Eleven')
+                                        vt3 = vt2.replace('7-11', 'Seven Eleven')
                                     else:
                                         vt3 = vt2
                                     res['便利店'] = vt3
@@ -833,9 +833,9 @@ class QueryTwo(Settings, Settings_sso):
                 print('正在写入......')
                 dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
                 dp.to_excel('G:\\输出文件\\派送问题件_语音外呼-{0}{1}.xlsx'.format(order_time,rq), sheet_name='查询', index=False, engine='xlsxwriter')
-                sql = '''REPLACE INTO {0}(id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,处理时间,派送次数,最新抓取时间,最新问题类型,统计月份, 物流轨迹时间, 物流轨迹,便利店, 商品名, 来源渠道,姓名,电话,地址,金额,付款类型,团队,时间,记录时间) 
-                        SELECT id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,IF(处理时间 = '',NULL,处理时间) 处理时间,派送次数,IF(最新抓取时间 = '',NULL,最新抓取时间) 最新抓取时间,最新问题类型,DATE_FORMAT({1},'%Y%m%d') 统计月份, 
-                                null 物流轨迹时间, null 物流轨迹, null 便利店, null 商品名, null 来源渠道,null 姓名,null 电话,null 地址,,null 金额,,null 付款类型,null 团队, {1} AS 时间, NOW() 记录时间 
+                sql = '''REPLACE INTO {0}(id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,处理时间,派送次数,最新抓取时间,最新问题类型,统计日期, 物流轨迹时间, 物流轨迹,便利店, 商品名, 来源渠道,姓名,电话,地址,金额,付款类型,团队,时间,外呼类型,记录时间) 
+                        SELECT id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,IF(处理时间 = '',NULL,处理时间) 处理时间,派送次数,IF(最新抓取时间 = '',NULL,最新抓取时间) 最新抓取时间,最新问题类型,DATE_FORMAT({1},'%Y%m%d') 统计日期, 
+                                null 物流轨迹时间, null 物流轨迹, null 便利店, null 商品名, null 来源渠道,null 姓名,null 电话,null 地址,null 金额,null 付款类型,null 团队, '{2}' AS 时间, null 外呼类型,NOW() 记录时间 
                         FROM cache_check;'''.format(data_woks, data_woks2, tm_data)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                 print('写入成功......')
@@ -871,7 +871,7 @@ class QueryTwo(Settings, Settings_sso):
         try:
             if req['data'] !=[]:
                 for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
-                    print(result['order_number'])
+                    # print(result['order_number'])
                     # result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
                     ordersDict.append(result.copy())
             else:
@@ -884,9 +884,10 @@ class QueryTwo(Settings, Settings_sso):
         return data
 
     # 语音外呼 派送的物流轨迹信息（二.1）
-    def _getDeliveryList_info(self, proxy_handle, proxy_id):
+    def _getDeliveryList_info(self, proxy_handle, proxy_id, tm_data):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        sql = '''SELECT id FROM {0} s;'''.format('派送问题件_语音外呼')
+        sql = '''SELECT id FROM {0} s WHERE s.`时间` = '{1}';'''.format('派送问题件_语音外呼', tm_data)
+        # sql = '''SELECT id FROM {0} s;'''.format('派送问题件_语音外呼', tm_data)
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
         if ordersDict.empty:
             print('无需要更新订单信息！！！')
@@ -894,21 +895,22 @@ class QueryTwo(Settings, Settings_sso):
         orderId = list(ordersDict['id'])
         max_count = len(orderId)                 # 使用len()获取列表的长度，上节学的
         print('++++++本次需查询;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+        print(orderId)
 
         df = pd.DataFrame([])
         dict = []
         for ord in orderId:
-            print(ord)
             ord = str(ord)
-            print(type(ord))
             res = {}
             res['id'] = ord
             res['物流轨迹'] = ''
             res['便利店'] = ''
-            ship_info, ship_time, ship_name = self._getDeliveryList_info2(ord, proxy_handle, proxy_id)
+            res['外呼类型'] = ''
+            ship_info, ship_time, ship_name, ship_type= self._getDeliveryList_info2(ord, proxy_handle, proxy_id)
             res['物流轨迹'] = ship_info
             res['物流轨迹时间'] = ship_time
             res['便利店'] = ship_name
+            res['外呼类型'] = ship_type
             dict.append(res)
         data = pd.json_normalize(dict)
         dp = df.append(data, ignore_index=True)
@@ -917,7 +919,8 @@ class QueryTwo(Settings, Settings_sso):
         sql = '''update 派送问题件_语音外呼 a, ps b
                         set a.`物流轨迹`= IF(b.`物流轨迹` = '', NULL, b.`物流轨迹`),
                             a.`物流轨迹时间`= IF(b.`物流轨迹时间` = '', NULL, b.`物流轨迹时间`),
-                            a.`便利店`= IF(b.`便利店` = '', NULL, b.`便利店`)
+                            a.`便利店`= IF(b.`便利店` = '', NULL, b.`便利店`),
+                            a.`外呼类型`= IF(b.`外呼类型` = '', NULL, b.`外呼类型`)
                 where a.`id`= b.`id`;'''.format('team')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('查询已更新+++')
@@ -942,38 +945,48 @@ class QueryTwo(Settings, Settings_sso):
         ship_info = ''
         ship_time = ''
         ship_name = ''
+        ship_type = ''
         step = 0
         try:
             if req['data'] !=[]:
                 for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
                     print(result)
+                    print(ord)
                     if step >= 1:
                         continue
                     if '送至' in result['track_info']:
                         vt = result['track_info'].split('送至')[1]
                         vt2 = vt.split('(')[0]
                         if '7-11' in vt2:
-                            ship_name = vt2.replace(to_replace='7-11', value='Seven Eleven')
+                            ship_name = vt2.replace('7-11', 'Seven Eleven')
                         else:
                             ship_name = vt2
                         ship_info = result['track_info']
                         ship_time = result['addtime']
+                        ship_type = '超商'
                         step = step + 1
                     elif '與客戶另約時間配送' in result['track_info']:
                         ship_name = '与客户另约时间配送'
                         ship_info = result['track_info']
                         ship_time = result['addtime']
+                        ship_type = '自取'
+                    elif '與客戶另約時間配送' in result['track_info']:
+                        ship_name = '与客户另约时间配送'
+                        ship_info = result['track_info']
+                        ship_time = result['addtime']
+                        ship_type = '预约时间配送'
             else:
-                return ship_info, ship_time, ship_name
+                return ship_info, ship_time, ship_name, ship_type
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
         print('*' * 50)
-        return ship_info, ship_time, ship_name
+        return ship_info, ship_time, ship_name, ship_type
 
     # 语音外呼 派送的物流轨迹 订单信息（三.1）
-    def _getDeliveryList_order(self, proxy_handle, proxy_id):
+    def _getDeliveryList_order(self, proxy_handle, proxy_id, tm_data):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        sql = '''SELECT 订单编号 FROM {0} s;'''.format('派送问题件_语音外呼')
+        sql = '''SELECT 订单编号 FROM {0} s WHERE s.`时间` = '{1}';'''.format('派送问题件_语音外呼', tm_data)
+        # sql = '''SELECT 订单编号 FROM {0} s;'''.format('派送问题件_语音外呼', tm_data)
         ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
         if ordersDict.empty:
             print('无需要更新订单信息！！！')
@@ -982,13 +995,20 @@ class QueryTwo(Settings, Settings_sso):
         max_count = len(orderId)                 # 使用len()获取列表的长度，上节学的
         print('++++++本次需查询;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
 
+        in_count = math.ceil(max_count / 500)
+        print(in_count)
         df = pd.DataFrame([])
-        dict = []
-        for ord in orderId:
-            print(ord)
+        dlist = []
+        n = 1
+        while n <= in_count:  # 这里用到了一个while循环，穿越过来的
+            n1 = 500 * (n-1)
+            n2 = 500 * n
+            ord = ','.join(orderId[n1:n2])
             data = self._getDeliveryList_order2(ord, '订单号', proxy_handle, proxy_id)
-            dict.append(data)
-        dp = df.append(dict, ignore_index=True)
+            dlist.append(data)
+            print('剩余查询数' + str(in_count - n))
+            n = n + 1
+        dp = df.append(dlist, ignore_index=True)
         dp = dp[['orderNumber', 'currency', 'area', 'befrom', 'amount','tel_phone', 'shipInfo.shipName', 'shipInfo.shipAddress', 'saleName', 'orderStatus', 'logisticsStatus', 'payType']]
         print(dp)
         dp.to_sql('ps', con=self.engine1, index=False, if_exists='replace')
@@ -1010,7 +1030,7 @@ class QueryTwo(Settings, Settings_sso):
         # 语音外呼 派送的物流轨迹信息（三.2）
     # 语音外呼 派送的物流轨迹 订单信息（三.2）
     def _getDeliveryList_order2(self, ord, searchType, proxy_id, proxy_handle):  # 进入订单检索界面
-        print('+++正在查询订单信息中')
+        print('+++正在查询 订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
@@ -1095,6 +1115,29 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
         return df
 
+    def _getDeliveryList_out(self, tm_data):
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        sql = '''SELECT 姓名 AS 客户名,	NULL 性别,	电话 AS 'contact number', NULL 客户分组, NULL 微信, 来源渠道 AS 购买渠道, substring_index(商品名,'#',-1) AS 商品名, 便利店 AS 超商名称, IF(付款类型 NOT LIKE '%货到付款%', 0, 金额) as 金额, 
+                       NULL 副号码1, NULL 副号码2, NULL 副号码3, NULL 副号码4, NULL 副号码5, NULL 副号码6, NULL 副号码7, NULL 副号码8, NULL 副号码9, 订单编号, 团队
+                FROM 派送问题件_语音外呼 s 
+                WHERE s.`时间` = '{1}' AND s.币种 = '台币' and s.订单状态 not in ('已完成','已退货(销售)','已退货(物流)','已退货(不拆包物流)')
+                  AND s.外呼类型 = '超商';;'''.format('派送问题件_语音外呼', tm_data)
+        df1 = pd.read_sql_query(sql=sql, con=self.engine1)
+
+        sql = '''SELECT 姓名 AS 客户名,	NULL 性别,	电话 AS 'contact number', NULL 客户分组, NULL 微信, 来源渠道 AS 购买渠道, substring_index(商品名,'#',-1) AS 商品名, 地址, IF(付款类型 NOT LIKE '%货到付款%', 0, 金额) as 金额, 
+                       NULL 副号码1, NULL 副号码2, NULL 副号码3, NULL 副号码4, NULL 副号码5, NULL 副号码6, NULL 副号码7, NULL 副号码8, NULL 副号码9, 订单编号, 团队
+                FROM 派送问题件_语音外呼 s 
+                WHERE s.`时间` = '{1}' AND s.币种 = '台币' and s.订单状态 not in ('已完成','已退货(销售)','已退货(物流)','已退货(不拆包物流)')
+                  AND s.外呼类型 = '预约时间配送';'''.format('派送问题件_语音外呼', tm_data)
+        df2 = pd.read_sql_query(sql=sql, con=self.engine1)
+
+        df1.to_excel('G:\\输出文件\\送至便利店-语音外呼{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+        df2.to_excel('G:\\输出文件\\与客户另约时间配送-语音外呼{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+
+        print('查询已导出+++')
+        print('*' * 50)
+        # 语音外呼 派送的物流轨迹信息（三.2）
+
 
 if __name__ == '__main__':
     # TODO------------------------------------单点更新配置------------------------------------
@@ -1134,17 +1177,18 @@ if __name__ == '__main__':
         tm2 = ''
         tm_data = ''
         if ct == 51:
-            tm = '2023-03-14 16:00:00'
-            tm2 = '2023-03-15 11:00:00'
-            tm_data = 'AM'
+            tm = (datetime.datetime.now() - relativedelta(days=1)).strftime('%Y-%m-%d') + ' 16:00:00'
+            tm2 = (datetime.datetime.now().strftime('%Y-%m-%d')) + ' 11:00:00'
+            tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'AM'
         elif ct == 52:
-            tm = '2023-03-15 11:00:00'
-            tm2 = '2023-03-15 16:00:00'
-            tm_data = 'PM'
-        m.getDeliveryList(tm, tm2, '创建时间', proxy_handle, proxy_id, tm_data)
-
-        m._getDeliveryList_info(proxy_handle, proxy_id)
-        m._getDeliveryList_order(proxy_handle, proxy_id)
+            tm = (datetime.datetime.now().strftime('%Y-%m-%d')) + ' 11:00:00'
+            tm2 = (datetime.datetime.now().strftime('%Y-%m-%d')) + ' 16:00:00'
+            tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'PM'
+        print('****** 查询      起止时间：' + tm + ' - ' + tm2 + ' ******')
+        # m.getDeliveryList(tm, tm2, '创建时间', proxy_handle, proxy_id, tm_data)
+        m._getDeliveryList_info(proxy_handle, proxy_id, tm_data)
+        m._getDeliveryList_order(proxy_handle, proxy_id, tm_data)
+        m._getDeliveryList_out(tm_data)
 
 
     # m.order_bind_status('2022-01-01', '2022-01-02')
