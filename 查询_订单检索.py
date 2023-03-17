@@ -831,30 +831,30 @@ class QueryOrder(Settings, Settings_sso):
             else:
                 print('---无 铱熙无敌 订单')
 
-            ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]') # ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]')
+            # ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]') # ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]')
             file_path = 'G:\\输出文件\\订单检索-{0}{1}.xlsx'.format('昨日明细', rq)
-            df0 = pd.DataFrame([])                                  # 创建空的dataframe数据框
-            df0.to_excel(file_path, index=False)                    # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            # df0 = pd.DataFrame([])                                  # 创建空的dataframe数据框
+            # df0.to_excel(file_path, index=False)                    # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
             writer = pd.ExcelWriter(file_path, engine='openpyxl')   # 初始化写入对象
-            # writer = pd.ExcelWriter(file_path, engine='xlsxwriter')   # 初始化写入对象
-            # writer = pd.ExcelWriter(file_path, engine='xlsxwriter', encoding='utf-8')   # 初始化写入对象
-            book = load_workbook(file_path)                         # 可以向不同的sheet写入数据（对现有工作表的追加）
-            writer.book = book                                      # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-
-            # dp = ILLEGAL_CHARACTERS_RE.sub(r'', dp)
-            for column in list(dp.columns):
-                # dp[column] = dp[column].apply(lambda x: format(x, '.2%'))
-                dp[column] = re.sub(ILLEGAL_CHARACTERS_RE, "", dp[column])
-            dp.to_excel(excel_writer=writer, sheet_name='明细', index=False)
-            db92.to_excel(excel_writer=writer, sheet_name='天马711', index=False)
-            db14.to_excel(excel_writer=writer, sheet_name='协来运直发', index=False)
-            if 'Sheet1' in book.sheetnames:                         # 删除新建文档时的第一个工作表
-                del book['Sheet1']
-            writer.save()
-            writer.close()
+            # # writer = pd.ExcelWriter(file_path, engine='xlsxwriter')   # 初始化写入对象
+            # # writer = pd.ExcelWriter(file_path, engine='xlsxwriter', encoding='utf-8')   # 初始化写入对象
+            # book = load_workbook(file_path)                         # 可以向不同的sheet写入数据（对现有工作表的追加）
+            # writer.book = book                                      # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            #
+            # # dp = ILLEGAL_CHARACTERS_RE.sub(r'', dp)
+            # # for column in list(dp.columns):
+            #     # dp[column] = dp[column].apply(lambda x: format(x, '.2%'))
+            #     # dp[column] = re.sub(ILLEGAL_CHARACTERS_RE, "", dp[column])
+            # dp.to_excel(excel_writer=writer, sheet_name='明细', index=False)
+            # db92.to_excel(excel_writer=writer, sheet_name='天马711', index=False)
+            # db14.to_excel(excel_writer=writer, sheet_name='协来运直发', index=False)
+            # if 'Sheet1' in book.sheetnames:                         # 删除新建文档时的第一个工作表
+            #     del book['Sheet1']
+            # writer.save()
+            # writer.close()
 
             # writer = pd.ExcelWriter(file_path, engine='xlsxwriter')  # 初始化写入对象
-            # dp.to_excel(excel_writer=writer, sheet_name='明细', index=False)
+            dp.to_excel(excel_writer=writer, sheet_name='明细', index=False)
 
             print('昨日明细 查询已导出+++')
         else:

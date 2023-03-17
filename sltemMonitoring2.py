@@ -1618,7 +1618,7 @@ class SltemMonitoring(Settings):
                                     FROM {0} sl_cx
                                     WHERE ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}')
                                         AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
-                        ) ss  ON s.币种 = ss.币种;;'''.format(family, now_month, now_month_new, last_month, last_month_new, currency, match[team])
+                        ) ss  ON s.币种 = ss.币种;'''.format(family, now_month, now_month_new, last_month, last_month_new, currency, match[team])
         sqltime82 = '''SELECT s.币种, s.年月, IF(s.旬 =1,'上旬',IF(s.旬 =2,'中旬',IF(s.旬 =3,'下旬',s.旬))) AS 旬, s.是否改派, s.物流方式,
                                 IF(签收量=0,NULL,签收量) as 签收,
                                 IF(拒收量=0,NULL,拒收量) as 拒收,
@@ -1684,8 +1684,7 @@ class SltemMonitoring(Settings):
                                                     "速派新竹", "速派黑猫", "速派宅配通",
                                                     "台湾-铱熙无敌-新竹改派", "台湾-铱熙无敌-黑猫改派",
                                                     "天马顺丰","天马黑猫","天马新竹",
-                                                    "香港-圆通-改派","香港-立邦-改派","香港-森鸿-改派","香港-易速配-改派","合计")
-                        ;'''.format(family, now_month, now_month_new, last_month, last_month_new, currency, match[team])
+                                                    "香港-圆通-改派","香港-立邦-改派","香港-森鸿-改派","香港-易速配-改派","合计");'''.format(family, now_month, now_month_new, last_month, last_month_new, currency, match[team])
         listT.append(sqltime82)
         show_name.append(' 物流分旬签收率(整体 本月)…………')
 
@@ -1778,7 +1777,7 @@ class SltemMonitoring(Settings):
                                     FROM {0} sl_cx
                                     WHERE ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}')
                                         AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
-                        ) ss  ON s.币种 = ss.币种;;'''.format(family, now_month, now_month_old, last_month, last_month_old, currency, match[team])
+                        ) ss  ON s.币种 = ss.币种;'''.format(family, now_month, now_month_old, last_month, last_month_old, currency, match[team])
         sqltime82 = '''SELECT s.币种, s.年月, IF(s.旬 =1,'上旬',IF(s.旬 =2,'中旬',IF(s.旬 =3,'下旬',s.旬))) AS 旬, s.是否改派, s.物流方式,
                                 IF(签收量=0,NULL,签收量) as 签收,
                                 IF(拒收量=0,NULL,拒收量) as 拒收,
@@ -1844,8 +1843,7 @@ class SltemMonitoring(Settings):
                                                     "速派新竹", "速派黑猫", "速派宅配通",
                                                     "台湾-铱熙无敌-新竹改派", "台湾-铱熙无敌-黑猫改派",
                                                     "天马顺丰","天马黑猫","天马新竹",
-                                                    "香港-圆通-改派","香港-立邦-改派","香港-森鸿-改派","香港-易速配-改派","合计")
-                        ;'''.format(family, now_month, now_month_old, last_month, last_month_old, currency, match[team])
+                                                    "香港-圆通-改派","香港-立邦-改派","香港-森鸿-改派","香港-易速配-改派","合计");'''.format(family, now_month, now_month_old, last_month, last_month_old, currency, match[team])
         listT.append(sqltime82)
         show_name.append(' 物流分旬签收率(整体 上月)…………')
 
@@ -3749,8 +3747,8 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2023.02.16'
-    now_month = '2023.03.16'
+    last_month = '2023.02.17'
+    now_month = '2023.03.17'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传
@@ -3758,7 +3756,8 @@ if __name__ == '__main__':
 
     # 测试监控运行（二）-- 第一种手动方式
     # m.order_Monitoring('港台')        # 各月缓存（整体一）、
-    for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港']:
+    # for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港']:
+    for team in ['神龙-香港', '火凤凰-台湾', '火凤凰-香港']:
     # for team in ['火凤凰-香港', '火凤凰-台湾']:
     # for team in ['火凤凰-香港']:
     # for team in [ '神龙-香港']:

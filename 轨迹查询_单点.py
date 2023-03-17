@@ -348,6 +348,8 @@ class QueryTwo(Settings, Settings_sso):
                                     step = step + 1
                                 elif '與客戶另約時間配送' in res['track_info']:
                                     res['便利店'] = '与客户另约时间配送'
+                                elif '與客戶另約時間到站自領' in res['track_info']:
+                                    res['便利店'] = '与客户另约时间到站自领'
                             ordersDict.append(res)
             except Exception as e:
                 print('转化失败： 重新获取中', str(Exception) + str(e))
@@ -452,6 +454,8 @@ class QueryTwo(Settings, Settings_sso):
                                     step = step + 1
                                 elif '與客戶另約時間配送' in res['track_info']:
                                     res['便利店'] = '与客户另约时间配送'
+                                elif '與客戶另約時間到站自領' in res['track_info']:
+                                    res['便利店'] = '与客户另约时间到站自领'
 
                             ordersDict.append(res)
             except Exception as e:
@@ -828,14 +832,14 @@ class QueryTwo(Settings, Settings_sso):
                     n = n + 1
                     time.sleep(1)
                 dp = df.append(dlist, ignore_index=True)
-                dp = dp[['id','order_number',  'currency', 'addtime', 'amount','orderStatus', 'logisticsStatus', 'logisticsName','create_time', 'lastQuestionName', 'contactName','userName', 'traceName',  'content', 'traceTime', 'failNum', 'questionAddtime', 'questionTypeName']]
-                dp.columns = ['id','订单编号', '币种', '下单时间', '金额','订单状态', '物流状态', '物流渠道','创建时间', '派送问题类型', '联系方式', '最新处理人', '最新处理状态', '最新处理结果', '处理时间', '派送次数', '最新抓取时间', '最新问题类型']
+                dp = dp[['id','order_number',  'waybill_number', 'currency', 'addtime', 'amount','orderStatus', 'logisticsStatus', 'logisticsName','create_time', 'lastQuestionName', 'contactName','userName', 'traceName',  'content', 'traceTime', 'failNum', 'questionAddtime', 'questionTypeName']]
+                dp.columns = ['id','订单编号', '运单编号', '币种', '下单时间', '金额','订单状态', '物流状态', '物流渠道','创建时间', '派送问题类型', '联系方式', '最新处理人', '最新处理状态', '最新处理结果', '处理时间', '派送次数', '最新抓取时间', '最新问题类型']
                 print('正在写入......')
                 dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
                 dp.to_excel('G:\\输出文件\\派送问题件_语音外呼-{0}{1}.xlsx'.format(order_time,rq), sheet_name='查询', index=False, engine='xlsxwriter')
-                sql = '''REPLACE INTO {0}(id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,处理时间,派送次数,最新抓取时间,最新问题类型,统计日期, 物流轨迹时间, 物流轨迹,便利店, 商品名, 来源渠道,姓名,电话,地址,金额,付款类型,团队,时间,外呼类型,记录时间) 
-                        SELECT id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,IF(处理时间 = '',NULL,处理时间) 处理时间,派送次数,IF(最新抓取时间 = '',NULL,最新抓取时间) 最新抓取时间,最新问题类型,DATE_FORMAT({1},'%Y%m%d') 统计日期, 
-                                null 物流轨迹时间, null 物流轨迹, null 便利店, null 商品名, null 来源渠道,null 姓名,null 电话,null 地址,null 金额,null 付款类型,null 团队, '{2}' AS 时间, null 外呼类型,NOW() 记录时间 
+                sql = '''REPLACE INTO {0}(id,订单编号, 运单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,处理时间,派送次数,最新抓取时间,最新问题类型,统计日期, 物流轨迹时间, 物流轨迹,便利店, 商品名, 来源渠道,姓名,电话,地址,金额,付款类型,团队,时间,外呼类型,是否短信,记录时间) 
+                        SELECT id,订单编号,运单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,IF(处理时间 = '',NULL,处理时间) 处理时间,派送次数,IF(最新抓取时间 = '',NULL,最新抓取时间) 最新抓取时间,最新问题类型,DATE_FORMAT({1},'%Y%m%d') 统计日期, 
+                                null 物流轨迹时间, null 物流轨迹, null 便利店, null 商品名, null 来源渠道,null 姓名,null 电话,null 地址,null 金额,null 付款类型,null 团队, '{2}' AS 时间, null 外呼类型,null 是否短信,NOW() 记录时间 
                         FROM cache_check;'''.format(data_woks, data_woks2, tm_data)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                 print('写入成功......')
@@ -906,11 +910,12 @@ class QueryTwo(Settings, Settings_sso):
             res['物流轨迹'] = ''
             res['便利店'] = ''
             res['外呼类型'] = ''
-            ship_info, ship_time, ship_name, ship_type= self._getDeliveryList_info2(ord, proxy_handle, proxy_id)
+            ship_info, ship_time, ship_name, ship_type, ship_message = self._getDeliveryList_info2(ord, proxy_handle, proxy_id)
             res['物流轨迹'] = ship_info
             res['物流轨迹时间'] = ship_time
             res['便利店'] = ship_name
             res['外呼类型'] = ship_type
+            res['是否短信'] = ship_message
             dict.append(res)
         data = pd.json_normalize(dict)
         dp = df.append(data, ignore_index=True)
@@ -920,7 +925,8 @@ class QueryTwo(Settings, Settings_sso):
                         set a.`物流轨迹`= IF(b.`物流轨迹` = '', NULL, b.`物流轨迹`),
                             a.`物流轨迹时间`= IF(b.`物流轨迹时间` = '', NULL, b.`物流轨迹时间`),
                             a.`便利店`= IF(b.`便利店` = '', NULL, b.`便利店`),
-                            a.`外呼类型`= IF(b.`外呼类型` = '', NULL, b.`外呼类型`)
+                            a.`外呼类型`= IF(b.`外呼类型` = '', NULL, b.`外呼类型`),
+                            a.`是否短信`= IF(b.`是否短信` = '', NULL, b.`是否短信`)
                 where a.`id`= b.`id`;'''.format('team')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('查询已更新+++')
@@ -946,6 +952,7 @@ class QueryTwo(Settings, Settings_sso):
         ship_time = ''
         ship_name = ''
         ship_type = ''
+        ship_message = ''
         step = 0
         try:
             if req['data'] !=[]:
@@ -964,23 +971,27 @@ class QueryTwo(Settings, Settings_sso):
                         ship_info = result['track_info']
                         ship_time = result['addtime']
                         ship_type = '超商'
+                        ship_message = '是'
                         step = step + 1
-                    elif '與客戶另約時間配送' in result['track_info']:
-                        ship_name = '与客户另约时间配送'
+                    elif '與客戶另約時間到站自領' in result['track_info']:
+                        vt = result['track_info'].split('到站自領，')[1]
+                        ship_name = vt.split('保管中')[0]
                         ship_info = result['track_info']
                         ship_time = result['addtime']
-                        ship_type = '自取'
+                        ship_type = '到站自取'
+                        ship_message = '是'
                     elif '與客戶另約時間配送' in result['track_info']:
                         ship_name = '与客户另约时间配送'
                         ship_info = result['track_info']
                         ship_time = result['addtime']
                         ship_type = '预约时间配送'
+                        ship_message = '否'
             else:
-                return ship_info, ship_time, ship_name, ship_type
+                return ship_info, ship_time, ship_name, ship_type, ship_message
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
         print('*' * 50)
-        return ship_info, ship_time, ship_name, ship_type
+        return ship_info, ship_time, ship_name, ship_type, ship_message
 
     # 语音外呼 派送的物流轨迹 订单信息（三.1）
     def _getDeliveryList_order(self, proxy_handle, proxy_id, tm_data):
@@ -1009,7 +1020,7 @@ class QueryTwo(Settings, Settings_sso):
             print('剩余查询数' + str(in_count - n))
             n = n + 1
         dp = df.append(dlist, ignore_index=True)
-        dp = dp[['orderNumber', 'currency', 'area', 'befrom', 'amount','tel_phone', 'shipInfo.shipName', 'shipInfo.shipAddress', 'saleName', 'orderStatus', 'logisticsStatus', 'payType']]
+        dp = dp[['orderNumber', 'wayBillNumber','currency', 'area', 'befrom', 'amount','tel_phone', 'shipInfo.shipName', 'shipInfo.shipAddress', 'saleName', 'orderStatus', 'logisticsStatus', 'payType']]
         print(dp)
         dp.to_sql('ps', con=self.engine1, index=False, if_exists='replace')
         sql = '''update 派送问题件_语音外呼 a, ps b
@@ -1022,7 +1033,8 @@ class QueryTwo(Settings, Settings_sso):
                             a.`付款类型`= IF(b.`payType` = '', NULL, b.`payType`),
                             a.`订单状态`= IF(b.`orderStatus` = '', NULL, b.`orderStatus`),
                             a.`物流状态`= IF(b.`logisticsStatus` = '', NULL, b.`logisticsStatus`),
-                            a.`团队`= IF(b.`area` = '', NULL, b.`area`)
+                            a.`团队`= IF(b.`area` = '', NULL, b.`area`),
+                            a.`运单编号`= IF(b.`wayBillNumber` = '', NULL, b.`wayBillNumber`)
                 where a.`订单编号`= b.`orderNumber`;'''.format('team')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('查询已更新+++')
@@ -1114,16 +1126,18 @@ class QueryTwo(Settings, Settings_sso):
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         return df
-
+    # 查询导出 （四）
     def _getDeliveryList_out(self, tm_data):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('正在获取 超商 语音外呼…………')
         sql = '''SELECT 姓名 AS 客户名,	NULL 性别,	电话 AS 'contact number', NULL 客户分组, NULL 微信, 来源渠道 AS 购买渠道, substring_index(商品名,'#',-1) AS 商品名, 便利店 AS 超商名称, IF(付款类型 NOT LIKE '%货到付款%', 0, 金额) as 金额, 
                        NULL 副号码1, NULL 副号码2, NULL 副号码3, NULL 副号码4, NULL 副号码5, NULL 副号码6, NULL 副号码7, NULL 副号码8, NULL 副号码9, 订单编号, 团队
                 FROM 派送问题件_语音外呼 s 
                 WHERE s.`时间` = '{1}' AND s.币种 = '台币' and s.订单状态 not in ('已完成','已退货(销售)','已退货(物流)','已退货(不拆包物流)')
-                  AND s.外呼类型 = '超商';;'''.format('派送问题件_语音外呼', tm_data)
+                  AND s.外呼类型 = '超商';'''.format('派送问题件_语音外呼', tm_data)
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
 
+        print('正在获取 预约时间配送 语音外呼…………')
         sql = '''SELECT 姓名 AS 客户名,	NULL 性别,	电话 AS 'contact number', NULL 客户分组, NULL 微信, 来源渠道 AS 购买渠道, substring_index(商品名,'#',-1) AS 商品名, 地址, IF(付款类型 NOT LIKE '%货到付款%', 0, 金额) as 金额, 
                        NULL 副号码1, NULL 副号码2, NULL 副号码3, NULL 副号码4, NULL 副号码5, NULL 副号码6, NULL 副号码7, NULL 副号码8, NULL 副号码9, 订单编号, 团队
                 FROM 派送问题件_语音外呼 s 
@@ -1131,8 +1145,32 @@ class QueryTwo(Settings, Settings_sso):
                   AND s.外呼类型 = '预约时间配送';'''.format('派送问题件_语音外呼', tm_data)
         df2 = pd.read_sql_query(sql=sql, con=self.engine1)
 
+        print('正在获取 到站自取 语音外呼…………')
+        sql = '''SELECT 姓名 AS 客户名,	NULL 性别,	电话 AS 'contact number', NULL 客户分组, NULL 微信, 便利店 AS 营业所, 来源渠道 AS 购买渠道, 运单编号 AS 快递单号, substring_index(商品名,'#',-1) AS 商品名, IF(付款类型 NOT LIKE '%货到付款%', 0, 金额) as 金额, 
+                       NULL 副号码1, NULL 副号码2, NULL 副号码3, NULL 副号码4, NULL 副号码5, NULL 副号码6, NULL 副号码7, NULL 副号码8, NULL 副号码9, 订单编号, 团队
+                FROM 派送问题件_语音外呼 s 
+                WHERE s.`时间` = '{1}' AND s.币种 = '台币' and s.订单状态 not in ('已完成','已退货(销售)','已退货(物流)','已退货(不拆包物流)')
+                  AND s.外呼类型 = '到站自取';'''.format('派送问题件_语音外呼', tm_data)
+        df3 = pd.read_sql_query(sql=sql, con=self.engine1)
+
         df1.to_excel('G:\\输出文件\\送至便利店-语音外呼{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         df2.to_excel('G:\\输出文件\\与客户另约时间配送-语音外呼{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+        df3.to_excel('G:\\输出文件\\到站自取-语音外呼{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+
+        filePath = r'G:\\输出文件\\派送问题件-语音外呼{}.xlsx'.format(rq)
+        df0 = pd.DataFrame([])                                  # 创建空的dataframe数据框
+        df0.to_excel(filePath, index=False)                     # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        print('正在写入excel…………')
+        writer = pd.ExcelWriter(filePath, engine='openpyxl')    # 初始化写入对象
+        book = load_workbook(filePath)                          # 可以向不同的sheet写入数据（对现有工作表的追加）
+        writer.book = book                                      # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        df1.to_excel(excel_writer=writer, sheet_name='超商', index=False)
+        df2.to_excel(excel_writer=writer, sheet_name='预约时间配送', index=False)
+        df3.to_excel(excel_writer=writer, sheet_name='到站自取', index=False)
+        if 'Sheet1' in book.sheetnames:                         # 删除新建文档时的第一个工作表
+            del book['Sheet1']
+        writer.save()
+        writer.close()
 
         print('查询已导出+++')
         print('*' * 50)
@@ -1155,8 +1193,7 @@ if __name__ == '__main__':
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 ；  cat = 1 、黑猫切换是否使用后台数据  0 、还是官网数据 
     '''
-    select = 1
-    ct = 52
+    select = 52
     isReal = 1
     cat = 0
     if int(select) == 1:
@@ -1171,21 +1208,21 @@ if __name__ == '__main__':
         print("2-->>> 正在按时间查询+++")
         m.order_online('2022-01-01', '2022-01-05', isReal, proxy_handle, proxy_id)
 
-    elif int(select) == 5:
+    elif int(select) == 51 or int(select) == 52:
         print("1-->>> 正在按运单号查询+++")
         tm = ''
         tm2 = ''
         tm_data = ''
-        if ct == 51:
+        if select == 51:
             tm = (datetime.datetime.now() - relativedelta(days=1)).strftime('%Y-%m-%d') + ' 16:00:00'
             tm2 = (datetime.datetime.now().strftime('%Y-%m-%d')) + ' 11:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'AM'
-        elif ct == 52:
+        elif select == 52:
             tm = (datetime.datetime.now().strftime('%Y-%m-%d')) + ' 11:00:00'
             tm2 = (datetime.datetime.now().strftime('%Y-%m-%d')) + ' 16:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'PM'
         print('****** 查询      起止时间：' + tm + ' - ' + tm2 + ' ******')
-        # m.getDeliveryList(tm, tm2, '创建时间', proxy_handle, proxy_id, tm_data)
+        m.getDeliveryList(tm, tm2, '创建时间', proxy_handle, proxy_id, tm_data)
         m._getDeliveryList_info(proxy_handle, proxy_id, tm_data)
         m._getDeliveryList_order(proxy_handle, proxy_id, tm_data)
         m._getDeliveryList_out(tm_data)

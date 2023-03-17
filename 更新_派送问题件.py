@@ -153,7 +153,7 @@ class QueryTwo(Settings, Settings_sso):
                                     SUM(IF(ss3.系统物流状态 = "已退货",1,0)) as 已退货,
                                     SUM(IF(ss3.系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成
                     FROM (  SELECT *,IF(w.订单号 IS NOT NULL,'202303',EXTRACT(YEAR_MONTH FROM 创建日期)) AS 月份, 
-                                    IF(w.订单号 IS NOT NULL,'便利店语音外呼',IF(派送问题 = '送至便利店' OR 派送问题 = '客户自取','送至便利店',IF(派送问题 = '客户长期不在' OR 派送问题 = '送达客户不在','送达客户不在',派送问题))) AS 派送类型
+                                    IF(w.订单号 IS NOT NULL,'送至便利店语音外呼',IF(派送问题 = '送至便利店' OR 派送问题 = '客户自取','送至便利店',IF(派送问题 = '客户长期不在' OR 派送问题 = '送达客户不在','送达客户不在',派送问题))) AS 派送类型
                             FROM 派送问题件_跟进表 g
                             LEFT JOIN (SELECT 订单编号 AS 订单号 FROM 派送问题件_外呼订单) w ON g.订单编号 = w.订单号
                             WHERE g.`创建日期` >= '{0}'  AND g.`创建日期` <= '{1}' AND g.币种 ='台币'

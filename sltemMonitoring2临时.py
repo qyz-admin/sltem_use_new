@@ -153,7 +153,7 @@ class SltemMonitoring(Settings):
         start: datetime = datetime.datetime.now()
         print('正在获取 ' + team + ' 每月（全部）签收数据…………')
         if match[team] == 'gat':
-            sql = '''SELECT LEFT(年月,4) AS 年, 年月, 旬, 日期, 团队, 所属团队 as 团队, 币种, 订单来源, 订单编号, 出货时间, 状态时间, 上线时间, 最终状态, 是否改派,物流方式,物流渠道,产品id,
+            sql = '''SELECT LEFT(年月,4) AS 年, 年月, 旬, 日期, 团队, 所属团队, 币种, 订单来源, 订单编号, 出货时间, 状态时间, 上线时间, 最终状态, 是否改派,物流方式,物流渠道,产品id,
                             父级分类,二级分类,三级分类,下单时间,审核时间,仓储扫描时间,完结状态时间,价格RMB
                     FROM {0}_zqsb a 
                     WHERE a.年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 7 MONTH),'%Y%m') AND a.年月 <= DATE_FORMAT(curdate(),'%Y%m')
@@ -1201,7 +1201,7 @@ class SltemMonitoring(Settings):
                             直发完成量 AS 直发下单完成单量,IFNULL(`直发下单-完成时`,0) / IFNULL(`直发完成量`,0) 直发下单完成时效,
                             直发已签收订单量 / 直发完成量 AS '签收/完成', 
 						    直发已签收订单量/ 直发订单量 AS '签收/总计' 
-			        FROM (SELECT IFNULL(币种,'合计') 币种, IFNULL(年,'合计') 年,IFNULL(年月,'合计') 年月,'合计' 物流方式,'合计' 父级分类,'合计' 旬,
+			        FROM (SELECT IFNULL(币种,'合计') 币种, IFNULL(年,'合计') 年,IFNULL(年月,'合计') 年月,'合计' 物流渠道,'合计' 父级分类,'合计' 旬,
                                 COUNT(`订单编号`) 总订单量,
                                 SUM(IF(sl_cx.`仓储扫描时间` is not null,1,0)) 直发订单量, 
                                 SUM(IF(sl_cx.`仓储扫描时间` is not null,DATEDIFF(`仓储扫描时间`,`下单时间`),0)) AS '直发下单-出库时',
@@ -1814,8 +1814,7 @@ class SltemMonitoring(Settings):
                                 FIELD(s.`年月`,'{2}','{4}','合计'),
                                 FIELD(s.`旬`,1,2,3,'上旬','中旬','下旬','合计'),
                                 FIELD(s.`是否改派`,'改派','直发','合计'),
-                                FIELD(s.`物流方式`, {7},"合计")
-                        ;'''.format(family, now_month, now_month_old, last_month, last_month_old, currency, match[team],self.logistics_name)
+                                FIELD(s.`物流方式`, {7},"合计");'''.format(family, now_month, now_month_old, last_month, last_month_old, currency, match[team],self.logistics_name)
         listT.append(sqltime82)
         show_name.append(' 物流分旬签收率(整体 上月)…………')
 
@@ -3719,8 +3718,8 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2023.02.16'
-    now_month = '2023.03.16'
+    last_month = '2023.02.17'
+    now_month = '2023.03.17'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传

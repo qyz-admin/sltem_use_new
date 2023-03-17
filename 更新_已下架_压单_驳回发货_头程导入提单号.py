@@ -668,6 +668,7 @@ class QueryTwoLower(Settings, Settings_sso):
             #     timeStart = (day - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
             #     timeEnd = day.strftime('%Y-%m-%d')
             timeStart = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
+            timeStart = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'
             timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
             print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
             for tem in team_whid:

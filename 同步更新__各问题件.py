@@ -1696,7 +1696,7 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
     select = 99
-    if int(select) == 909:
+    if int(select) == 99:
         handle = '手动0'
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
         proxy_handle = '代理服务器0'
@@ -1722,9 +1722,18 @@ if __name__ == '__main__':
             m.orderReturnList_Query(team, timeStart, timeEnd, proxy_handle, proxy_id)                   # 查询更新-退换货
             # m.orderReturnList_Query(team, '2022-05-20', '2022-06-05')         # 查询更新-退换货
 
-        timeStart, timeEnd = m.readInfo('拒收问题件')
-        m.order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id)                         # 查询更新-拒收问题件 @--ok
-        # m.order_js_Query('2022-08-01', '2022-08-31')                                       # 查询更新-拒收问题件-·123456
+        # timeStart, timeEnd = m.readInfo('拒收问题件')
+        # m.order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id)                         # 查询更新-拒收问题件 @--ok
+        # # m.order_js_Query('2022-08-01', '2022-08-31')                                       # 查询更新-拒收问题件-·123456
+
+        timeStart, timeEnd = m.readInfo('拒收问题件')                                        # 查询更新-拒收问题件 @--ok
+        timeStart = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()                 # 按天循环获取
+        timeEnd = datetime.datetime.strptime(timeEnd, '%Y-%m-%d').date()
+        for i in range((timeEnd - timeStart).days):  # 按天循环获取订单状态
+            day = timeStart + datetime.timedelta(days=i)
+            day_time = str(day)
+            print('****** 更新      起止时间：' + day_time + ' - ' + day_time + ' ******')
+            m.order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id)
 
         timeStart, timeEnd = m.readInfo('派送问题件')
         m.waybill_deliveryList(timeStart, timeEnd, proxy_handle, proxy_id)                              # 查询更新-派送问题件、
