@@ -153,9 +153,15 @@ class QueryTwo(Settings, Settings_sso):
                                     SUM(IF(ss3.系统物流状态 = "已退货",1,0)) as 已退货,
                                     SUM(IF(ss3.系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成
                     FROM (  SELECT *,IF(w.订单号 IS NOT NULL,'202303',EXTRACT(YEAR_MONTH FROM 创建日期)) AS 月份, 
-                                    IF(w.订单号 IS NOT NULL,'送至便利店语音外呼',IF(派送问题 = '送至便利店' OR 派送问题 = '客户自取','送至便利店',IF(派送问题 = '客户长期不在' OR 派送问题 = '送达客户不在','送达客户不在',派送问题))) AS 派送类型
+                                    IF(w.订单号 IS NOT NULL,
+                                        IF(w.外呼类型 ='到站自取','营业所自取带挂机短信',IF(w.外呼类型 ='预约时间配送','预约时间配送不带挂机短信',
+										IF(w.外呼类型 ='超商' AND 是否短信 ='否','送至便利店不带挂机短信',IF(w.外呼类型 ='超商','送至便利店带挂机短信',派送问题)))),
+										IF(派送问题 = '送至便利店' OR 派送问题 = '客户自取','送至便利店',IF(派送问题 = '客户长期不在' OR 派送问题 = '送达客户不在','送达客户不在',派送问题))) AS 派送类型
                             FROM 派送问题件_跟进表 g
-                            LEFT JOIN (SELECT 订单编号 AS 订单号 FROM 派送问题件_外呼订单) w ON g.订单编号 = w.订单号
+							LEFT JOIN (SELECT 订单编号 AS 订单号, 外呼类型, 是否短信
+										 FROM 派送问题件_语音外呼 y
+										 WHERE y.便利店 IS NOT NULL AND y.时间 IS NOT NULL AND y.订单状态 NOT IN ('已完成','已退货(销售)','已退货(物流)','已退货(不拆包物流)')
+							) w ON g.订单编号 = w.订单号
                             WHERE g.`创建日期` >= '{0}'  AND g.`创建日期` <= '{1}' AND g.币种 ='台币'
                     ) s1
                     LEFT JOIN (SELECT * FROM gat_order_list) ss3 ON s1.订单编号 = ss3.订单编号
@@ -591,12 +597,12 @@ class QueryTwo(Settings, Settings_sso):
                                 ) p
                             ) PP
                         GROUP BY 币种, 创建日期
-					) s4 on s3.币种 =s4.币种 AND s3.创建日期 =s4.创建日期
+					) s4 on s1.币种 =s4.币种 AND s1.日期 =s4.创建日期
                      LEFT JOIN ( SELECT 币种, 创建日期, CASE DATE_FORMAT(创建日期,'%w')	WHEN 1 THEN '星期一' WHEN 2 THEN '星期二' WHEN 3 THEN '星期三' WHEN 4 THEN '星期四' WHEN 5 THEN '星期五' WHEN 6 THEN '星期六' WHEN 0 THEN '星期日' END as 上月周, COUNT(订单编号) AS 上月派送问题件单量
                                         FROM 派送问题件_跟进表 p
                                         WHERE p.创建日期 >= DATE_SUB('{0} ',INTERVAL 1 MONTH)  AND p.创建日期 < '{0}'
                                         GROUP BY 币种, 创建日期
-                     ) s5 on s3.币种 = s5.币种 AND s3.创建日期 = DATE_SUB(s5.创建日期,INTERVAL -1 MONTH)
+                     ) s5 on s1.币种 = s5.币种 AND s1.日期 = DATE_SUB(s5.创建日期,INTERVAL -1 MONTH)
                     LEFT JOIN 派送问题件_跟进表_message s6 on s3.币种 = s6.币种 AND s3.创建日期 = s6.日期 AND s3.问题件类型 =s6.短信模板
                     GROUP BY s1.币种, s1.日期, s3.问题件类型
             ) s
@@ -850,12 +856,12 @@ class QueryTwo(Settings, Settings_sso):
         print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
         currencyId = [13, 6]            # 13 是台币； 6 是港币
         logisticsStatus = [9999, 2, 3, 4]
-        logisticsId_tw = [9999, '85,191,348,703,711,722', '198,199,229,356,376,380', '555,556,557,724,768,769,770', '367,383,255']
+        logisticsId_tw = [9999, '85,191,348,703,711,722', '198,199,229,356,376,380', '555,556,557,724,768,769,770,802,900', '63,255,367,382,383,420,458,704,905']
         logisticsId_hk = [9999, '230,277', '665,693']
 
         match = {6: '港币', 13: '台币'}
         match2 = {9999: '全部', 2: '已签收', 3: '拒收', 4: '已退货'}
-        match3 = {9999: '全部', '85,191,348,703,711,722': '速派', '198,199,229,356,376,380': '天马', '555,556,557,724,768,769,770': '协来运', '367,383,255': '易速配', '230,277': '立邦', '665,693': '圆通'}
+        match3 = {9999: '全部', '85,191,348,703,711,722': '速派', '198,199,229,356,376,380': '天马', '555,556,557,724,768,769,770,802,900': '协来运', '63,255,367,382,383,420,458,704,905': '易速配', '230,277': '立邦', '665,693': '圆通'}
 
         dlist = []
         df =pd.DataFrame([])

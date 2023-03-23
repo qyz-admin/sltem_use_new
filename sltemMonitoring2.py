@@ -1901,7 +1901,7 @@ class SltemMonitoring(Settings):
         print('正在运行宏…………')
         app = xl.App(visible=False, add_book=False)             # 运行宏调整
         app.display_alerts = False
-        wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+        wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
         wbsht1 = app.books.open(filePath)
         if ready == '本期宏':
             wbsht.macro('sl_总监控运行')()
@@ -3655,7 +3655,7 @@ class SltemMonitoring(Settings):
         print('正在运行宏…………')
         app = xl.App(visible=False, add_book=False)             # 运行宏调整
         app.display_alerts = False
-        wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+        wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
         wbsht1 = app.books.open(filePath)
         if ready == '本期宏':
             wbsht.macro('sl_总监控运行')()
@@ -3747,8 +3747,8 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2023.02.17'
-    now_month = '2023.03.17'
+    last_month = '2023.02.20'
+    now_month = '2023.03.20'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传

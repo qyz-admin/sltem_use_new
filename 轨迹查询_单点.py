@@ -1208,7 +1208,7 @@ if __name__ == '__main__':
         print("2-->>> 正在按时间查询+++")
         m.order_online('2022-01-01', '2022-01-05', isReal, proxy_handle, proxy_id)
 
-    elif int(select) == 51 or int(select) == 52:
+    elif int(select) in  (51,52,53,54):
         print("1-->>> 正在按运单号查询+++")
         tm = ''
         tm2 = ''
@@ -1220,6 +1220,14 @@ if __name__ == '__main__':
         elif select == 52:
             tm = (datetime.datetime.now().strftime('%Y-%m-%d')) + ' 11:00:00'
             tm2 = (datetime.datetime.now().strftime('%Y-%m-%d')) + ' 16:00:00'
+            tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'PM'
+        elif select == 53:
+            tm = '2023-03-17 16:00:00'
+            tm2 = '2023-03-20 11:00:00'
+            tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'AM'
+        elif select == 54:
+            tm = '2023-03-21 16:00:00'
+            tm2 = '2023-03-22 16:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'PM'
         print('****** 查询      起止时间：' + tm + ' - ' + tm2 + ' ******')
         m.getDeliveryList(tm, tm2, '创建时间', proxy_handle, proxy_id, tm_data)

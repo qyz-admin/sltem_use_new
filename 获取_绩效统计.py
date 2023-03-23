@@ -1466,7 +1466,7 @@ if __name__ == '__main__':
         # m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
         #
         # order_time = '跟进时间'
-        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
+        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
         # order_time = '创建时间'
         # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
         #

@@ -16,6 +16,7 @@ import pandas.io.formats.excel
 
 from sqlalchemy import create_engine
 from settings import Settings
+from settings_sso import Settings_sso
 from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, \
@@ -53,6 +54,7 @@ class QueryUpdate(Settings):
                                                                                     self.mysql3['datebase']))
         self.e = EmailControl()
         self.m = MysqlControl()
+        self.dk = Settings_sso()    # 钉钉发送
     def reSetEngine(self):
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -917,6 +919,31 @@ class QueryUpdate(Settings):
                    and gz.`审核时间` >= '{0} 00:00:00' AND gz.`日期` >= '{1}';'''.format(month_yesterday, month_last)
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('已清除不参与计算的今日改派订单…………')
+
+
+        print('正在检查总表 订单重量异常 信息 ......')
+        sql = '''SELECT 订单编号 
+                FROM {0} s 
+                WHERE s.包裹重量 > 5000 AND s.`订单编号` not in (SELECT 订单编号 FROM {1});'''.format('d1_gat', '订单重量异常')
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+        if df is not None and len(df) > 0:
+            df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
+            sql = 'REPLACE INTO {0}(订单编号, 记录时间) SELECT 订单编号, NOW() 添加时间 FROM d1_cpy; '.format('订单重量异常')
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
+            orderId = list(df['订单编号'])
+            orderId = ','.join(orderId)
+            url = "https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e"  # url为机器人的webhook  个人 小海
+            # # url = "https://oapi.dingtalk.com/robot/send?access_token=fa74c55267674d9281f705b6fde624818c9977287cb590891ef2691714a9ceda"  # url为机器人的webhook  审单问题群
+            content = r"订单重量异常, 请核实；" + orderId  # 钉钉消息内容，注意test是自定义的关键字，需要在钉钉机器人设置中添加，这样才能接收到消息
+            mobile_list = ['18538110674']  # 要@的人的手机号，可以是多个，注意：钉钉机器人设置中需要添加这些人，否则不会接收到消息
+            isAtAll = '单个'  # 是、 否、 单个、 @所有人
+            self.dk.send_dingtalk_message(url, content, mobile_list, isAtAll)
+
+            print('订单重量异常 信息 已发送 请注意查看......')
+        else:
+            print('无 订单重量异常 信息！！！')
+
     # 导出总的签收表---各家族-港澳台(三)
     def EportOrderBook(self, team, month_last, month_yesterday):
         today = datetime.date.today().strftime('%Y.%m.%d')
@@ -1032,7 +1059,7 @@ class QueryUpdate(Settings):
                 print('正在运行 预估签收率 表宏…………')
                 app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
                 app.display_alerts = False
-                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
                 wbsht1 = app.books.open(file_path)
                 wbsht.macro('预估签收率修饰_使用')()
                 wbsht1.save()
@@ -1101,7 +1128,7 @@ class QueryUpdate(Settings):
                 print('正在运行 同产品各团队对比 表宏…………')
                 app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
                 app.display_alerts = False
-                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
                 wbsht1 = app.books.open(file_path)
                 wbsht.macro('同产品各团队对比_使用')()
                 wbsht1.save()
@@ -1158,7 +1185,7 @@ class QueryUpdate(Settings):
                 print('正在运行 同产品各团队对比 表宏…………')
                 app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
                 app.display_alerts = False
-                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
                 wbsht1 = app.books.open(file_path)
                 wbsht.macro('同产品各团队对比_使用')()
                 wbsht1.save()
@@ -5190,7 +5217,7 @@ class QueryUpdate(Settings):
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.screen_updating = False
             # app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('zl_gat_report_new.gat_总_品类_物流_两月签收率')()
             wbsht1.save()
@@ -5233,7 +5260,7 @@ class QueryUpdate(Settings):
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.screen_updating = False
             # app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('zl_gat_report_new.gat_品类直发分旬签收率')()
             wbsht1.save()
@@ -5284,7 +5311,7 @@ class QueryUpdate(Settings):
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.screen_updating = False
             # app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('zl_gat_report_new.gat_产品签收率_总')()
             wbsht1.save()
@@ -5310,8 +5337,7 @@ class QueryUpdate(Settings):
         month_now = datetime.datetime.now().strftime('%Y-%m-%d')
         gat_time = (datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m')
         match = {'gat': '港台-每日'}
-        not_team = '"红杉家族-港澳台","红杉家族-港澳台2",  "APP运营", "金狮-港澳台", "金鹏家族-小虎队", "金鹏家族-4组","Line运营","神龙-主页运营","奥创队","神龙-香港","客服中心-港台","研发部-研发团队","翼虎家族-mercadolibre"'
-        not_team = '"客服中心港台","奥创队","神龙主页运营","APP运营","Line运营","红杉港台","郑州北美""研发部港台","金鹏港台","金狮港台","翼虎港台"'
+        not_team = '"客服中心港台","奥创队","神龙主页运营","APP运营","Line运营","红杉港台","郑州北美","研发部港台","金鹏港台","金狮港台","翼虎港台"'
         del_time = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y%m')
 
         sql = '''DELETE FROM gat_zqsb gt
@@ -5330,8 +5356,8 @@ class QueryUpdate(Settings):
         print('正在清除不参与计算的今日改派订单…………')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
-        print('正在修改-港澳台-物流渠道…………')
-        self.update_logistics_name()
+        # print('正在修改-港澳台-物流渠道…………')
+        # self.update_logistics_name()
 
         filePath = []
         listT = []  # 查询sql的结果 存放池
@@ -6526,7 +6552,7 @@ class QueryUpdate(Settings):
         try:
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('zl_report_day')()
             wbsht1.save()
@@ -6541,7 +6567,7 @@ class QueryUpdate(Settings):
 
         # print('正在运行' + match[team] + '表宏…………（win32com方法二）')
         # xls = win32com.client.Dispatch("Excel.Application")
-        # wb = xls.workbooks.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')  ##存储vba代码的文件
+        # wb = xls.workbooks.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')  ##存储vba代码的文件
         # wb.Application.DisplayAlerts = False
         # try:
         #     wb1 = xls.workbooks.open(file_path)
@@ -6765,7 +6791,7 @@ class QueryUpdate(Settings):
             print('正在运行' + match[team] + '表宏…………')
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('gat_总_地区_两月签收率')()
             wbsht1.save()
@@ -7300,7 +7326,7 @@ class QueryUpdate(Settings):
             # print('正在运行' + wbbook + '表宏…………')
             # app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             # app.display_alerts = False
-            # wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            # wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
             # wbsht1 = app.books.open(file_path)
             # wbsht.macro('py_sl_总运行')()
             # wbsht1.save()
@@ -7747,7 +7773,7 @@ class QueryUpdate(Settings):
             # print('正在运行' + wbbook + '表宏…………')
             # app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             # app.display_alerts = False
-            # wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            # wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
             # wbsht1 = app.books.open(file_path)
             # wbsht.macro('py_sl_总运行')()
             # wbsht1.save()
@@ -8027,7 +8053,8 @@ class QueryUpdate(Settings):
             print('正在获取 周报表 数据内容…………')
             sql = '''SELECT 日期31天,ss.问题订单,ss.正常出货,ss.删除订单,concat(ROUND(IFNULL(ss.删除订单/ss.问题订单,0) * 100,2),'%') as 取消占比,ss.实际签收, ss1.约派送,ss1.核实拒收 as 核实拒收原因,ss1.再派签收,ss2.挽回单数,ss2.未确认,ss2.退款单数,ss2.实际挽回单数,ss3.正常发货,ss3.取消订单,
                             ss5.客言需要, ss5.客言取消, ss5.未接听, ss4.`联系量（有结果）`,ss4.挽单量,  ss4.张联系量 AS '张陈平-联系量(有结果)',ss4.张挽单量 AS '张陈平-挽单量', ss4.蔡联系量 AS '蔡利英-联系量(有结果)',ss4.蔡挽单量 AS '蔡利英-挽单量', 
-                            ss4.杨联系量 AS '杨嘉仪-联系量(有结果)',ss4.杨挽单量 AS '杨嘉仪-挽单量',  NULL 联系量,NULL 客户接听量,  NULL '张陈平-联系量',NULL '张陈平-客户接听量', NULL '蔡利英-联系量',NULL '蔡利英-客户接听量', NULL '杨嘉仪-联系量',NULL '杨嘉仪-客户接听量'
+                            ss4.杨联系量 AS '杨嘉仪-联系量(有结果)',ss4.杨挽单量 AS '杨嘉仪-挽单量',   ss4.李联系量 AS '李晓青-联系量(有结果)',ss4.李挽单量 AS '李晓青-挽单量',
+                            NULL 联系量,NULL 客户接听量,  NULL '张陈平-联系量',NULL '张陈平-客户接听量', NULL '蔡利英-联系量',NULL '蔡利英-客户接听量', NULL '杨嘉仪-联系量',NULL '杨嘉仪-客户接听量', NULL '李晓青-联系量',NULL '李晓青-客户接听量'
                     FROM date
                     LEFT JOIN
                     (SELECT 日期 AS 系统问题,COUNT(订单编号) AS 问题订单,
@@ -8115,7 +8142,8 @@ class QueryUpdate(Settings):
                     ) ss3 ON  date.`日期31天` = EXTRACT(day FROM ss3.`采购异常`)
                     LEFT JOIN
                     (SELECT DATE(s.处理时间) AS 拒收问题件, COUNT(订单编号) AS '联系量（有结果）', SUM(IF(s.`再次克隆下单` IS NOT NULL,1,0)) AS 挽单量, SUM(IF(处理人='张陈平',1,0)) AS 张联系量, SUM(IF(处理人='张陈平' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS 张挽单量,
-                            SUM(IF(处理人='蔡利英',1,0)) AS 蔡联系量, SUM(IF(处理人='蔡利英' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS 蔡挽单量,  SUM(IF(处理人='杨嘉仪',1,0)) AS 杨联系量, SUM(IF(处理人='杨嘉仪' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS 杨挽单量
+                            SUM(IF(处理人='蔡利英',1,0)) AS 蔡联系量, SUM(IF(处理人='蔡利英' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS 蔡挽单量,  SUM(IF(处理人='杨嘉仪',1,0)) AS 杨联系量, SUM(IF(处理人='杨嘉仪' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS 杨挽单量,
+                            SUM(IF(处理人='李晓青',1,0)) AS 李联系量, SUM(IF(处理人='李晓青' AND s.`再次克隆下单` IS NOT NULL,1,0)) AS 李挽单量
                         FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`
                                 FROM (SELECT * 
                                         FROM 拒收问题件 
@@ -8177,7 +8205,7 @@ class QueryUpdate(Settings):
                 print('正在运行 日报表、周报表 宏…………')
                 app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
                 app.display_alerts = False
-                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
                 wbsht1 = app.books.open(file_path)
                 wbsht.macro('电话核实日报表_周报表')()
                 wbsht1.save()
@@ -8260,7 +8288,7 @@ class QueryUpdate(Settings):
                 print('正在运行 物流头部产品签收率 宏…………')
                 app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
                 app.display_alerts = False
-                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
                 wbsht1 = app.books.open(file_path)
                 wbsht.macro('物流头程产品签收率_月')()
                 wbsht1.save()
@@ -8383,7 +8411,7 @@ class QueryUpdate(Settings):
                 print('正在运行 在线签收率 宏…………')
                 app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
                 app.display_alerts = False
-                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
                 wbsht1 = app.books.open(file_path)
                 wbsht.macro('gat_总_品类_物流_两月签收率')()
                 wbsht1.save()
@@ -10984,7 +11012,7 @@ class QueryUpdate(Settings):
             print('正在运行' + match[team] + '表宏…………')
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('gat_总_品类_物流_两月签收率')()
             wbsht1.save()
@@ -11013,7 +11041,7 @@ class QueryUpdate(Settings):
             print('正在运行' + match[team] + '表宏…………')
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('gat_品类直发分旬签收率')()
             wbsht1.save()
@@ -11048,7 +11076,7 @@ class QueryUpdate(Settings):
             print('正在运行' + match[team] + '表宏…………')
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('gat_产品签收率_总')()
             wbsht1.save()
@@ -11079,9 +11107,9 @@ if __name__ == '__main__':
             # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
         else:
-            month_last = '2023-01-01'
-            month_old = '2023-01-01'  # 获取-每日-报表 开始的时间
-            month_yesterday = '2023-02-28'
+            month_last = '2023-02-01'
+            month_old = '2023-02-01'  # 获取-每日-报表 开始的时间
+            month_yesterday = '2023-03-16'
 
         last_time = '2021-01-01'
         up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期

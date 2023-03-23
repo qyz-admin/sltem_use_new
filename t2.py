@@ -41,16 +41,15 @@ if team == 'gat':
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    data_begin = datetime.date(2022, 12, 30)  # 数据库更新
-    begin = datetime.date(2022, 12, 30)      # 单点更新
-    end = datetime.date(2022, 12, 31)
+    data_begin = datetime.date(2023, 2, 28)  # 数据库更新
+    begin = datetime.date(2023, 2, 28)      # 单点更新
+    end = datetime.date(2023, 3, 23)
     # 导出时间
     month_last = '2023-01-01'
-    month_yesterday = '2023-03-10'
+    month_yesterday = '2023-03-23'
     month_begin = '2022-12-01'
 print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
-print('****** 导出      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
 print('****** 导出      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
 
 # 库的引用

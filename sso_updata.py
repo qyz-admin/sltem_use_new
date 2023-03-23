@@ -2905,29 +2905,6 @@ class Query_sso_updata(Settings):
                                        a.`改派原运单号`= IF(b.`改派原运单号` = '', NULL,  b.`改派原运单号`)
                            where a.`订单编号`=b.`订单编号`;'''.format('gat_order_list')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
-            print('正在检查总表 订单重量异常 信息 ......')
-            sql = '''SELECT 订单编号 
-                    FROM {0} s 
-                    WHERE s.包裹重量 > 5000 AND s.`订单编号` not in (SELECT 订单编号 FROM {1});'''.format('d1_cpy_cp', '订单重量异常')
-            df = pd.read_sql_query(sql=sql, con=self.engine1)
-            if data is not None and len(data) > 0:
-                df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
-                sql = 'REPLACE INTO {0}(订单编号, 记录时间) SELECT 订单编号, NOW() 添加时间 FROM d1_cpy; '.format('订单重量异常')
-                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
-                orderId = list(df['订单编号'])
-                orderId = ','.join(orderId)
-                url = "https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e"  # url为机器人的webhook  个人 小海
-                # # url = "https://oapi.dingtalk.com/robot/send?access_token=fa74c55267674d9281f705b6fde624818c9977287cb590891ef2691714a9ceda"  # url为机器人的webhook  审单问题群
-                content = r"天马711超商订单： 解绑超商，重新审核；" + orderId  # 钉钉消息内容，注意test是自定义的关键字，需要在钉钉机器人设置中添加，这样才能接收到消息
-                mobile_list = ['18538110674']  # 要@的人的手机号，可以是多个，注意：钉钉机器人设置中需要添加这些人，否则不会接收到消息
-                isAtAll = '单个'  # 是、 否、 单个、 @所有人
-                self.dk.send_dingtalk_message(url, content, mobile_list, isAtAll)
-
-                print('订单重量异常 信息 已发送 请注意查看......')
-            else:
-                print('无 订单重量异常 信息！！！')
         else:
             print('没有需要获取的信息！！！')
             return

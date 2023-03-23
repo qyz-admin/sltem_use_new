@@ -1651,13 +1651,13 @@ class SltemMonitoring(Settings):
                                     SUM(IF(最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),`价格RMB`,0))  as 完成金额,
                                     SUM(`价格RMB`) AS 总金额
                                 FROM {0} sl_cx
-                                WHERE  ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
+                                WHERE  ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`所属团队` IN ({6})
 								GROUP BY 币种, 所属团队, 年月, 旬, 是否改派, 物流渠道
                                 with rollup 
                         ) s
                         LEFT JOIN (SELECT 币种, 年月,COUNT(订单编号) AS 月单量
                                     FROM qsb_gat sl_cx
-                                    WHERE ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
+                                    WHERE ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`所属团队` IN ({6})
                                     GROUP BY 币种, 所属团队, 年月
                         ) ss  ON s.币种 = ss.币种 AND s.年月 = ss.年月
                         WHERE s.年月 <> '合计' 
@@ -1665,8 +1665,7 @@ class SltemMonitoring(Settings):
                                 FIELD(s.`年月`,'{2}','{4}','合计'),
                                 FIELD(s.`旬`,1,2,3,'上旬','中旬','下旬','合计'),
                                 FIELD(s.`是否改派`,'改派','直发','合计'),
-                                FIELD(s.`物流方式`, {7}, "合计")
-                        ;'''.format(family, now_month, now_month_new, last_month, last_month_new, currency, match[team],self.logistics_name)
+                                FIELD(s.`物流方式`, {7}, "合计");'''.format(family, now_month, now_month_new, last_month, last_month_new, currency, match[team],self.logistics_name)
         listT.append(sqltime82)
         show_name.append(' 物流分旬签收率(整体 本月)…………')
 
@@ -1800,13 +1799,13 @@ class SltemMonitoring(Settings):
                                     SUM(IF(最终状态 IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),`价格RMB`,0))  as 完成金额,
                                     SUM(`价格RMB`) AS 总金额
                                 FROM {0} sl_cx
-                                WHERE  ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
+                                WHERE  ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`所属团队` IN ({6})
 								GROUP BY 币种, 所属团队, 年月, 旬, 是否改派, 物流渠道
                                 with rollup 
                         ) s
                         LEFT JOIN (SELECT 币种, 年月,COUNT(订单编号) AS 月单量
                                     FROM qsb_gat sl_cx
-                                    WHERE ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`团队` IN ({6})
+                                    WHERE ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`所属团队` IN ({6})
                                     GROUP BY 币种, 所属团队, 年月
                         ) ss  ON s.币种 = ss.币种 AND s.年月 = ss.年月
                         WHERE s.年月 <> '合计'
@@ -1872,7 +1871,7 @@ class SltemMonitoring(Settings):
         print('正在运行宏…………')
         app = xl.App(visible=False, add_book=False)             # 运行宏调整
         app.display_alerts = False
-        wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+        wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
         wbsht1 = app.books.open(filePath)
         if ready == '本期宏':
             wbsht.macro('sl_总监控运行')()
@@ -3626,7 +3625,7 @@ class SltemMonitoring(Settings):
         print('正在运行宏…………')
         app = xl.App(visible=False, add_book=False)             # 运行宏调整
         app.display_alerts = False
-        wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(工具表).xlsm')
+        wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
         wbsht1 = app.books.open(filePath)
         if ready == '本期宏':
             wbsht.macro('sl_总监控运行')()
@@ -3718,17 +3717,17 @@ if __name__ == '__main__':
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     # 获取签收表内容（一）qsb_slgat
-    last_month = '2023.02.17'
-    now_month = '2023.03.17'
+    last_month = '2023.02.23'
+    now_month = '2023.03.23'
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传
 
 
     # 测试监控运行（二）-- 第一种手动方式
-    # m.order_Monitoring('港台')        # 各月缓存（整体一）、
+    m.order_Monitoring('港台')        # 各月缓存（整体一）、
     for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港']:
-    # for team in ['火凤凰-香港', '火凤凰-台湾']:
+    # for team in ['神龙-台湾', '火凤凰-台湾']:
     # for team in ['火凤凰-香港']:
     # for team in [ '神龙-香港']:
     # for team in ['港台-台湾']:
