@@ -833,28 +833,18 @@ class QueryOrder(Settings, Settings_sso):
 
             # ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]') # ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]')
             file_path = 'G:\\输出文件\\订单检索-{0}{1}.xlsx'.format('昨日明细', rq)
-            # df0 = pd.DataFrame([])                                  # 创建空的dataframe数据框
-            # df0.to_excel(file_path, index=False)                    # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-            # writer = pd.ExcelWriter(file_path, engine='openpyxl')   # 初始化写入对象
-            # # writer = pd.ExcelWriter(file_path, engine='xlsxwriter')   # 初始化写入对象
-            # # writer = pd.ExcelWriter(file_path, engine='xlsxwriter', encoding='utf-8')   # 初始化写入对象
-            # book = load_workbook(file_path)                         # 可以向不同的sheet写入数据（对现有工作表的追加）
-            # writer.book = book                                      # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-            #
-            # # dp = ILLEGAL_CHARACTERS_RE.sub(r'', dp)
-            # # for column in list(dp.columns):
-            #     # dp[column] = dp[column].apply(lambda x: format(x, '.2%'))
-            #     # dp[column] = re.sub(ILLEGAL_CHARACTERS_RE, "", dp[column])
-            # dp.to_excel(excel_writer=writer, sheet_name='明细', index=False)
-            # db92.to_excel(excel_writer=writer, sheet_name='天马711', index=False)
-            # db14.to_excel(excel_writer=writer, sheet_name='协来运直发', index=False)
-            # if 'Sheet1' in book.sheetnames:                         # 删除新建文档时的第一个工作表
-            #     del book['Sheet1']
-            # writer.save()
-            # writer.close()
-
-            # writer = pd.ExcelWriter(file_path, engine='xlsxwriter')  # 初始化写入对象
-            dp.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
+            df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+            df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+            book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            dp.to_excel(excel_writer=writer, sheet_name='明细', index=False)
+            db92.to_excel(excel_writer=writer, sheet_name='天马711', index=False)
+            db14.to_excel(excel_writer=writer, sheet_name='协来运直发', index=False)
+            if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+                del book['Sheet1']
+            writer.save()
+            writer.close()
 
             print('昨日明细 查询已导出+++')
         else:
@@ -942,10 +932,26 @@ class QueryOrder(Settings, Settings_sso):
         print('******本批次查询成功')
         return df
 
+    #  1.0 单点获取 最近三天订单 删除原因分析
+    def order_Query_Delete(self, timeStart, timeEnd, areaId, query, proxy_id, proxy_handle, time_handle):  # 进入订单检索界面
+        if time_handle == '自动':
+            sql = '''SELECT DISTINCT 下单日期 FROM day_delete_cache_copy1 d GROUP BY 下单日期 ORDER BY 下单日期 DESC;'''.format(
+                'day_delete_cache_copy1')
+            rq = pd.read_sql_query(sql=sql, con=self.engine1)
+            rq = pd.to_datetime(rq['下单日期'][0])
+            timeStart = (rq + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
+
+        timeStart = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()  # 按天循环获取
+        timeEnd = datetime.datetime.strptime(timeEnd, '%Y-%m-%d').date()
+        for i in range((timeEnd - timeStart).days):  # 按天循环获取订单状态
+            day = timeStart + datetime.timedelta(days=i)
+            day_time = str(day)
+            self.order_Query_Delete_Update(day_time, day_time, areaId, query, proxy_id, proxy_handle)
 
     #  1.1 单点获取 最近三天订单 删除原因分析
-    def order_Query_Delete(self, timeStart, timeEnd, areaId, query, proxy_id, proxy_handle):  # 进入订单检索界面
-        print('+++正在检查 ' + timeStart + ' 到 ' + timeEnd + ' 号订单信息中')
+    def order_Query_Delete_Update(self, timeStart, timeEnd, areaId, query, proxy_id, proxy_handle):  # 进入订单检索界面
+        print('+++正在检查 ' + timeStart + ' 到 ' + timeEnd + ' 号 订单删除 信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
@@ -992,7 +998,7 @@ class QueryOrder(Settings, Settings_sso):
             sql = '''DELETE FROM `cache` gt WHERE gt.`订单编号` IN (SELECT * FROM gat_地址邮编错误);'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             self.del_people(proxy_id, proxy_handle)
-            self.del_order_day()
+            self.del_order_day_new(timeStart)
 
             print('查询已导出+++')
         else:
@@ -1081,418 +1087,10 @@ class QueryOrder(Settings, Settings_sso):
         print('******本批次查询成功')
         return df # 更新删除订单的原因 -函数调用
     # 1.3 分析订单删除的  分析导出
-    def del_order_day(self):
-        print('正在分析 昨日 删单原因中')
-        sql ='''SELECT *,concat(ROUND(SUM(IF(删单原因 IS NULL OR 删单原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
-                FROM (SELECT s1.*,总订单量,总删单量, 系统删单量
-                      FROM (SELECT 币种,运营团队,删单原因,COUNT(订单编号) AS 订单量
-                            FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
-                                  FROM `cache` c
-                            ) w
-                            GROUP BY 币种,运营团队,删单原因
-                      ) s1
-                      LEFT JOIN
-                      ( SELECT 币种,运营团队,COUNT(订单编号) AS 总订单量, SUM(IF(订单状态 = '已删除',1,0)) AS 总删单量, SUM(IF(订单状态 = '已删除' AND 删除人 IS NULL,1,0)) AS 系统删单量
-                        FROM `cache` w
-                        GROUP BY 币种,运营团队
-                      ) s2 
-                      ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
-                ) s
-                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港')
-                GROUP BY 币种,运营团队,删单原因
-                ORDER BY FIELD(币种,'台币','港币','合计'),
-                         FIELD(运营团队,'神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
-                         订单量 DESC;'''
-        df1 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # print(df1)
-        # 初始化设置
-        sl_tem, sl_tem_lh, sl_tem_ey, sl_tem_cf = '', '', '', ''
-        hfh_tem, hfh_tem_lh, hfh_tem_ey, hfh_tem_cf = '', '', '', ''
-        for row in df1.itertuples():
-            tem = getattr(row, '运营团队')
-            delreson = getattr(row, '删单原因')
-            count = getattr(row, '订单量')
-            if tem == '神龙家族-台湾' and delreson == None:
-                sl_tem = '*神  龙:   昨日单量：' + str(int(getattr(row, '总订单量'))) + '；删单量：' + str(int(getattr(row, '总删单量'))) + '；删单率：' + str(getattr(row, '删单率')) + '；系统删单量：' + str(int(getattr(row, '系统删单量'))) + '单;'
-                # print(sl_tem)
-            elif tem == '神龙家族-台湾' and '拉黑率订单' == delreson:
-                sl_tem_lh = '，\n            其中占比较多的是：拉黑率订单：' + str(int(count)) + '单, '
-                # print(sl_tem_lh)
-            elif tem == '神龙家族-台湾' and '恶意订单' == delreson:
-                sl_tem_ey = '恶意订单：' + str(int(count)) + '单, '
-                # print(sl_tem_ey)
-            elif tem == '神龙家族-台湾' and '重复订单' == delreson:
-                sl_tem_cf = '重复订单：' + str(int(count)) + '单;'
-                # print(sl_tem_cf)
-
-            elif tem == '火凤凰-台湾' and delreson == None:
-                hfh_tem = '*火凤凰:  昨日单量：' + str(int(getattr(row, '总订单量'))) + '；删单量：' + str(int(getattr(row, '总删单量'))) + '；删单率：' + str(getattr(row, '删单率')) + '；系统删单量：' + str(int(getattr(row, '系统删单量'))) + '单;'
-                # print(hfh_tem)
-            elif tem == '火凤凰-台湾' and '拉黑率订单' == delreson:
-                hfh_tem_lh = '，\n            其中占比较多的是：拉黑率订单：' + str(int(count)) + '单, '
-                # print(hfh_tem_lh)
-            elif tem == '火凤凰-台湾' and '恶意订单' == delreson:
-                hfh_tem_ey = '恶意订单：' + str(int(count)) + '单, '
-                # print(hfh_tem_ey)
-            elif tem == '火凤凰-台湾' and '重复订单' == delreson:
-                hfh_tem_cf = '重复订单：' + str(int(count)) + '单;'
-                # print(hfh_tem_cf)
-        print('*' * 50)
-        print(sl_tem + sl_tem_lh + sl_tem_ey + sl_tem_cf)
-        print(hfh_tem + hfh_tem_lh + hfh_tem_ey + hfh_tem_cf)
-
-        print('正在获取 删单明细 拉黑率信息 二…………')
-        sql ='''SELECT 币种, 删单原因, IF(联系电话 = '总计',NULL,联系电话) AS 拉黑率订单, 订单量, 拉黑率70以上, 拉黑率70以下
-                FROM(
-                    (SELECT s1.*
-					    FROM (SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(联系电话,'总计') 联系电话, COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
-                                FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
-                                        FROM `cache` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '拉黑率%'
-                                ) w
-                                GROUP BY 币种,删单原因, 联系电话
-                                WITH ROLLUP
-                        )  s1
-                        WHERE 币种 <> "总计" AND 删单原因 <> "总计"
-                        GROUP BY 币种,删单原因, 联系电话
-                        ORDER BY 订单量 desc
-                        LIMIT 5
-                    ) 
-                    UNION ALL
-                    (SELECT s1.*
-                        FROM (  SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(ip,'总计') ip, COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
-                                FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
-                                        FROM `cache` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '拉黑率%'
-                                ) w
-                                GROUP BY 币种,删单原因, ip
-                                WITH ROLLUP
-                        )  s1
-                        WHERE 币种 <> "总计" AND 删单原因 <> "总计"
-                        GROUP BY 币种,删单原因, ip
-                        ORDER BY 订单量 desc
-                        LIMIT 5
-                    ) 
-                ) s;'''
-        df2 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # print(df2)
-        df2.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
-        print('正在记录 拉黑率信息......')
-        sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 记录日期, 更新时间) SELECT 币种, 删单原因, 拉黑率订单, 订单量, CURDATE() 记录日期, NOW() 更新时间 FROM cache_cp s WHERE s.拉黑率订单 IS NOT NULL;'''.format('day_delete_cache')
-        pd.read_sql_query(sql=sql, con=self.engine1,chunksize=10000)
-
-        sl_Black ,sl_Black_iphone , sl_Black_ip = '','',''
-        k = 0
-        k2 = 0
-        for row in df2.itertuples():
-            tem_Black = getattr(row, '拉黑率订单')
-            count = getattr(row, '订单量')
-            if tem_Black == None:
-                sl_Black = '*拉黑率删除:  ' + str(int(getattr(row, '订单量'))) + '单；拉黑率70以上的：' + str(int(getattr(row, '拉黑率70以上'))) +'单；'
-                # print(sl_Black)
-            elif tem_Black != None and '.' not in tem_Black:
-                if count >= 10:
-                    if k == 0:
-                        sl_Black_iphone = '\n           同一电话有：(0' + str(int(tem_Black)) + ':' + str(int(count)) + '单),'
-                        k = k + 1
-                    elif k > 0:
-                        sl_Black_iphone =sl_Black_iphone + '(0' + str(int(tem_Black)) + ':' + str(int(count)) + '单);'
-                        k = k + 1
-                else:
-                    if k == 0:
-                        sl_Black_iphone = '\n           同一电话有：(0' + str(int(tem_Black)) + ':' + str(int(count)) +'单),'
-                        k = k + 1
-                    elif k > 0:
-                        sl_Black_iphone =sl_Black_iphone + '(0' + str(int(tem_Black)) + ':' + str(int(count)) + '单);'
-                        k = k + 1
-                # print(sl_Black_iphone)
-            elif tem_Black != None and '.' in tem_Black:
-                if count >= 10:
-                    if k2 == 0:
-                        sl_Black_ip = '\n           同一ip有：   (' + str(getattr(row, '拉黑率订单')) + ':' + str(int(getattr(row, '订单量'))) + '单),'
-                        k2 = k2 + 1
-                    elif k > 0:
-                        sl_Black_ip = sl_Black_ip + '(' + str(tem_Black) + ':' + str(int(count)) + '单);'
-                        k2 = k2 + 1
-                else:
-                    if k2 == 0:
-                        sl_Black_ip = '\n           同一ip有：   (' + str(tem_Black) + ':' + str(int(count)) +'单),'
-                        k2 = k2 + 1
-                    elif k > 0:
-                        sl_Black_ip = sl_Black_ip + '（' + str(tem_Black) + ':' + str(int(count)) + '单);'
-                        k2 = k2 + 1
-                # print(sl_Black_ip)
-        print('*' * 50)
-        print(sl_Black + sl_Black_iphone + sl_Black_ip)
-
-        print('正在获取 删单明细 恶意删除信息 三…………')
-        sql ='''SELECT 币种, 删单原因, IF(联系电话 = '总计',NULL,联系电话) AS 恶意删除, 订单量, 拉黑率70以上, 拉黑率70以下
-                FROM(
-                    (SELECT s1.*
-                        FROM (  SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(联系电话,'总计') 联系电话,COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
-                                FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
-                                        FROM `cache` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '恶意%'
-                                ) w
-                                GROUP BY 币种,删单原因, 联系电话
-                                WITH ROLLUP
-                        )  s1
-                        WHERE 币种 <> "总计" AND 删单原因 <> "总计"
-                        GROUP BY 币种,删单原因, 联系电话
-                        ORDER BY 订单量 desc
-                        LIMIT 5
-                    ) 
-                    UNION ALL
-                    (SELECT s1.*
-                        FROM (  SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(ip,'总计') ip,COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
-                                FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
-                                        FROM `cache` c
-                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '恶意%'
-                                ) w
-                                GROUP BY 币种,删单原因, ip
-                                WITH ROLLUP
-                        )  s1
-                        WHERE 币种 <> "总计" AND 删单原因 <> "总计"
-                        GROUP BY 币种,删单原因, ip
-                        ORDER BY 订单量 desc
-                        LIMIT 5
-                    ) 
-                ) s;'''
-        df3 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # print(df3)
-        df3.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
-        print('正在记录 恶意删除信息......')
-        sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 记录日期, 更新时间) SELECT 币种, 删单原因, 恶意删除, 订单量, CURDATE() 记录日期, NOW() 更新时间 FROM cache_cp s WHERE s.恶意删除 IS NOT NULL;'''.format('day_delete_cache')
-        pd.read_sql_query(sql=sql, con=self.engine1,chunksize=10000)
-
-        st_ey, st_ey_iphone, st_ey_ip = '','',''
-        k = 0
-        k2 = 0
-        for row in df3.itertuples():
-            tem_Black = getattr(row, '恶意删除')
-            count = getattr(row, '订单量')
-            if tem_Black == None:
-                st_ey = '*恶意删除： ' + str(int(count)) + '单；拉黑率70以上的：' + str(int(getattr(row, '拉黑率70以上'))) + '单；低于70的：' + str(int(getattr(row, '拉黑率70以下'))) + '单；'
-            elif tem_Black != None and '.' not in tem_Black:
-                if count >= 10:
-                    if k == 0:
-                        st_ey_iphone = ';\n           同一电话有：(' + str(tem_Black) + ': ' + str(int(count)) + '单),'
-                        k = k + 1
-                    elif k > 0:
-                        st_ey_iphone = st_ey_iphone + '(0' + str(tem_Black) + ': ' + str(int(count)) + '单);'
-                        k = k + 1
-                else:
-                    if k == 0:
-                        st_ey_iphone = ';\n           同一电话有：(' + str(tem_Black) + ': ' + str(int(count)) +'单),'
-                        k = k + 1
-                    elif k > 0:
-                        st_ey_iphone = st_ey_iphone + '(0' + str(tem_Black) + ': ' + str(int(count)) + '单);'
-                        k = k + 1
-
-            elif tem_Black != None and '.' in tem_Black:
-                if count >= 10:
-                    if k2 == 0:
-                        st_ey_ip = ';\n           同一ip有：    (' + str(tem_Black) + ': ' + str(int(count)) + '单),'
-                        k2 = k2 + 1
-                    elif k2 > 0:
-                        st_ey_ip = st_ey_ip + '(0' + str(tem_Black) + ': ' + str(int(count)) + '单);'
-                        k2 = k2 + 1
-                else:
-                    if k2 == 0:
-                        st_ey_ip = ';\n           同一ip有：    (' + str(tem_Black) + ': ' + str(int(count)) +'单),'
-                        k2 = k2 + 1
-                    elif k2 > 0:
-                        st_ey_ip = st_ey_ip + '(0' + str(tem_Black) + ': ' + str(int(count)) + '单);'
-                        k2 = k2 + 1
-        print('*' * 50)
-        print(st_ey + st_ey_iphone + st_ey_ip)
-
-        print('正在获取 删单明细 重复删除信息 四…………')
-        sql = '''SELECT IFNULL(币种,'币种') 币种,IFNULL(删单原因,'总计') 重复删除,COUNT(订单编号) AS 订单量
-                    FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
-                            FROM `cache` c
-                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '重复订单%'
-                    ) w
-                GROUP BY 币种,删单原因;'''
-        df4 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # print(df4)
-        cf_del = ''
-        for row in df4.itertuples():
-            tem_Black = getattr(row, '重复删除')
-            count = getattr(row, '订单量')
-            # cf_del = '*重复删除：' + str(count) + '单, 查询后都是客户上笔未收到或者是连续订多笔订单重复删除；'
-            cf_del = '*重复删除：' + str(count) + '单；'
-        print('*' * 50)
-        print(cf_del)
-
-        print('正在获取 删单明细 系统删除信息 五…………')
-        sql = '''SELECT s1.*
-                        FROM ( 
-        					    (SELECT *
-                                    FROM (SELECT IFNULL(币种,'币种') 币种,IFNULL(删单原因,'总计') 系统删除,COUNT(订单编号) AS 订单量
-                                            FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
-                                                    FROM `cache` c
-                                                    WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除人 IS NULL
-                                            ) w
-                                            GROUP BY 币种,删单原因
-                                            WITH ROLLUP
-                                    ) w1
-                                    WHERE 币种 <> '币种'
-                                    ORDER BY 订单量 DESC
-                                    LIMIT 4
-                                )
-                                UNION ALL
-                                 ( SELECT 币种,联系电话 AS 系统删除,COUNT(订单编号) AS 订单量
-                                    FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
-                                            FROM `cache` c
-                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除人 IS NULL
-                                    ) w
-                                    GROUP BY 币种,联系电话
-                                    ORDER BY 订单量 DESC
-                                    LIMIT 4
-                                )
-                                UNION ALL
-                                (SELECT 币种,ip AS 系统删除,COUNT(订单编号) AS 订单量
-                                    FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
-                                            FROM `cache` c
-                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除人 IS NULL
-                                    ) w
-                                    GROUP BY 币种,ip
-                                    ORDER BY 订单量 DESC
-                                    LIMIT 4
-                                )
-                        ) s1;'''
-        df5 = pd.read_sql_query(sql=sql, con=self.engine1)
-        # print(df5)
-        df5.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
-        print('正在记录 系统删除信息......')
-        sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 记录日期, 更新时间) 
-                SELECT 币种,'系统删除'  删单类型, 系统删除, 订单量, CURDATE() 记录日期, NOW() 更新时间
-				FROM cache_cp s 
-				WHERE s.系统删除 LIKE '%.%' OR s.系统删除 LIKE '%9%' OR s.系统删除 LIKE '%8%' OR s.系统删除 LIKE '%7%' OR s.系统删除 LIKE '%6%' OR s.系统删除 LIKE '%5%' 
-				   OR s.系统删除 LIKE '%4%' OR s.系统删除 LIKE '%3%' OR s.系统删除 LIKE '%2%' OR s.系统删除 LIKE '%1%' OR s.系统删除 LIKE '%0%';'''.format('day_delete_cache')
-        pd.read_sql_query(sql=sql, con=self.engine1,chunksize=10000)
-
-        st_del, st_del_iphone, st_del_ip = '', '', ''
-        k = 0
-        k2 = 0
-        for row in df5.itertuples():
-            tem_Black = getattr(row, '系统删除')
-            count = getattr(row, '订单量')
-            if '总计' in tem_Black:
-                st_del = '*系统删除： ' + str(int(count)) + '单；其中比较多的是：'
-            elif '订单' in tem_Black:
-                st_del = st_del + str(tem_Black) + ':' + str(int(count)) + '单,'
-
-            elif tem_Black != None and '.' not in tem_Black:
-                if count >= 10:
-                    if k == 0:
-                        st_del_iphone = ';\n           同一电话有：(' + str(tem_Black) + ': ' + str(int(count)) + '单),'
-                        k = k + 1
-                    elif k > 0:
-                        st_del_iphone = st_del_iphone + '(0' + str(tem_Black) + ': ' + str(int(count)) + '单);'
-                        k = k + 1
-                else:
-                    if k == 0:
-                        st_del_iphone = ';\n           同一电话有：(' + str(tem_Black) + ': ' + str(int(count)) + '单),'
-                        k = k + 1
-                    elif k > 0:
-                        st_del_iphone = st_del_iphone + '(0' + str(tem_Black) + ': ' + str(int(count)) + '单);'
-                        k = k + 1
-
-            elif tem_Black != None and '.' in tem_Black:
-                if count >= 10:
-                    if k2 == 0:
-                        st_del_ip = ';\n           同一ip有：   (' + str(tem_Black) + ': ' + str(int(count)) + '单),'
-                        k2 = k2 + 1
-                    elif k2 > 0:
-                        st_del_ip = st_del_ip + '(0' + str(tem_Black) + ': ' + str(int(count)) + '单);'
-                        k2 = k2 + 1
-                else:
-                    if k2 == 0:
-                        st_del_ip = ';\n           同一ip有：   (' + str(tem_Black) + ': ' + str(int(count)) + '单),'
-                        k2 = k2 + 1
-                    elif k2 > 0:
-                        st_del_ip = st_del_ip + '(0' + str(tem_Black) + ': ' + str(int(count)) + '单);'
-                        k2 = k2 + 1
-        print('*' * 50)
-        print(st_del + st_del_iphone + st_del_ip)
-
-        print('正在获取 连续3天以上的黑名单 电话、IP信息 六…………')
-        sql ='''UPDATE day_delete_cache d 
-                    SET d.`删单明细` = IF(d.`删单明细` LIKE '0%', RIGHT(d.`删单明细`,LENGTH(d.`删单明细`)-1),d.`删单明细`);'''
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        sql = '''SELECT *
-                FROM (
-                        SELECT 币种,删单类型,删单明细, COUNT(记录日期) AS 次数
-                        FROM day_delete_cache d
-                        WHERE d.`记录日期` >= IF(DATE_FORMAT('2022-06-29','%w') = 2 ,DATE_SUB(CURDATE(), INTERVAL 5 DAY),IF(DATE_FORMAT('2022-06-29','%w') = 1 ,DATE_SUB(CURDATE(), INTERVAL 6 DAY),DATE_SUB(CURDATE(), INTERVAL 2 DAY)))
-                        GROUP BY 币种,删单类型,删单明细
-                ) s
-                WHERE s.次数 >= 3
-                ORDER BY 币种,删单类型,删单明细, 次数 DESC;'''
-        df6 = pd.read_sql_query(sql=sql, con=self.engine1)
-        db61 = df6[~(df6['删单类型'].str.contains('系统删除'))]
-        # day_del = db61.to_markdown()
-        day_del = '''注意：连续3天同电话\IP的信息>>>'''
-        day_del2 = '恶意订单:'
-        day_del3 = '拉黑率订单:'
-        for row in db61.itertuples():
-            tem = getattr(row, '删单类型')
-            info = getattr(row, '删单明细')
-            count = getattr(row, '次数')
-            # day_del = day_del + '\n' + tem + ':' + info + ':  ' + str(int(count)) + '单,'
-            if '恶意订单' in tem:
-                day_del2 = day_del2 + '\n' + info + ':  ' + str(int(count)) + '单,'
-            elif '拉黑率订单' in tem:
-                day_del3 = day_del3 + '\n' + info + ':  ' + str(int(count)) + '单,'
-
-        print('*' * 50)
-        print(day_del + '\n' + day_del2 + '\n' + day_del3)
-
-
-        # url = "https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e"  # url为机器人的webhook
-        url = "https://oapi.dingtalk.com/robot/send?access_token=9a92f00296846dcd3ec8b52d7bacce114a9e34cb2d5dbfad9ce3371ab8d037f9"  # url为机器人的webhook  港台客服
-        content = r'r"H:\桌面\需要用到的文件\文件夹\out2.jpeg"'  # 钉钉消息内容，注意test是自定义的关键字，需要在钉钉机器人设置中添加，这样才能接收到消息
-        mobile_list = ['18538110674']  # 要@的人的手机号，可以是多个，注意：钉钉机器人设置中需要添加这些人，否则不会接收到消息
-        isAtAll = '是'  # 是否@所有人
-        headers = {'Content-Type': 'application/json', "Charset": "UTF-8"}
-        data = {"msgtype": "text",
-                # "markdown": {# 要发送的内容【支持markdown】【！注意：content内容要包含机器人自定义关键字，不然消息不会发送出去，这个案例中是test字段】
-                #         "title": 'TEST',
-                #         "text": "#### 昨日删单率分析" + "\n" +
-                #         "* " + sl_tem +
-                #         "   + " + sl_tem_lh + sl_tem_ey + sl_tem_cf + "\n" +
-                #         "* " + hfh_tem +
-                #         "   + " + hfh_tem_lh + hfh_tem_ey + hfh_tem_cf
-                # },
-                "text": {        # 要发送的内容【支持markdown】【！注意：content内容要包含机器人自定义关键字，不然消息不会发送出去，这个案例中是test字段】
-                    "content": '神龙 - 火凤凰 昨日台湾订单 删除分析' + '\n' +
-                               sl_tem + sl_tem_lh + sl_tem_ey + sl_tem_cf + '\n' +
-                               hfh_tem + hfh_tem_lh + hfh_tem_ey + hfh_tem_cf + '\n' +
-                               sl_Black + sl_Black_iphone + sl_Black_ip + '\n' +
-                               st_ey + st_ey_iphone + st_ey_ip + '\n' +
-                               cf_del + '\n' +
-                               st_del + st_del_iphone + st_del_ip + '\n' + '\n' +
-                               day_del + '\n' + day_del2 + '\n' + day_del3
-                    # "content": 'TEST'
-                },
-                "at": {# 要@的人
-                        # "atMobiles": mobile_list,
-                        # 是否@所有人
-                        "isAtAll": False  # @全体成员（在此可设置@特定某人）
-                }
-        }
-        # 4、对请求的数据进行json封装
-        sendData = json.dumps(data)  # 将字典类型数据转化为json格式
-        sendData = sendData.encode("utf-8")  # python3的Request要求data为byte类型
-        r = requests.post(url, headers=headers, data=json.dumps(data))
-        req = json.loads(r.text)  # json类型数据转换为dict字典
-        print(req['errmsg'])
-
-    def del_order_day_new(self):
-        print('正在分析 昨日 删单原因中')
-        sql ='''SELECT *,concat(ROUND(SUM(IF(删单原因 IS NULL OR 删单原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
+    def del_order_day_new(self, timeStart):
+        print('正在分析 ' + timeStart + ' 删单原因中')
+        sql ='''SELECT 币种, 运营团队, 删单原因, 订单量, 总订单量, 总删单量, 系统删单量,
+                        concat(ROUND(SUM(IF(删单原因 IS NULL OR 删单原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
                 FROM (SELECT s1.*,总订单量,总删单量, 系统删单量
                       FROM (SELECT 币种,运营团队,删单原因,COUNT(订单编号) AS 订单量
                             FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
@@ -1519,14 +1117,358 @@ class QueryOrder(Settings, Settings_sso):
                 FROM (  SELECT dt.*, 
                                 @_rn := if(@_prev_a = 币种 and @_prev_b = 运营团队, @_rn + 1, 1) as _rn,
                                 @_prev_a := 币种 as _prev_a,  @_prev_b := 运营团队 as _prev_b
-                        FROM 是 dt 
+                        FROM cache_online dt 
                         JOIN (
                                 SELECT @_rn:=0, @_prev_a:=null, @_prev_b:=null, @_prev_c:=null
                         ) tmp  
-                ) s1 where _rn <= 4;'''
+                ) s1 where _rn <= 5;'''
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
 
+        # print(df1)
+        # 初始化设置
+        sl_tem, hfh_tem = '', ''
+        sl_tem_lh, hfh_tem_lh = '，\n            其中占比较多的是：', '，\n            其中占比较多的是：'
+        for date, row in df1.iterrows():
+            tem = row['运营团队']
+            delreson = row['删单原因']
+            count = row['订单量']
+            count_z = row['总订单量']
+            count_zd = row['总删单量']
+            count_zdl = row['删单率']
+            count_xtdl = row['系统删单量']
+            if tem == '神龙家族-台湾':
+                if delreson == None:
+                    sl_tem = '*神  龙:   昨日单量：' + str(int(count_z)) + '; 删单量：' + str(int(count_zd)) + '; 删单率：' + str(count_zdl) + '; 系统删单量：' + str(int(count_xtdl)) + '单; '
+                else:
+                    sl_tem_lh = sl_tem_lh + delreson + '：' + str(int(count)) + '单; '
+            elif tem == '火凤凰-台湾':
+                if delreson == None:
+                    hfh_tem = '*火凤凰:   昨日单量：' + str(int(count_z)) + '; 删单量：' + str(int(count_zd)) + '; 删单率：' + str(count_zdl) + '; 系统删单量：' + str(int(count_xtdl)) + '单; '
+                else:
+                    hfh_tem_lh = hfh_tem_lh + delreson + '：' + str(int(count)) + '单; '
+        print('*' * 50)
+        print(sl_tem + sl_tem_lh)
+        print(hfh_tem + hfh_tem_lh)
 
+        print('正在获取 删单明细 拉黑率信息 二…………')
+        sql ='''SELECT 币种, 删单原因, IF(标准电话 = '总计',NULL,标准电话) AS 拉黑率订单, 订单量, 拉黑率70以上, 拉黑率70以下, 下单日期
+                FROM(
+                        (	SELECT s1.*
+                            FROM (SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(标准电话,'总计') 标准电话, COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下, 下单日期
+                                    FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 下单日期
+                                            FROM `cache` c
+                                            WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '拉黑率%'
+                                    ) w
+                                    GROUP BY 币种,删单原因, 标准电话
+                                    WITH ROLLUP
+                            )  s1
+                            WHERE 币种 <> "总计" AND 删单原因 <> "总计"
+                            GROUP BY 币种,删单原因, 标准电话
+                            ORDER BY 订单量 desc
+                            LIMIT 5
+                        ) 
+                        UNION ALL
+                        (   SELECT s1.*
+                            FROM (  SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(ip,'总计') ip, COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下, 下单日期
+                                    FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 下单日期
+                                            FROM `cache` c
+                                            WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '拉黑率%'
+                                    ) w
+                                    GROUP BY 币种,删单原因, ip
+                                    WITH ROLLUP
+                            )  s1
+                            WHERE 币种 <> "总计" AND 删单原因 <> "总计"
+                            GROUP BY 币种,删单原因, ip
+                            ORDER BY 订单量 desc
+                            LIMIT 5
+                        ) 
+                ) s;'''
+        df2 = pd.read_sql_query(sql=sql, con=self.engine1)
+        # print(df2)
+        df2.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
+        print('正在记录 拉黑率信息......')
+        sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 下单日期, 记录日期, 更新时间) SELECT 币种, 删单原因, 拉黑率订单, 订单量, 下单日期, CURDATE() 记录日期, NOW() 更新时间 FROM cache_cp s WHERE s.拉黑率订单 IS NOT NULL;'''.format('day_delete_cache_copy1')
+        pd.read_sql_query(sql=sql, con=self.engine1,chunksize=10000)
+
+        sl_Black ,sl_Black_iphone , sl_Black_ip = '','',''
+        k = 0
+        k2 = 0
+        for row in df2.itertuples():
+            tem_Black = getattr(row, '拉黑率订单')
+            count = getattr(row, '订单量')
+            if tem_Black == None:
+                sl_Black = '*拉黑率删除:  ' + str(int(getattr(row, '订单量'))) + '单；拉黑率70以上的：' + str(int(getattr(row, '拉黑率70以上'))) +'单；'
+            else:
+                if '.' not in tem_Black:
+                    if k == 0:
+                        sl_Black_iphone = sl_Black + '\n           同一电话有：(0' + str(int(tem_Black)) + ':' + str(int(count)) +'单),'
+                        k = k + 1
+                    elif k > 0:
+                        sl_Black_iphone =sl_Black_iphone + '(0' + str(int(tem_Black)) + ':' + str(int(count)) + '单);'
+                        k = k + 1
+                elif '.' in tem_Black:
+                    if k2 == 0:
+                        sl_Black_ip = sl_Black_iphone + '\n           同一ip有：   (' + str(tem_Black) + ':' + str(int(count)) +'单),'
+                        k2 = k2 + 1
+                    elif k > 0:
+                        sl_Black_ip = sl_Black_ip + '（' + str(tem_Black) + ':' + str(int(count)) + '单);'
+                        k2 = k2 + 1
+        print('*' * 50)
+        print(sl_Black_ip)
+
+        print('正在获取 删单明细 恶意删除信息 三…………')
+        sql ='''SELECT 币种, 删单原因, IF(标准电话 = '总计',NULL,标准电话) AS 恶意删除, 订单量, 拉黑率70以上, 拉黑率70以下, 下单日期
+                FROM(
+                    (SELECT s1.*
+                        FROM (  SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(标准电话,'总计') 标准电话,COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下, 下单日期
+                                FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 下单日期
+                                        FROM `cache` c
+                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '恶意%'
+                                ) w
+                                GROUP BY 币种,删单原因, 标准电话
+                                WITH ROLLUP
+                        )  s1
+                        WHERE 币种 <> "总计" AND 删单原因 <> "总计"
+                        GROUP BY 币种,删单原因, 标准电话
+                        ORDER BY 订单量 desc
+                        LIMIT 5
+                    ) 
+                    UNION ALL
+                    (SELECT s1.*
+                        FROM (  SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(ip,'总计') ip,COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下, 下单日期
+                                FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 下单日期
+                                        FROM `cache` c
+                                        WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '恶意%'
+                                ) w
+                                GROUP BY 币种,删单原因, ip
+                                WITH ROLLUP
+                        )  s1
+                        WHERE 币种 <> "总计" AND 删单原因 <> "总计"
+                        GROUP BY 币种,删单原因, ip
+                        ORDER BY 订单量 desc
+                        LIMIT 5
+                    ) 
+                ) s;'''
+        df3 = pd.read_sql_query(sql=sql, con=self.engine1)
+        # print(df3)
+        df3.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
+        print('正在记录 恶意删除信息......')
+        sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 下单日期, 记录日期, 更新时间) SELECT 币种, 删单原因, 恶意删除, 订单量, 下单日期, CURDATE() 记录日期, NOW() 更新时间 FROM cache_cp s WHERE s.恶意删除 IS NOT NULL;'''.format('day_delete_cache_copy1')
+        pd.read_sql_query(sql=sql, con=self.engine1,chunksize=10000)
+
+        st_ey, st_ey_iphone, st_ey_ip = '','',''
+        k = 0
+        k2 = 0
+        for row in df3.itertuples():
+            tem_Black = getattr(row, '恶意删除')
+            count = getattr(row, '订单量')
+            if tem_Black == None:
+                st_ey = '*恶意删除： ' + str(int(count)) + '单；拉黑率70以上的：' + str(int(getattr(row, '拉黑率70以上'))) + '单；低于70的：' + str(int(getattr(row, '拉黑率70以下'))) + '单；'
+            else:
+                if '.' not in tem_Black:
+                    if k == 0:
+                        st_ey_iphone = st_ey + ';\n           同一电话有：(' + str(tem_Black) + ': ' + str(int(count)) +'单),'
+                        k = k + 1
+                    elif k > 0:
+                        st_ey_iphone = st_ey_iphone + '(' + str(tem_Black) + ': ' + str(int(count)) + '单);'
+                        k = k + 1
+                if '.' in tem_Black:
+                    if k2 == 0:
+                        st_ey_ip = st_ey_iphone + ';\n           同一ip有：    (' + str(tem_Black) + ': ' + str(int(count)) +'单),'
+                        k2 = k2 + 1
+                    elif k2 > 0:
+                        st_ey_ip = st_ey_ip + '(' + str(tem_Black) + ': ' + str(int(count)) + '单);'
+                        k2 = k2 + 1
+        print('*' * 50)
+        print(st_ey_ip)
+
+        print('正在获取 删单明细 重复删除信息 四…………')
+        sql = '''SELECT IFNULL(币种,'币种') 币种,IFNULL(删单原因,'总计') 重复删除,COUNT(订单编号) AS 订单量
+                    FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
+                            FROM `cache` c
+                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '重复订单%'
+                    ) w
+                GROUP BY 币种,删单原因;'''
+        df4 = pd.read_sql_query(sql=sql, con=self.engine1)
+        # print(df4)
+        cf_del = ''
+        for row in df4.itertuples():
+            tem_Black = getattr(row, '重复删除')
+            count = getattr(row, '订单量')
+            # cf_del = '*重复删除：' + str(count) + '单, 查询后都是客户上笔未收到或者是连续订多笔订单重复删除；'
+            cf_del = '*重复删除：' + str(count) + '单；'
+        print('*' * 50)
+        print(cf_del)
+
+        print('正在获取 删单明细 系统删除信息 五…………')
+        sql = '''SELECT s1.*
+                        FROM ( 
+        					    (SELECT *
+                                    FROM (SELECT IFNULL(币种,NULL) 币种,IFNULL(删单原因,NULL) 系统删除,COUNT(订单编号) AS 订单量, 下单日期
+                                            FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 下单日期
+                                                    FROM `cache` c
+                                                    WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除人 IS NULL
+                                            ) w
+                                            GROUP BY 币种,删单原因
+                                            WITH ROLLUP
+                                    ) w1
+                                    WHERE 币种 <> '币种'
+                                    ORDER BY 订单量 DESC
+                                    LIMIT 4
+                                )
+                                UNION ALL
+                                 ( SELECT 币种,标准电话 AS 系统删除,COUNT(订单编号) AS 订单量, 下单日期
+                                    FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 下单日期
+                                            FROM `cache` c
+                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除人 IS NULL
+                                    ) w
+                                    GROUP BY 币种,标准电话
+                                    ORDER BY 订单量 DESC
+                                    LIMIT 4
+                                )
+                                UNION ALL
+                                (SELECT 币种,ip AS 系统删除,COUNT(订单编号) AS 订单量, 下单日期
+                                    FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 下单日期
+                                            FROM `cache` c
+                                            WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除人 IS NULL
+                                    ) w
+                                    GROUP BY 币种,ip
+                                    ORDER BY 订单量 DESC
+                                    LIMIT 4
+                                )
+                        ) s1;'''
+        df5 = pd.read_sql_query(sql=sql, con=self.engine1)
+        # print(df5)
+        df5.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
+        print('正在记录 系统删除信息......')
+        sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 下单日期, 记录日期, 更新时间) 
+                SELECT 币种,'系统删除'  删单类型, 系统删除, 订单量, 下单日期, CURDATE() 记录日期, NOW() 更新时间
+				FROM cache_cp s 
+				WHERE s.系统删除 LIKE '%.%' OR s.系统删除 LIKE '%9%' OR s.系统删除 LIKE '%8%' OR s.系统删除 LIKE '%7%' OR s.系统删除 LIKE '%6%' OR s.系统删除 LIKE '%5%' 
+				   OR s.系统删除 LIKE '%4%' OR s.系统删除 LIKE '%3%' OR s.系统删除 LIKE '%2%' OR s.系统删除 LIKE '%1%' OR s.系统删除 LIKE '%0%';'''.format('day_delete_cache_copy1')
+        pd.read_sql_query(sql=sql, con=self.engine1,chunksize=10000)
+
+        st_del, st_del_iphone, st_del_ip = '', '', ''
+        k = 0
+        k2 = 0
+        for row in df5.itertuples():
+            tem_Black = getattr(row, '系统删除')
+            count = getattr(row, '订单量')
+            if tem_Black == None:
+                st_del = '*系统删除： ' + str(int(count)) + '单；其中比较多的是：'
+            elif '订单' in tem_Black:
+                st_del = st_del + str(tem_Black) + ':' + str(int(count)) + '单,'
+            else:
+                if '.' not in tem_Black:
+                    if k == 0:
+                        st_del_iphone = st_del + ';\n           同一电话有：(' + str(tem_Black) + ': ' + str(int(count)) + '单),'
+                        k = k + 1
+                    elif k > 0:
+                        st_del_iphone = st_del_iphone + '(' + str(tem_Black) + ': ' + str(int(count)) + '单);'
+                        k = k + 1
+                if '.' in tem_Black:
+                    if k2 == 0:
+                        st_del_ip = st_del_iphone + ';\n           同一ip有：   (' + str(tem_Black) + ': ' + str(int(count)) + '单),'
+                        k2 = k2 + 1
+                    elif k2 > 0:
+                        st_del_ip = st_del_ip + '(' + str(tem_Black) + ': ' + str(int(count)) + '单);'
+                        k2 = k2 + 1
+        print('*' * 50)
+        print(st_del_ip)
+
+        print('正在获取 连续3天以上的黑名单 电话、IP信息 六…………')
+        sql = '''SELECT *
+                FROM (
+                        SELECT 币种,删单类型,删单明细, COUNT(下单日期) AS 次数
+                        FROM day_delete_cache_copy1 d
+                        WHERE d.`下单日期` >= IF(DATE_FORMAT('2022-06-29','%w') = 2 ,DATE_SUB(CURDATE(), INTERVAL 6 DAY),IF(DATE_FORMAT('2022-06-29','%w') = 1 ,DATE_SUB(CURDATE(), INTERVAL 7 DAY),DATE_SUB(CURDATE(), INTERVAL 3 DAY)))
+                        GROUP BY 币种,删单类型,删单明细
+                        ORDER BY 币种,删单类型,删单明细, 次数 DESC
+                ) s
+                WHERE s.次数 >= 3 AND s.删单类型 <> '系统删除'
+                ORDER BY 币种,删单类型,次数 DESC;'''
+        df6 = pd.read_sql_query(sql=sql, con=self.engine1)
+        db61 = df6[~(df6['删单类型'].str.contains('系统删除'))]
+        # day_del = db61.to_markdown()
+        day_del = '''注意：连续3天同电话\IP的信息>>>'''
+        day_del2 = '恶意订单:'
+        day_del3 = '拉黑率订单:'
+        for row in db61.itertuples():
+            tem = getattr(row, '删单类型')
+            info = getattr(row, '删单明细')
+            count = getattr(row, '次数')
+            if '恶意订单' in tem:
+                day_del2 = day_del2 + '\n' + info + ':  ' + str(int(count)) + '单,'
+            elif '拉黑率订单' in tem:
+                day_del3 = day_del3 + '\n' + info + ':  ' + str(int(count)) + '单,'
+        day_del = day_del + '\n' + day_del2 + '\n' + day_del3
+        print('*' * 50)
+        print(day_del)
+
+
+        # url = "https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e"  # url为机器人的webhook  小嗨
+        url = "https://oapi.dingtalk.com/robot/send?access_token=9a92f00296846dcd3ec8b52d7bacce114a9e34cb2d5dbfad9ce3371ab8d037f9"  # url为机器人的webhook  港台客服
+        content = r'r"H:\桌面\需要用到的文件\文件夹\out2.jpeg"'  # 钉钉消息内容，注意test是自定义的关键字，需要在钉钉机器人设置中添加，这样才能接收到消息
+        mobile_list = ['18538110674']  # 要@的人的手机号，可以是多个，注意：钉钉机器人设置中需要添加这些人，否则不会接收到消息
+        isAtAll = '是'  # 是否@所有人
+        headers = {'Content-Type': 'application/json', "Charset": "UTF-8"}
+        data = {"msgtype": "text",
+                # "markdown": {# 要发送的内容【支持markdown】【！注意：content内容要包含机器人自定义关键字，不然消息不会发送出去，这个案例中是test字段】
+                #         "title": 'TEST',
+                #         "text": "#### 昨日删单率分析" + "\n" +
+                #         "* " + sl_tem +
+                #         "   + " + sl_tem_lh + sl_tem_ey + sl_tem_cf + "\n" +
+                #         "* " + hfh_tem +
+                #         "   + " + hfh_tem_lh + hfh_tem_ey + hfh_tem_cf
+                # },
+                "text": {        # 要发送的内容【支持markdown】【！注意：content内容要包含机器人自定义关键字，不然消息不会发送出去，这个案例中是test字段】
+                    "content": timeStart + ' >>> 神龙 - 火凤凰 <<< 台湾订单 删单分析' + '\n' + '\n' +
+                               sl_tem + sl_tem_lh + '\n' +
+                               hfh_tem + hfh_tem_lh + '\n' +
+                               sl_Black_ip + '\n' +
+                               st_ey_ip + '\n' +
+                               cf_del + '\n' +
+                               st_del_ip + '\n' + '\n' +
+                               day_del
+                    # "content": 'TEST'
+                },
+                "at": {# 要@的人
+                        # "atMobiles": mobile_list,
+                        # 是否@所有人
+                        "isAtAll": False  # @全体成员（在此可设置@特定某人）
+                }
+        }
+        # 4、对请求的数据进行json封装
+        sendData = json.dumps(data)  # 将字典类型数据转化为json格式
+        sendData = sendData.encode("utf-8")  # python3的Request要求data为byte类型
+        r = requests.post(url, headers=headers, data=json.dumps(data))
+        req = json.loads(r.text)  # json类型数据转换为dict字典
+        print(req['errmsg'])
+
+
+    def del_order_day(self):
+        print('正在分析 昨日 删除原因')
+        sql = '''SELECT *, concat(ROUND(SUM(IF(删单原因 IS NULL OR 删单原因 = '',总订单量-订单量,订单量)) / SUM(总订单量) * 100,2),'%') as '删单率'
+                FROM (SELECT s1.*, 总订单量, 总删单量, 系统删单量
+                      FROM (SELECT 币种, 运营团队, 删单原因, COUNT(订单编号) AS 订单量
+                            FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
+                                  FROM `cache` c
+                            ) w
+                            GROUP BY 币种,运营团队,删单原因
+                      ) s1
+                      LEFT JOIN
+                      ( SELECT 币种,运营团队,COUNT(订单编号) AS 总订单量, SUM(IF(订单状态 = '已删除',1,0)) AS 总删单量, SUM(IF(订单状态 = '已删除' AND 删除人 IS NULL,1,0)) AS 系统删单量
+                        FROM `cache` w
+                        GROUP BY 币种,运营团队
+                      ) s2 
+                      ON s1.`币种`=s2.`币种` AND s1.`运营团队`=s2.`运营团队`
+                ) s
+                WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港')
+                GROUP BY 币种,运营团队,删单原因
+                ORDER BY FIELD(币种,'台币','港币','合计'),
+                         FIELD(运营团队,'神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港','神龙-运营1组','Line运营','金鹏家族-小虎队','合计'),
+                         订单量 DESC;'''
+        df1 = pd.read_sql_query(sql=sql, con=self.engine1)
         # print(df1)
         # 初始化设置
         sl_tem, sl_tem_lh, sl_tem_ey, sl_tem_cf = '', '', '', ''
@@ -1536,7 +1478,9 @@ class QueryOrder(Settings, Settings_sso):
             delreson = getattr(row, '删单原因')
             count = getattr(row, '订单量')
             if tem == '神龙家族-台湾' and delreson == None:
-                sl_tem = '*神  龙:   昨日单量：' + str(int(getattr(row, '总订单量'))) + '；删单量：' + str(int(getattr(row, '总删单量'))) + '；删单率：' + str(getattr(row, '删单率')) + '；系统删单量：' + str(int(getattr(row, '系统删单量'))) + '单;'
+                sl_tem = '*神  龙:   昨日单量：' + str(int(getattr(row, '总订单量'))) + '；删单量：' + str(
+                    int(getattr(row, '总删单量'))) + '；删单率：' + str(getattr(row, '删单率')) + '；系统删单量：' + str(
+                    int(getattr(row, '系统删单量'))) + '单;'
                 # print(sl_tem)
             elif tem == '神龙家族-台湾' and '拉黑率订单' == delreson:
                 sl_tem_lh = '，\n            其中占比较多的是：拉黑率订单：' + str(int(count)) + '单, '
@@ -1549,7 +1493,9 @@ class QueryOrder(Settings, Settings_sso):
                 # print(sl_tem_cf)
 
             elif tem == '火凤凰-台湾' and delreson == None:
-                hfh_tem = '*火凤凰:  昨日单量：' + str(int(getattr(row, '总订单量'))) + '；删单量：' + str(int(getattr(row, '总删单量'))) + '；删单率：' + str(getattr(row, '删单率')) + '；系统删单量：' + str(int(getattr(row, '系统删单量'))) + '单;'
+                hfh_tem = '*火凤凰:  昨日单量：' + str(int(getattr(row, '总订单量'))) + '；删单量：' + str(
+                    int(getattr(row, '总删单量'))) + '；删单率：' + str(getattr(row, '删单率')) + '；系统删单量：' + str(
+                    int(getattr(row, '系统删单量'))) + '单;'
                 # print(hfh_tem)
             elif tem == '火凤凰-台湾' and '拉黑率订单' == delreson:
                 hfh_tem_lh = '，\n            其中占比较多的是：拉黑率订单：' + str(int(count)) + '单, '
@@ -1565,10 +1511,10 @@ class QueryOrder(Settings, Settings_sso):
         print(hfh_tem + hfh_tem_lh + hfh_tem_ey + hfh_tem_cf)
 
         print('正在获取 删单明细 拉黑率信息 二…………')
-        sql ='''SELECT 币种, 删单原因, IF(联系电话 = '总计',NULL,联系电话) AS 拉黑率订单, 订单量, 拉黑率70以上, 拉黑率70以下
+        sql = '''SELECT 币种, 删除原因, IF(联系电话 = '总计',NULL,联系电话) AS 拉黑率订单, 订单量, 拉黑率70以上, 拉黑率70以下
                 FROM(
                     (SELECT s1.*
-					    FROM (SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(联系电话,'总计') 联系电话, COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
+                        FROM (SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(联系电话,'总计') 联系电话, COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
                                 FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                         FROM `cache` c
                                         WHERE 币种 = '台币' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '拉黑率%'
@@ -1601,45 +1547,52 @@ class QueryOrder(Settings, Settings_sso):
         # print(df2)
         df2.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
         print('正在记录 拉黑率信息......')
-        sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 记录日期, 更新时间) SELECT 币种, 删单原因, 拉黑率订单, 订单量, CURDATE() 记录日期, NOW() 更新时间 FROM cache_cp s WHERE s.拉黑率订单 IS NOT NULL;'''.format('day_delete_cache')
-        pd.read_sql_query(sql=sql, con=self.engine1,chunksize=10000)
+        sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 记录日期, 更新时间) SELECT 币种, 删单原因, 拉黑率订单, 订单量, CURDATE() 记录日期, NOW() 更新时间 FROM cache_cp s WHERE s.拉黑率订单 IS NOT NULL;'''.format(
+            'day_delete_cache')
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
-        sl_Black ,sl_Black_iphone , sl_Black_ip = '','',''
+        sl_Black, sl_Black_iphone, sl_Black_ip = '', '', ''
         k = 0
         k2 = 0
         for row in df2.itertuples():
             tem_Black = getattr(row, '拉黑率订单')
             count = getattr(row, '订单量')
             if tem_Black == None:
-                sl_Black = '*拉黑率删除:  ' + str(int(getattr(row, '订单量'))) + '单；拉黑率70以上的：' + str(int(getattr(row, '拉黑率70以上'))) +'单；'
+                sl_Black = '*拉黑率删除:  ' + str(int(getattr(row, '订单量'))) + '单；拉黑率70以上的：' + str(
+                    int(getattr(row, '拉黑率70以上'))) + '单；'
                 # print(sl_Black)
             elif tem_Black != None and '.' not in tem_Black:
                 if count >= 10:
                     if k == 0:
-                        sl_Black_iphone = '\n           同一电话有：(0' + str(int(tem_Black)) + ':' + str(int(count)) + '单),'
+                        sl_Black_iphone = '\n           同一电话有：(0' + str(int(tem_Black)) + ':' + str(
+                            int(count)) + '单),'
                         k = k + 1
                     elif k > 0:
-                        sl_Black_iphone =sl_Black_iphone + '(0' + str(int(tem_Black)) + ':' + str(int(count)) + '单);'
+                        sl_Black_iphone = sl_Black_iphone + '(0' + str(int(tem_Black)) + ':' + str(
+                            int(count)) + '单);'
                         k = k + 1
                 else:
                     if k == 0:
-                        sl_Black_iphone = '\n           同一电话有：(0' + str(int(tem_Black)) + ':' + str(int(count)) +'单),'
+                        sl_Black_iphone = '\n           同一电话有：(0' + str(int(tem_Black)) + ':' + str(
+                            int(count)) + '单),'
                         k = k + 1
                     elif k > 0:
-                        sl_Black_iphone =sl_Black_iphone + '(0' + str(int(tem_Black)) + ':' + str(int(count)) + '单);'
+                        sl_Black_iphone = sl_Black_iphone + '(0' + str(int(tem_Black)) + ':' + str(
+                            int(count)) + '单);'
                         k = k + 1
                 # print(sl_Black_iphone)
             elif tem_Black != None and '.' in tem_Black:
                 if count >= 10:
                     if k2 == 0:
-                        sl_Black_ip = '\n           同一ip有：   (' + str(getattr(row, '拉黑率订单')) + ':' + str(int(getattr(row, '订单量'))) + '单),'
+                        sl_Black_ip = '\n           同一ip有：   (' + str(getattr(row, '拉黑率订单')) + ':' + str(
+                            int(getattr(row, '订单量'))) + '单),'
                         k2 = k2 + 1
                     elif k > 0:
                         sl_Black_ip = sl_Black_ip + '(' + str(tem_Black) + ':' + str(int(count)) + '单);'
                         k2 = k2 + 1
                 else:
                     if k2 == 0:
-                        sl_Black_ip = '\n           同一ip有：   (' + str(tem_Black) + ':' + str(int(count)) +'单),'
+                        sl_Black_ip = '\n           同一ip有：   (' + str(tem_Black) + ':' + str(int(count)) + '单),'
                         k2 = k2 + 1
                     elif k > 0:
                         sl_Black_ip = sl_Black_ip + '（' + str(tem_Black) + ':' + str(int(count)) + '单);'
@@ -1649,7 +1602,7 @@ class QueryOrder(Settings, Settings_sso):
         print(sl_Black + sl_Black_iphone + sl_Black_ip)
 
         print('正在获取 删单明细 恶意删除信息 三…………')
-        sql ='''SELECT 币种, 删单原因, IF(联系电话 = '总计',NULL,联系电话) AS 恶意删除, 订单量, 拉黑率70以上, 拉黑率70以下
+        sql = '''SELECT 币种, 删除原因, IF(联系电话 = '总计',NULL,联系电话) AS 恶意删除, 订单量, 拉黑率70以上, 拉黑率70以下
                 FROM(
                     (SELECT s1.*
                         FROM (  SELECT IFNULL(币种,'总计') 币种,IFNULL(删单原因,'总计') 删单原因,IFNULL(联系电话,'总计') 联系电话,COUNT(订单编号) AS 订单量, SUM(IF(拉黑率 > 70 ,1,0)) AS 拉黑率70以上,SUM(IF(拉黑率 < 70 ,1,0)) AS 拉黑率70以下
@@ -1685,17 +1638,19 @@ class QueryOrder(Settings, Settings_sso):
         # print(df3)
         df3.to_sql('cache_cp', con=self.engine1, index=False, if_exists='replace')
         print('正在记录 恶意删除信息......')
-        sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 记录日期, 更新时间) SELECT 币种, 删单原因, 恶意删除, 订单量, CURDATE() 记录日期, NOW() 更新时间 FROM cache_cp s WHERE s.恶意删除 IS NOT NULL;'''.format('day_delete_cache')
-        pd.read_sql_query(sql=sql, con=self.engine1,chunksize=10000)
+        sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 记录日期, 更新时间) SELECT 币种, 删单原因, 恶意删除, 订单量, CURDATE() 记录日期, NOW() 更新时间 FROM cache_cp s WHERE s.恶意删除 IS NOT NULL;'''.format(
+            'day_delete_cache')
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
-        st_ey, st_ey_iphone, st_ey_ip = '','',''
+        st_ey, st_ey_iphone, st_ey_ip = '', '', ''
         k = 0
         k2 = 0
         for row in df3.itertuples():
             tem_Black = getattr(row, '恶意删除')
             count = getattr(row, '订单量')
             if tem_Black == None:
-                st_ey = '*恶意删除： ' + str(int(count)) + '单；拉黑率70以上的：' + str(int(getattr(row, '拉黑率70以上'))) + '单；低于70的：' + str(int(getattr(row, '拉黑率70以下'))) + '单；'
+                st_ey = '*恶意删除： ' + str(int(count)) + '单；拉黑率70以上的：' + str(
+                    int(getattr(row, '拉黑率70以上'))) + '单；低于70的：' + str(int(getattr(row, '拉黑率70以下'))) + '单；'
             elif tem_Black != None and '.' not in tem_Black:
                 if count >= 10:
                     if k == 0:
@@ -1706,7 +1661,7 @@ class QueryOrder(Settings, Settings_sso):
                         k = k + 1
                 else:
                     if k == 0:
-                        st_ey_iphone = ';\n           同一电话有：(' + str(tem_Black) + ': ' + str(int(count)) +'单),'
+                        st_ey_iphone = ';\n           同一电话有：(' + str(tem_Black) + ': ' + str(int(count)) + '单),'
                         k = k + 1
                     elif k > 0:
                         st_ey_iphone = st_ey_iphone + '(0' + str(tem_Black) + ': ' + str(int(count)) + '单);'
@@ -1722,7 +1677,7 @@ class QueryOrder(Settings, Settings_sso):
                         k2 = k2 + 1
                 else:
                     if k2 == 0:
-                        st_ey_ip = ';\n           同一ip有：    (' + str(tem_Black) + ': ' + str(int(count)) +'单),'
+                        st_ey_ip = ';\n           同一ip有：    (' + str(tem_Black) + ': ' + str(int(count)) + '单),'
                         k2 = k2 + 1
                     elif k2 > 0:
                         st_ey_ip = st_ey_ip + '(0' + str(tem_Black) + ': ' + str(int(count)) + '单);'
@@ -1736,7 +1691,7 @@ class QueryOrder(Settings, Settings_sso):
                             FROM `cache` c
                             WHERE 币种 = '台币' AND 订单状态 = '已删除' AND 运营团队 IN ('神龙家族-台湾','神龙-香港','火凤凰-台湾','火凤凰-香港') AND 删除原因 LIKE '重复订单%'
                     ) w
-                GROUP BY 币种,删单原因;'''
+                GROUP BY 币种,删除原因;'''
         df4 = pd.read_sql_query(sql=sql, con=self.engine1)
         # print(df4)
         cf_del = ''
@@ -1751,7 +1706,7 @@ class QueryOrder(Settings, Settings_sso):
         print('正在获取 删单明细 系统删除信息 五…………')
         sql = '''SELECT s1.*
                         FROM ( 
-        					    (SELECT *
+                                (SELECT *
                                     FROM (SELECT IFNULL(币种,'币种') 币种,IFNULL(删单原因,'总计') 系统删除,COUNT(订单编号) AS 订单量
                                             FROM (SELECT *,IF(删除原因 LIKE '恶意%','恶意订单',IF(删除原因 LIKE '拉黑率%','拉黑率订单',IF(删除原因 LIKE '重复订单%','重复订单',删除原因))) 删单原因
                                                     FROM `cache` c
@@ -1791,10 +1746,11 @@ class QueryOrder(Settings, Settings_sso):
         print('正在记录 系统删除信息......')
         sql = '''REPLACE INTO {0}(币种, 删单类型, 删单明细, 单量, 记录日期, 更新时间) 
                 SELECT 币种,'系统删除'  删单类型, 系统删除, 订单量, CURDATE() 记录日期, NOW() 更新时间
-				FROM cache_cp s 
-				WHERE s.系统删除 LIKE '%.%' OR s.系统删除 LIKE '%9%' OR s.系统删除 LIKE '%8%' OR s.系统删除 LIKE '%7%' OR s.系统删除 LIKE '%6%' OR s.系统删除 LIKE '%5%' 
-				   OR s.系统删除 LIKE '%4%' OR s.系统删除 LIKE '%3%' OR s.系统删除 LIKE '%2%' OR s.系统删除 LIKE '%1%' OR s.系统删除 LIKE '%0%';'''.format('day_delete_cache')
-        pd.read_sql_query(sql=sql, con=self.engine1,chunksize=10000)
+                FROM cache_cp s 
+                WHERE s.系统删除 LIKE '%.%' OR s.系统删除 LIKE '%9%' OR s.系统删除 LIKE '%8%' OR s.系统删除 LIKE '%7%' OR s.系统删除 LIKE '%6%' OR s.系统删除 LIKE '%5%' 
+                   OR s.系统删除 LIKE '%4%' OR s.系统删除 LIKE '%3%' OR s.系统删除 LIKE '%2%' OR s.系统删除 LIKE '%1%' OR s.系统删除 LIKE '%0%';'''.format(
+            'day_delete_cache')
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
         st_del, st_del_iphone, st_del_ip = '', '', ''
         k = 0
@@ -1842,7 +1798,7 @@ class QueryOrder(Settings, Settings_sso):
         print(st_del + st_del_iphone + st_del_ip)
 
         print('正在获取 连续3天以上的黑名单 电话、IP信息 六…………')
-        sql ='''UPDATE day_delete_cache d 
+        sql = '''UPDATE day_delete_cache d 
                     SET d.`删单明细` = IF(d.`删单明细` LIKE '0%', RIGHT(d.`删单明细`,LENGTH(d.`删单明细`)-1),d.`删单明细`);'''
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         sql = '''SELECT *
@@ -1873,7 +1829,6 @@ class QueryOrder(Settings, Settings_sso):
         print('*' * 50)
         print(day_del + '\n' + day_del2 + '\n' + day_del3)
 
-
         # url = "https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e"  # url为机器人的webhook
         url = "https://oapi.dingtalk.com/robot/send?access_token=9a92f00296846dcd3ec8b52d7bacce114a9e34cb2d5dbfad9ce3371ab8d037f9"  # url为机器人的webhook  港台客服
         content = r'r"H:\桌面\需要用到的文件\文件夹\out2.jpeg"'  # 钉钉消息内容，注意test是自定义的关键字，需要在钉钉机器人设置中添加，这样才能接收到消息
@@ -1889,7 +1844,7 @@ class QueryOrder(Settings, Settings_sso):
                 #         "* " + hfh_tem +
                 #         "   + " + hfh_tem_lh + hfh_tem_ey + hfh_tem_cf
                 # },
-                "text": {        # 要发送的内容【支持markdown】【！注意：content内容要包含机器人自定义关键字，不然消息不会发送出去，这个案例中是test字段】
+                "text": {  # 要发送的内容【支持markdown】【！注意：content内容要包含机器人自定义关键字，不然消息不会发送出去，这个案例中是test字段】
                     "content": '神龙 - 火凤凰 昨日台湾订单 删除分析' + '\n' +
                                sl_tem + sl_tem_lh + sl_tem_ey + sl_tem_cf + '\n' +
                                hfh_tem + hfh_tem_lh + hfh_tem_ey + hfh_tem_cf + '\n' +
@@ -1900,20 +1855,18 @@ class QueryOrder(Settings, Settings_sso):
                                day_del + '\n' + day_del2 + '\n' + day_del3
                     # "content": 'TEST'
                 },
-                "at": {# 要@的人
-                        # "atMobiles": mobile_list,
-                        # 是否@所有人
-                        "isAtAll": False  # @全体成员（在此可设置@特定某人）
+                "at": {  # 要@的人
+                    # "atMobiles": mobile_list,
+                    # 是否@所有人
+                    "isAtAll": False  # @全体成员（在此可设置@特定某人）
                 }
-        }
+                }
         # 4、对请求的数据进行json封装
         sendData = json.dumps(data)  # 将字典类型数据转化为json格式
         sendData = sendData.encode("utf-8")  # python3的Request要求data为byte类型
         r = requests.post(url, headers=headers, data=json.dumps(data))
         req = json.loads(r.text)  # json类型数据转换为dict字典
         print(req['errmsg'])
-
-
 
     def del_order_day_test(self):
         print('正在分析 昨日 删单原因中')
@@ -2957,9 +2910,9 @@ SELECT 币种,运营团队,
         print()
 
     # 进入订单检索界面     促单查询
-    def order_track_Query(self, hanlde, timeStart, timeEnd, proxy_id, proxy_handle):
+    def order_track_Query(self, time_handle, timeStart, timeEnd, proxy_id, proxy_handle):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        if hanlde == '自动':
+        if time_handle == '自动':
             if (datetime.datetime.now()).strftime('%d') == 1:
                 timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m-%d')
                 timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
@@ -3008,7 +2961,7 @@ SELECT 币种,运营团队,
             dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
             sql = '''REPLACE INTO {0}(id,订单编号,币种,下单时间,订单状态, 物流状态, 代下单客服,克隆人,来源渠道,记录时间) 
                                SELECT id,订单编号,币种,下单时间,订单状态, 物流状态, 代下单客服,克隆人,来源渠道, NOW() 记录时间 
-                    FROM cache_check;'''.format('促单_分析')
+                    FROM cache;'''.format('促单_分析')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
             listT = []

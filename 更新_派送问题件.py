@@ -128,8 +128,6 @@ class QueryTwo(Settings, Settings_sso):
         # self.getOrderList(timeStart, timeEnd)
         # self.getDeliveryList(timeStart, timeEnd)
         month = (datetime.datetime.now()).strftime('%Y%m')
-        # print(month)
-        # print(type(month))
         time_Start = (datetime.datetime.now() - relativedelta(months=12)).strftime('%Y-%m') + '-01'        # 派送问题件签收率
         if (datetime.datetime.now()).strftime('%d') == 1:
             timeStart = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m') + '-01'
@@ -488,59 +486,8 @@ class QueryTwo(Settings, Settings_sso):
                         "圆通签收单量","圆通拒收单量","圆通签收率","圆通退款率","上月圆通签收单量","上月圆通拒收单量","上月圆通签收率","上月圆通退款率"]].copy()
 
         print('正在获取跟进内容…………')
-        sql = '''SELECT 币种, EXTRACT(YEAR_MONTH FROM 创建日期) AS 月份, 创建日期, CASE DATE_FORMAT(创建日期,'%w')	WHEN 1 THEN '星期一' WHEN 2 THEN '星期二' WHEN 3 THEN '星期三' WHEN 4 THEN '星期四' WHEN 5 THEN '星期五' WHEN 6 THEN '星期六' WHEN 0 THEN '星期日' END as 上月周,
-                        总单量, 签收单量, 拒收单量, concat(ROUND(IFNULL(签收单量 / 总单量,0) * 100,2),'%') as 签收率, 派送问题件单量, 问题件类型,单量,短信,邮件,在线, 
-                        IF(电话 = 0,NULL,电话) AS 电话,IF(客户回复再派量 = 0,NULL,客户回复再派量) AS 客户回复再派量,
-                        concat(ROUND(IFNULL(物流再派签收 / 物流再派,0) * 100,2),'%') as 物流再派签收率,
-                        concat(ROUND(IFNULL(物流3派签收 / 物流3派,0) * 100,2),'%') as 物流3派签收率,
-                 --       IF(问题件类型 = '客户不接电话' and 未派 <> 0,CONCAT(未派,'单处理时已完结'),IF(单量 >= 短信,"获取物流轨迹信息后，后台会排队处理；若30-40分钟内订单状态变为已完结，则不发送短信。",IF(单量 < 短信,"物流轨迹更新后， 根据派送问题类型的更改，会再次发送短信。", NULL))) 未派, 											
-                        IF(问题件类型 = '送达客户不在/客户长期不在' AND 创建日期 >='{1}' AND 创建日期 <='{2}','暂未处理。物流已2派或3派',IF(问题件类型 = '客户不接电话' and 未派 <> 0,CONCAT(未派,'单处理时已完结'),IF(单量 >= 短信,"获取物流轨迹信息后，后台会排队处理；若30-40分钟内订单状态变为已完结，则不发送短信。",IF(单量 < 短信,"物流轨迹更新后， 根据派送问题类型的更改，会再次发送短信。", NULL))))  未派, 
-                        异常, 上月总单量, 上月签收单量, 上月拒收单量, 
-                        concat(ROUND(IFNULL(上月签收单量 / 上月总单量,0) * 100,2),'%') as 上月签收率, 上月派送问题件单量,上月周
-                FROM ( SELECT s1.币种, s1.创建日期, s3.签收单量, s3.拒收单量, s3.总单量, 派送问题件单量, 问题件类型,
-                            COUNT(订单编号) AS 单量, 发送量 短信, NULL AS 邮件, NULL AS 在线, 
-                            SUM(IF(s1.备注 <> "" AND s1.回复类型 <> "已完结" AND s1.回复类型 <> "已发短信",1,0)) AS 电话, 
-                            SUM(IF(回复类型 = "回复",1,0)) AS 客户回复再派量, 物流再派, 物流再派签收, 物流3派, 物流3派签收, 
-                            SUM(IF(s1.回复类型 = "已完结" OR s1.回复类型 = "已发短信",1,0)) AS 未派, 异常,
-                            s4.签收单量 AS 上月签收单量, s4.拒收单量 AS 上月拒收单量, s4.总单量 AS 上月总单量, s5.上月派送问题件单量, s5.上月周
-                    FROM( SELECT *, IF(派送问题 LIKE "地址问题" OR 派送问题 LIKE "客户要求更改派送时间或者地址","地址问题/客户要求更改派送时间或者地址",IF(派送问题 LIKE "送达客户不在" OR 派送问题 LIKE "客户长期不在","送达客户不在/客户长期不在",派送问题)) AS 问题件类型,
-                                IF(备注 <> "", IF(备注 LIKE "已签收%" OR 备注 LIKE "已完结%" OR 备注 LIKE "已拒收%"  OR 备注 LIKE "显示拒收%" ,"已完结", IF(备注 LIKE "无人接听%" OR 备注 LIKE "无效号码%","无人接听", IF(备注 LIKE "已通知%" OR 备注 LIKE "已告知%" OR 备注 LIKE "请告知%" OR 备注 LIKE "请通知%","已发短信", 
-	                            IF(备注 LIKE "%*%","未回复",IF((备注 NOT LIKE "%*%" AND 备注 NOT LIKE "%拒收%") AND (备注 LIKE "%客%取%" OR 备注 LIKE "%客%拿%" OR 备注 LIKE "%送货%" OR 备注 LIKE "%送貨%" OR 备注 LIKE "%取件%" OR 备注 LIKE "%取货%" OR 备注 LIKE "%取貨%"),"回复",""))))),备注) AS 回复类型
-                        FROM ( SELECT ss1.订单编号,	ss1.币种,	ss1.下单时间,	ss1.订单状态,	ss1.物流状态,	ss1.物流渠道,	ss1.创建日期,	ss1.创建时间,	ss1.派送问题, ss1.派送次数, ss1.处理人,	ss1.处理记录,	ss1.处理时间, IF(ss1.备注 = "",ss2.处理结果,ss1.备注) AS 备注
-								FROM ( SELECT * FROM 派送问题件_跟进表 p WHERE p.创建日期 >= '{0}' ) ss1
-								LEFT JOIN 物流问题件 ss2 ON ss1.订单编号 = ss2.订单编号
-							) p
-                        ) s1
-                        LEFT JOIN 
-                        ( SELECT 币种, 创建日期, COUNT(订单编号) AS 派送问题件单量,
-                                SUM(IF(派送次数 = 2,1,0)) AS 物流再派,
-                                SUM(IF(物流状态 = "已签收" AND 派送次数 = 2,1,0)) AS 物流再派签收,
-                                SUM(IF(派送次数 > 2,1,0)) AS 物流3派,
-                                SUM(IF(物流状态 = "已签收" AND 派送次数 > 2,1,0)) AS 物流3派签收,
-                                SUM(IF(回复类型 = "回复" AND 物流状态 = "拒收",1,0)) AS 异常
-                          FROM ( SELECT *, IF(备注 <> "", IF(备注 LIKE "已签收%" OR 备注 LIKE "已完结%" OR 备注 LIKE "已拒收%"  OR 备注 LIKE "显示拒收%","已完结",IF(备注 LIKE "无人接听%" OR 备注 LIKE "无效号码%","无人接听", IF(备注 LIKE "已通知%" OR 备注 LIKE "已告知%" OR 备注 LIKE "请告知%" OR 备注 LIKE "请通知%","已发短信", 
-	                                    IF(备注 LIKE "%*%","未回复",IF((备注 NOT LIKE "%*%" AND 备注 NOT LIKE "%拒收%") AND (备注 LIKE "%客%取%" OR 备注 LIKE "%客%拿%" OR 备注 LIKE "%送货%" OR 备注 LIKE "%送貨%" OR 备注 LIKE "%取件%" OR 备注 LIKE "%取货%" OR 备注 LIKE "%取貨%"),"回复",""))))),备注) AS 回复类型
-                                 FROM ( SELECT ss1.订单编号,	ss1.币种,	ss1.下单时间,	ss1.订单状态,	ss1.物流状态,	ss1.物流渠道,	ss1.创建日期,	ss1.创建时间,	ss1.派送问题, ss1.派送次数, ss1.处理人,	ss1.处理记录,	ss1.处理时间, IF(ss1.备注 = "",ss2.处理结果,ss1.备注) AS 备注
-										FROM ( SELECT * FROM 派送问题件_跟进表 p WHERE p.创建日期 >= '{0}' ) ss1
-										LEFT JOIN 物流问题件 ss2 ON ss1.订单编号 = ss2.订单编号
-								) p
-                            ) PP
-                          GROUP BY 币种, 创建日期
-                        ) s2 on s1.币种 =s2.币种 AND s1.创建日期 =s2.创建日期
-                        LEFT JOIN (SELECT * FROM 派送问题件_跟进表2_cp p WHERE p.`物流名称` = '全部') s3 on s1.币种 = s3.币种 AND s1.创建日期 = s3.日期
-                        LEFT JOIN (SELECT * FROM 派送问题件_跟进表2_cp p WHERE p.`物流名称` = '全部') s4 on s1.币种 = s4.币种 AND s1.创建日期 = DATE_SUB(s4.日期,INTERVAL -1 MONTH)
-                        LEFT JOIN (SELECT 币种, 创建日期, CASE DATE_FORMAT(创建日期,'%w')	WHEN 1 THEN '星期一' WHEN 2 THEN '星期二' WHEN 3 THEN '星期三' WHEN 4 THEN '星期四' WHEN 5 THEN '星期五' WHEN 6 THEN '星期六' WHEN 0 THEN '星期日' END as 上月周, COUNT(订单编号) AS 上月派送问题件单量
-                                    FROM 派送问题件_跟进表 p
-                                    WHERE p.创建日期 >= DATE_SUB('{0}',INTERVAL 1 MONTH)  AND p.创建日期 < '{0}'
-                                    GROUP BY 币种, 创建日期
-                        ) s5 on s1.币种 = s5.币种 AND s1.创建日期 = DATE_SUB(s5.创建日期,INTERVAL -1 MONTH)
-                        LEFT JOIN 派送问题件_跟进表_message s6 on s1.币种 = s6.币种 AND s1.创建日期 = s6.日期 AND s1.问题件类型 =s6.短信模板
-                        GROUP BY s1.币种, s1.创建日期, s1.问题件类型
-                ) s
-                ORDER BY s.币种, s.创建日期 , 
-                FIELD(s.问题件类型,'送至便利店','地址问题/客户要求更改派送时间或者地址','客户自取','客户不接电话','送达客户不在/客户长期不在','拒收','合计');'''.format(timeStart, logisticsN_begin, logisticsN_end)
         sql = '''SELECT 币种, EXTRACT(YEAR_MONTH FROM 日期) AS 月份, 日期 AS 创建日期, 
-                        CASE DATE_FORMAT(日期,'%w')	WHEN 1 THEN '星期一' WHEN 2 THEN '星期二' WHEN 3 THEN '星期三' WHEN 4 THEN '星期四' WHEN 5 THEN '星期五' WHEN 6 THEN '星期六' WHEN 0 THEN '星期日' END as 上月周,
+                        CASE DATE_FORMAT(日期,'%w')	WHEN 1 THEN '星期一' WHEN 2 THEN '星期二' WHEN 3 THEN '星期三' WHEN 4 THEN '星期四' WHEN 5 THEN '星期五' WHEN 6 THEN '星期六' WHEN 0 THEN '星期日' END as 月周,
                         总单量, 签收单量, 拒收单量, concat(ROUND(IFNULL(签收单量 / 总单量,0) * 100,2),'%') as 签收率, 派送问题件单量, 问题件类型,单量,短信,邮件,在线, IF(电话 = 0,NULL,电话) AS 电话,IF(客户回复再派量 = 0,NULL,客户回复再派量) AS 客户回复再派量,
                         concat(ROUND(IFNULL(物流再派签收 / 物流再派,0) * 100,2),'%') as 物流再派签收率,
                         concat(ROUND(IFNULL(物流3派签收 / 物流3派,0) * 100,2),'%') as 物流3派签收率,									
@@ -598,7 +545,8 @@ class QueryTwo(Settings, Settings_sso):
                             ) PP
                         GROUP BY 币种, 创建日期
 					) s4 on s1.币种 =s4.币种 AND s1.日期 =s4.创建日期
-                     LEFT JOIN ( SELECT 币种, 创建日期, CASE DATE_FORMAT(创建日期,'%w')	WHEN 1 THEN '星期一' WHEN 2 THEN '星期二' WHEN 3 THEN '星期三' WHEN 4 THEN '星期四' WHEN 5 THEN '星期五' WHEN 6 THEN '星期六' WHEN 0 THEN '星期日' END as 上月周, COUNT(订单编号) AS 上月派送问题件单量
+                     LEFT JOIN 
+                     ( SELECT 币种, 创建日期, CASE DATE_FORMAT(创建日期,'%w')	WHEN 1 THEN '星期一' WHEN 2 THEN '星期二' WHEN 3 THEN '星期三' WHEN 4 THEN '星期四' WHEN 5 THEN '星期五' WHEN 6 THEN '星期六' WHEN 0 THEN '星期日' END as 上月周, COUNT(订单编号) AS 上月派送问题件单量
                                         FROM 派送问题件_跟进表 p
                                         WHERE p.创建日期 >= DATE_SUB('{0} ',INTERVAL 1 MONTH)  AND p.创建日期 < '{0}'
                                         GROUP BY 币种, 创建日期
@@ -609,6 +557,7 @@ class QueryTwo(Settings, Settings_sso):
             ORDER BY s.币种, s.日期 , 
 	            FIELD(s.问题件类型,'送至便利店','地址问题/客户要求更改派送时间或者地址','客户自取','客户不接电话','送达客户不在/客户长期不在','拒收','合计');'''.format(timeStart, logisticsN_begin, logisticsN_end)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
+        df.to_sql('tem', con=self.engine1, index=False, if_exists='replace')
         db2 = df[(df['币种'].str.contains('台币'))]
         # db22 = db2[(db2['月份'].str.contains("'" + month + "'"))]
         db3 = df[(df['币种'].str.contains('港币'))]
@@ -1569,7 +1518,7 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 问题件 状态运行（一）-----------------------------------------
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     '''
-    select = 99
+    select = 1
     if int(select) == 99:
         handle = '手动0'
         login_TmpCode = '2bb2a3ecea7932ddb588d29b39c8d8ba'          # 输入登录口令Tkoen
@@ -1592,7 +1541,6 @@ if __name__ == '__main__':
 
             timeStart, timeEnd = m.readInfo('派送问题件_更新')
             # m.getDeliveryList('2022-06-12', '2022-06-30')
-            # m.getDeliveryList('2022-07-10', '2022-07-26')
             m.getDeliveryList(timeStart, timeEnd, proxy_handle, proxy_id)                     # 派送问题件 更新
 
             # timeStart, timeEnd = m.readInfo('派送问题件_导出')
@@ -1609,7 +1557,7 @@ if __name__ == '__main__':
                 timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 
             print('派送问题件，导出时间》》》 ' + timeStart + "---" + timeEnd)
-            m.outport_getDeliveryList('2022-10-01', timeEnd, logisticsN_begin, logisticsN_end)
+            m.outport_getDeliveryList(timeStart, timeEnd, logisticsN_begin, logisticsN_end)
             # m.outport_getDeliveryList(timeStart, timeEnd)             # 派送问题件跟进表 导出
 
         elif int(select) == 909:         # 查询更新-派送问题件
@@ -1617,6 +1565,8 @@ if __name__ == '__main__':
             m.getDeliveryList('2022-04-01', '2022-04-30', proxy_handle, proxy_id)
             # m.getDeliveryList('2022-07-10', '2022-07-26')
             # m.getDeliveryList(timeStart, timeEnd)                     # 派送问题件 更新
+
+
 
     elif int(select) == 1:
         proxy_handle = '代理服务器0'
@@ -1626,7 +1576,7 @@ if __name__ == '__main__':
         # m.getOrderList_T('2022-06-01', '2022-06-30')
         logisticsN_begin = '2022-07-11'                             # 送达客户不在/客户长期不在  物流轨迹查询时间
         logisticsN_end = '2022-07-31'
-        m.outport_getDeliveryList('2023-01-01', '2023-03-07', logisticsN_begin, logisticsN_end)
+        m.outport_getDeliveryList('2023-03-01', '2023-03-23', logisticsN_begin, logisticsN_end)
         # m.getMessageLog('2022-07-01', '2022-07-15')
 
 

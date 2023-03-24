@@ -1714,17 +1714,18 @@ if __name__ == '__main__':
         areaId = None                                   # 团队id
         js.order_Query_Yiwudi(time_yesterday, time_now, areaId, query, proxy_handle, proxy_id)   # 检查 头程直发渠道 & 天马711
 
-        time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        time_now = time_yesterday
+        timeStart = '2023-03-21'
+        timeEnd = '2023-03-23'
         query = '下单时间'
         areaId = None                                   # 团队id
-        js.order_Query_Delete(time_yesterday, time_now, areaId, query, proxy_handle, proxy_id)   # 最近三天删单原因
+        time_handle = '自动'
+        js.order_Query_Delete(timeStart, timeEnd, areaId, query, proxy_handle, proxy_id, time_handle)   # 最近三天删单原因
 
 
-        hanlde = '自动'
+        time_handle = '自动'
         timeStart = '2022-09-19'
         timeEnd = '2022-09-19'
-        js.order_track_Query(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)  # 促单查询；订单检索
+        js.order_track_Query(time_handle, timeStart, timeEnd, proxy_handle, proxy_id)  # 促单查询；订单检索
 
     '''
     # -----------------------------------------------自动获取 数据库 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------

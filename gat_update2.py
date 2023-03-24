@@ -757,6 +757,12 @@ class QueryUpdate(Settings):
 
     # 导出需要更新的签收表---港澳台(二)
     def EportOrder(self, team, month_last, month_yesterday, month_begin, check, export, handle, proxy_handle, proxy_id):
+        print('正在更新4单 物流渠道中......')
+        sql = '''update gat_order_list a
+                    set a.`物流渠道`= '天马新竹'
+                where a.`订单编号` IN ('NA230314084228BM5JP9','NA230314081340UP9JC3','NA2303140617250C6KU3','NA230314005148273I38');'''.format(team)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
         match = {'gat': '港台','slsc': '品牌'}
         emailAdd = {'gat': 'giikinliujun@163.com', 'slsc': 'sunyaru@giikin.com'}
         today = datetime.date.today().strftime('%Y.%m.%d')
