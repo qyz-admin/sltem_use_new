@@ -22,9 +22,7 @@ start: datetime = datetime.datetime.now()
 team = 'gat'
 match1 = {'gat': '港台',
           'slsc': '品牌'}
-match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
-         'slsc': r'D:\Users\Administrator\Desktop\需要用到的文件\品牌',
-         'gat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
+match = {'gat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
          'gat_upload': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表 - 单独上传'}
 '''    msyql 语法:      show processlist（查看当前进程）;                        在cmd中键入命令（清理DNS）：ipconfig /flushdns
                         set global event_scheduler=0;（关闭定时器）;
@@ -72,8 +70,8 @@ we = WlExecl()
 qu = QueryUpdate()
 
 # 上传退货
-# e.readReturnOrder(team)
-# print('退货导入耗时：', datetime.datetime.now() - start)
+e.readReturnOrder(team)
+print('退货导入耗时：', datetime.datetime.now() - start)
 
 # ---读取execl文件---
 for dir in dirs:

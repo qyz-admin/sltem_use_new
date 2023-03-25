@@ -1,16 +1,46 @@
 import pandas as pd
 import os
+import math
 import xlwings
 import numpy as np
 import datetime
 import zhconv          # transform2_zh_hant：转为繁体;transform2_zh_hans：转为简体
 from mysqlControl import MysqlControl
-class ExcelControl():
+from settings import Settings
+from sqlalchemy import create_engine
+from 查询_订单检索 import QueryOrder
+class ExcelControl(Settings):
     '''
     excel的导入和整理
     '''
     # __slots__ = ['filePath', 'team', 'sql']
     def __init__(self):
+        Settings.__init__(self)
+        self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
+                                                                                    self.mysql1['password'],
+                                                                                    self.mysql1['host'],
+                                                                                    self.mysql1['port'],
+                                                                                    self.mysql1['datebase']))
+        self.engine2 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql2['user'],
+                                                                                    self.mysql2['password'],
+                                                                                    self.mysql2['host'],
+                                                                                    self.mysql2['port'],
+                                                                                    self.mysql2['datebase']))
+        self.engine20 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql20['user'],
+                                                                                     self.mysql20['password'],
+                                                                                     self.mysql20['host'],
+                                                                                     self.mysql20['port'],
+                                                                                     self.mysql20['datebase']))
+        self.engine3 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql3['user'],
+                                                                                    self.mysql3['password'],
+                                                                                    self.mysql3['host'],
+                                                                                    self.mysql3['port'],
+                                                                                    self.mysql3['datebase']))
+        self.engine4 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql4['user'],
+                                                                                    self.mysql4['password'],
+                                                                                    self.mysql4['host'],
+                                                                                    self.mysql4['port'],
+                                                                                    self.mysql4['datebase']))
         self.sql = MysqlControl()
         '''用来和数据库通信'''
     def readExcel(self, filePath, team):
@@ -406,7 +436,16 @@ class ExcelControl():
 
     def readReturnOrder(self, team):
         import os
-        path = r'D:\Users\Administrator\Desktop\需要用到的文件\退货'
+        # 用pandas读取excel，结果日期自动的变为了数字
+        def date(para):
+            if type(para) == int:
+                delta = pd.Timedelta(str(int(para)) + 'days')
+                time = pd.to_datetime('1899-12-30') + delta
+                return time
+            else:
+                return para
+
+        path = r'D:\Users\Administrator\Desktop\需要用到的文件\A退货'
         dirs = os.listdir(path=path)
         for dir in dirs:
             filePath = os.path.join(path, dir)
@@ -414,16 +453,66 @@ class ExcelControl():
             if dir[:2] != '~$':
                 df = pd.read_excel(filePath)
                 columns_value = list(df.columns)  # 获取数据的标题名，转为列表
-                for column_val in columns_value:
-                    if '订单编号' != column_val:
-                        df.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
-                df.columns = ['订单编号']
-                self.sql.writeSqlReplace(df)
-                sql = 'INSERT IGNORE INTO {}_return (订单编号，添加时间) SELECT 订单编号, NOW() 添加时间 FROM tem; '.format(team)
-                self.sql.replaceInto(team + '_return', list(df.columns))
+                # for column_val in columns_value:
+                #     if '订单编号' != column_val:
+                #         df.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
+                print(df)
+                print(df.columns)
+                df.rename(columns={'单号': '运单编号', '日期 ': '日期'}, inplace=True)
+                df['日期'] = df['日期'].apply(date)
+                df = df[['日期', '运单编号', '取件单号', '代收金额', '处理结果']]
+                df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+
+                sql = '''INSERT IGNORE INTO {}_return (日期, 订单编号, 运单编号, 取件单号, 代收金额, 处理结果, 添加时间)
+                                                SELECT 日期, null 订单编号, 运单编号, 取件单号, 代收金额, 处理结果, NOW() 添加时间 FROM customer; '''.format(team)
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
                 print('退货更新文件成功…………')
                 os.remove(filePath)
                 print('已清除退货文件…………')
+
+                print('正在补充的订单信息…………')
+                sql = '''SELECT 运单编号 FROM {}_return r WHERE r.`订单编号` IS NULL OR r.`订单编号` = "";'''.format(team)
+                ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+                print(ordersDict)
+
+                if ordersDict.empty:
+                    print(' ****** 没有要补充的订单信息; ****** ')
+                else:
+                    print('！！！ 请再次更新订单编号数据！！！')
+                    proxy_handle = '代理服务器0'
+                    proxy_id = '192.168.13.89:37467'                            # 输入代理服务器节点和端口
+                    handle = '手0动'
+                    login_TmpCode = '517e55c6fb6c34ca99a69874aaf5ec25'          # 输入登录口令Tkoen
+                    js = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+
+                    orders_Dict = list(ordersDict['运单编号'])
+                    max_count = len(orders_Dict)
+                    if max_count > 0:
+                        in_count = math.ceil(max_count / 500)
+                        df = pd.DataFrame([])
+                        dlist = []
+                        n = 0
+                        while n < in_count:  # 这里用到了一个while循环，穿越过来的
+                            print('查询第 ' + str(n) + ' 页中，剩余次数' + str(in_count - n))
+                            n = n * 500
+                            n2 = (n + 1) * 500
+                            ord = ','.join(orders_Dict[n:n2])
+                            print(ord)
+                            # data = js.orderInfoQuery(ord, '运单号', proxy_id, proxy_handle)
+                            data = js.orderInfo_pople(ord, '运单号', proxy_id, proxy_handle)
+                            print(data)
+                            dlist.append(data)
+                            n = n + 1
+                        print('正在写入......')
+                        dp = df.append(dlist, ignore_index=True)
+                        dp = dp[['orderNumber','wayBillNumber']]
+                        dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+                        sql = '''update `gat_return` a, customer b
+                                    SET a.`订单编号` = IF(b.`orderNumber` = '', NULL, b.`orderNumber`)
+                                where a.`运单编号`=b.`wayBillNumber`;'''
+                        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
 if __name__ == '__main__':
     e = ExcelControl()
     match = {'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\退货',
