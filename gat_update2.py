@@ -757,12 +757,6 @@ class QueryUpdate(Settings):
 
     # 导出需要更新的签收表---港澳台(二)
     def EportOrder(self, team, month_last, month_yesterday, month_begin, check, export, handle, proxy_handle, proxy_id):
-        print('正在更新4单 物流渠道中......')
-        sql = '''update gat_order_list a
-                    set a.`物流渠道`= '天马新竹'
-                where a.`订单编号` IN ('NA230314084228BM5JP9','NA230314081340UP9JC3','NA2303140617250C6KU3','NA230314005148273I38');'''.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
         match = {'gat': '港台','slsc': '品牌'}
         emailAdd = {'gat': 'giikinliujun@163.com', 'slsc': 'sunyaru@giikin.com'}
         today = datetime.date.today().strftime('%Y.%m.%d')
@@ -927,13 +921,14 @@ class QueryUpdate(Settings):
         print('已清除不参与计算的今日改派订单…………')
 
         print('正在检查总表 订单重量异常 信息 ......')
-        sql = '''SELECT 订单编号 
+        sql = '''SELECT 订单编号, 币种, 下单时间, 电话号码, 产品id, 产品名称
                 FROM {0} s 
                 WHERE s.包裹重量 > 5000 AND s.`订单编号` not in (SELECT 订单编号 FROM {1});'''.format('d1_gat', '订单重量异常')
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         if df is not None and len(df) > 0:
             df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
-            sql = 'REPLACE INTO {0}(订单编号, 记录时间) SELECT 订单编号, NOW() 添加时间 FROM d1_cpy; '.format('订单重量异常')
+            sql = '''REPLACE INTO {0}(订单编号, 币种, 下单时间, 电话号码, 产品id, 产品名称, 记录时间) 
+                               SELECT 订单编号, 币种, 下单时间, 电话号码, 产品id, 产品名称, NOW() 添加时间 FROM d1_cpy; '''.format('订单重量异常')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
             orderId = list(df['订单编号'])
