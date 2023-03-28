@@ -476,9 +476,9 @@ class QueryUpdate(Settings):
         print('正在获取查询 在途-未上线 数据…………')
         rq = datetime.datetime.now().strftime('%Y.%m.%d')
         month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
-        sql = '''SELECT 日期,团队,币种,订单编号,IF(物流方式 LIKE "%天马%" AND LENGTH(运单编号) = 20, CONCAT(861, RIGHT(运单编号, 8)), IF((物流方式 LIKE "%速派%" or 物流方式 LIKE "%易速配%" or 物流方式 LIKE "%龟山%") AND (运单编号 LIKE "A%" OR 运单编号 LIKE "B%"), RIGHT(运单编号, LENGTH(运单编号) - 1), UPPER(运单编号))) 运单编号,
-        是否改派,物流方式, 系统订单状态,系统物流状态,物流状态,签收表物流状态,
-                        最终状态,下单时间,审核时间,仓储扫描时间,出货时间,上线时间,状态时间,完结状态时间,在途未上线
+        sql = '''SELECT 日期,团队,币种,订单编号,
+                        IF(物流方式 LIKE "%天马%" AND LENGTH(运单编号) = 20, CONCAT(861, RIGHT(运单编号, 8)), IF((物流方式 LIKE "%速派%" or 物流方式 LIKE "%易速配%" or 物流方式 LIKE "%龟山%") AND (运单编号 LIKE "A%" OR 运单编号 LIKE "B%"), RIGHT(运单编号, LENGTH(运单编号) - 1), UPPER(运单编号))) 运单编号,
+                        是否改派,物流方式, 系统订单状态,系统物流状态,物流状态,签收表物流状态, 最终状态,下单时间,审核时间,仓储扫描时间,出货时间,上线时间,状态时间,完结状态时间,在途未上线
                 FROM ( SELECT *, IF(最终状态 = '在途',
 						    IF(币种 = '香港',IF((出货时间 IS NULL AND 仓储扫描时间 <= DATE_SUB(CURDATE(), INTERVAL 2 DAY)) OR
                                               (出货时间 IS NOT NULL AND 仓储扫描时间 <= DATE_SUB(CURDATE(), INTERVAL 3 DAY)),1,0)
@@ -514,11 +514,11 @@ class QueryUpdate(Settings):
         print('更新完成…………')
 
         print('正在获取写入excel内容…………')
-        sql = '''SELECT 订单编号,运单编号, 是否改派,发货时间,物流方式,最终状态, NULL 查询状态结果,NULL 配送问题, NULL 状态时间
+        sql = '''SELECT 订单编号,运单编号, 是否改派,发货时间,物流方式,当前状态, NULL 查询状态结果,NULL 配送问题, NULL 状态时间
                 FROM (  SELECT c.订单编号,c.运单编号,c.系统订单状态, c.系统物流状态, c.是否改派, g.标准物流状态,g.签收表物流状态, c.仓储扫描时间 AS 发货时间, 物流方式, b.出货时间 AS 新出货时间,
 							IF(ISNULL(系统物流状态), IF(ISNULL(g.标准物流状态) OR g.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , 
 													IF(物流方式 like '%天马%' and g.签收表物流状态 = '在途','未上线', g.标准物流状态)
-                            ), 系统物流状态) AS 最终状态
+                            ), 系统物流状态) AS 当前状态
                         FROM customer c
                         LEFT JOIN gat_wl_data b ON c.`运单编号` = b.`运单编号`
                         LEFT JOIN gat_logisitis_match g ON b.物流状态 = g.签收表物流状态
@@ -546,15 +546,10 @@ class QueryUpdate(Settings):
         for wy in waybill:
             wy1 = wy.split('&')[0]
             wy2 = wy.split('&')[1]
-
             db1 = df[(df['物流方式'].str.contains(wy1))]
-            db2 = db1[(db1['最终状态'].str.contains('在途'))]
-            db3 = db1[(db1['最终状态'].str.contains('未上线'))]
-
             file_path = 'G:\\输出文件\\{0}{1} 在途未上线.xlsx'.format(rq, wy2)
             writer2 = pd.ExcelWriter(file_path, engine='openpyxl')
-            db2[['订单编号', '运单编号', '是否改派', '发货时间', '查询状态结果', '配送问题', '状态时间']].to_excel(writer2, sheet_name='在途', index=False, startrow=0)
-            db3[['订单编号', '运单编号', '是否改派', '发货时间', '查询状态结果', '配送问题', '状态时间']].to_excel(writer2, sheet_name='未上线', index=False, startrow=0)
+            db1[['订单编号', '运单编号', '是否改派', '发货时间', '当前状态', '查询状态结果', '配送问题', '状态时间']].to_excel(writer2, sheet_name='查询', index=False, startrow=0)
             writer2.save()
             writer2.close()
         print('----已写入excel')
@@ -575,7 +570,7 @@ if __name__ == '__main__':
     # upload = '查询-订单号'
     # m.trans_way_cost(team)  # 同产品下的规格运费查询
     '''
-    select = 2
+    select = 4
     if int(select) == 1:
             upload = '查询-运单号'
             m.readFormHost(upload)

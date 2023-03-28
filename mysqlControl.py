@@ -64,7 +64,7 @@ class MysqlControl(Settings):
 
     def replaceInto(self, team, dfColumns):
         columns = list(dfColumns)
-        columns = ', '.join(columns)
+        columns = ','.join(columns)
         if team in ('slrb', 'slsc'):
             print(team + '---9')
             sql = 'REPLACE INTO {}({}, 添加时间) SELECT *, NOW() 添加时间 FROM tem; '.format(team, columns)

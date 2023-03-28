@@ -1649,7 +1649,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 909
+    select = 99
     if int(select) == 99:
         handle = '手动0'
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
@@ -1697,7 +1697,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 单点 昨日头程直发渠道 & 天马711的订单明细  | 删单原因 状态运行（二）-----------------------------------------
     '''
-    if int(select) == 909:
+    if int(select) == 99:
         proxy_handle = '代理服务器0'
         proxy_id = '192.168.13.89:37467'                            # 输入代理服务器节点和端口
         handle = '手0动'
@@ -1709,7 +1709,7 @@ if __name__ == '__main__':
         time_now = (datetime.datetime.now()).strftime('%Y-%m-%d')
         query = '下单时间'
         areaId = None                                   # 团队id
-        # js.order_Query_Yiwudi(time_yesterday, time_now, areaId, query, proxy_handle, proxy_id)   # 检查 头程直发渠道 & 天马711@--ok
+        js.order_Query_Yiwudi(time_yesterday, time_now, areaId, query, proxy_handle, proxy_id)   # 检查 头程直发渠道 & 天马711@--ok
 
 
         timeStart = '2023-03-21'
@@ -1717,7 +1717,7 @@ if __name__ == '__main__':
         query = '下单时间'
         areaId = None                                   # 团队id
         time_handle = '自动'
-        # js.order_Query_Delete(timeStart, timeEnd, areaId, query, proxy_handle, proxy_id, time_handle)   # 最近三天删单原因@--ok
+        js.order_Query_Delete(timeStart, timeEnd, areaId, query, proxy_handle, proxy_id, time_handle)   # 最近三天删单原因@--ok
 
 
         time_handle = '自动'

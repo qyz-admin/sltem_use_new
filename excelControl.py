@@ -456,7 +456,6 @@ class ExcelControl(Settings):
                 # for column_val in columns_value:
                 #     if '订单编号' != column_val:
                 #         df.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
-                # print(df)
                 print(df.columns)
                 if '吉客印新竹退款明细' in filePath:
                     df.insert(0, '物流', '速派')
@@ -464,7 +463,7 @@ class ExcelControl(Settings):
                     df.insert(0, '物流', '天马')
                 df.rename(columns={'订单号': '物流订单编号','单号': '运单编号', '日期 ': '日期'}, inplace=True)
                 df['日期'] = df['日期'].apply(date)
-                df = df[['日期', '物流订单编号', '运单编号', '取件单号', '代收金额', '处理结果']]
+                df = df[['日期', '物流订单编号', '运单编号', '取件单号', '代收金额', '处理结果', '物流']]
                 df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
                 print('正在写入退货表 订单信息…………')
                 sql = '''INSERT IGNORE INTO {}_return (日期, 订单编号, 物流订单编号, 联系电话, 运单编号, 取件单号, 代收金额, 处理结果, 发货时间, 物流状态, 完成时间, 上线时间, 物流, 添加时间)
@@ -507,19 +506,22 @@ class ExcelControl(Settings):
                     print(data)
                     dlist.append(data)
                     n = n + 1
-                print('正在写入......')
                 dp = df.append(dlist, ignore_index=True)
-                dp = dp[['orderNumber','wayBillNumber', 'shipInfo.shipPhone', 'deliveryTime','logisticsStatus', 'onlineTime','finishTime']]
-                dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-                sql = '''update `gat_return` a, customer b
-                            SET a.`订单编号` = IF(b.`orderNumber` = '', NULL, b.`orderNumber`),
-                                a.`联系电话` = IF(b.`shipInfo.shipPhone` = '', NULL, b.`shipInfo.shipPhone`),
-                                a.`发货时间` = IF(b.`deliveryTime` = '', NULL, b.`deliveryTime`),
-                                a.`物流状态` = IF(b.`logisticsStatus` = '', NULL, b.`logisticsStatus`),
-                                a.`上线时间` = IF(b.`onlineTime` = '', NULL, b.`onlineTime`),
-                                a.`完成时间` = IF(b.`finishTime` = '', NULL, b.`finishTime`)
-                        where a.`运单编号`=b.`wayBillNumber`;'''
-                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                if dp.empty:
+                    print(' ****** 没有要补充的订单信息; ****** ')
+                else:
+                    print('正在写入......')
+                    dp = dp[['orderNumber','wayBillNumber', 'shipInfo.shipPhone', 'deliveryTime','logisticsStatus', 'onlineTime','finishTime']]
+                    dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+                    sql = '''update `gat_return` a, customer b
+                                SET a.`订单编号` = IF(b.`orderNumber` = '', NULL, b.`orderNumber`),
+                                    a.`联系电话` = IF(b.`shipInfo.shipPhone` = '', NULL, b.`shipInfo.shipPhone`),
+                                    a.`发货时间` = IF(b.`deliveryTime` = '', NULL, b.`deliveryTime`),
+                                    a.`物流状态` = IF(b.`logisticsStatus` = '', NULL, b.`logisticsStatus`),
+                                    a.`上线时间` = IF(b.`onlineTime` = '', NULL, b.`onlineTime`),
+                                    a.`完成时间` = IF(b.`finishTime` = '', NULL, b.`finishTime`)
+                            where a.`运单编号`=b.`wayBillNumber`;'''
+                    pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             else:
                 print('无需补充数据')
 
