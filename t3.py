@@ -70,7 +70,8 @@ we = WlExecl()
 qu = QueryUpdate()
 
 # 上传退货
-e.readReturnOrder(team)
+# e.readReturnOrder(team)
+e.readReturnOrder_Update(team,'吉客印新竹退款明细')
 print('退货导入耗时：', datetime.datetime.now() - start)
 
 # ---读取execl文件---

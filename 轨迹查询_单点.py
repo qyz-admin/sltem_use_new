@@ -1157,7 +1157,7 @@ class QueryTwo(Settings, Settings_sso):
         df2.to_excel('G:\\输出文件\\与客户另约时间配送-语音外呼{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         df3.to_excel('G:\\输出文件\\到站自取-语音外呼{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
 
-        filePath = r'G:\\输出文件\\派送问题件-语音外呼{}.xlsx'.format(rq)
+        filePath = r'G:\\输出文件\\语音外呼-派送问题件{}.xlsx'.format(rq)
         df0 = pd.DataFrame([])                                  # 创建空的dataframe数据框
         df0.to_excel(filePath, index=False)                     # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         print('正在写入excel…………')
@@ -1193,7 +1193,7 @@ if __name__ == '__main__':
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 ；  cat = 1 、黑猫切换是否使用后台数据  0 、还是官网数据 
     '''
-    select = 1
+    select = 51
     isReal = 1
     cat = 0
     if int(select) == 1:
@@ -1222,12 +1222,12 @@ if __name__ == '__main__':
             tm2 = (datetime.datetime.now().strftime('%Y-%m-%d')) + ' 16:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'PM'
         elif select == 53:
-            tm = '2023-03-17 16:00:00'
-            tm2 = '2023-03-20 11:00:00'
+            tm = '2023-03-27 10:00:00'
+            tm2 = '2023-03-27 11:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'AM'
         elif select == 54:
-            tm = '2023-03-21 16:00:00'
-            tm2 = '2023-03-22 16:00:00'
+            tm = '2023-03-24 16:00:00'
+            tm2 = '2023-03-25 16:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'PM'
         print('****** 查询      起止时间：' + tm + ' - ' + tm2 + ' ******')
         m.getDeliveryList(tm, tm2, '创建时间', proxy_handle, proxy_id, tm_data)

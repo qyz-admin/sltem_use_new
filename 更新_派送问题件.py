@@ -97,7 +97,7 @@ class QueryTwo(Settings, Settings_sso):
             sql = 'SELECT DISTINCT 日期 FROM 派送问题件_跟进表2_cp d  ORDER BY 日期 DESC'
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
             rq = pd.to_datetime(rq['日期'][0])
-            last_time = rq.strftime('%Y-%m-%d')
+            last_time =(rq - datetime.timedelta(days=15)).strftime('%Y-%m-%d')
             now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 
         elif team == '物流问题件_更新':
@@ -1518,7 +1518,7 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 问题件 状态运行（一）-----------------------------------------
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
     '''
-    select = 1
+    select = 99
     if int(select) == 99:
         handle = '手动0'
         login_TmpCode = '2bb2a3ecea7932ddb588d29b39c8d8ba'          # 输入登录口令Tkoen

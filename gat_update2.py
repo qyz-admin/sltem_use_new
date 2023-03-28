@@ -879,7 +879,7 @@ class QueryUpdate(Settings):
 						) a
                         LEFT JOIN gat_wl_data b ON a.`查件单号` = b.`运单编号`
                         LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
-                        LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
+                        LEFT JOIN (SELECT 订单编号 FROM {0}_return r WHERE r.`订单编号` IS NOT NULL AND r.`订单编号` <> "") d ON a.订单编号 = d.订单编号
                         ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             print('正在写入---' + match[team] + ' ---临时缓存…………')  # 备用临时缓存表

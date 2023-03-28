@@ -456,62 +456,87 @@ class ExcelControl(Settings):
                 # for column_val in columns_value:
                 #     if '订单编号' != column_val:
                 #         df.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
-                print(df)
+                # print(df)
                 print(df.columns)
-                df.rename(columns={'单号': '运单编号', '日期 ': '日期'}, inplace=True)
-                df['日期'] = df['日期'].apply(date)
-                df = df[['日期', '运单编号', '取件单号', '代收金额', '处理结果']]
-                df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-
-                sql = '''INSERT IGNORE INTO {}_return (日期, 订单编号, 运单编号, 取件单号, 代收金额, 处理结果, 添加时间)
-                                                SELECT 日期, null 订单编号, 运单编号, 取件单号, 代收金额, 处理结果, NOW() 添加时间 FROM customer; '''.format(team)
-                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
-                print('退货更新文件成功…………')
-                os.remove(filePath)
-                print('已清除退货文件…………')
-
-                print('正在补充的订单信息…………')
-                sql = '''SELECT 运单编号 FROM {}_return r WHERE r.`订单编号` IS NULL OR r.`订单编号` = "";'''.format(team)
-                ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
-                print(ordersDict)
-
-                if ordersDict.empty:
-                    print(' ****** 没有要补充的订单信息; ****** ')
+                if '吉客印新竹退款明细' in filePath:
+                    df.insert(0, '物流', '速派')
                 else:
-                    print('！！！ 请再次更新订单编号数据！！！')
-                    proxy_handle = '代理服务器0'
-                    proxy_id = '192.168.13.89:37467'                            # 输入代理服务器节点和端口
-                    handle = '手0动'
-                    login_TmpCode = '517e55c6fb6c34ca99a69874aaf5ec25'          # 输入登录口令Tkoen
-                    js = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+                    df.insert(0, '物流', '天马')
+                df.rename(columns={'订单号': '物流订单编号','单号': '运单编号', '日期 ': '日期'}, inplace=True)
+                df['日期'] = df['日期'].apply(date)
+                df = df[['日期', '物流订单编号', '运单编号', '取件单号', '代收金额', '处理结果']]
+                df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+                print('正在写入退货表 订单信息…………')
+                sql = '''INSERT IGNORE INTO {}_return (日期, 订单编号, 物流订单编号, 联系电话, 运单编号, 取件单号, 代收金额, 处理结果, 发货时间, 物流状态, 完成时间, 上线时间, 物流, 添加时间)
+                                                SELECT 日期, null 订单编号, 物流订单编号, null 联系电话, 运单编号, 取件单号, 代收金额, 处理结果, 
+                                                null 发货时间, null 物流状态, null 完成时间, null 上线时间, 物流, NOW() 添加时间 FROM customer; '''.format(team)
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                self.readReturnOrder_Update(team, filePath)
 
-                    orders_Dict = list(ordersDict['运单编号'])
-                    max_count = len(orders_Dict)
-                    if max_count > 0:
-                        in_count = math.ceil(max_count / 500)
-                        df = pd.DataFrame([])
-                        dlist = []
-                        n = 0
-                        while n < in_count:  # 这里用到了一个while循环，穿越过来的
-                            print('查询第 ' + str(n) + ' 页中，剩余次数' + str(in_count - n))
-                            n = n * 500
-                            n2 = (n + 1) * 500
-                            ord = ','.join(orders_Dict[n:n2])
-                            print(ord)
-                            # data = js.orderInfoQuery(ord, '运单号', proxy_id, proxy_handle)
-                            data = js.orderInfo_pople(ord, '运单号', proxy_id, proxy_handle)
-                            print(data)
-                            dlist.append(data)
-                            n = n + 1
-                        print('正在写入......')
-                        dp = df.append(dlist, ignore_index=True)
-                        dp = dp[['orderNumber','wayBillNumber']]
-                        dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-                        sql = '''update `gat_return` a, customer b
-                                    SET a.`订单编号` = IF(b.`orderNumber` = '', NULL, b.`orderNumber`)
-                                where a.`运单编号`=b.`wayBillNumber`;'''
-                        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+    def readReturnOrder_Update(self, team, filePath):
+        print('正在检查 需补充的 订单信息…………')
+        sql = '''SELECT 运单编号 FROM {}_return r WHERE r.`订单编号` IS NULL OR r.`订单编号` = "";'''.format(team)
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        print(ordersDict)
+
+        if ordersDict.empty:
+            print(' ****** 没有要补充的订单信息; ****** ')
+        else:
+            print('！！！ 请再次更新订单编号数据！！！')
+            proxy_handle = '代理服务器0'
+            proxy_id = '192.168.13.89:37467'                            # 输入代理服务器节点和端口
+            handle = '手0动'
+            login_TmpCode = '517e55c6fb6c34ca99a69874aaf5ec25'          # 输入登录口令Tkoen
+            js = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+
+            orders_Dict = list(ordersDict['运单编号'])
+            max_count = len(orders_Dict)
+            if max_count > 0:
+                in_count = math.ceil(max_count / 500)
+                df = pd.DataFrame([])
+                dlist = []
+                n = 0
+                while n < in_count:  # 这里用到了一个while循环，穿越过来的
+                    print('查询第 ' + str(n) + ' 页中，剩余次数' + str(in_count - n))
+                    n1 = n * 500
+                    n2 = (n + 1) * 500
+                    ord = ','.join(orders_Dict[n1:n2])
+                    print(ord)
+                    data = js.orderInfoQuery(ord, '运单号', proxy_id, proxy_handle)
+                    # data = js.orderInfo_pople(ord, '运单号', proxy_id, proxy_handle)
+                    print(data)
+                    dlist.append(data)
+                    n = n + 1
+                print('正在写入......')
+                dp = df.append(dlist, ignore_index=True)
+                dp = dp[['orderNumber','wayBillNumber', 'shipInfo.shipPhone', 'deliveryTime','logisticsStatus', 'onlineTime','finishTime']]
+                dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+                sql = '''update `gat_return` a, customer b
+                            SET a.`订单编号` = IF(b.`orderNumber` = '', NULL, b.`orderNumber`),
+                                a.`联系电话` = IF(b.`shipInfo.shipPhone` = '', NULL, b.`shipInfo.shipPhone`),
+                                a.`发货时间` = IF(b.`deliveryTime` = '', NULL, b.`deliveryTime`),
+                                a.`物流状态` = IF(b.`logisticsStatus` = '', NULL, b.`logisticsStatus`),
+                                a.`上线时间` = IF(b.`onlineTime` = '', NULL, b.`onlineTime`),
+                                a.`完成时间` = IF(b.`finishTime` = '', NULL, b.`finishTime`)
+                        where a.`运单编号`=b.`wayBillNumber`;'''
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            else:
+                print('无需补充数据')
+
+        if '吉客印新竹退款明细' in filePath:
+            print('正在输出 退货退款 导状态表…………')
+            sql = '''SELECT 订单编号, 联系电话, 运单编号 AS 回执单号, 发货时间,  '退货退款' AS 物流状态,  4 AS 完成状态,  完成时间 AS 更新时间, 上线时间 
+                    FROM {0}_return r 
+                    WHERE DATE_FORMAT(r.添加时间, '%Y-%m-%d') = DATE_FORMAT(CURDATE() , '%Y-%m-%d') AND r.物流 = '速派'
+                         AND r.`订单编号` IS NOT NULL AND r.`订单编号` <>  "";'''.format(team)
+            ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+            print(ordersDict)
+        else:
+            print('无需生成导状态表')
+
+        print('退货更新文件成功…………')
+        os.remove(filePath)
+        print('已清除退货文件…………')
 
 if __name__ == '__main__':
     e = ExcelControl()

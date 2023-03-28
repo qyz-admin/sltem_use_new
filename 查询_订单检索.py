@@ -496,18 +496,27 @@ class QueryOrder(Settings, Settings_sso):
         # print('正在处理json数据转化为dataframe…………')
         try:
             for result in req['data']['list']:
-                result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
-                result['saleName'] = 0
-                result['productId'] = 0
-                result['saleProduct'] = 0
-                result['spec'] = 0
-                result['chooser'] = 0
-                result['saleId'] = result['specs'][0]['saleId']
-                result['saleName'] = result['specs'][0]['saleName']
-                result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
-                result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
-                result['spec'] = result['specs'][0]['spec']
-                result['chooser'] = result['specs'][0]['chooser']
+                print(result['orderNumber'])
+                if result['specs'] != []:
+                    result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
+                    result['saleName'] = 0
+                    result['productId'] = 0
+                    result['saleProduct'] = 0
+                    result['spec'] = 0
+                    result['chooser'] = 0
+                    result['saleId'] = result['specs'][0]['saleId']
+                    result['saleName'] = result['specs'][0]['saleName']
+                    result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+                    result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
+                    result['spec'] = result['specs'][0]['spec']
+                    result['chooser'] = result['specs'][0]['chooser']
+                else:
+                    result['saleId'] = ''        # 添加新的字典键-值对，为下面的重新赋值用
+                    result['saleName'] = ''
+                    result['productId'] = ''
+                    result['saleProduct'] = ''
+                    result['spec'] = ''
+                    result['chooser'] = ''
                 quest = ''
                 for re in result['questionReason']:
                     quest = quest + ';' + re
@@ -832,7 +841,7 @@ class QueryOrder(Settings, Settings_sso):
                 print('---无 铱熙无敌 订单')
 
             # ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]') # ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]')
-            file_path = 'G:\\输出文件\\订单检索-{0}{1}.xlsx'.format('昨日明细', rq)
+            file_path = 'G:\\输出文件\\{0} 订单检明细.xlsx'.format(timeEnd)
             df0 = pd.DataFrame([])  # 创建空的dataframe数据框
             df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
             writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
@@ -992,7 +1001,7 @@ class QueryOrder(Settings, Settings_sso):
                        '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库', '拒收原因', '物流更新时间', '状态时间', '更新时间']]
             db0.insert(0, '删除人', '')
             db0.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
-            db0.to_excel('G:\\输出文件\\神龙-火凤凰 昨日删单明细{0}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            db0.to_excel('G:\\输出文件\\{0} 神龙-火凤凰 删单明细.xlsx'.format(timeEnd), sheet_name='查询', index=False, engine='xlsxwriter')
 
             print('正在分析订单删除的原因......')
             sql = '''DELETE FROM `cache` gt WHERE gt.`订单编号` IN (SELECT * FROM gat_地址邮编错误);'''
@@ -2976,6 +2985,7 @@ SELECT 币种,运营团队,
                     ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
             df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
             listT.append(df2)
+
             sql3 = '''SELECT 代下单客服, COUNT(订单编号) as 总代下单量
                     FROM ( SELECT *
                             FROM `cache` s
@@ -3039,6 +3049,26 @@ SELECT 币种,运营团队,
             df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
             listT.append(df6)
 
+            sql7 = '''SELECT 币种,代下单客服, COUNT(订单编号) as 总代下单量,
+                            SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量,
+                            concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 完成签收,
+                            SUM(IF(物流状态 = "已签收",1,0)) as 签收,
+                            SUM(IF(物流状态 = "拒收",1,0)) as 拒收,
+                            SUM(IF(物流状态 = "已退货",1,0)) as 已退货,
+                            SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
+                            concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / COUNT(订单编号),0) * 100,2),'%') as 总计签收,
+                            concat(ROUND(IFNULL(SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / COUNT(订单编号),0) * 100,2),'%') as 完成占比,
+                            concat(ROUND(IFNULL(SUM(IF(物流状态 = "已退货",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
+                        FROM ( SELECT *
+                                FROM `cache` s
+                                WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                        ) ss1
+                        GROUP BY 币种,代下单客服
+                        WITH ROLLUP 
+                        ORDER BY 币种,FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
+            df7 = pd.read_sql_query(sql=sql7, con=self.engine1)
+            listT.append(df7)
+
             file_path = 'G:\\输出文件\\促单查询 {}.xlsx'.format(rq)
             df0 = pd.DataFrame([])  # 创建空的dataframe数据框
             df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -3051,6 +3081,7 @@ SELECT 币种,运营团队,
             listT[2].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=22)      # 总下单量
             listT[5].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=25)     # 分币种单量
             listT[0].to_excel(excel_writer=writer, sheet_name='明细', index=False)     # 明细单量
+            listT[5].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startrow=22)  # 明细
             if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
                 del book['Sheet1']
             writer.save()

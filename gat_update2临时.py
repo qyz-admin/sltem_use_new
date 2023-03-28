@@ -757,7 +757,7 @@ class QueryUpdate(Settings):
 
     # 导出需要更新的签收表---港澳台(二)
     def EportOrder(self, team, month_last, month_yesterday, month_begin, check, export, handle, proxy_handle, proxy_id):
-        match = {'gat': '港台','slsc': '品牌'}
+        match = {'gat': '港台', 'slsc': '品牌'}
         emailAdd = {'gat': 'giikinliujun@163.com', 'slsc': 'sunyaru@giikin.com'}
         today = datetime.date.today().strftime('%Y.%m.%d')
         if check == '是':
@@ -790,7 +790,8 @@ class QueryUpdate(Settings):
                                 WHERE sl.`日期`>= '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
                              ) s
                         LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
-                        LEFT JOIN (SELECT * FROM dim_cate GROUP BY pid ) dc ON  dc.pid = dp.second_cate_id;'''.format(team,month_begin)
+                        LEFT JOIN (SELECT * FROM dim_cate GROUP BY pid ) dc ON  dc.pid = dp.second_cate_id;'''.format(
+                    team, month_begin)
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
                 if df.empty:
                     print('  第二次检查没有为空的………… ')
@@ -853,7 +854,8 @@ class QueryUpdate(Settings):
                       and gt.`订单编号` IN (SELECT 订单编号 
                                             FROM gat_order_list gs
                                             WHERE gs.年月 >= {0}
-                                              and gs.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'));'''.format(del_time)
+                                              and gs.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'));'''.format(
+                del_time)
             print('正在清除港澳台-总表的可能删除了的订单…………')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('正在获取---' + match[team] + '---更新数据内容…………')
@@ -874,24 +876,27 @@ class QueryUpdate(Settings):
                             IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, null 签收表订单编号, null 签收表运单编号, null 原运单号, b.物流状态 签收表物流状态, null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, 添加物流单号时间,
                             省洲,市区,数量, a.下架时间, a.物流提货时间, a.完结状态, a.回款时间, a.支付类型, a.是否盲盒, a.克隆类型, a.主订单
                         FROM (SELECT * 
-							FROM {0}_order_list g
-							WHERE g.日期 >= '{2}' AND g.日期 <= '{3}' AND g.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)') AND g.物流方式 <> '盲盒专用物流渠道'
-						) a
+                            FROM {0}_order_list g
+                            WHERE g.日期 >= '{2}' AND g.日期 <= '{3}' AND g.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)') AND g.物流方式 <> '盲盒专用物流渠道'
+                        ) a
                         LEFT JOIN gat_wl_data b ON a.`查件单号` = b.`运单编号`
                         LEFT JOIN {0}_logisitis_match c ON b.物流状态 = c.签收表物流状态
-                        LEFT JOIN {0}_return d ON a.订单编号 = d.订单编号
+                        LEFT JOIN (SELECT 订单编号 FROM {0}_return r WHERE r.`订单编号` IS NOT NULL AND r.`订单编号` <> "") d ON a.订单编号 = d.订单编号
                         ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             print('正在写入---' + match[team] + ' ---临时缓存…………')  # 备用临时缓存表
             df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
             if export == '导表':
                 print('正在写入excel…………')
-                df = df[['日期', '团队', '所属团队', '币种', '订单编号', '电话号码', '运单编号', '出货时间', '物流状态', '物流状态代码', '状态时间', '上线时间', '系统订单状态', '系统物流状态', '最终状态',
-                         '是否改派', '物流方式', '物流渠道', '物流名称', '签收表物流状态', '付款方式', '产品id', '产品名称','父级分类', '二级分类', '下单时间', '审核时间', '仓储扫描时间', '完结状态时间']]
+                df = df[['日期', '团队', '所属团队', '币种', '订单编号', '电话号码', '运单编号', '出货时间', '物流状态', '物流状态代码', '状态时间', '上线时间',
+                         '系统订单状态', '系统物流状态', '最终状态',
+                         '是否改派', '物流方式', '物流渠道', '物流名称', '签收表物流状态', '付款方式', '产品id', '产品名称', '父级分类', '二级分类', '下单时间',
+                         '审核时间', '仓储扫描时间', '完结状态时间']]
                 old_path = 'G:\\输出文件\\{} {} 更新-签收表.xlsx'.format(today, match[team])
                 df.to_excel(old_path, sheet_name=match[team], index=False)
-                new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\{} {} 更新-签收表.xlsx'.format(today,match[team])
-                shutil.copyfile(old_path, new_path)             # copy到指定位置
+                new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime(
+                    '%m.%d') + '\\{} {} 更新-签收表.xlsx'.format(today, match[team])
+                shutil.copyfile(old_path, new_path)  # copy到指定位置
                 print('----已写入excel; 并复制到指定文件夹中')
             else:
                 print('不 写入excel…………')
@@ -920,15 +925,15 @@ class QueryUpdate(Settings):
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('已清除不参与计算的今日改派订单…………')
 
-
         print('正在检查总表 订单重量异常 信息 ......')
-        sql = '''SELECT 订单编号 
+        sql = '''SELECT 订单编号, 币种, 下单时间, 电话号码, 产品id, 产品名称
                 FROM {0} s 
                 WHERE s.包裹重量 > 5000 AND s.`订单编号` not in (SELECT 订单编号 FROM {1});'''.format('d1_gat', '订单重量异常')
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         if df is not None and len(df) > 0:
             df.to_sql('d1_cpy', con=self.engine1, index=False, if_exists='replace')
-            sql = 'REPLACE INTO {0}(订单编号, 记录时间) SELECT 订单编号, NOW() 添加时间 FROM d1_cpy; '.format('订单重量异常')
+            sql = '''REPLACE INTO {0}(订单编号, 币种, 下单时间, 电话号码, 产品id, 产品名称, 记录时间) 
+                               SELECT 订单编号, 币种, 下单时间, 电话号码, 产品id, 产品名称, NOW() 添加时间 FROM d1_cpy; '''.format('订单重量异常')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
             orderId = list(df['订单编号'])

@@ -24,10 +24,10 @@ from settings_sso import Settings_sso
 from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
-
+from 查询_订单检索 import QueryOrder
 
 # -*- coding:utf-8 -*-
-class QueryOrder(Settings, Settings_sso):
+class QueryOrder_Code(Settings, Settings_sso):
     def __init__(self, userMobile, password, login_TmpCode, handle, proxy_handle, proxy_id):
         Settings.__init__(self)
         Settings_sso.__init__(self)
@@ -38,17 +38,17 @@ class QueryOrder(Settings, Settings_sso):
         # self.sso_online_Two()
         # self._online_Two()
 
-        # self.sso__online_auto()
-        if proxy_handle == '代理服务器':
-            if handle == '手动':
-                self.sso__online_handle_proxy(login_TmpCode, proxy_id)
-            else:
-                self.sso__online_auto_proxy(proxy_id)
-        else:
-            if handle == '手动':
-                self.sso__online_handle(login_TmpCode)
-            else:
-                self.sso__online_auto()
+        # # self.sso__online_auto()
+        # if proxy_handle == '代理服务器':
+        #     if handle == '手动':
+        #         self.sso__online_handle_proxy(login_TmpCode, proxy_id)
+        #     else:
+        #         self.sso__online_auto_proxy(proxy_id)
+        # else:
+        #     if handle == '手动':
+        #         self.sso__online_handle(login_TmpCode)
+        #     else:
+        #         self.sso__online_auto()
 
         # self.sso__online_handle(login_TmpCode)
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
@@ -1091,13 +1091,14 @@ class QueryOrder(Settings, Settings_sso):
             dp = df.append(dlist, ignore_index=True)
             print('正在写入......')
             dp.to_sql('cache_ch', con=self.engine1, index=False, if_exists='replace')
-            dp.to_excel('G:\\输出文件\\绩效系统问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO gat_order_list_log(订单编号,币种, 下单时间,订单状态,物流状态,创建时间,派送问题类型, 最新处理人, 最新处理状态, 最新处理结果,处理时间,统计日期, 记录时间) 
-                                           SELECT 订单编号,币种, 下单时间,订单状态,物流状态,创建时间,派送问题类型, 最新处理人, 最新处理状态, 最新处理结果,处理时间,DATE_FORMAT(NOW(),'%Y-%m-%d') 统计日期, NOW() 记录时间 
-                    FROM cache_ch;'''
+            dp.to_excel('G:\\输出文件\\系统问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            sql = '''REPLACE INTO gat_order_list_log(id, orderId, orderNumber, orderStatus, updateTime, uid, remark, name, 统计月份,记录时间) 
+                                              SELECT id, orderId, orderNumber, orderStatus, updateTime, uid, remark, name, DATE_FORMAT({0},'%Y%m') 统计月份, NOW() 记录时间 
+                    FROM cache_ch;'''.format(timeEnd)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
-            self._service_id_orderInfoTWO()
+            self._service_id_orderInfoTWO(timeEnd)
+            self._service_id_orderInfoThree(timeEnd)
         else:
             print('无需查询......')
     def _service_id_orderInfo(self, ord, proxy_handle, proxy_id):  # 进入订单检索界面
@@ -1124,18 +1125,15 @@ class QueryOrder(Settings, Settings_sso):
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         return data
-    def _service_id_orderInfoTWO(self):  # 进入订单检索界面
+    def _service_id_orderInfoTWO(self, timeEnd):  # 进入订单检索界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        print('+++正在查询订单信息中')
-        sql = '''SELECT *
-                FROM cache_ch c
-                WHERE c.orderStatus IS NOT NULL AND c.orderStatus <> ""
-                ORDER BY orderNumber, id;'''
+        print('+++正在查询订单 转化人 信息中')
         sql = '''SELECT *
                 FROM gat_order_list_log c
-                WHERE c.orderStatus IS NOT NULL AND c.orderStatus <> ""
-                ORDER BY orderNumber, id;'''
+                WHERE c.统计月份 = DATE_FORMAT('{0}','%Y%m') AND c.orderStatus IS NOT NULL AND c.orderStatus <> ""
+                ORDER BY orderNumber, id;'''.format(timeEnd)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
+        print(82)
         print(df)
         dict = {}
         for index, x in df.iterrows():
@@ -1225,13 +1223,59 @@ class QueryOrder(Settings, Settings_sso):
         data = list(dict.values())
         data = pd.json_normalize(data)
         print(data)
-        data.to_excel('G:\\输出文件\\系统问题件-绩效{0}.xlsx', sheet_name='查询', index=False, engine='xlsxwriter').format(rq)
+        data.to_excel('G:\\输出文件\\系统问题件-下单时间{0}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         data.to_sql('cache_ch', con=self.engine1, index=False, if_exists='replace')
-        sql = '''REPLACE INTO 系统问题件_下单时间( id,orderId, orderNumber,orderStatus,updateTime,uid,remark, name, 统计月份,记录时间) 
-                 SELECT id, orderId, orderNumber, orderStatus, updateTime, uid, remark, name, DATE_FORMAT(NOW(),'%Y%m') 统计月份, NOW() 记录时间 
+        sql = '''REPLACE INTO 系统问题件_下单时间( id, 订单编号, 订单状态, 转化时间, 备注, 转化人,  系统订单状态, 系统物流状态, 统计月份,记录时间) 
+                 SELECT id, 订单编号, 订单状态, 转化时间, 备注, 转化人, NULL AS 系统订单状态, NULL AS 系统物流状态, DATE_FORMAT('2023-01-01','%Y%m') 统计月份, NOW() 记录时间 
                  FROM cache_ch;'''
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('写入成功......')
+    def _service_id_orderInfoThree(self, timeEnd):  # 进入订单检索界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('正在更新 订单状态 信息…………')
+        sql = '''SELECT 订单编号 FROM 系统问题件_下单时间 c WHERE c.统计月份 = DATE_FORMAT('{1}','%Y%m');'''.format('gat', timeEnd)
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        print(ordersDict)
+
+        if ordersDict.empty:
+            print(' ****** 没有要补充的订单信息; ****** ')
+        else:
+            print('！！！ 请再次更新订单编号数据！！！')
+            proxy_handle = '代理服务器0'
+            proxy_id = '192.168.13.89:37467'                            # 输入代理服务器节点和端口
+            handle = '手0动'
+            login_TmpCode = '517e55c6fb6c34ca99a69874aaf5ec25'          # 输入登录口令Tkoen
+            js = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+
+            orders_Dict = list(ordersDict['订单编号'])
+            max_count = len(orders_Dict)
+            if max_count > 0:
+                in_count = math.ceil(max_count / 500)
+                df = pd.DataFrame([])
+                dlist = []
+                n = 0
+                while n < in_count:  # 这里用到了一个while循环，穿越过来的
+                    print('查询第 ' + str(n+1) + ' 页中，剩余次数' + str(in_count - n-1))
+                    n1 = n * 500
+                    n2 = (n + 1) * 500
+                    ord = ','.join(orders_Dict[n1:n2])
+                    data = js.orderInfoQuery(ord, '订单号', proxy_id, proxy_handle)
+                    # print(data)
+                    dlist.append(data)
+                    n = n + 1
+                    print(n)
+                print('正在写入......')
+                dp = df.append(dlist, ignore_index=True)
+                dp = dp[['orderNumber','logisticsStatus', 'orderStatus']]
+                dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
+                sql = '''update `系统问题件_下单时间` a, cache_check b
+                            SET a.`系统订单状态` = IF(b.`orderStatus` = '', NULL, b.`orderStatus`),
+                                a.`系统物流状态` = IF(b.`logisticsStatus` = '', NULL, b.`logisticsStatus`)
+                        where a.`订单编号`=b.`orderNumber`;'''
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            else:
+                print('无需补充数据')
+        print('更新成功......')
 
     # 绩效-汇总输出
     def service_check(self):
@@ -1417,7 +1461,7 @@ if __name__ == '__main__':
     login_TmpCode = '4b84b336ab9739218a563cde0be598ee'  # 输入登录口令Tkoen
     proxy_handle = '代理服务器'
     proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
-    m = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+    m = QueryOrder_Code('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
@@ -1444,8 +1488,8 @@ if __name__ == '__main__':
                 timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
                 timeEnd = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         else:
-            timeStart = '2022-11-01'
-            timeEnd = '2022-11-30'
+            timeStart = '2023-01-01'
+            timeEnd = '2023-01-31'
         print(timeStart + "---" + timeEnd)
 
         # m.service_id_order(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)      # 促单查询；下单时间 @~@ok
@@ -1466,7 +1510,7 @@ if __name__ == '__main__':
         # m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
         #
         # order_time = '跟进时间'
-        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
+        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
         # order_time = '创建时间'
         # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
         #
@@ -1475,7 +1519,9 @@ if __name__ == '__main__':
         # order_time = '创建时间'
         # m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
 
-        m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)            # 系统问题件  查询；订单检索
+        # m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)            # 系统问题件  查询；订单检索
+        # m._service_id_orderInfoTWO('2023-01-01')            # 系统问题件  查询；订单检索
+        m._service_id_orderInfoThree('2023-01-01')            # 系统问题件  查询；订单检索
 
         # order_time = '跟进时间'                                                                  # 拒收问题  查询；订单检索@~@ok
         timeStart = datetime.date(2023, 2, 1)

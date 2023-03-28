@@ -386,7 +386,8 @@ class QueryUpdate(Settings):
                         ) y
                         WHERE y.单量 >=2 and y.差量 > 100
                     ) s
-	            WHERE s.产品id NOT IN ( SELECT  DISTINCT  产品id FROM 运费核实 y);'''.format(month_yesterday, month_now)
+	            WHERE s.产品id NOT IN ( SELECT  DISTINCT  产品id FROM 运费核实 y)
+	            ORDER BY s.选品人, s.产品id, s.规格中文;'''.format(month_yesterday, month_now)
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
         df1 = df1[['年月', '团队',  '日期', '币种', '订单编号', '数量', '电话号码', '运单编号', '是否改派', '物流方式', '商品id', '产品id', '产品名称',
                  '价格', '仓储扫描时间', '完结状态', '物流花费', '包裹体积', '规格中文', '产品量', '订单包裹重量',  '同规格最小包裹重量', '差量', '选品人', '备注']]

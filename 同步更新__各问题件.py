@@ -226,13 +226,13 @@ class QueryTwo(Settings, Settings_sso):
             last_time = (rq + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
             now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         elif team == '工单列表':
-            sql = '''SELECT DISTINCT DATE_FORMAT(提交时间, '%Y-%m-%d') 
+            sql = '''SELECT DISTINCT DATE_FORMAT(提交时间, '%Y-%m-%d') as 提交日期
                     FROM {0} d 
                     WHERE DATE_FORMAT(提交时间, '%Y%m') >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m')
                     GROUP BY DATE_FORMAT(提交时间, '%Y-%m-%d') 
-                    ORDER BY DATE_FORMAT(提交时间, '%Y-%m-%d') DESC'''.format(team)
+                    ORDER BY DATE_FORMAT(提交时间, '%Y-%m-%d') DESC;'''.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
-            rq = pd.to_datetime(rq['处理时间'][0])
+            rq = pd.to_datetime(rq['提交日期'][0])
             last_time = (rq - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
             now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 
@@ -1564,19 +1564,19 @@ class QueryTwo(Settings, Settings_sso):
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = self._getOrderCollectionList(timeStart, timeEnd, n, proxy_handle, proxy_id)
-            dp = dp[['order_number','area_name','currency_name','waybill_number','ship_phone','payType','order_status','logistics_status','logistics_name','reassignmentTypeName','addtime','delivery_time',
+            dp = dp[['detail_id','order_number','area_name','currency_name','waybill_number','ship_phone','payType','order_status','logistics_status','logistics_name','reassignmentTypeName','addtime','delivery_time',
                     'finishtime','question_type','step','channel','source','intime','serviceName','operator','collectionType','dealOperatorName','deal_time',
                     'dealContent','dealStatus','traceRecord', 'do_status','sync_operator','sync_data.deal_id','sync_data.create_time','sync_data.sync_type','sync_data_all']]
-            dp.columns = ['订单编号','所属团队','币种','运单编号','电话','支付方式','订单状态','物流状态','物流渠道','订单类型','下单时间','发货时间',
+            dp.columns = ['工单编号','订单编号','所属团队','币种','运单编号','电话','支付方式','订单状态','物流状态','物流渠道','订单类型','下单时间','发货时间',
                           '完成时间','问题类型','环节问题','来源渠道','提交形式','提交时间','受理客服','登记人','工单类型','最新处理人','最新处理时间',
                           '最新处理描述','最新处理结果','处理记录','是否完成','同步人','同步状态','同步时间','同步类型','同步操作记录']
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('G:\\输出文件\\工单列表-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO 工单列表(订单编号,所属团队,币种,运单编号,电话,支付方式,订单状态,物流状态,物流渠道,订单类型,下单时间,
+            sql = '''REPLACE INTO 工单列表(工单编号, 订单编号,所属团队,币种,运单编号,电话,支付方式,订单状态,物流状态,物流渠道,订单类型,下单时间,
 			                    发货时间,完成时间,问题类型,环节问题,来源渠道,提交形式,提交时间,受理客服,登记人,工单类型,
 			                    最新处理人,最新处理时间,最新处理描述,最新处理结果,处理记录,是否完成,同步人,同步状态,同步时间,同步类型,同步操作记录,记录时间)
-                    SELECT 订单编号,所属团队,币种,运单编号,电话,支付方式,订单状态,物流状态,物流渠道,订单类型,下单时间,IF(发货时间 = '',NULL, 发货时间) AS 发货时间,IF(完成时间 = '',NULL, 完成时间) AS 完成时间,
+                    SELECT 工单编号, 订单编号,所属团队,币种,运单编号,电话,支付方式,订单状态,物流状态,物流渠道,订单类型,下单时间,IF(发货时间 = '',NULL, 发货时间) AS 发货时间,IF(完成时间 = '',NULL, 完成时间) AS 完成时间,
                                 问题类型,环节问题,来源渠道,提交形式,IF(提交时间 = '',NULL, 提交时间) AS 提交时间,受理客服,登记人,工单类型,最新处理人,IF(最新处理时间 = '',NULL, 最新处理时间) AS 最新处理时间,最新处理描述,
                                 最新处理结果,处理记录,是否完成,同步人,同步状态,IF(同步时间 = '',NULL, 同步时间) AS 同步时间,同步类型,同步操作记录,NOW() 记录时间
                     FROM  customer;'''
@@ -1649,7 +1649,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 99
+    select = 909
     if int(select) == 99:
         handle = '手动0'
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
@@ -1658,7 +1658,7 @@ if __name__ == '__main__':
 
         m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
         start: datetime = datetime.datetime.now()
-        m.waybill_InfoQuery('2021-12-01', '2021-12-01', proxy_handle, proxy_id)         # 查询更新-物流问题件  -- 每日启动测试使用
+        m.waybill_InfoQuery('2021-12-01', '2021-12-01', proxy_handle, proxy_id)     #   -- 每日启动测试使用
 
         timeStart, timeEnd = m.readInfo('拒收问题件')                                        # 查询更新-拒收问题件 @--ok
         timeStart = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()                 # 按天循环获取
@@ -1697,7 +1697,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 单点 昨日头程直发渠道 & 天马711的订单明细  | 删单原因 状态运行（二）-----------------------------------------
     '''
-    if int(select) == 99:
+    if int(select) == 909:
         proxy_handle = '代理服务器0'
         proxy_id = '192.168.13.89:37467'                            # 输入代理服务器节点和端口
         handle = '手0动'
@@ -1709,7 +1709,7 @@ if __name__ == '__main__':
         time_now = (datetime.datetime.now()).strftime('%Y-%m-%d')
         query = '下单时间'
         areaId = None                                   # 团队id
-        js.order_Query_Yiwudi(time_yesterday, time_now, areaId, query, proxy_handle, proxy_id)   # 检查 头程直发渠道 & 天马711@--ok
+        # js.order_Query_Yiwudi(time_yesterday, time_now, areaId, query, proxy_handle, proxy_id)   # 检查 头程直发渠道 & 天马711@--ok
 
 
         timeStart = '2023-03-21'
@@ -1717,7 +1717,7 @@ if __name__ == '__main__':
         query = '下单时间'
         areaId = None                                   # 团队id
         time_handle = '自动'
-        js.order_Query_Delete(timeStart, timeEnd, areaId, query, proxy_handle, proxy_id, time_handle)   # 最近三天删单原因@--ok
+        # js.order_Query_Delete(timeStart, timeEnd, areaId, query, proxy_handle, proxy_id, time_handle)   # 最近三天删单原因@--ok
 
 
         time_handle = '自动'
@@ -1774,7 +1774,8 @@ if __name__ == '__main__':
     # proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
     # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
     # start: datetime = datetime.datetime.now()
-    # #
+
+
     # timeStart, timeEnd = m.readInfo('压单表_已核实')
     # m.waybill_InfoQuery_yadan(timeStart, timeEnd)  # 查询更新-物流问题件 - 压单核实
     # m.waybill_InfoQuery_yadan('2022-11-09', '2022-11-09')  # 查询更新-物流问题件 - 压单核实
@@ -1823,8 +1824,8 @@ if __name__ == '__main__':
     # m._sale_Query_info('NR112180927421695')
 
     # timeStart = '2022-09-01'
-    # timeEnd = '2022-10-23'
-    # m.getOrderCollectionList(timeStart, timeEnd)   # 工单列表-物流客诉件
+    # timeEnd = '2023-03-26'
+    # m.getOrderCollectionList(timeStart, timeEnd, proxy_handle, proxy_id)   # 工单列表-物流客诉件
 
     # for team in [1, 2]:
         # m.orderReturnList_Query(team, '2022-02-15', '2022-02-16')           # 查询更新-退换货
