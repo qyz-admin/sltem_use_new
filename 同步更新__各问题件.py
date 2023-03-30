@@ -1252,8 +1252,7 @@ class QueryTwo(Settings, Settings_sso):
             dp = df.append(dlist, ignore_index=True)
             dp = dp[['orderInfo.order_number',  'orderInfo.currency', 'orderInfo.area', 'orderInfo.amount', 'orderInfo_count', 'feedback_type', 'question_type',
                     'orderInfoAfter.order_number', 'orderInfoAfter.amount', 'refund_amount', 'create_time', 'user', 'deal_time', 'deal_user', 'type']]
-            dp.columns = ['订单编号', '币种', '团队', '金额', '数量', '反馈方式', '反馈问题类型', '新订单编号', '克隆后金额', '退款金额', '导入时间',
-                        '登记人', '处理时间', '处理人', '售后类型']
+            dp.columns = ['订单编号', '币种', '团队', '金额', '数量', '反馈方式', '反馈问题类型', '新订单编号', '克隆后金额', '退款金额', '导入时间', '登记人', '处理时间', '处理人', '售后类型']
             dp = dp[(dp['币种'].str.contains('港币|台币', na=False))]
             print('共有 ' + str(len(dp)) + '条 正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')

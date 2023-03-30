@@ -205,6 +205,26 @@ class QueryTwo(Settings, Settings_sso):
         				月份, 总订单;'''.format(time_Start, timeEnd)
         df81 = pd.read_sql_query(sql=sql81, con=self.engine1)
 
+        sql82 = '''SELECT 外呼类型,  时间日期, 是否短信, COUNT(订单编号) AS 总订单,
+                            SUM(IF(系统物流状态 = "已签收",1,0)) as 签收,
+                            SUM(IF(系统物流状态 = "拒收",1,0)) as 拒收,
+                            SUM(IF(系统物流状态 = "已退货",1,0)) as 已退货,
+                            SUM(IF(系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
+                            concat(ROUND(IFNULL(SUM(IF(系统物流状态 = "已签收",1,0)) / SUM(IF(系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 完成签收,
+                            concat(ROUND(IFNULL(SUM(IF(系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / COUNT(订单编号),0) * 100,2),'%') as 完成占比
+					FROM (  SELECT s1.*, g.`系统物流状态`
+							FROM
+							(	SELECT *, IF(时间 IN ('2023-03-14PM', '2023-03-15PM', '2023-03-16PM','2023-03-14AM', '2023-03-15AM', '2023-03-16AM'),'2023-03-16',
+							              IF(时间 LIKE '%AM',SUBSTRING_INDEX(时间,"AM",1),SUBSTRING_INDEX(时间,"PM",1))) AS 时间日期
+								 FROM 派送问题件_语音外呼 y
+								 WHERE y.便利店 IS NOT NULL AND y.时间 IS NOT NULL AND y.订单状态 NOT IN ('已完成','已退货(销售)','已退货(物流)','已退货(不拆包物流)')
+							) s1
+							LEFT JOIN gat_order_list g ON s1.订单编号 = g.订单编号
+					) s
+					GROUP BY 外呼类型, 时间日期, 是否短信
+					ORDER BY 外呼类型, 时间日期, 是否短信;'''.format(time_Start, timeEnd)
+        df82 = pd.read_sql_query(sql=sql82, con=self.engine1)
+
         print('正在获取excel内容…………')
         sql = '''SELECT *, IF(派送问题 LIKE "地址问题" OR 派送问题 LIKE "客户要求更改派送时间或者地址","地址问题/客户要求更改派送时间或者地址",派送问题) AS 问题件类型, 
                         IF(备注 <> "", IF(备注 LIKE "已签收%" OR 备注 LIKE "已完结%","已完结",IF(备注 LIKE "无人接听%" OR 备注 LIKE "无效号码%","无人接听", IF(备注 LIKE "已通知%" OR 备注 LIKE "已告知%" OR 备注 LIKE "请告知%" OR 备注 LIKE "请通知%","已发短信", 
@@ -604,6 +624,7 @@ class QueryTwo(Settings, Settings_sso):
         df55.to_excel(excel_writer=writer, sheet_name='上月', index=False)
         df8.to_excel(excel_writer=writer, sheet_name='台湾 问题类型 签收率', index=False)
         df81.to_excel(excel_writer=writer, sheet_name='香港 问题类型 签收率', index=False)
+        df82.to_excel(excel_writer=writer, sheet_name='台湾 语音外呼 签收率', index=False)
         if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表 cp
             del book['Sheet1']
         writer.save()

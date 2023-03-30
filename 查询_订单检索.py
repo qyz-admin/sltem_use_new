@@ -764,17 +764,18 @@ class QueryOrder(Settings, Settings_sso):
             n = 1
             while n <= in_count:  # 这里用到了一个while循环，穿越过来的
                 print('剩余查询次数' + str(in_count - n))
-                n = n + 1
                 data = self._timeQuery_format(timeStart, timeEnd, n, areaId, query, proxy_id, proxy_handle, logisticsId, currencyId)
+                n = n + 1
                 dlist.append(data)
             print('正在写入......')
             dp = df.append(dlist, ignore_index=True)
-            dp = dp[['orderNumber', 'area','logisticsStatus', 'orderStatus', 'abbreviation', 'addTime']]
-            df.columns = ['订单编号', '运营团队', '物流状态', '订单状态', '商品简称', '下单时间']
-            columns = list(dp.columns)
-            columns = ','.join(columns)
-            dp.to_sql('tem', con=self.engine1, index=False, if_exists='replace')
-            sql = 'REPLACE INTO {0}({1}) SELECT * FROM tem;'.format('订单检索', columns)
+            dp = dp[['orderNumber', 'area', 'logisticsStatus', 'orderStatus', 'abbreviation', 'addTime', 'saleProduct']]
+            dp.columns = ['订单编号', '运营团队', '物流状态', '订单状态', '商品简称', '下单时间', '产品名称']
+            # columns = list(dp.columns)
+            # columns = ','.join(columns)
+            dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+            sql = '''REPLACE INTO {0}(订单编号,运营团队,物流状态,订单状态,商品简称,下单时间,产品名称) 
+                               SELECT 订单编号,运营团队,物流状态,订单状态,商品简称,下单时间,产品名称 FROM cache;'''.format('订单检索')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('查询已导出+++')
         else:
@@ -849,7 +850,7 @@ class QueryOrder(Settings, Settings_sso):
                 print('---无 铱熙无敌 订单')
 
             # ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]') # ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]')
-            file_path = 'G:\\输出文件\\{0} 订单检明细.xlsx'.format(timeEnd)
+            file_path = 'G:\\输出文件\\{0} 订单检索-明细.xlsx'.format(timeEnd)
             df0 = pd.DataFrame([])  # 创建空的dataframe数据框
             df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
             writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
@@ -1016,24 +1017,8 @@ class QueryOrder(Settings, Settings_sso):
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
         data = pd.json_normalize(ordersdict)
-        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        # data.to_excel('G:\\输出文件\\明细{0}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-        df = None
-        try:
-            df = data[['orderNumber', 'befrom', 'currency', 'area', 'productId', 'saleProduct', 'saleName', 'spec', 'shipInfo.shipName', 'shipInfo.shipPhone', 'tel_phone','percent', 'phoneLength',
-                       'shipInfo.shipAddress', 'amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime','logisticsName', 'dpeStyle',
-                       'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName', 'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime',
-                       'finishTime', 'refundTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer', 'autoVerify', 'autoVerifyTip', 'cloneUser', 'isClone', 'warehouse', 'smsStatus',
-                       'logisticsControl', 'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName','update_time']]
-            df.columns = ['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '标准电话','拉黑率', '电话长度',
-                          '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
-                          '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
-                          '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
-                          '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型',  '更新时间']
-        except Exception as e:
-            print('！！！！！！ 转化失败，请检查过程 ！！！！！！')
         print('******本批次查询成功')
-        return df
+        return data
 
     #  1.0 单点获取 最近三天订单 删除原因分析
     def order_Query_Delete(self, timeStart, timeEnd, areaId, query, proxy_id, proxy_handle, time_handle):  # 进入订单检索界面
@@ -1230,7 +1215,7 @@ class QueryOrder(Settings, Settings_sso):
         # print(df1)
         # 初始化设置
         sl_tem, hfh_tem = '', ''
-        sl_tem_lh, hfh_tem_lh = '，\n            其中占比较多的是：', '，\n            其中占比较多的是：'
+        sl_tem_lh, hfh_tem_lh = '\n            其中占比较多的是：', '\n            其中占比较多的是：'
         for date, row in df1.iterrows():
             tem = row['运营团队']
             delreson = row['删单原因']
@@ -1304,14 +1289,14 @@ class QueryOrder(Settings, Settings_sso):
             else:
                 if '.' not in tem_Black:
                     if k == 0:
-                        sl_Black_iphone = sl_Black + '\n           同一电话有：(0' + str(int(tem_Black)) + ':' + str(int(count)) +'单),'
+                        sl_Black_iphone = sl_Black + '\n           同一电话有：(' + str(int(tem_Black)) + ':' + str(int(count)) +'单), '
                         k = k + 1
                     elif k > 0:
-                        sl_Black_iphone =sl_Black_iphone + '(0' + str(int(tem_Black)) + ':' + str(int(count)) + '单);'
+                        sl_Black_iphone =sl_Black_iphone + '(' + str(int(tem_Black)) + ':' + str(int(count)) + '单), '
                         k = k + 1
                 elif '.' in tem_Black:
                     if k2 == 0:
-                        sl_Black_ip = sl_Black_iphone + '\n           同一ip有：   (' + str(tem_Black) + ':' + str(int(count)) +'单),'
+                        sl_Black_ip = sl_Black_iphone + '\n           同一ip有：   (' + str(tem_Black) + ':' + str(int(count)) +'单), '
                         k2 = k2 + 1
                     elif k > 0:
                         sl_Black_ip = sl_Black_ip + '（' + str(tem_Black) + ':' + str(int(count)) + '单);'
@@ -1370,14 +1355,14 @@ class QueryOrder(Settings, Settings_sso):
             else:
                 if '.' not in tem_Black:
                     if k == 0:
-                        st_ey_iphone = st_ey + ';\n           同一电话有：(' + str(tem_Black) + ': ' + str(int(count)) +'单),'
+                        st_ey_iphone = st_ey + ';\n           同一电话有：(' + str(tem_Black) + ': ' + str(int(count)) +'单), '
                         k = k + 1
                     elif k > 0:
-                        st_ey_iphone = st_ey_iphone + '(' + str(tem_Black) + ': ' + str(int(count)) + '单);'
+                        st_ey_iphone = st_ey_iphone + '(' + str(tem_Black) + ': ' + str(int(count)) + '单), '
                         k = k + 1
                 if '.' in tem_Black:
                     if k2 == 0:
-                        st_ey_ip = st_ey_iphone + ';\n           同一ip有：    (' + str(tem_Black) + ': ' + str(int(count)) +'单),'
+                        st_ey_ip = st_ey_iphone + ';\n           同一ip有：    (' + str(tem_Black) + ': ' + str(int(count)) +'单), '
                         k2 = k2 + 1
                     elif k2 > 0:
                         st_ey_ip = st_ey_ip + '(' + str(tem_Black) + ': ' + str(int(count)) + '单);'
@@ -1460,18 +1445,18 @@ class QueryOrder(Settings, Settings_sso):
             if tem_Black == None:
                 st_del = '*系统删除： ' + str(int(count)) + '单；其中比较多的是：'
             elif '订单' in tem_Black:
-                st_del = st_del + str(tem_Black) + ':' + str(int(count)) + '单,'
+                st_del = st_del + str(tem_Black) + ':' + str(int(count)) + '单, '
             else:
                 if '.' not in tem_Black:
                     if k == 0:
-                        st_del_iphone = st_del + ';\n           同一电话有：(' + str(tem_Black) + ': ' + str(int(count)) + '单),'
+                        st_del_iphone = st_del + ';\n           同一电话有：(' + str(tem_Black) + ': ' + str(int(count)) + '单), '
                         k = k + 1
                     elif k > 0:
-                        st_del_iphone = st_del_iphone + '(' + str(tem_Black) + ': ' + str(int(count)) + '单);'
+                        st_del_iphone = st_del_iphone + '(' + str(tem_Black) + ': ' + str(int(count)) + '单), '
                         k = k + 1
                 if '.' in tem_Black:
                     if k2 == 0:
-                        st_del_ip = st_del_iphone + ';\n           同一ip有：   (' + str(tem_Black) + ': ' + str(int(count)) + '单),'
+                        st_del_ip = st_del_iphone + ';\n           同一ip有：   (' + str(tem_Black) + ': ' + str(int(count)) + '单), '
                         k2 = k2 + 1
                     elif k2 > 0:
                         st_del_ip = st_del_ip + '(' + str(tem_Black) + ': ' + str(int(count)) + '单);'
@@ -3068,7 +3053,7 @@ SELECT 币种,运营团队,
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
             listT = []
-            listT.append(dp)
+            listT.append(dp)    # 0 明细单量
 
             sql2 = '''SELECT 代下单客服, COUNT(订单编号) as 有效转化单量
                     FROM ( SELECT *
@@ -3078,7 +3063,7 @@ SELECT 币种,运营团队,
                     GROUP BY 代下单客服
                     ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
             df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
-            listT.append(df2)
+            listT.append(df2)   # 1 有效单量
 
             sql3 = '''SELECT 代下单客服, COUNT(订单编号) as 总代下单量
                     FROM ( SELECT *
@@ -3088,7 +3073,7 @@ SELECT 币种,运营团队,
                     GROUP BY 代下单客服
                     ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
             df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
-            listT.append(df3)
+            listT.append(df3)   # 2 总下单量
 
             sql4 = '''SELECT EXTRACT(DAY FROM 下单时间) AS 天, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 日期, 代下单客服, COUNT(订单编号) as 总代下单量,
 							SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量
@@ -3101,7 +3086,7 @@ SELECT 币种,运营团队,
                     ORDER BY 天,
 					FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
             df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
-            listT.append(df4)
+            listT.append(df4)   # 3 明细
 
             sql5 = '''SELECT 代下单客服, COUNT(订单编号) as 总代下单量,
                             SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量,
@@ -3121,7 +3106,7 @@ SELECT 币种,运营团队,
                         WITH ROLLUP 
                         ORDER BY FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
             df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
-            listT.append(df5)
+            listT.append(df5)   # 4 个人
 
             sql6 = '''SELECT 币种, COUNT(订单编号) as 总代下单量,
                             SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量,
@@ -3141,7 +3126,7 @@ SELECT 币种,运营团队,
                         WITH ROLLUP 
                         ORDER BY 币种;'''
             df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
-            listT.append(df6)
+            listT.append(df6)   # 5 分币种单量
 
             sql7 = '''SELECT 币种,代下单客服, COUNT(订单编号) as 总代下单量,
                             SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量,
@@ -3161,7 +3146,7 @@ SELECT 币种,运营团队,
                         WITH ROLLUP 
                         ORDER BY 币种,FIELD(代下单客服,'李若兰','刘文君','马育慧','曲开拓','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
             df7 = pd.read_sql_query(sql=sql7, con=self.engine1)
-            listT.append(df7)
+            listT.append(df7)   # 6 分币种个人
 
             file_path = 'G:\\输出文件\\促单查询 {}.xlsx'.format(rq)
             df0 = pd.DataFrame([])  # 创建空的dataframe数据框
@@ -3169,13 +3154,16 @@ SELECT 币种,运营团队,
             writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
             book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
             writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-            listT[4].to_excel(excel_writer=writer, sheet_name='汇总', index=False)
+
+            listT[4].to_excel(excel_writer=writer, sheet_name='汇总', index=False)  # 个人
+            listT[6].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startrow=22)  # 分币种个人
+
             listT[3].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=13)        # 明细
             listT[1].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=19)      # 有效单量
             listT[2].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=22)      # 总下单量
             listT[5].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=25)     # 分币种单量
+
             listT[0].to_excel(excel_writer=writer, sheet_name='明细', index=False)     # 明细单量
-            listT[5].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startrow=22)  # 明细
             if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
                 del book['Sheet1']
             writer.save()
@@ -3317,7 +3305,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 9                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
@@ -3336,12 +3324,14 @@ if __name__ == '__main__':
 
     elif int(select) == 3:
         print("1-->>> 正在按下单时间查询+++")
-        timeStart = datetime.date(2023, 2, 1)  # 单点更新
+        timeStart = datetime.date(2023, 3, 15)  # 单点更新
         timeEnd = datetime.date(2023, 3, 28)
-        areaId = ''
+        areaId = None
         query = '下单时间'
-        logisticsId = "85,348,199,356"      # 物流名称
-        currencyId = "13"                     # 币种名称：13台湾，6香港
+        # logisticsId = "85,348,199,356"      # 物流名称
+        # currencyId = "13"                     # 币种名称：13台湾，6香港
+        logisticsId = None      # 物流名称
+        currencyId = None                    # 币种名称：13台湾，6香港
         for i in range((timeEnd - timeStart).days):  # 按天循环获取订单状态
             day = timeStart + datetime.timedelta(days=i)
             day_time = str(day)
@@ -3349,7 +3339,7 @@ if __name__ == '__main__':
 
     elif int(select) == 33:
         print("2-->>> 正在按完成时间查询+++")
-        timeStart = datetime.date(2023, 2, 1)  # 单点更新
+        timeStart = datetime.date(2023, 3, 15)  # 单点更新
         timeEnd = datetime.date(2023, 3, 28)
         areaId = ''
         query = '完成时间'

@@ -2812,7 +2812,7 @@ class Query_sso_updata(Settings):
                                     h.`shipInfo.shipAddress` 地址,
                                     h.`tel_phone` 标准电话,
                                     h.`percent` 下单拒收率,
-                                    h.`abbreviation` 发货仓库,
+                                    h.`warehouse` 发货仓库,
                                     h.`cloneTypeName` 克隆类型,
                                     h.`isBlindBox` 是否盲盒,
                                     h.`mainOrderNumber` 主订单,

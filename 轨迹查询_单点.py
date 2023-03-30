@@ -789,7 +789,7 @@ class QueryTwo(Settings, Settings_sso):
 
 
     # 语音外呼 派送问题件           （一.1）
-    def getDeliveryList(self, timeStart, timeEnd, order_time, proxy_handle, proxy_id, tm_data):  # 进入订单检索界面
+    def getDeliveryList(self, timeStart, timeEnd, order_time, proxy_handle, proxy_id, tm_data, message):  # 进入订单检索界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 派送问题件(' + order_time + ') 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.deliveryQuestion&action=getDeliveryList'
@@ -971,7 +971,7 @@ class QueryTwo(Settings, Settings_sso):
                         ship_info = result['track_info']
                         ship_time = result['addtime']
                         ship_type = '超商'
-                        ship_message = '是'
+                        ship_message = '否'
                         step = step + 1
                     elif '與客戶另約時間到站自領' in result['track_info']:
                         vt = result['track_info'].split('到站自領，')[1]
@@ -979,7 +979,7 @@ class QueryTwo(Settings, Settings_sso):
                         ship_info = result['track_info']
                         ship_time = result['addtime']
                         ship_type = '到站自取'
-                        ship_message = '是'
+                        ship_message = '否'
                     elif '與客戶另約時間配送' in result['track_info']:
                         ship_name = '与客户另约时间配送'
                         ship_info = result['track_info']
@@ -1193,7 +1193,7 @@ if __name__ == '__main__':
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 ；  cat = 1 、黑猫切换是否使用后台数据  0 、还是官网数据 
     '''
-    select = 52
+    select = 51
     isReal = 1
     cat = 0
     if int(select) == 1:
@@ -1230,7 +1230,8 @@ if __name__ == '__main__':
             tm2 = '2023-03-25 16:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'PM'
         print('****** 查询      起止时间：' + tm + ' - ' + tm2 + ' ******')
-        m.getDeliveryList(tm, tm2, '创建时间', proxy_handle, proxy_id, tm_data)
+        message = '带短信'
+        m.getDeliveryList(tm, tm2, '创建时间', proxy_handle, proxy_id, tm_data, message)
         m._getDeliveryList_info(proxy_handle, proxy_id, tm_data)
         m._getDeliveryList_order(proxy_handle, proxy_id, tm_data)
         m._getDeliveryList_out(tm_data)

@@ -29,7 +29,7 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
 
 # 初始化时间设置
 updata = '全部'           #  后台获取全部（两月）、部分更新（近五天）
-if team == 'gat0':
+if team == 'gat':
     # 更新时间
     timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
     data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
@@ -41,9 +41,9 @@ if team == 'gat0':
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    data_begin = datetime.date(2023, 1, 1)  # 数据库更新
-    begin = datetime.date(2023, 1, 1)      # 单点更新
-    end = datetime.date(2023, 3, 28)
+    data_begin = datetime.date(2022, 7, 1)  # 数据库更新
+    begin = datetime.date(2022, 7, 1)      # 单点更新
+    end = datetime.date(2023, 10, 1)
     # 导出时间
     month_last = '2023-01-01'
     month_yesterday = '2023-03-23'
@@ -96,7 +96,7 @@ print('导入耗时：', datetime.datetime.now() - start)
 
 # TODO------------------------------------数据库分段读取------------------------------------
 print('---------------------------------- 数据库更新部分：--------------------------------')
-# m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
+m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
 
 # qu.EportOrder(team, month_last, month_yesterday, month_begin, '是', '导表','手0动','代理服务器0','192.168.13.89:37466')     # 最近两个月的更新信息导出
 print('获取-更新 耗时：', datetime.datetime.now() - start)

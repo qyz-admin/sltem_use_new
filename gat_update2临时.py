@@ -955,8 +955,8 @@ class QueryUpdate(Settings):
         match = {'gat': '港台','slsc': '品牌'}
         print(month_last)
         print(month_yesterday)
-        print('正在修改-港澳台-物流渠道…………')
-        self.update_logistics_name()
+        # print('正在修改-港澳台-物流渠道…………')
+        # self.update_logistics_name()
 
         print('正在获取---' + match[team] + ' ---全部数据内容…………')
         sql = '''SELECT * FROM {0}_zqsb a WHERE a.日期 >= '{1}' AND a.日期 <= '{2}' ORDER BY a.`下单时间`;'''.format(team, month_last, month_yesterday)     # 港台查询函数导出
@@ -5235,8 +5235,6 @@ class QueryUpdate(Settings):
             app.quit()
         except Exception as e:
             print('运行失败：', str(Exception) + str(e))
-
-
         new_path = 'F:\\神龙签收率\\' + (datetime.datetime.now()).strftime('%m.%d') + '\\签收率\\{} {} 物流品类-签收率.xlsx'.format(today, match[team])
         shutil.copyfile(file_path, new_path)        # copy到指定位置
         print('----已写入excel; 并复制到指定文件夹中')

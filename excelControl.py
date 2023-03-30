@@ -525,14 +525,20 @@ class ExcelControl(Settings):
             else:
                 print('无需补充数据')
 
-        if '吉客印新竹退款明细' in filePath:
+        if '吉客印新竹退款明细' in filePath or '现退明细' in filePath:
+            rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+            new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + "\\导状态\\{0} 导退货状态-临时.xlsx".format(rq)
             print('正在输出 退货退款 导状态表…………')
             sql = '''SELECT 订单编号, 联系电话, 运单编号 AS 回执单号, 发货时间,  '退货退款' AS 物流状态,  4 AS 完成状态,  完成时间 AS 更新时间, 上线时间 
                     FROM {0}_return r 
-                    WHERE DATE_FORMAT(r.添加时间, '%Y-%m-%d') = DATE_FORMAT(CURDATE() , '%Y-%m-%d') AND r.物流 = '速派'
+                    WHERE DATE_FORMAT(r.添加时间, '%Y-%m-%d') = DATE_FORMAT(CURDATE() , '%Y-%m-%d')
                          AND r.`订单编号` IS NOT NULL AND r.`订单编号` <>  "";'''.format(team)
             ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
             print(ordersDict)
+            if ordersDict.empty:
+                print(' ****** 无需生成导状态表 ****** ')
+            else:
+                ordersDict.to_excel(new_path, sheet_name='查询', index=False,engine='xlsxwriter')
         else:
             print('无需生成导状态表')
 
