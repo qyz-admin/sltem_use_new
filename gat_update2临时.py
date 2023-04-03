@@ -11110,19 +11110,14 @@ if __name__ == '__main__':
     '''
     select = 99
     handle_time = '自动'
-    # handle_time = '手动'
     if int(select) == 99:
         if handle_time == '自动':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'     # 获取-每日-报表 开始的时间
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
-        elif handle_time == '手动':
-            month_last = '2023-02-01'
-            month_old = '2023-02-01'                                # 获取-每日-报表 开始的时间
-            month_yesterday = '2023-03-16'
         else:
             month_last = '2023-02-01'
-            month_old = '2023-02-01'  # 获取-每日-报表 开始的时间
+            month_old = '2023-02-01'                                # 获取-每日-报表 开始的时间
             month_yesterday = '2023-03-16'
 
         last_time = '2021-01-01'
@@ -11131,22 +11126,14 @@ if __name__ == '__main__':
         m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
 
         currency_id = '全部付款'
-        # m.gat_new(team, month_last, month_yesterday, currency_id)   # 获取-货到付款& 在线付款 签收率-报表
-        # m.qsb_new(team, month_old)                                  # 获取-每日-报表
+        m.gat_new(team, month_last, month_yesterday, currency_id)   # 获取-货到付款& 在线付款 签收率-报表
+        m.qsb_new(team, month_old)                                  # 获取-每日-报表
         m.EportOrderBook(team, month_last, month_yesterday)         # 导出-总的-签收
-        # m.phone_report('handle', month_last, month_yesterday)       # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）
+        m.phone_report('handle', month_last, month_yesterday)       # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）
 
         # currency_id = '在线付款'
         # m.gat_new(team, month_last, month_yesterday, currency_id)  # 获取-在线付款 签收率-报表
 
-    elif int(select) == 88:
-        # m.jushou()                                            #  拒收核实-查询需要的产品id
-        # m.address_repot(team, month_last, month_yesterday)                       #  获取-地区签收率-报表
-
-        # 停用备用使用
-        # m.EportOrder(team)       #  导出需要更新的签收表
-        m.qsb_report(team, '2021-06-26', '2021-05-26')
-        pass
 
     elif int(select) == 1:
         last_time = '2021-01-01'
@@ -11170,5 +11157,14 @@ if __name__ == '__main__':
         m.readFormHost(team, write, last_time, up_time)  # 线付重复订单 读表---港澳台（一）
 
 
+
+    elif int(select) == 88:
+        # m.jushou()                                            #  拒收核实-查询需要的产品id
+        # m.address_repot(team, month_last, month_yesterday)                       #  获取-地区签收率-报表
+
+        # 停用备用使用
+        # m.EportOrder(team)       #  导出需要更新的签收表
+        m.qsb_report(team, '2021-06-26', '2021-05-26')
+        pass
     print('耗时：', datetime.datetime.now() - start)
     # win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)

@@ -7,7 +7,7 @@ from mysqlControl import MysqlControl
 from wlMysql import WlMysql
 from wlExecl import WlExecl
 from sso_updata import Query_sso_updata
-from gat_update2 import QueryUpdate
+from gat_update2临时 import QueryUpdate
 import datetime
 from dateutil.relativedelta import relativedelta
 

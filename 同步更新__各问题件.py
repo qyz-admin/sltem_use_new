@@ -235,7 +235,12 @@ class QueryTwo(Settings, Settings_sso):
             rq = pd.to_datetime(rq['提交日期'][0])
             last_time = (rq - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
             now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-
+        elif team == '拒收问题件':
+            sql = '''SELECT DISTINCT 处理时间 FROM {0} d GROUP BY 处理时间 ORDER BY 处理时间 DESC'''.format(team)
+            rq = pd.read_sql_query(sql=sql, con=self.engine1)
+            rq = pd.to_datetime(rq['处理时间'][0])
+            last_time = (rq - datetime.timedelta(days=3)).strftime('%Y-%m-%d')
+            now_time = (datetime.datetime.now()).strftime('%Y-%m-%d')
         else:
             sql = '''SELECT DISTINCT 处理时间 FROM {0} d GROUP BY 处理时间 ORDER BY 处理时间 DESC'''.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -1627,6 +1632,8 @@ class QueryTwo(Settings, Settings_sso):
 
 if __name__ == '__main__':
     start: datetime = datetime.datetime.now()
+    # timeStart = datetime.date(2023, 3, 27)
+    # timeEnd = datetime.date(2023, 4, 3)
     '''
     # -----------------------------------------------自动获取 问题件 状态运行（一）-----------------------------------------
     # 1、 物流问题件；2、物流客诉件；3、物流问题件；4、全部；--->>数据更新切换
