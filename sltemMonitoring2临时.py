@@ -169,7 +169,7 @@ class SltemMonitoring(Settings):
         print('写入缓存耗时：', datetime.datetime.now() - start)
 
     # 获取每月正常使用的时间（二）
-    def sl_Monitoring(self, team, now_month, last_month, ready):
+    def sl_Monitoring(self, team, now_month, last_month, ready, handle_now_month, handle_last_month, handle_now_month_old, handle_last_month_old):
         match = {'港台-台湾': '"火凤凰-香港","红杉家族-港澳台","郑州-北美","研发部-研发团队","金蝉项目组","APP运营","客服中心-港台","神龙-香港","金蝉家族优化组","火凤凰-台湾","金蝉家族公共团队","神龙家族-台湾"',
                  '港台-香港': '"火凤凰-香港","红杉家族-港澳台","郑州-北美","研发部-研发团队","金蝉项目组","APP运营","客服中心-港台","神龙-香港","金蝉家族优化组","火凤凰-台湾","金蝉家族公共团队","神龙家族-台湾"',
                  '神龙-香港': '"神龙港台"',
@@ -215,6 +215,9 @@ class SltemMonitoring(Settings):
         elif ready == '上期宏':
             now_month_new = rq['年月'][1]
             now_month_old = rq['年月'][2]
+        elif ready == '手动':
+            now_month_new = handle_now_month
+            now_month_old = handle_last_month
         print('本期时间：' + now_month)
         print('当月: ', end="")
         print(now_month_new)
@@ -241,6 +244,9 @@ class SltemMonitoring(Settings):
         elif ready == '上期宏':
             last_month_new = rq['年月'][1]
             last_month_old = rq['年月'][2]
+        elif ready == '手动':
+            last_month_new = handle_now_month_old
+            last_month_old = handle_last_month_old
         print('上期时间：' + last_month)
         print('当月: ', end="")
         print(last_month_new)
@@ -3716,29 +3722,48 @@ if __name__ == '__main__':
     match1 = {'gat': '港台',
               'slsc': '品牌'}
     # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
-    # 获取签收表内容（一）qsb_slgat
-    last_month = '2023.03.06'
-    now_month = '2023.03.31'
+    select = '自动0'
+    if select == '自动':
+        last_month = '2023.03.03'
+        now_month = '2023.04.03'
+
+        handle_data = '本期宏'
+        # handle_data = '本期月初宏'
+        # handle_data = '本期上月宏'
+        # handle_data = '上期宏'
+    else:
+        handle_data = '手动'
+        now_month = '2023.04.03'            # 本月记录日期
+        handle_now_month = '202303'         # 本月记录 本月数据
+        handle_last_month = '202302'        # 本月记录 上月数据
+
+        last_month = '2023.03.03'           # 上月记录日期
+        handle_now_month_old = '202302'     # 上月记录 本月数据
+        handle_last_month_old = '202301'    # 上月记录 上月数据
+
     # for team in ['神龙-港台', '火凤凰-港台', '小虎队-港台', '红杉-港台', '金狮-港台', '神龙-主页运营1组']:
         # m.readForm(team, last_month)      # 上月上传
         # m.readForm(team, now_month)       # 本月上传
 
 
     # 测试监控运行（二）-- 第一种手动方式
-    m.order_Monitoring('港台')        # 各月缓存（整体一）、
-    for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港']:
+    # m.order_Monitoring('港台')        # 各月缓存（整体一）、
+    # for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港']:
     # for team in ['神龙-台湾', '火凤凰-台湾']:
-    # for team in ['火凤凰-台湾']:
-    # for team in ['火凤凰-台湾']:
+    for team in ['神龙-香港']:
     # for team in ['港台-台湾']:
         now_month = now_month.replace('.', '-')           # 修改配置时间
         last_month = last_month.replace('.', '-')
-        m.sl_Monitoring(team, now_month, last_month, '本期宏')      # 输出数据--每月正常使用的时间（二 分家族）、
+        m.sl_Monitoring(team, now_month, last_month, handle_data, handle_now_month, handle_last_month,handle_now_month_old, handle_last_month_old)      # 输出数据--每月正常使用的时间（二 分家族）、
+
+        # m.sl_Monitoring(team, now_month, last_month, '本期宏')      # 输出数据--每月正常使用的时间（二 分家族）、
         # m.sl_Monitoring(team, now_month, last_month, '本期月初宏')      # 输出数据--每月正常使用的时间（二 分家族）、
 
         # m.sl_Monitoring(team, now_month, last_month, '本期上月宏')      # 输出数据--每月正常使用的时间（二 分家族）
-
         # m.sl_Monitoring(team, now_month, last_month, '上期宏')      # 输出数据--每月正常使用的时间（二）
+
+
+
 
 
     # for team in ['火凤凰-台湾', '火凤凰-香港', '神龙-台湾', '神龙-香港', '神龙运营1组-台湾', '港台-台湾']:

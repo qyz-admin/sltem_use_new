@@ -1597,6 +1597,7 @@ class QueryOrder_Code(Settings, Settings_sso):
 
 
         # 去掉物流与派送重复的，以物流为准
+        print('派送问题件-绩效 数据整理 写入计算统计表 中 （三.二去掉物流与派送重复的，以物流为准）......')
         sql = '''SELECT *  FROM cache_ch_cp p WHERE p.订单编号 NOT IN (SELECT 订单编号 FROM cache_ch);'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_sql('cache_check_cp', con=self.engine1, index=False, if_exists='replace')

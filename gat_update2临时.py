@@ -953,8 +953,14 @@ class QueryUpdate(Settings):
     def EportOrderBook(self, team, month_last, month_yesterday):
         today = datetime.date.today().strftime('%Y.%m.%d')
         match = {'gat': '港台','slsc': '品牌'}
-        print(month_last)
-        print(month_yesterday)
+        day = datetime.datetime.now().strftime('%d')
+        if int(day) < 10:
+            print('****** 当前日期小于10, 为本月上旬 --- 起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
+            month_last = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'
+        else:
+            print('****** 当前日期大于10, 为本月中下旬 --- 起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
+            month_last = month_last
+        print('****** 转存数据      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
         # print('正在修改-港澳台-物流渠道…………')
         # self.update_logistics_name()
 
@@ -11103,12 +11109,17 @@ if __name__ == '__main__':
         3、last_time：   切换：更新上传时间；
     '''
     select = 99
+    handle_time = '自动'
+    # handle_time = '手动'
     if int(select) == 99:
-        if team == 'gat':
+        if handle_time == '自动':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-            month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-            # month_old = '2021-12-01'  # 获取-每日-报表 开始的时间
+            month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'     # 获取-每日-报表 开始的时间
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
+        elif handle_time == '手动':
+            month_last = '2023-02-01'
+            month_old = '2023-02-01'                                # 获取-每日-报表 开始的时间
+            month_yesterday = '2023-03-16'
         else:
             month_last = '2023-02-01'
             month_old = '2023-02-01'  # 获取-每日-报表 开始的时间
@@ -11120,10 +11131,10 @@ if __name__ == '__main__':
         m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
 
         currency_id = '全部付款'
-        m.gat_new(team, month_last, month_yesterday, currency_id)   # 获取-货到付款& 在线付款 签收率-报表
-        m.qsb_new(team, month_old)                                  # 获取-每日-报表
+        # m.gat_new(team, month_last, month_yesterday, currency_id)   # 获取-货到付款& 在线付款 签收率-报表
+        # m.qsb_new(team, month_old)                                  # 获取-每日-报表
         m.EportOrderBook(team, month_last, month_yesterday)         # 导出-总的-签收
-        m.phone_report('handle', month_last, month_yesterday)       # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）
+        # m.phone_report('handle', month_last, month_yesterday)       # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）
 
         # currency_id = '在线付款'
         # m.gat_new(team, month_last, month_yesterday, currency_id)  # 获取-在线付款 签收率-报表
