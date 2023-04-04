@@ -240,7 +240,7 @@ class QueryTwo(Settings, Settings_sso):
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
             rq = pd.to_datetime(rq['处理时间'][0])
             last_time = (rq - datetime.timedelta(days=3)).strftime('%Y-%m-%d')
-            now_time = (datetime.datetime.now()).strftime('%Y-%m-%d')
+            now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         else:
             sql = '''SELECT DISTINCT 处理时间 FROM {0} d GROUP BY 处理时间 ORDER BY 处理时间 DESC'''.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)

@@ -982,7 +982,7 @@ class QueryUpdate(Settings):
             shutil.copyfile(old_path, new_path)     # copy到指定位置
             print(tem + '----已写入excel; 并复制到指定文件夹中')
         try:
-            print('正在转存中' + month_yesterday + '最近两个月的订单......')
+            print('正在转存中' + month_last + ' - ' + month_yesterday + '的订单数据......')
             sql = '''SELECT 年月, 旬, 日期, 团队,所属团队,币种, 订单来源, 订单编号, 出货时间, IF(`状态时间` = '',NULL,状态时间) as 状态时间, 上线时间, 最终状态,是否改派,物流方式,物流渠道,
                             产品id,父级分类,二级分类,三级分类,下单时间, 审核时间,仓储扫描时间,下架时间, 物流提货时间, 完结状态, 完结状态时间,回款时间, 价格RMB, 运单编号, curdate() 记录时间
                     FROM d1_{0} a WHERE a.`运单编号` is not null ;'''.format(team)
