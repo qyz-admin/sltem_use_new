@@ -1198,22 +1198,38 @@ class QueryTwo(Settings, Settings_sso):
                 if result['traceItems'] != []:
                     for res in result['traceItems']:
                         resval = res.split(':')[0]
-                        if '跟进人' in resval:
+                        if '跟进人:' in resval:
                             result['跟进人'] = (res.split('跟进人:')[1]).strip()  # 跟进人
-                        if '时间' in resval and '跟进' not in resval:
-                            result['时间'] = (res.split('时间:')[1]).strip()  # 跟进人
-                        if '内容' in resval:
+                        else:
+                            result['跟进人'] = ''
+                        if '时间:' in resval and '跟进' not in resval:
+                            result['时间:'] = (res.split('时间:')[1]).strip()  # 跟进人
+                        else:
+                            result['是否需要商品'] = ''
+                        if '内容:' in resval:
                             result['内容'] = (res.split('内容:')[1]).strip()  # 跟进人
-                        if '联系方式' in resval:
+                        else:
+                            result['是否需要商品'] = ''
+                        if '联系方式:' in resval:
                             result['联系方式'] = (res.split('联系方式:')[1]).strip()  # 跟进人
-                        if '问题类型' in resval:
+                        else:
+                            result['是否需要商品'] = ''
+                        if '问题类型:' in resval:
                             result['问题类型'] = (res.split('问题类型:')[1]).strip()  # 跟进人
-                        if '问题原因' in resval:
+                        else:
+                            result['是否需要商品'] = ''
+                        if '问题原因:' in resval:
                             result['问题原因'] = (res.split('问题原因:')[1]).strip()  # 跟进人
-                        if '处理结果' in res:
+                        else:
+                            result['是否需要商品'] = ''
+                        if '处理结果:' in res:
                             result['处理结果'] = (res.split('处理结果:')[1]).strip()  # 跟进人
-                        if '是否需要商品' in res:
+                        else:
+                            result['是否需要商品'] = ''
+                        if '是否需要商品:' in res:
                             result['是否需要商品'] = (res.split('是否需要商品:')[1]).strip()  # 跟进人
+                        else:
+                            result['是否需要商品'] = ''
                 ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 请检查出错点！！！', str(Exception) + str(e))

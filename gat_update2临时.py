@@ -7926,20 +7926,18 @@ class QueryUpdate(Settings):
             week_time2 = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%m.%d')
             listT = []  # 查询sql的结果 存放池
             print('正在获取 日报表 数据内容…………')
-            sql = '''SELECT 日期31天, ss.*, ss1.*, ss2.*, ss3.*, ss4.*
+            sql = '''SELECT 日期31天, ss.*, ss1.*, ss2.*, ss3.*, ss4.* , ss5.*
                     FROM date
                     LEFT JOIN
-                            (SELECT 日期 AS 系统问题,
-                                        COUNT(订单编号) AS 问题订单,
-                                        SUM(IF(g.`系统订单状态` NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 正常出货,
-                                        SUM(IF(g.`系统订单状态` = '已删除',1,0)) AS 删除订单,
-                                        SUM(IF(g.`系统物流状态` = '已签收',1,0)) AS 实际签收
-                            FROM gat_order_list g
-                            WHERE (g.日期 BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AND 
-                                        (g.`问题时间` BETWEEN TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY)) AND TIMESTAMP(CURDATE())) 
-                                        AND g.`问题原因` IS NOT NULL AND g.币种 = '台湾'
-                            GROUP BY DATE(日期) 
-                            ORDER BY DATE(日期)
+                    (SELECT 日期 AS 系统问题, COUNT(订单编号) AS 问题订单,
+                            SUM(IF(g.`系统订单状态` NOT IN ('未支付','待审核','已取消','截单','支付失败','已删除','问题订单','问题订单审核','待发货'),1,0)) AS 正常出货,
+                            SUM(IF(g.`系统订单状态` = '已删除',1,0)) AS 删除订单, SUM(IF(g.`系统物流状态` = '已签收',1,0)) AS 实际签收
+                        FROM gat_order_list g
+                        WHERE (g.日期 BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AND  (g.`问题时间` BETWEEN TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY)) AND TIMESTAMP(CURDATE())) 
+                            AND g.`问题原因` IS NOT NULL AND g.币种 = '台湾'
+--                            WHERE (g.日期 BETWEEN '2023-03-01' AND '2023-04-01') AND (g.`问题时间` BETWEEN TIMESTAMP('2023-03-01') AND TIMESTAMP('2023-04-01')) AND g.`问题原因` IS NOT NULL AND g.币种 = '台湾'
+                        GROUP BY DATE(日期) 
+                        ORDER BY DATE(日期)
                     ) ss ON  date.`日期31天` = EXTRACT(day FROM ss.`系统问题`)
                     
                     LEFT JOIN 
@@ -7947,7 +7945,8 @@ class QueryUpdate(Settings):
                     (	SELECT ww.* ,物流问题总量, 约派送, 核实拒收, 再派签收, 未接听, 无效号码
                         FROM (SELECT 处理时间 AS 物流问题, COUNT(订单编号) AS 物流问题联系量
                                     FROM 物流问题件 cg
-                                    WHERE cg.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND cg.币种 = '台币'
+                                    WHERE cg.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND cg.币种 = '台币'  AND cg.问题类型 <> '订单压单（giikin内部专用）'
+--                                     WHERE cg.`处理时间` BETWEEN '2023-03-01' AND '2023-03-31' AND cg.币种 = '台币' AND cg.问题类型 <> '订单压单（giikin内部专用）'
                                     GROUP BY 处理时间
                                     ORDER BY 处理时间
                         ) ww
@@ -7962,7 +7961,11 @@ class QueryUpdate(Settings):
                             FROM (SELECT wt.*, g.`系统订单状态`, g.`系统物流状态`, g.`完结状态`
                                         FROM (SELECT * 
                                                     FROM 物流问题件 
-                                                    WHERE id IN (SELECT MAX(id) FROM 物流问题件 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号) 
+                                                    WHERE id IN ( SELECT MAX(id) 
+																	FROM 物流问题件 w 
+																	WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY)  AND w.问题类型 <> '订单压单（giikin内部专用）'
+-- 																	WHERE w.`处理时间` BETWEEN '2023-03-01' AND '2023-03-31'  AND w.问题类型 <> '订单压单（giikin内部专用）'
+																	GROUP BY 订单编号) 
                                                     ORDER BY id
                                         ) wt 
                                         LEFT JOIN gat_order_list g ON  wt.`订单编号` = g.`订单编号`
@@ -7979,6 +7982,7 @@ class QueryUpdate(Settings):
                         FROM (SELECT 处理时间 AS 物流客诉, COUNT(订单编号) AS 物流客诉联系量
                                     FROM 物流客诉件 cg
                                     WHERE cg.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) and cg.币种 = '台币'
+--                                     WHERE cg.`处理时间` BETWEEN '2023-03-01' AND '2023-03-31' and cg.币种 = '台币'
                                     GROUP BY 处理时间
                                     ORDER BY 处理时间
                         ) cc 
@@ -7994,7 +7998,11 @@ class QueryUpdate(Settings):
                             FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`完结状态`
                                         FROM (SELECT * 
                                                     FROM 物流客诉件 
-                                                    WHERE id IN (SELECT MAX(id) FROM 物流客诉件 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号) 
+                                                    WHERE id IN (SELECT MAX(id) 
+																	FROM 物流客诉件 w 
+																	WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) 
+-- 																	WHERE w.`处理时间` BETWEEN '2023-03-01' AND '2023-03-31'
+																	GROUP BY 订单编号) 
                                                     ORDER BY id
                                             ) cg
                                         LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
@@ -8013,6 +8021,7 @@ class QueryUpdate(Settings):
                                     FROM 采购异常 cg
                                     LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
                                     WHERE cg.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND g.是否改派 = '直发'
+--                                     WHERE cg.`处理时间` BETWEEN '2023-03-01' AND '2023-03-31' AND g.是否改派 = '直发'
                                     GROUP BY cg.处理时间
                                     ORDER BY cg.处理时间
                         ) gg 
@@ -8028,7 +8037,11 @@ class QueryUpdate(Settings):
                             FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`, g.`币种`, g.`是否改派`
                                         FROM (SELECT * 
                                                     FROM 采购异常 
-                                                    WHERE id IN (SELECT MAX(id) FROM 采购异常 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号) 
+                                                    WHERE id IN (SELECT MAX(id) 
+																	FROM 采购异常 w 
+																	WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) 
+-- 																	WHERE w.`处理时间` BETWEEN '2023-03-01' AND '2023-03-31'
+																	GROUP BY 订单编号) 
                                                     ORDER BY id
                                             ) cg
                                         LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
@@ -8045,7 +8058,12 @@ class QueryUpdate(Settings):
                             FROM (SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`
                                     FROM (SELECT * 
                                             FROM 拒收问题件 
-                                            WHERE 联系方式 = '电话' AND 币种 = '台币' AND id IN (SELECT MAX(id) FROM 拒收问题件 w WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY 订单编号)	
+                                            WHERE 联系方式 = '电话' AND 币种 = '台币' 
+												 AND id IN (SELECT MAX(id) 
+																FROM 拒收问题件 w 
+																WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY)  AND w.处理人 IN ('蔡利英','杨嘉仪','张陈平','李晓青')
+-- 																WHERE w.`处理时间` BETWEEN '2023-03-01' AND '2023-03-31' AND w.处理人 IN ('蔡利英','杨嘉仪','张陈平','李晓青')
+																GROUP BY 订单编号)	
                                             ORDER BY id
                                         ) cg
                                     LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
@@ -8055,6 +8073,41 @@ class QueryUpdate(Settings):
                             GROUP BY DATE(s.处理时间) 
                             ORDER BY DATE(s.处理时间) 
                     ) ss4 ON  date.`日期31天` = EXTRACT(day FROM ss4.`拒收问题件`)
+					
+					LEFT JOIN 
+					(	SELECT ww.* , 压单核实总量, 有效订单, 签收量, 删单量, 联系取消订单, 无人接听
+                        FROM (SELECT 处理时间 AS 压单核实, COUNT(订单编号) AS 压单核实联系量
+                                    FROM 物流问题件 cg
+                                    WHERE cg.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND cg.币种 = '台币'  AND cg.问题类型 = '订单压单（giikin内部专用）'
+--                                     WHERE cg.`处理时间` BETWEEN '2023-03-01' AND '2023-03-31' AND cg.币种 = '台币' AND cg.问题类型 = '订单压单（giikin内部专用）'
+                                    GROUP BY 处理时间
+                                    ORDER BY 处理时间
+                        ) ww
+                        LEFT JOIN 
+                        (SELECT 处理时间 AS 压单核实,
+                                        COUNT(订单编号) AS 压单核实总量,
+										 SUM(IF(ks.系统订单状态 IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'),1,0)) AS 有效订单,
+										 SUM(IF(ks.系统物流状态 = '已签收',1,0)) AS 签收量,
+										 SUM(IF(ks.系统订单状态 IN ('未支付', '支付失败', '已删除'),1,0)) AS 删单量,
+                                        SUM(IF(ks.`处理结果` LIKE '%取消%' OR ks.`处理结果` LIKE '%无效号码%',1,0)) AS 联系取消订单,
+                                        SUM(IF(ks.`处理结果` LIKE '%无人接听%',1,0)) AS 无人接听
+                            FROM (SELECT wt.*, g.`系统订单状态`, g.`系统物流状态`, g.`完结状态`
+                                        FROM (SELECT * 
+                                                    FROM 物流问题件 
+                                                    WHERE id IN ( SELECT MAX(id) 
+																	FROM 物流问题件 w 
+																	WHERE w.`处理时间` BETWEEN DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE())-1 DAY) AND DATE_SUB(CURDATE(), INTERVAL 1 DAY)  AND w.问题类型 <> '订单压单（giikin内部专用）'
+-- 																	WHERE w.`处理时间` BETWEEN '2023-03-01' AND '2023-03-31'  AND w.问题类型 = '订单压单（giikin内部专用）'
+																	GROUP BY 订单编号) 
+                                                    ORDER BY id
+                                        ) wt 
+                                        LEFT JOIN gat_order_list g ON  wt.`订单编号` = g.`订单编号`
+                                        WHERE wt.币种 = '台币'
+                            ) ks
+                            GROUP BY ks.处理时间
+                            ORDER BY 处理时间
+                        ) ww2  ON ww.`压单核实` = ww2.`压单核实`
+                    ) ss5 ON date.`日期31天` = EXTRACT(day FROM ss5.`压单核实`)
                     GROUP BY 日期31天
                     ORDER BY 日期31天;'''.format()     # 港台查询函数导出
             df0 = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -11108,7 +11161,7 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    select = 99
+    select = 1
     handle_time = '自动'
     if int(select) == 99:
         if handle_time == '自动':

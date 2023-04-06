@@ -382,14 +382,15 @@ class QueryTwoLower(Settings, Settings_sso):
         timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
         print('正在查询 港台 压单订单信息中......')
         url = r'http://gwms-v3.giikin.cn/order/pressure/index'
+        url = r'http://gwms-v3.giikin.cn/order/pressure/index2'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'http://gwms-v3.giikin.cn',
-                    'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
+                    'Referer': 'http://gwms-v3.giikin.cn/order/pressure/index2'}
         data = {'page': '1',
                 'limit': 500,
                 'startDate': timeStart + ' 00:00:00',
                 'endDate': timeEnd + ' 23:59:59',
-                'selectStr': '1=1'}
+                'selectStr': '1=1 and a.reason in (1,2,3,4)'}
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
@@ -422,16 +423,17 @@ class QueryTwoLower(Settings, Settings_sso):
             else:
                 dp = df
             print('正在写入......')
-            dp = dp[['order_number', 'goods_id', 'goods_name', 'currency_id', 'area_id', 'ydtime', 'purid', 'other_reason', 'buyer', 'intime', 'addtime', 'is_lower', 'below_time', 'cate']]
-            dp.columns = ['订单编号', '产品ID', '产品名称', '币种', '团队', '反馈时间', '压单原因', '其他原因', '采购员', '入库时间', '下单时间', '是否下架', '下架时间', '品类']
+            dp = dp[['order_number', 'goods_id', 'goods_name', 'currency_id', 'area_id', 'intime', 'purid', 'other_reason', 'buyer', 'intime', 'addtime', 'cate', 'sku', 'spec', 'yd_day', 'billno']]
+            dp.columns = ['订单编号', '产品ID', '产品名称', '币种', '团队', '反馈时间', '压单原因', '其他原因', '采购员', '入库时间', '下单时间', '品类', 'SKU', '产品规格', '压单天数', '运单号']
             dp = dp[(dp['币种'].str.contains('港币|台币', na=False))]
             # print(dp)
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO 压单表(订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, 下架时间, 品类, 记录时间) 
-                    SELECT 订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, IF(下架时间 = '',NULL,下架时间) 下架时间, 品类, NOW() 记录时间
-                    FROM customer'''
+            sql = '''REPLACE INTO 压单表(订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, 是否下架, 下架时间, 品类, SKU, 产品规格, 压单天数, 运单号,记录时间) 
+                    SELECT 订单编号,产品ID,产品名称,币种,团队, 反馈时间, 压单原因, 其他原因, 采购员, 入库时间, 下单时间, NULL as 是否下架, NULL as 下架时间, 品类, SKU, 产品规格, 压单天数, 运单号,NOW() 记录时间
+                    FROM customer;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('共有 ' + str(len(dp)) + '条 成功写入数据库+++++++')
+
 
             print('正在获取 压单反馈 信息中......')
             time_path: datetime = datetime.datetime.now()
@@ -495,15 +497,15 @@ class QueryTwoLower(Settings, Settings_sso):
         print('*' * 50)
     def _order_spec(self, timeStart, timeEnd, n):  # 进入压单检索界面
         print('+++正在查询订单信息中')
-        url = r'http://gwms-v3.giikin.cn/order/pressure/index'
+        url = r'http://gwms-v3.giikin.cn/order/pressure/index2'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'http://gwms-v3.giikin.cn',
-                    'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
+                    'Referer': 'http://gwms-v3.giikin.cn/order/pressure/index2'}
         data = {'page': n,
                 'limit': 500,
                 'startDate': timeStart + ' 00:00:00',
                 'endDate': timeEnd + ' 23:59:59',
-                'selectStr': '1=1'}
+                'selectStr': '1=1 and a.reason in (1,2,3,4)'}
         proxy = '39.105.167.0:40005'  # 使用代理服务器
         proxies = {'http': 'socks5://' + proxy,
                    'https': 'socks5://' + proxy}
@@ -1641,9 +1643,9 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
-    select = 5
+    select = 1
     if select == 1:
-        m.readFile(select)            # 上传每日压单核实结果
+        # m.readFile(select)            # 上传每日压单核实结果
         m.order_spec()                # 压单反馈  （备注（压单核实是否需要））
 
     elif select == 2:

@@ -3736,7 +3736,7 @@ if __name__ == '__main__':
 
         handle_now_month,handle_last_month,handle_now_month_old,handle_last_month_old = '','','',''
     else:
-        now_month = '2023.04.03'            # 本月记录日期
+        now_month = '2023.04.06'            # 本月记录日期
         handle_now_month = '202303'         # 本月记录 本月数据
         handle_last_month = '202302'        # 本月记录 上月数据
 
@@ -3751,9 +3751,9 @@ if __name__ == '__main__':
 
 
     # 测试监控运行（二）-- 第一种手动方式
-    # m.order_Monitoring('港台')        # 各月缓存（整体一）、
-    # for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港']:
-    for team in ['火凤凰-台湾']:
+    m.order_Monitoring('港台')        # 各月缓存（整体一）、
+    for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港']:
+    # for team in ['火凤凰-台湾']:
     # for team in ['港台-台湾']:
         now_month = now_month.replace('.', '-')           # 修改配置时间
         last_month = last_month.replace('.', '-')
