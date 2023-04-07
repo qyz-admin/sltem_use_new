@@ -239,7 +239,7 @@ class QueryTwo(Settings, Settings_sso):
             sql = '''SELECT DISTINCT 处理时间 FROM {0} d GROUP BY 处理时间 ORDER BY 处理时间 DESC'''.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
             rq = pd.to_datetime(rq['处理时间'][0])
-            last_time = (rq - datetime.timedelta(days=3)).strftime('%Y-%m-%d')
+            last_time = (rq - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
             now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         else:
             sql = '''SELECT DISTINCT 处理时间 FROM {0} d GROUP BY 处理时间 ORDER BY 处理时间 DESC'''.format(team)
@@ -1098,21 +1098,20 @@ class QueryTwo(Settings, Settings_sso):
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
                 'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': -1, 'finishTimeStart': None,
                 'finishTimeEnd': None, 'traceTimeStart': timeStart + ' 00:00:00', 'traceTimeEnd': timeEnd + ' 23:59:59','newCloneNumber': None}
-        self.session.mount('http://', HTTPAdapter(max_retries=3))
-        self.session.mount('https://', HTTPAdapter(max_retries=3))
+        self.session.mount('http://', HTTPAdapter(max_retries=4))
+        self.session.mount('https://', HTTPAdapter(max_retries=4))
         try:
             if proxy_handle == '代理服务器':
                 proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
-                req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+                req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies, timeout=500)
             else:
-                req = self.session.post(url=url, headers=r_header, data=data)
+                req = self.session.post(url=url, headers=r_header, data=data, timeout=500)
+            print('+++已成功发送请求......')
+            req = json.loads(req.text)  # json类型数据转换为dict字典
+            max_count = req['data']['count']
+            print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
         except requests.exceptions.RequestException as e:
             print(e)
-        print('+++已成功发送请求......')
-        req = json.loads(req.text)  # json类型数据转换为dict字典
-        max_count = req['data']['count']
-        print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
-        # print(req)
         ordersDict = []
         if max_count != 0:
             df = pd.DataFrame([])
@@ -1167,14 +1166,14 @@ class QueryTwo(Settings, Settings_sso):
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
                 'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': -1, 'finishTimeStart': None,
                 'finishTimeEnd': None, 'traceTimeStart': timeStart + ' 00:00:00', 'traceTimeEnd': timeEnd + ' 23:59:59', 'newCloneNumber': None}
-        self.session.mount('http://', HTTPAdapter(max_retries=3))
-        self.session.mount('https://', HTTPAdapter(max_retries=3))
+        self.session.mount('http://', HTTPAdapter(max_retries=4))
+        self.session.mount('https://', HTTPAdapter(max_retries=4))
         try:
             if proxy_handle == '代理服务器':
                 proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
-                req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+                req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies, timeout=500)
             else:
-                req = self.session.post(url=url, headers=r_header, data=data)
+                req = self.session.post(url=url, headers=r_header, data=data, timeout=500)
         except requests.exceptions.RequestException as e:
             print(e)
         try:
@@ -1198,38 +1197,23 @@ class QueryTwo(Settings, Settings_sso):
                 if result['traceItems'] != []:
                     for res in result['traceItems']:
                         resval = res.split(':')[0]
-                        if '跟进人:' in resval:
+                        if '跟进人' in resval:
                             result['跟进人'] = (res.split('跟进人:')[1]).strip()  # 跟进人
-                        else:
-                            result['跟进人'] = ''
-                        if '时间:' in resval and '跟进' not in resval:
-                            result['时间:'] = (res.split('时间:')[1]).strip()  # 跟进人
-                        else:
-                            result['是否需要商品'] = ''
-                        if '内容:' in resval:
+                        if '时间' in resval and '跟进' not in resval:
+                            result['时间'] = (res.split('时间:')[1]).strip()  # 跟进人
+                        if '内容' in resval:
                             result['内容'] = (res.split('内容:')[1]).strip()  # 跟进人
-                        else:
-                            result['是否需要商品'] = ''
-                        if '联系方式:' in resval:
+                        if '联系方式' in resval:
                             result['联系方式'] = (res.split('联系方式:')[1]).strip()  # 跟进人
-                        else:
-                            result['是否需要商品'] = ''
-                        if '问题类型:' in resval:
+                        if '问题类型' in resval:
                             result['问题类型'] = (res.split('问题类型:')[1]).strip()  # 跟进人
-                        else:
-                            result['是否需要商品'] = ''
-                        if '问题原因:' in resval:
+                        if '问题原因' in resval:
                             result['问题原因'] = (res.split('问题原因:')[1]).strip()  # 跟进人
-                        else:
-                            result['是否需要商品'] = ''
-                        if '处理结果:' in res:
+                        if '处理结果' in resval:
                             result['处理结果'] = (res.split('处理结果:')[1]).strip()  # 跟进人
-                        else:
-                            result['是否需要商品'] = ''
-                        if '是否需要商品:' in res:
+                        if '是否需要商品' in resval:
                             result['是否需要商品'] = (res.split('是否需要商品:')[1]).strip()  # 跟进人
-                        else:
-                            result['是否需要商品'] = ''
+
                 ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 请检查出错点！！！', str(Exception) + str(e))
@@ -1671,51 +1655,45 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 99
-    if int(select) == 99:
+    select = 909
+    if int(select) == 909:
         handle = '手动0'
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
         proxy_handle = '代理服务器0'
-        proxy_id = '192.168.13.89:37467'                            # 输入代理服务器节点和端口
+        proxy_id = '192.168.13.89:37469'                            # 输入代理服务器节点和端口
 
         m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
         start: datetime = datetime.datetime.now()
         m.waybill_InfoQuery('2021-12-01', '2021-12-01', proxy_handle, proxy_id)     #   -- 每日启动测试使用
 
         timeStart, timeEnd = m.readInfo('拒收问题件')                                        # 查询更新-拒收问题件 @--ok
-        timeStart = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()                 # 按天循环获取
-        timeEnd = datetime.datetime.strptime(timeEnd, '%Y-%m-%d').date()
-        for i in range((timeEnd - timeStart).days):  # 按天循环获取订单状态
-            day = timeStart + datetime.timedelta(days=i)
-            day_time = str(day)
-            print('****** 更新      起止时间：' + day_time + ' - ' + day_time + ' ******')
-            m.order_js_Query(day_time, day_time, proxy_handle, proxy_id)
+        m.order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id)
 
-        timeStart, timeEnd = m.readInfo('物流问题件')
-        m.waybill_InfoQuery(timeStart, timeEnd, proxy_handle, proxy_id)                     # 查询更新-物流问题件
-
-        timeStart, timeEnd = m.readInfo('压单表_已核实')
-        m.waybill_InfoQuery_yadan(timeStart, timeEnd, proxy_handle, proxy_id)               # 查询更新-物流问题件 - 压单核实
-
-        timeStart, timeEnd = m.readInfo('物流客诉件')
-        m.waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id)                         # 查询更新-物流客诉件 @--ok
-
-        timeStart, timeEnd = m.readInfo('退换货表')
-        for team in [1, 2]:
-            m.orderReturnList_Query(team, timeStart, timeEnd, proxy_handle, proxy_id)                   # 查询更新-退换货
-
-        timeStart, timeEnd = m.readInfo('派送问题件')
-        m.waybill_deliveryList(timeStart, timeEnd, proxy_handle, proxy_id)                              # 查询更新-派送问题件、
-
-        timeStart, timeEnd = m.readInfo('采购异常')
-        m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'), proxy_handle, proxy_id)  # 查询更新-采购问题件（一、简单查询）
-
-        timeStart, timeEnd = m.readInfo('短信模板')
-        m.getMessage_Log(timeStart, timeEnd, proxy_handle, proxy_id)                            # 查询更新-短信模板 @--ok
-
-        timeStart, timeEnd = m.readInfo('工单列表')
-        m.getOrderCollectionList(timeStart, timeEnd, proxy_handle, proxy_id)                  # 工单列表-物流客诉件
-        print('查询耗时：', datetime.datetime.now() - start)
+        # timeStart, timeEnd = m.readInfo('物流问题件')
+        # m.waybill_InfoQuery(timeStart, timeEnd, proxy_handle, proxy_id)                     # 查询更新-物流问题件
+        #
+        # timeStart, timeEnd = m.readInfo('压单表_已核实')
+        # m.waybill_InfoQuery_yadan(timeStart, timeEnd, proxy_handle, proxy_id)               # 查询更新-物流问题件 - 压单核实
+        #
+        # timeStart, timeEnd = m.readInfo('物流客诉件')
+        # m.waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id)                         # 查询更新-物流客诉件 @--ok
+        #
+        # timeStart, timeEnd = m.readInfo('退换货表')
+        # for team in [1, 2]:
+        #     m.orderReturnList_Query(team, timeStart, timeEnd, proxy_handle, proxy_id)                   # 查询更新-退换货
+        #
+        # timeStart, timeEnd = m.readInfo('派送问题件')
+        # m.waybill_deliveryList(timeStart, timeEnd, proxy_handle, proxy_id)                              # 查询更新-派送问题件、
+        #
+        # timeStart, timeEnd = m.readInfo('采购异常')
+        # m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'), proxy_handle, proxy_id)  # 查询更新-采购问题件（一、简单查询）
+        #
+        # timeStart, timeEnd = m.readInfo('短信模板')
+        # m.getMessage_Log(timeStart, timeEnd, proxy_handle, proxy_id)                            # 查询更新-短信模板 @--ok
+        #
+        # timeStart, timeEnd = m.readInfo('工单列表')
+        # m.getOrderCollectionList(timeStart, timeEnd, proxy_handle, proxy_id)                  # 工单列表-物流客诉件
+        # print('查询耗时：', datetime.datetime.now() - start)
     '''
     # -----------------------------------------------自动获取 单点 昨日头程直发渠道 & 天马711的订单明细  | 删单原因 状态运行（二）-----------------------------------------
     '''

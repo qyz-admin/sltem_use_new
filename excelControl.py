@@ -1,5 +1,5 @@
 import pandas as pd
-import os
+import os, shutil
 import math
 import xlwings
 import numpy as np
@@ -466,9 +466,9 @@ class ExcelControl(Settings):
                 df = df[['日期', '物流订单编号', '运单编号', '取件单号', '代收金额', '处理结果', '物流']]
                 df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
                 print('正在写入退货表 订单信息…………')
-                sql = '''INSERT IGNORE INTO {}_return (日期, 订单编号, 物流订单编号, 联系电话, 运单编号, 取件单号, 代收金额, 处理结果, 发货时间, 物流状态, 完成时间, 上线时间, 物流, 添加时间)
+                sql = '''INSERT IGNORE INTO {}_return (日期, 订单编号, 物流订单编号, 联系电话, 运单编号, 取件单号, 代收金额, 处理结果, 发货时间, 物流状态, 完成时间, 上线时间, 物流, 收货时间, 添加时间)
                                                 SELECT 日期, null 订单编号, 物流订单编号, null 联系电话, 运单编号, 取件单号, 代收金额, 处理结果, 
-                                                null 发货时间, null 物流状态, null 完成时间, null 上线时间, 物流, NOW() 添加时间 FROM customer; '''.format(team)
+                                                null 发货时间, null 物流状态, null 完成时间, null 上线时间, 物流, null 收货时间, NOW() 添加时间 FROM customer; '''.format(team)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                 self.readReturnOrder_Update(team, filePath)
 
@@ -500,7 +500,7 @@ class ExcelControl(Settings):
                     n1 = n * 500
                     n2 = (n + 1) * 500
                     ord = ','.join(orders_Dict[n1:n2])
-                    print(ord)
+                    # print(ord)
                     data = js.orderInfoQuery(ord, '运单号', proxy_id, proxy_handle)
                     # data = js.orderInfo_pople(ord, '运单号', proxy_id, proxy_handle)
                     print(data)
@@ -511,13 +511,14 @@ class ExcelControl(Settings):
                     print(' ****** 没有要补充的订单信息; ****** ')
                 else:
                     print('正在写入......')
-                    dp = dp[['orderNumber','wayBillNumber', 'shipInfo.shipPhone', 'deliveryTime','logisticsStatus', 'onlineTime','finishTime']]
+                    dp = dp[['orderNumber','wayBillNumber', 'shipInfo.shipPhone', 'deliveryTime','logisticsStatus', 'takeTime', 'onlineTime','finishTime']]
                     dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
                     sql = '''update `gat_return` a, customer b
                                 SET a.`订单编号` = IF(b.`orderNumber` = '', NULL, b.`orderNumber`),
                                     a.`联系电话` = IF(b.`shipInfo.shipPhone` = '', NULL, b.`shipInfo.shipPhone`),
                                     a.`发货时间` = IF(b.`deliveryTime` = '', NULL, b.`deliveryTime`),
                                     a.`物流状态` = IF(b.`logisticsStatus` = '', NULL, b.`logisticsStatus`),
+                                    a.`收货时间` = IF(b.`takeTime` = '', NULL, b.`takeTime`),
                                     a.`上线时间` = IF(b.`onlineTime` = '', NULL, b.`onlineTime`),
                                     a.`完成时间` = IF(b.`finishTime` = '', NULL, b.`finishTime`)
                             where a.`运单编号`=b.`wayBillNumber`;'''
@@ -534,11 +535,20 @@ class ExcelControl(Settings):
                     WHERE DATE_FORMAT(r.添加时间, '%Y-%m-%d') = DATE_FORMAT(CURDATE() , '%Y-%m-%d')
                          AND r.`订单编号` IS NOT NULL AND r.`订单编号` <>  "";'''.format(team)
             ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
-            print(ordersDict)
+            # print(ordersDict)
             if ordersDict.empty:
                 print(' ****** 无需生成导状态表 ****** ')
             else:
                 ordersDict.to_excel(new_path, sheet_name='查询', index=False,engine='xlsxwriter')
+
+                new_path2 = 'D:\\Users\\Administrator\\Desktop\\需要用到的文件\\数据库\\{0} 导退货状态-临时.xlsx'.format(rq)
+                sql = '''SELECT 订单编号, 运单编号 AS 运单号, '已完成' AS 订单状态,  '已退货' AS 物流状态,  发货时间, 收货时间, 上线时间, 完成时间 
+                        FROM {0}_return r 
+                        WHERE DATE_FORMAT(r.添加时间, '%Y-%m-%d') = DATE_FORMAT(CURDATE() , '%Y-%m-%d')
+                             AND r.`订单编号` IS NOT NULL AND r.`订单编号` <>  "";'''.format(team)
+                df = pd.read_sql_query(sql=sql, con=self.engine1)
+                df.to_excel(new_path2, sheet_name='查询', index=False, engine='xlsxwriter')
+                print('----已写入excel; 并复制到指定文件夹中')
         else:
             print('无需生成导状态表')
 

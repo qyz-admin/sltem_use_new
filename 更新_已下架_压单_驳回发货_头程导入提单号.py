@@ -443,7 +443,8 @@ class QueryTwoLower(Settings, Settings_sso):
                             s.下架时间,s.记录时间, s1.处理结果,s1.处理时间,NULL 备注,  DATEDIFF(curdate(),入库时间) 压单天数, DATE_FORMAT(入库时间,'%Y-%m-%d') 入库,采购异常, 处理进度, 详细处理时间,反馈内容, 压单短信发送时间
                      FROM ( SELECT * , {0}
                             FROM 压单表 g
-                            WHERE g.`记录时间` >= CURDATE() and g.是否下架 <> '已下架'
+                            WHERE g.`记录时间` >= CURDATE() 
+                            # and g.是否下架 <> '已下架'
                     ) s
                     LEFT JOIN (SELECT *
                                 FROM 压单表_已核实

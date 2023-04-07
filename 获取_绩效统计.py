@@ -958,15 +958,18 @@ class QueryOrder_Code(Settings, Settings_sso):
             data.update({'timeStart': timeStart + ' 00:00:00,', 'timeEnd': timeEnd + ' 23:59:59'})
             data_woks = '拒收问题件_下单时间'
             data_woks2 = '下单时间'
-        if proxy_handle == '代理服务器':
-            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
-            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        else:
-            req = self.session.post(url=url, headers=r_header, data=data)
+        try:
+            if proxy_handle == '代理服务器':
+                proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+                req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies, timeout=None)
+            else:
+                req = self.session.post(url=url, headers=r_header, data=data, timeout=None)
+            print(req)
+            req = json.loads(req.text)  # json类型数据转换为dict字典
+            max_count = req['data']['count']
+        except requests.exceptions.RequestException as e:
+            print(e)
         # print('+++已成功发送请求......')
-        print(req)
-        req = json.loads(req.text)  # json类型数据转换为dict字典
-        max_count = req['data']['count']
         print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
         # print(req)
         if max_count != 0:
@@ -1013,15 +1016,15 @@ class QueryOrder_Code(Settings, Settings_sso):
             data.update({'traceItemIds': -1, 'timeStart': timeStart + ' 00:00:00,', 'timeEnd': timeEnd + ' 23:59:59'})
         elif order_time == '下单时间':
             data.update({'timeStart': timeStart + ' 00:00:00,', 'timeEnd': timeEnd + ' 23:59:59'})
-        if proxy_handle == '代理服务器':
-            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
-            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        else:
-            req = self.session.post(url=url, headers=r_header, data=data)
-        print('+++已成功发送请求......')
         # print(req)
         # print(req.text)
         try:
+            if proxy_handle == '代理服务器':
+                proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+                req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies, timeout=None)
+            else:
+                req = self.session.post(url=url, headers=r_header, data=data, timeout=None)
+            print('+++已成功发送请求......')
             req = json.loads(req.text)  # json类型数据转换为dict字典
         except Exception as e:
             print('转化失败： 请求失败', str(Exception) + str(e))
@@ -1030,7 +1033,6 @@ class QueryOrder_Code(Settings, Settings_sso):
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
                 # print(result['orderNumber'])
-                # print(55)
                 result['订单编号'] = result['orderNumber']
                 result['再次克隆下单'] = result['newCloneNumber']
                 result['跟进人'] = ''
@@ -1042,40 +1044,25 @@ class QueryOrder_Code(Settings, Settings_sso):
                 result['处理结果'] = ''
                 result['是否需要商品'] = ''
                 if result['traceItems'] != []:
+                    # print(result['traceItems'])
                     for res in result['traceItems']:
                         resval = res.split(':')[0]
-                        if '跟进人:' in resval:
+                        if '跟进人' in resval:
                             result['跟进人'] = (res.split('跟进人:')[1]).strip()  # 跟进人
-                        else:
-                            result['跟进人'] = ''
-                        if '时间:' in resval and '跟进' not in resval:
-                            result['时间:'] = (res.split('时间:')[1]).strip()  # 跟进人
-                        else:
-                            result['是否需要商品'] = ''
-                        if '内容:' in resval:
+                        if '时间' in resval and '跟进' not in resval:
+                            result['时间'] = (res.split('时间:')[1]).strip()  # 跟进人
+                        if '内容' in resval:
                             result['内容'] = (res.split('内容:')[1]).strip()  # 跟进人
-                        else:
-                            result['是否需要商品'] = ''
-                        if '联系方式:' in resval:
+                        if '联系方式' in resval:
                             result['联系方式'] = (res.split('联系方式:')[1]).strip()  # 跟进人
-                        else:
-                            result['是否需要商品'] = ''
-                        if '问题类型:' in resval:
+                        if '问题类型' in resval:
                             result['问题类型'] = (res.split('问题类型:')[1]).strip()  # 跟进人
-                        else:
-                            result['是否需要商品'] = ''
-                        if '问题原因:' in resval:
+                        if '问题原因' in resval:
                             result['问题原因'] = (res.split('问题原因:')[1]).strip()  # 跟进人
-                        else:
-                            result['是否需要商品'] = ''
-                        if '处理结果:' in res:
+                        if '处理结果' in resval:
                             result['处理结果'] = (res.split('处理结果:')[1]).strip()  # 跟进人
-                        else:
-                            result['是否需要商品'] = ''
-                        if '是否需要商品:' in res:
+                        if '是否需要商品' in resval:
                             result['是否需要商品'] = (res.split('是否需要商品:')[1]).strip()  # 跟进人
-                        else:
-                            result['是否需要商品'] = ''
 
                 ordersDict.append(result.copy())
         except Exception as e:
@@ -1582,7 +1569,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                         IF(物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 物流状态,
                         IF(物流状态 IN ('已签收','理赔'), IF(订单状态 = '已退货(销售)','拒收',物流状态), IF(物流状态 = '发货中','在途',
 			            IF(物流状态 = '' or 物流状态 IS NULL or 物流状态 = '暂无物流状态', IF(订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),物流状态)))) as 最终状态, 统计月份, 记录时间
-                FROM 压单核实_跟进时间 s1
+                FROM 压单核实_创建时间 s1
                 WHERE s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT('2023-04-06','%Y%m%d')
                  AND (s1.`最新客服处理` NOT LIKE '%无人接听%' AND s1.`最新客服处理` NOT LIKE '%无效号码%' );'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -1657,7 +1644,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         df.to_sql('cache_ch_cp', con=self.engine1, index=False, if_exists='replace')
 
 
-        print('派送问题件-绩效 数据整理 写入计算统计表 中 （三.二去掉物流与派送重复的，以物流为准）......')
+        print('派送问题件-绩效 数据整理 写入计算统计表 中 （三.三去掉物流与派送重复的，以物流为准）......')
         sql = '''SELECT *  FROM cache_ch_cp p WHERE p.订单编号 NOT IN (SELECT 订单编号 FROM cache_ch);'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_sql('cache_check_cp', con=self.engine1, index=False, if_exists='replace')
@@ -2322,21 +2309,21 @@ if __name__ == '__main__':
             开始获取 绩效数据
         '''
         order_time = '跟进时间'                                                                  # 拒收问题  查询；订单检索@~@ok
-        timeStart = datetime.date(2023, 3, 14)
+        timeStart = datetime.date(2023, 3, 15)
         timeEnd = datetime.date(2023, 4, 1)
         for i in range((timeEnd - timeStart).days):  # 按天循环获取订单状态
             day = timeStart + datetime.timedelta(days=i)
             day_time = str(day)
             print('****** 更新      起止时间：' + day_time + ' - ' + day_time + ' ******')
-            m.service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time)      # (需处理两次)
+            # m.service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time)      # (需处理两次)
 
-        timeStart = '2023-03-04'
+        timeStart = '2023-03-22'
         timeEnd = '2023-03-31'
-        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # (需处理两次)
-        order_time = '下单跟进时间'
-        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
-        order_time = '下单时间'
-        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
+        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # (需处理两次)
+        # order_time = '下单跟进时间'
+        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
+        # order_time = '下单时间'
+        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
 
 
         # m.service_id_order(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)      # 促单查询；下单时间 @~@ok

@@ -894,8 +894,7 @@ class QueryUpdate(Settings):
                          '审核时间', '仓储扫描时间', '完结状态时间']]
                 old_path = 'G:\\输出文件\\{} {} 更新-签收表.xlsx'.format(today, match[team])
                 df.to_excel(old_path, sheet_name=match[team], index=False)
-                new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime(
-                    '%m.%d') + '\\{} {} 更新-签收表.xlsx'.format(today, match[team])
+                new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\{} {} 更新-签收表.xlsx'.format(today, match[team])
                 shutil.copyfile(old_path, new_path)  # copy到指定位置
                 print('----已写入excel; 并复制到指定文件夹中')
             else:
