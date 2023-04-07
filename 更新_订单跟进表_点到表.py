@@ -297,10 +297,10 @@ class QueryTwo(Settings, Settings_sso):
         start = datetime.datetime.now()
         # 获取更新订单的语句
         sql = '''SELECT 订单编号 FROM {0} s WHERE s.`添加时间` = CURDATE() and s.`出库时间` IS NULL;'''.format('gat_waybill_list')
-        data_df = ['order_number', 'goods_id', 'goods_name', 'currency_id', 'area_id', 'ydtime', 'purid', 'other_reason',
-                 'buyer', 'intime', 'addtime', 'is_lower', 'below_time', 'cate']
+        data_df = ['order_number', 'goods_id', 'goods_name', 'currency_id', 'area_id', 'intime', 'purid', 'other_reason',
+                 'buyer', 'intime', 'addtime', 'cate']
         data_df2 = ['订单编号', '产品ID', '产品名称', '币种', '团队', '反馈时间', '压单原因', '其他原因',
-                    '采购员', '入库时间', '下单时间', '是否下架', '下架时间', '品类']
+                    '采购员', '入库时间', '下单时间', '品类']
         # 获取更新表的语句
         sql2 = '''update {0} a, cache b
                 set a.`订单状态`= '压单'

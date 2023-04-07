@@ -2612,16 +2612,16 @@ class Settings_sso():
         print('+++正在查询订单信息中')
         timeStart = ((datetime.datetime.now() + datetime.timedelta(days=1)) - relativedelta(months=2)).strftime('%Y-%m-%d')
         timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
-        url = r'http://gwms-v3.giikin.cn/order/pressure/index'
+        url = r'http://gwms-v3.giikin.cn/order/pressure/index2'
         r_header = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
             'origin': 'http://gwms-v3.giikin.cn',
-            'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
+            'Referer': 'http://gwms-v3.giikin.cn/order/pressure/index2'}
         data = {'page': 1,
                 'limit': 500,
                 'startDate': timeStart + ' 00:00:00',
                 'endDate': timeEnd + ' 23:59:59',
-                'selectStr': "1=1 and oc.order_number in ('" + ord + "')"
+                'selectStr': "1=1  and a.reason in (1,2,3,4) and b.order_number in ('" + ord + "')"
                 }
         # print(data)
         proxy = '39.105.167.0:40005'  # 使用代理服务器
