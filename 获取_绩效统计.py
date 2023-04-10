@@ -1693,7 +1693,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                 FROM (
                         SELECT *
                         FROM 拒收问题件_跟进时间 s1
-                        WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT('2023-04-06','%Y%m%d') AND s1.再次克隆下单 <> "" and s1.新单克隆人 in ({0})
+                        WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT('2023-02-03','%Y%m%d') AND s1.再次克隆下单 <> "" and s1.新单克隆人 in ({0})
                 ) s;'''.format(username_Jushou)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_sql('cache_ch', con=self.engine1, index=False, if_exists='replace')
@@ -1701,7 +1701,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                            SELECT 类型, 新单克隆人, 订单编号, 克隆后新订单号, 新单订单状态,新单物流状态, 最终状态, 
                                  IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),'是','否') as 是否计算, 统计月份,
                                  IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"), 统计月份, '-') as 计算月份,  
-                                 DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') as 更新月份, 记录时间, NOW() 更新时间
+                                 DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m') as 更新月份, 记录时间, NOW() 更新时间
                            FROM cache_ch;'''.format('拒收挽单_挽单列表_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
