@@ -41,12 +41,12 @@ if team == 'gat0':
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    data_begin = datetime.date(2023, 2, 1)  # 数据库更新
-    begin = datetime.date(2023, 2, 1)      # 单点更新
-    end = datetime.date(2023, 3, 1)
+    data_begin = datetime.date(2023, 3, 14)  # 数据库更新
+    begin = datetime.date(2023, 3, 1)      # 单点更新
+    end = datetime.date(2023, 4, 12)
     # 导出时间
     month_last = '2023-02-01'
-    month_yesterday = '2023-04-10'
+    month_yesterday = '2023-04-12'
     month_begin = '2022-01-01'
 print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
@@ -121,7 +121,7 @@ if team == 'gat' and updata == '全部':
     print('更新耗时：', datetime.datetime.now() - start)
 
     print('---------------------------------- 导出部分：--------------------------------')
-    export = '导表0'
+    export = '导表'
     check = '是'
     qu.EportOrder(team, month_last, month_yesterday, month_begin, check, export, handle, proxy_handle, proxy_id)     # 最近两个月的更新信息导出
     print('输出耗时：', datetime.datetime.now() - start)

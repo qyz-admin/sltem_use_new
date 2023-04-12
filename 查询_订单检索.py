@@ -22,7 +22,7 @@ from settings_sso import Settings_sso
 from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
-
+from 轨迹查询_单点 import QueryTwo
 
 # -*- coding:utf-8 -*-
 class QueryOrder(Settings, Settings_sso):
@@ -3044,8 +3044,8 @@ SELECT 币种,运营团队,
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = self._order_track_Query(timeStart, timeEnd, n, proxy_handle, proxy_id)
-            dp = dp[['id','orderNumber', 'currency', 'addTime', 'orderStatus', 'logisticsStatus', 'service', 'cloneUser','befrom']]
-            dp.columns = ['id','订单编号', '币种', '下单时间', '订单状态', '物流状态', '代下单客服', '克隆人','来源渠道']
+            dp = dp[['id','orderNumber', 'currency', 'wayBillNumber','addTime', 'orderStatus', 'logisticsStatus', 'service', 'cloneUser','befrom']]
+            dp.columns = ['id','订单编号', '币种', '运单编号', '下单时间', '订单状态', '物流状态', '代下单客服', '克隆人','来源渠道']
             dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
             sql = '''REPLACE INTO {0}(id,订单编号,币种,下单时间,订单状态, 物流状态, 代下单客服,克隆人,来源渠道,记录时间) 
                                SELECT id,订单编号,币种,下单时间,订单状态, 物流状态, 代下单客服,克隆人,来源渠道, NOW() 记录时间 
@@ -3169,6 +3169,25 @@ SELECT 币种,运营团队,
             writer.save()
             writer.close()
             # df.to_excel('G:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='有效单量', index=False, engine='xlsxwriter')
+
+            sql = '''SELECT 运单编号 FROM `cache` s WHERE (s.克隆人 IS NULL OR s.克隆人 = "") and s.代下单客服 = "刘文君" and s.物流状态 <> '已签收';'''
+            ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+            if ordersDict.empty:
+                print(' ****** 没有要查询物流轨迹的信息; ****** ')
+            else:
+                print('！！！ 查询物流轨迹数据中！！！')
+                handle = '自动'
+                login_TmpCode = 'login_TmpCode'
+                if handle == '手动':
+                    print('请输入口令Token:  回车确认')
+                    login_TmpCode = str(input())
+                login_TmpCode = '0b04de569eb6395e88a34a2e9cde8e92'  # 输入登录口令Tkoen
+                proxy_handle = '代理服务器0'
+                proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
+                lw = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+                lw.Search_online(ordersDict, 1, '运单编号', proxy_handle, proxy_id, 0)
+                print('物流轨迹以输出！！！')
+
 
         print('++++++本批次查询成功+++++++')
         print('*' * 50)

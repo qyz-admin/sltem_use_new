@@ -2344,40 +2344,40 @@ if __name__ == '__main__':
         timeStart = '2023-03-22'
         timeEnd = '2023-03-31'
         m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # (需处理两次)
-        # order_time = '下单跟进时间'
-        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
-        # order_time = '下单时间'
-        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
+        order_time = '下单跟进时间'
+        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
+        order_time = '下单时间'
+        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
 
 
-        # m.service_id_order(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)      # 促单查询；下单时间 @~@ok
+        m.service_id_order(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)      # 促单查询；下单时间 @~@ok
 
-        # order_time = '创建时间'
-        # m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；创建时间 （一、获取订单内容）@~@ok
-        # m.service_id_ssale_info(proxy_handle, proxy_id, '采购异常_创建时间')                             # 采购查询；创建时间 （二、获取处理详情）@~@ok
-        # order_time = '跟进时间'
-        # m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；处理时间 （一、获取订单内容）@~@ok
-        # m.service_id_ssale_info(proxy_handle, proxy_id, '采购问题件_跟进时间')                             # 采购查询；处理时间 （二、获取处理详情）@~@ok
+        order_time = '创建时间'
+        m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；创建时间 （一、获取订单内容）@~@ok
+        m.service_id_ssale_info(proxy_handle, proxy_id, '采购异常_创建时间')                             # 采购查询；创建时间 （二、获取处理详情）@~@ok
+        order_time = '跟进时间'
+        m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；处理时间 （一、获取订单内容）@~@ok
+        m.service_id_ssale_info(proxy_handle, proxy_id, '采购问题件_跟进时间')                             # 采购查询；处理时间 （二、获取处理详情）@~@ok
 
-        # m.service_id_getRedeemOrderList(timeStart, timeEnd, proxy_handle, proxy_id)  # 挽单列表  查询@~@ok
+        m.service_id_getRedeemOrderList(timeStart, timeEnd, proxy_handle, proxy_id)  # 挽单列表  查询@~@ok
 
-        # order_time = '处理时间'                                                                 # 派送问题  处理时间:登记结果处理时间； 创建时间： 订单放入时间@~@
-        # m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)    # (需处理两次)
-        # m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)    # (需处理两次)
-        # order_time = '创建时间'                                                                 # 派送问题   创建时间： 订单放入时间（每次导出时需要更新数据）@~@
-        # m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
+        order_time = '处理时间'                                                                 # 派送问题  处理时间:登记结果处理时间； 创建时间： 订单放入时间@~@
+        m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)    # (需处理两次)
+        m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)    # (需处理两次)
+        order_time = '创建时间'                                                                 # 派送问题   创建时间： 订单放入时间（每次导出时需要更新数据）@~@
+        m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
 
-        # order_time = '跟进时间'
-        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
-        # order_time = '创建时间'
-        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
+        order_time = '跟进时间'
+        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
+        order_time = '创建时间'
+        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
 
-        # order_time = '跟进时间'
-        # m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
-        # order_time = '创建时间'
-        # m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
-        #
-        # m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)            # 系统问题件  查询；订单检索
+        order_time = '跟进时间'
+        m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
+        order_time = '创建时间'
+        m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
+
+        m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)            # 系统问题件  查询；订单检索
 
 
     elif int(select) == 8:

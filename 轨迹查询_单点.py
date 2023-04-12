@@ -1208,7 +1208,7 @@ if __name__ == '__main__':
         print("2-->>> 正在按时间查询+++")
         m.order_online('2022-01-01', '2022-01-05', isReal, proxy_handle, proxy_id)
 
-    elif int(select) in  (51,52,53,54):
+    elif int(select) in (51,52,53,54):
         print("1-->>> 正在按运单号查询+++")
         tm = ''
         tm2 = ''
