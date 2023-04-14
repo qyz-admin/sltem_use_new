@@ -514,16 +514,16 @@ class QueryUpdate(Settings):
         print('更新完成…………')
 
         print('正在获取写入excel内容…………')
-        sql = '''SELECT 订单编号,运单编号, 是否改派,发货时间,物流方式,当前状态,最终状态, NULL 查询状态结果,NULL 配送问题, NULL 状态时间
+        sql = '''SELECT 订单编号,运单编号, 是否改派,发货时间,物流方式,当前状态,NULL 查询状态结果,NULL 配送问题, NULL 状态时间
                 FROM (  SELECT c.订单编号,c.运单编号,c.系统订单状态, c.系统物流状态, c.是否改派, g.标准物流状态,g.签收表物流状态, c.仓储扫描时间 AS 发货时间, 物流方式, b.出货时间 AS 新出货时间,
 							IF(ISNULL(系统物流状态), IF(ISNULL(g.标准物流状态) OR g.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , 
 													IF(物流方式 like '%天马%' and g.签收表物流状态 = '在途','未上线', g.标准物流状态)
-                            ), 系统物流状态) AS 当前状态,最终状态
+                            ), 系统物流状态) AS 当前状态
                         FROM customer c
                         LEFT JOIN gat_wl_data b ON c.`运单编号` = b.`运单编号`
                         LEFT JOIN gat_logisitis_match g ON b.物流状态 = g.签收表物流状态
                 ) s
-                WHERE 最终状态 NOT IN ('拒收','已签收')
+                WHERE 当前状态 NOT IN ('拒收','已签收')
                 ORDER BY 发货时间;'''.format()
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入excel…………')

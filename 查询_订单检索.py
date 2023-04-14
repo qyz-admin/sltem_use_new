@@ -856,7 +856,7 @@ class QueryOrder(Settings, Settings_sso):
             writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
             book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
             writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-            dp.to_excel(excel_writer=writer, sheet_name='明细', index=False)
+            db1.to_excel(excel_writer=writer, sheet_name='明细', index=False)
             db92.to_excel(excel_writer=writer, sheet_name='天马711', index=False)
             db14.to_excel(excel_writer=writer, sheet_name='协来运直发', index=False)
             if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
@@ -983,7 +983,7 @@ class QueryOrder(Settings, Settings_sso):
         try:
             for result in req['data']['list']:
                 # print(result['orderNumber'])
-                if result['specs'] != '':
+                if result['specs'] != '' and result['specs'] != []:
                     result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
                     result['saleName'] = 0
                     result['productId'] = 0
@@ -998,9 +998,11 @@ class QueryOrder(Settings, Settings_sso):
                     result['chooser'] = result['specs'][0]['chooser']
                 else:
                     result['saleId'] = ''
-                    result['saleProduct'] = ''
+                    result['saleName'] = ''
                     result['productId'] = ''
+                    result['saleProduct'] = ''
                     result['spec'] = ''
+                    result['chooser'] = ''
                 quest = ''
                 for re in result['questionReason']:
                     quest = quest + ';' + re
@@ -3170,7 +3172,13 @@ SELECT 币种,运营团队,
             writer.close()
             # df.to_excel('G:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='有效单量', index=False, engine='xlsxwriter')
 
-            sql = '''SELECT 运单编号 FROM `cache` s WHERE (s.克隆人 IS NULL OR s.克隆人 = "") and s.代下单客服 = "刘文君" and s.物流状态 <> '已签收';'''
+            sql = '''SELECT *
+                    FROM (
+                            SELECT 运单编号 
+                            FROM `cache` s 
+                            WHERE (s.克隆人 IS NULL OR s.克隆人 = "") and s.代下单客服 = "刘文君" 
+                    ) s1
+                    WHERE s1.物流状态 <> '已签收' and (s1.运单编号 IS not NULL and s1.运单编号 <> "");'''
             ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
             if ordersDict.empty:
                 print(' ****** 没有要查询物流轨迹的信息; ****** ')
@@ -3186,7 +3194,7 @@ SELECT 币种,运营团队,
                 proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
                 lw = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
                 lw.Search_online(ordersDict, 1, '运单编号', proxy_handle, proxy_id, 0)
-                print('物流轨迹以输出！！！')
+                print('物流轨迹已输出！！！')
 
 
         print('++++++本批次查询成功+++++++')
@@ -3324,7 +3332,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 3                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
@@ -3343,8 +3351,8 @@ if __name__ == '__main__':
 
     elif int(select) == 3:
         print("1-->>> 正在按下单时间查询+++")
-        timeStart = datetime.date(2023, 3, 15)  # 单点更新
-        timeEnd = datetime.date(2023, 3, 28)
+        timeStart = datetime.date(2023, 4, 1)  # 单点更新
+        timeEnd = datetime.date(2023, 4, 14)
         areaId = None
         query = '下单时间'
         # logisticsId = "85,348,199,356"      # 物流名称
@@ -3393,8 +3401,8 @@ if __name__ == '__main__':
     # 订单检索  根据 gat_order_list 源表查询
     elif int(select) == 6:
         hanlde = '自0动'
-        timeStart = '2023-02-01'
-        timeEnd = '2023-02-28'
+        timeStart = '2023-01-01'
+        timeEnd = '2023-04-11'
 
         # timeStart = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         # timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')

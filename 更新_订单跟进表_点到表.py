@@ -103,6 +103,8 @@ class QueryTwo(Settings, Settings_sso):
                         db.rename(columns={'订单号': '订单编号'}, inplace=True)
                         db.rename(columns={'承运单号': '运单编号'}, inplace=True)
                         db.rename(columns={'子单号': '运单编号'}, inplace=True)
+                        db.rename(columns={'承运(转运)单号': '运单编号'}, inplace=True)
+                        db.rename(columns={'末条物流时间': '末条时间'}, inplace=True)
                         # print(db.columns)
                         if '物流状态' not in db.columns:
                             db.insert(0, '物流状态', None)

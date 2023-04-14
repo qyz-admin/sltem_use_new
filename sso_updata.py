@@ -1180,6 +1180,7 @@ class Query_sso_updata(Settings):
         print('++++++已成功登录++++++' + str(req))
         print(datetime.datetime.now())
         print('*' * 100)
+
     def sso__online_auto_host(self):  # 手动输入token 登录系统保持会话状态
         print(datetime.datetime.now())
         print('正在登录后台系统中......')
@@ -3412,7 +3413,7 @@ class Query_sso_updata(Settings):
         print('正在获取 改派未发货…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
         sql = '''SELECT xj.订单编号, xj.下单时间, xj.新运单号 运单编号, xj.查件单号, xj.产品id, xj.商品名称, xj.下架时间, xj.仓库, xj.物流渠道, xj.币种, xj.统计时间, xj.记录时间, b.物流状态, c.标准物流状态,b.状态时间, NULL 系统订单状态, NULL 系统物流状态, 
-                        IF(统计时间 >=CURDATE() ,'未发货',NULL) AS 状态, g.工单类型, g.工单是否完成,g.提交形式, g.提交时间, g.登记人, g.运单编号 AS 运单号, g.最新处理人, g.最新处理时间, g.最新处理结果, g.同步操作记录
+                        IF(统计时间 >=CURDATE() ,'未发货',NULL) AS 状态, g.工单类型, g.工单是否完成,g.提交形式, g.提交时间, g.登记人, g.运单编号 AS 运单号, g.最新处理人, g.最新处理时间, g.最新处理结果, g.同步操作记录, IF(LENGTH(xj.新运单号) >=20,'是',NULL) 导新运单号
                 FROM ( SELECT *
                        FROM 已下架表 x
                        WHERE x.记录时间 >= TIMESTAMP ( CURDATE( ) ) AND x.币种 = '台币'

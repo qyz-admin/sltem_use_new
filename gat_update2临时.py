@@ -79,6 +79,8 @@ class QueryUpdate(Settings):
                 print(filePath)
                 if '需发货的改派订单' in dir or '需发货改派订单' in dir:
                     write = '需发货'
+                elif '订单检索' in dir or '导退货状态-临时' in dir:
+                    write = '手动更新数据库'
                 elif 'Payment_list' in dir or '港台线付退款' in dir or '拒付统计' in dir:
                     write = '在线支付'
                 elif '线上支付重复订单' in dir:
@@ -8377,7 +8379,7 @@ class QueryUpdate(Settings):
                             SUM(s1.完成金额) as 完成金额,
                             SUM(s1.发货金额) as 发货金额,
                             SUM(s1.总计金额) as 总计金额
-                    FROM (SELECT cx.币种 as 币种,cx.所属团队 as 家族,cx.年月 as 年月,cx.是否改派 as 是否改派,cx.物流方式 as 物流方式,
+                    FROM (SELECT cx.币种 as 币种,cx.所属团队 as 家族,cx.年月 as 年月,cx.是否改派 as 是否改派,cx.物流渠道 as 物流方式,
                                 SUM(IF(最终状态 = "已签收",1,0)) as 签收,
                                 SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
                                 SUM(IF(最终状态 = "在途",1,0)) as 在途,
@@ -8396,7 +8398,7 @@ class QueryUpdate(Settings):
                                 SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
                             FROM gat_zqsb cx
 							where cx.支付类型 = '在线付款' and cx.`运单编号` is not null AND cx.日期 >= '{0}' AND cx.日期 <= '{1}'
-                            GROUP BY cx.`币种`,cx.`所属团队`, cx.`年月`, cx.`是否改派`, cx.`物流方式`
+                            GROUP BY cx.`币种`,cx.`所属团队`, cx.`年月`, cx.`是否改派`, cx.`物流渠道`
                             ORDER BY cx.`币种`,cx.`所属团队`, cx.`年月`, cx.`是否改派` DESC, 总订单 DESC
                     ) s1
                     GROUP BY s1.`家族`,s1.`币种`, s1.`年月`, s1.`是否改派`,  s1.`物流方式`
