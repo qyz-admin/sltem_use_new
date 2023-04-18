@@ -26,32 +26,6 @@ match = {'sl_rb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本
 说明：  日本 需整理的表：1、吉客印神龙直发签收表=密码：‘JKTSL’>(明细再copy保存；改派明细不需要);2、直发签收表>(明细再copy保存；3、状态更新需要copy保存);
 
 '''
-
-# 初始化时间设置
-updata = '全部'           #  后台获取全部（两月）、部分更新（近五天）
-if team == 'gat0':
-    # 更新时间
-    timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
-    data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
-    begin = data_begin
-    end = datetime.datetime.now().date()
-    # 导出时间
-    month_last = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'
-    month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
-    month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
-else:
-    # 更新时间
-    data_begin = datetime.date(2023, 4, 10)  # 数据库更新
-    begin = datetime.date(2023, 4, 10)      # 单点更新
-    end = datetime.date(2023, 4, 14)
-    # 导出时间
-    month_last = '2023-02-01'
-    month_yesterday = '2023-04-14'
-    month_begin = '2022-01-01'
-print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
-print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
-print('****** 导出      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
-
 # 库的引用
 path = match[team]
 dirs = os.listdir(path=path)
@@ -94,11 +68,50 @@ for dir in dirs:
         print('单表+++导入-耗时：', datetime.datetime.now() - wb_start)
 print('导入耗时：', datetime.datetime.now() - start)
 
+
+
+# 初始化时间设置
+updata = '全部'           #  后台获取全部（两月）、部分更新（近五天）
+select = 2                #  1 更新最近两个月的数据；  2、 更新本月的数据
+export = '导表'           #  导表 是否导出明细表
+check = '是'              #  是否 检查产品id 产品名称 父级分类 等有缺失的数据
+if select == 1:
+    # 更新时间
+    timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
+    data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
+    begin = data_begin
+    end = datetime.datetime.now().date()
+    # 导出时间
+    month_last = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'
+    month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
+    month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
+elif select == 2:
+    # 更新时间
+    timeStart = (datetime.datetime.now()).strftime('%Y-%m') + '-01'
+    data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
+    begin = data_begin
+    end = datetime.datetime.now().date()
+    # 导出时间
+    month_last = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'
+    month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
+    month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
+else:
+    # 更新时间
+    data_begin = datetime.date(2023, 4, 10)  # 数据库更新
+    begin = datetime.date(2023, 4, 10)      # 单点更新
+    end = datetime.date(2023, 4, 14)
+    # 导出时间
+    month_last = '2023-02-01'
+    month_yesterday = '2023-04-14'
+    month_begin = '2022-01-01'
+print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
+print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
+print('****** 导出      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
+
+
 # TODO------------------------------------数据库分段读取------------------------------------
 print('---------------------------------- 数据库更新部分：--------------------------------')
-# m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
-
-# qu.EportOrder(team, month_last, month_yesterday, month_begin, '是', '导表0','手0动','代理服务器0','192.168.13.89:37466')     # 最近两个月的更新信息导出
+m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
     m.creatMyOrderSlTWO(team, begin, end)                               # 停用 最近两个月的 部分内容 更新信息
@@ -111,32 +124,33 @@ proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
 handle = '手动0'
 login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
 
-if team == 'gat' and updata == '全部':
-    print('---------------------------------- 单点更新部分：--------------------------------')
-    sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', login_TmpCode, handle, proxy_handle, proxy_id)
-    for i in range((end - begin).days):                             # 按天循环获取订单状态
-        day = begin + datetime.timedelta(days=i)
-        day_time = str(day)
-        sso.order_getList(team, updata, day_time, day_time, proxy_handle, proxy_id)
-    print('更新耗时：', datetime.datetime.now() - start)
-
-    print('---------------------------------- 导出部分：--------------------------------')
-    export = '导表0'
-    check = '是'
-    qu.EportOrder(team, month_last, month_yesterday, month_begin, check, export, handle, proxy_handle, proxy_id)     # 最近两个月的更新信息导出
-    print('输出耗时：', datetime.datetime.now() - start)
-
-    # sso.readFormHost('gat', '导入')                       # 导入新增的订单 line运营  手动导入
-    # for i in range((end - begin).days):  # 按天循环获取订单状态
-    #     day = begin + datetime.timedelta(days=i)
-    #     day_time = str(day)
-    #     sso.orderInfo_append(day_time, day_time, '')               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
-    # sso.orderInfo_append(str(begin), str(end), 179, '990bb426a1053d4382ed45fa935f3742', '手0动')               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
-    # sso.orderInfo(team, updata, begin, end)
+print('---------------------------------- 单点更新部分：--------------------------------')
+sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', login_TmpCode, handle, proxy_handle, proxy_id)
+for i in range((end - begin).days):                             # 按天循环获取订单状态
+    day = begin + datetime.timedelta(days=i)
+    day_time = str(day)
+    sso.order_getList(team, updata, day_time, day_time, proxy_handle, proxy_id)
+print('更新耗时：', datetime.datetime.now() - start)
 
 
+# TODO------------------------------------导出部分------------------------------------
+print('---------------------------------- 导出部分：--------------------------------')
+qu.EportOrder(team, month_last, month_yesterday, month_begin, check, export, handle, proxy_handle, proxy_id)     # 最近两个月的更新信息导出
+print('输出耗时：', datetime.datetime.now() - start)
 
-elif team != 'gat' and updata == '全1部':
+# sso.readFormHost('gat', '导入')                       # 导入新增的订单 line运营  手动导入
+# for i in range((end - begin).days):  # 按天循环获取订单状态
+#     day = begin + datetime.timedelta(days=i)
+#     day_time = str(day)
+#     sso.orderInfo_append(day_time, day_time, '')               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
+# sso.orderInfo_append(str(begin), str(end), 179, '990bb426a1053d4382ed45fa935f3742', '手0动')               # 导入新增的订单 line运营   调用了 查询订单检索 里面的 时间-查询更新
+# sso.orderInfo(team, updata, begin, end)
+
+
+
+
+
+if team != 'gat' and updata != '全部':
     print('---------------------------------- 手动导入更新部分：--------------------------------')
     handle = '手动'
     sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343','',handle, proxy_handle, proxy_id)
@@ -146,13 +160,13 @@ elif team != 'gat' and updata == '全1部':
 
 
 
+
 elif team in ('ga99t', 'slsc', 'sl_rb'):
     m.creatMyOrderSlTWO(team, begin, end)                           # 最近两个月的更新订单信息
     print('处理耗时：', datetime.datetime.now() - start)
     print('------------导出部分：---------------------')
     m.connectOrder(team, month_last, month_yesterday, month_begin)  # 最近两个月的订单信息导出
     print('输出耗时：', datetime.datetime.now() - start)
-
 
 
 

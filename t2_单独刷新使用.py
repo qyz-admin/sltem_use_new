@@ -1518,12 +1518,13 @@ if __name__ == '__main__':
         timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
         data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
         begin = data_begin
-        end = datetime.datetime.now().date()
+        timeEnd = (datetime.datetime.now()).strftime('%Y-%m') + '-01'
+        end = datetime.datetime.strptime(timeEnd, '%Y-%m-%d').date()
     else:
         # 更新时间
-        data_begin = datetime.date(2023, 4, 10)  # 数据库更新
-        begin = datetime.date(2023, 4, 10)  # 单点更新
-        end = datetime.date(2023, 4, 14)
+        data_begin = datetime.date(2022, 6, 1)  # 数据库更新
+        begin = datetime.date(2022, 6, 1)  # 单点更新
+        end = datetime.date(2023, 2, 1)
 
     print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
     print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')

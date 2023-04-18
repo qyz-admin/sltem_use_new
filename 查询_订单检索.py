@@ -1228,12 +1228,12 @@ class QueryOrder(Settings, Settings_sso):
             count_xtdl = row['系统删单量']
             if tem == '神龙家族-台湾':
                 if delreson == None:
-                    sl_tem = '*神  龙:   昨日单量：' + str(int(count_z)) + '; 删单量：' + str(int(count_zd)) + '; 删单率：' + str(count_zdl) + '; 系统删单量：' + str(int(count_xtdl)) + '单; '
+                    sl_tem = '*神  龙:   有效单量：' + str(int(count_z)) + ';  删单量：' + str(int(count_zd)) + ';  删单率：' + str(count_zdl) + ';  系统删单量：' + str(int(count_xtdl)) + '单; '
                 else:
                     sl_tem_lh = sl_tem_lh + delreson + '：' + str(int(count)) + '单; '
             elif tem == '火凤凰-台湾':
                 if delreson == None:
-                    hfh_tem = '*火凤凰:   昨日单量：' + str(int(count_z)) + '; 删单量：' + str(int(count_zd)) + '; 删单率：' + str(count_zdl) + '; 系统删单量：' + str(int(count_xtdl)) + '单; '
+                    hfh_tem = '*火凤凰:   有效单量：' + str(int(count_z)) + ';  删单量：' + str(int(count_zd)) + ';  删单率：' + str(count_zdl) + ';  系统删单量：' + str(int(count_xtdl)) + '单; '
                 else:
                     hfh_tem_lh = hfh_tem_lh + delreson + '：' + str(int(count)) + '单; '
         print('*' * 50)
@@ -3172,9 +3172,9 @@ SELECT 币种,运营团队,
             writer.close()
             # df.to_excel('G:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='有效单量', index=False, engine='xlsxwriter')
 
-            sql = '''SELECT *
+            sql = '''SELECT 运单编号
                     FROM (
-                            SELECT 运单编号 
+                            SELECT * 
                             FROM `cache` s 
                             WHERE (s.克隆人 IS NULL OR s.克隆人 = "") and s.代下单客服 = "刘文君" 
                     ) s1
@@ -3224,18 +3224,27 @@ SELECT 币种,运营团队,
         # print('正在处理json数据转化为dataframe…………')
         try:
             for result in req['data']['list']:
-                result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
-                result['saleName'] = 0
-                result['productId'] = 0
-                result['saleProduct'] = 0
-                result['spec'] = 0
-                result['chooser'] = 0
-                result['saleId'] = result['specs'][0]['saleId']
-                result['saleName'] = result['specs'][0]['saleName']
-                result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
-                result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
-                result['spec'] = result['specs'][0]['spec']
-                result['chooser'] = result['specs'][0]['chooser']
+                print(result['orderNumber'])
+                if result['specs'] != []:
+                    result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
+                    result['saleName'] = 0
+                    result['productId'] = 0
+                    result['saleProduct'] = 0
+                    result['spec'] = 0
+                    result['chooser'] = 0
+                    result['saleId'] = result['specs'][0]['saleId']
+                    result['saleName'] = result['specs'][0]['saleName']
+                    result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+                    result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
+                    result['spec'] = result['specs'][0]['spec']
+                    result['chooser'] = result['specs'][0]['chooser']
+                else:
+                    result['saleId'] = ''        # 添加新的字典键-值对，为下面的重新赋值用
+                    result['saleName'] = ''
+                    result['productId'] = ''
+                    result['saleProduct'] = ''
+                    result['spec'] = ''
+                    result['chooser'] = ''
                 quest = ''
                 for re in result['questionReason']:
                     quest = quest + ';' + re

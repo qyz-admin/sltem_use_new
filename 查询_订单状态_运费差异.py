@@ -533,8 +533,8 @@ class QueryUpdate(Settings):
         writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
         book = load_workbook(file_pathT)  # 可以向不同的sheet写入数据（对现有工作表的追加）
         writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        df[(df['最终状态'].str.contains('在途'))].to_excel(excel_writer=writer, sheet_name='在途', index=False)
-        df[(df['最终状态'].str.contains('未上线'))].to_excel(excel_writer=writer, sheet_name='未上线', index=False)
+        df[(df['当前状态'].str.contains('在途'))].to_excel(excel_writer=writer, sheet_name='在途', index=False)
+        df[(df['当前状态'].str.contains('未上线'))].to_excel(excel_writer=writer, sheet_name='未上线', index=False)
         if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
             del book['Sheet1']
         writer.save()

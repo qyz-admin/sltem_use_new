@@ -495,16 +495,19 @@ class MysqlControl(Settings):
                             null 是否盲盒,
                             null 主订单,
                             null 改派原运单号
-                    FROM gk_order a
-                            LEFT JOIN dim_area ON dim_area.id = a.area_id
-                            LEFT JOIN dim_payment ON dim_payment.id = a.payment_id
-	                        LEFT JOIN gk_sale ON gk_sale.id = a.sale_id
-                            LEFT JOIN dim_trans_way ON dim_trans_way.id = a.logistics_id
-                            LEFT JOIN dim_cate ON dim_cate.id = gk_sale.third_cate_id
-                            LEFT JOIN intervals ON intervals.id = a.intervals
-                            LEFT JOIN dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
-                            LEFT JOIN dim_order_status os ON os.id = a.order_status
-							LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
+                    FROM  ( SELECT *
+							FROM gk_order g
+							WHERE g.month >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 12 month),'%Y%m')
+					)  a
+                    LEFT JOIN dim_area ON dim_area.id = a.area_id
+                    LEFT JOIN dim_payment ON dim_payment.id = a.payment_id
+                    LEFT JOIN gk_sale ON gk_sale.id = a.sale_id
+                    LEFT JOIN dim_trans_way ON dim_trans_way.id = a.logistics_id
+                    LEFT JOIN dim_cate ON dim_cate.id = gk_sale.third_cate_id
+                    LEFT JOIN intervals ON intervals.id = a.intervals
+                    LEFT JOIN dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
+                    LEFT JOIN dim_order_status os ON os.id = a.order_status
+                    LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
                     WHERE  a.rq = '{0}' AND dim_area.id IN ({1});'''.format(last_month, match2[team])
                 df = pd.read_sql_query(sql=sql, con=self.engine2)
             # sql = 'SELECT * FROM dim_order_status;'

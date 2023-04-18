@@ -766,8 +766,11 @@ class QueryUpdate(Settings):
             print('正在第一次检查父级分类为空的信息---')
             sql = '''SELECT 订单编号,商品id,dp.`product_id`, dp.`name` product_name, dp.third_cate_id, dc.`ppname` cate, dc.`pname` second_cate, dc.`name` third_cate
                     FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-                            FROM {0}_order_list sl
-                            WHERE sl.`日期`> '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+                            FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`父级分类`,`系统订单状态`
+								  FROM {0}_order_list 
+								  WHERE `日期`> '{1}'
+							) sl
+                            WHERE (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
                          ) s
                     LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
                     LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''.format(team, month_begin)
@@ -788,12 +791,14 @@ class QueryUpdate(Settings):
                 print('正在第二次检查父级分类为空的信息---')
                 sql = '''SELECT 订单编号,商品id,dp.`product_id`, dp.`name` product_name, dp.third_cate_id, dc.`ppname` cate, dc.`pname` second_cate, dc.`name` third_cate
                         FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-                                FROM gat_order_list sl
-                                WHERE sl.`日期`>= '{1}' AND (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+                                FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`父级分类`,`系统订单状态`
+									  FROM {0}_order_list 
+								      WHERE `日期`> '{1}'
+								) sl
+                                WHERE (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
                              ) s
                         LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
-                        LEFT JOIN (SELECT * FROM dim_cate GROUP BY pid ) dc ON  dc.pid = dp.second_cate_id;'''.format(
-                    team, month_begin)
+                        LEFT JOIN (SELECT * FROM dim_cate GROUP BY pid ) dc ON  dc.pid = dp.second_cate_id;'''.format(team, month_begin)
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
                 if df.empty:
                     print('  第二次检查没有为空的………… ')
@@ -810,9 +815,12 @@ class QueryUpdate(Settings):
             print('正在第一次检查产品id为空的信息---')
             sql = '''SELECT 订单编号,商品id,dp.product_id, dp.`name` product_name, dp.third_cate_id
                     FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-                            FROM {0}_order_list sl
-                            WHERE sl.`日期`>= '{1}' AND (sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
-                        ) s
+                        FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`父级分类`,`系统订单状态`
+								FROM {0}_order_list 
+								WHERE `日期`> '{1}'
+						) sl
+                        WHERE (sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+                    ) s
                     LEFT JOIN dim_product_gat dp ON dp.product_id = s.`产品id`;'''.format(team, month_begin)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             if df.empty:
@@ -828,10 +836,12 @@ class QueryUpdate(Settings):
                 print('更新完成+++')
 
             print('正在综合检查 父级分类、产品id 为空的信息---')
-            sql = '''SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`,sl.`产品名称`,sl.`父级分类`,sl.`二级分类`,sl.`三级分类`
-                    FROM gat_order_list sl
-                    WHERE sl.`日期`>= '{1}'
-                        AND (sl.`父级分类` IS NULL or sl.`父级分类`= '' OR sl.`产品名称` IS NULL or sl.`产品名称`= '')
+            sql = '''SELECT id,日期,`订单编号`,`商品id`,`产品id`,`产品名称`,`父级分类`,`二级分类`,`三级分类`
+                    FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`产品名称`,`父级分类`,`二级分类`,`三级分类`,`系统订单状态`
+							FROM {0}_order_list 
+							WHERE `日期`> '{1}'
+					) sl
+                    WHERE (sl.`父级分类` IS NULL or sl.`父级分类`= '' OR sl.`产品名称` IS NULL or sl.`产品名称`= '')
                         AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'));'''.format(team, month_begin)
             data = pd.read_sql_query(sql=sql, con=self.engine1)
             data.to_sql('tem_product_cp', con=self.engine1, index=False, if_exists='replace')
@@ -1256,7 +1266,7 @@ class QueryUpdate(Settings):
                         concat(ROUND(IFNULL(s2.完成金额 / s2.总计金额,0) * 100,2),'%') as '完成占比(金额)',
                         concat(ROUND(IFNULL(s2.完成金额 / s2.发货金额,0) * 100,2),'%') as '已完成/已发货(金额)',
                         concat(ROUND(IFNULL(s2.退货金额 / s2.总计金额,0) * 100,2),'%') as '退货率(金额)'
-                FROM (  SELECT  IFNULL(cx.家族,'合计') as 家族, IFNULL(cx.币种,'合计') as 币种, IFNULL(cx.年月,'合计') as 年月, IFNULL(cx.是否改派,'合计') as 是否改派, IFNULL(cx.物流渠道,'合计') as 物流方式,
+                FROM (  SELECT  IFNULL(cx.所属团队,'合计') as 家族, IFNULL(cx.币种,'合计') as 币种, IFNULL(cx.年月,'合计') as 年月, IFNULL(cx.是否改派,'合计') as 是否改派, IFNULL(cx.物流渠道,'合计') as 物流方式,
                                 SUM(IF(最终状态 = "已签收",1,0)) as 签收,
                                 SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
                                 SUM(IF(最终状态 = "在途",1,0)) as 在途,
@@ -1273,11 +1283,12 @@ class QueryUpdate(Settings):
                                 SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),`价格RMB`,0)) as 完成金额,
                                 SUM(`价格RMB`) as 总计金额,
                                 SUM(`价格RMB`) - SUM(IF(最终状态 = "未发货",`价格RMB`,0)) as 发货金额
-                            FROM (SELECT *, 所属团队 as 家族
+                            FROM (SELECT *
                                     FROM {0}_zqsb cc 
-                                    WHERE cc.`运单编号` is not null AND cc.日期 >= '{1}' AND cc.日期 <= '{2}' AND cc.付款方式 in ({3})
+                                    WHERE cc.日期 BETWEEN '{1}' AND '{2}'
                             ) cx
-                            GROUP BY cx.`家族`, cx.`币种`, cx.`年月`, cx.`是否改派`, cx.`物流渠道`
+                            WHERE cx.`运单编号` is not null AND cx.付款方式 in ({3})
+                            GROUP BY cx.`所属团队`, cx.`币种`, cx.`年月`, cx.`是否改派`, cx.`物流渠道`
                             with rollup
                 ) s2
                 GROUP BY s2.`家族`,s2.`币种`, s2.`年月`, s2.`是否改派`, s2.`物流方式` 
