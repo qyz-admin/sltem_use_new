@@ -561,9 +561,9 @@ class Updata_gat(Settings):
         # print(req.headers)
         url = req.headers['Location']
 
+        '''
         time.sleep(1)
         if url != '/portal/index/index.html':
-            # print('4.2、加载： ' + 'https://gimp.giikin.com')
             # print('4.2、加载： ' + 'https://gimp.giikin.com')
             url = req.headers['Location']
             r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -574,11 +574,56 @@ class Updata_gat(Settings):
             # print(req.headers)
         else:
             index = req.headers['Location']
-
         time.sleep(1)
         # print('5、加载： ' + 'https://gimp.giikin.com/portal/index/index.html')
         url = 'https://gimp.giikin.com' + index
         # print(url)
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gsso.giikin.com/'}
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        '''
+        # 此处跳转换新的地址了
+        # print('5.1、加载： ' + 'https://gimp.giikin.com//admin/login_by_dingtalk/finishLoginJump?jump_url=https://gimp.giikin.com')
+        time.sleep(1)
+        if url == '/admin/login_by_dingtalk/finishLoginJump?jump_url=https://gimp.giikin.com':
+            index = req.headers['Location']
+            url = 'https://gsso.giikin.com' + index
+            r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                        'Referer': 'http://gsso.giikin.com/'}
+            req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+
+        elif url == '/portal/index/index.html':
+            index = req.headers['Location']
+            url = 'https://gimp.giikin.com' + index
+            r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                        'Referer': 'http://gsso.giikin.com/'}
+            req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+
+        else:
+            url = req.headers['Location']
+            r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                        'Referer': 'http://gsso.giikin.com/'}
+            req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+            index = req.headers['Location']
+            url = 'https://gimp.giikin.com' + index
+            # print(req)
+            # print(req.headers)
+
+        time.sleep(1)
+        # print('5.2、加载： ' + 'https://gimp.giikin.com')
+        # print(url)
+        url = 'https://gimp.giikin.com/'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gsso.giikin.com/'}
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        # print(req)
+        # print(req.headers)
+
+        time.sleep(1)
+        # print('5.3、加载： ' + 'https://gimp.giikin.com/portal/index/index.html')
+        # print(url)
+        index = req.headers['Location']
+        url = 'https://gimp.giikin.com/' + index
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
@@ -822,31 +867,72 @@ class Updata_gat(Settings):
         # print(req.headers)
         url = req.headers['Location']
 
+        '''
         time.sleep(1)
         if url != '/portal/index/index.html':
-            # print('4.2、加载： ' + 'https://gimp.giikin.com')
             # print('4.2、加载： ' + 'https://gimp.giikin.com')
             url = req.headers['Location']
             r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                         'Referer': 'http://gsso.giikin.com/'}
-            # req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}  # 使用代理服务器
-            req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False, proxies=proxies)
+            req = self.session.get(url=url, headers=r_header, allow_redirects=False)
             index = req.headers['Location']
             # print(req)
             # print(req.headers)
         else:
             index = req.headers['Location']
-
         time.sleep(1)
         # print('5、加载： ' + 'https://gimp.giikin.com/portal/index/index.html')
         url = 'https://gimp.giikin.com' + index
         # print(url)
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
-        # req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}  # 使用代理服务器
-        req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False, proxies=proxies)
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        '''
+        # 此处跳转换新的地址了
+        # print('5.1、加载： ' + 'https://gimp.giikin.com//admin/login_by_dingtalk/finishLoginJump?jump_url=https://gimp.giikin.com')
+        time.sleep(1)
+        if url == '/admin/login_by_dingtalk/finishLoginJump?jump_url=https://gimp.giikin.com':
+            index = req.headers['Location']
+            url = 'https://gsso.giikin.com' + index
+            r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                        'Referer': 'http://gsso.giikin.com/'}
+            req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+
+        elif url == '/portal/index/index.html':
+            index = req.headers['Location']
+            url = 'https://gimp.giikin.com' + index
+            r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                        'Referer': 'http://gsso.giikin.com/'}
+            req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+
+        else:
+            url = req.headers['Location']
+            r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                        'Referer': 'http://gsso.giikin.com/'}
+            req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+            index = req.headers['Location']
+            url = 'https://gimp.giikin.com' + index
+            # print(req)
+            # print(req.headers)
+
+        time.sleep(1)
+        # print('5.2、加载： ' + 'https://gimp.giikin.com')
+        # print(url)
+        url = 'https://gimp.giikin.com/'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gsso.giikin.com/'}
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+        # print(req)
+        # print(req.headers)
+
+        time.sleep(1)
+        # print('5.3、加载： ' + 'https://gimp.giikin.com/portal/index/index.html')
+        # print(url)
+        index = req.headers['Location']
+        url = 'https://gimp.giikin.com/' + index
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'Referer': 'http://gsso.giikin.com/'}
+        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req)
         # print(req.headers)
 
@@ -1513,7 +1599,7 @@ if __name__ == '__main__':
     login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
     team = 'gat'
 
-    if team == 'gat0':
+    if team == 'gat':
         # 更新时间
         timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
         data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
@@ -1524,13 +1610,13 @@ if __name__ == '__main__':
         # 更新时间
         data_begin = datetime.date(2022, 6, 1)  # 数据库更新
         begin = datetime.date(2022, 6, 1)  # 单点更新
-        end = datetime.date(2023, 2, 1)
+        end = datetime.date(2022, 11, 1)
 
     print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
     print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 
     # TODO------------------------------------更新数据  数据库分段读取------------------------------------
-    # u.creatMyOrderSl(begin, end)
+    u.creatMyOrderSl(begin, end)
 
     # TODO------------------------------------更新数据  单点检索读取------------------------------------
     if proxy_handle == '代理服务器':

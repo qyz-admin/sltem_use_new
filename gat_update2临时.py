@@ -815,7 +815,7 @@ class QueryUpdate(Settings):
             print('正在第一次检查产品id为空的信息---')
             sql = '''SELECT 订单编号,商品id,dp.product_id, dp.`name` product_name, dp.third_cate_id
                     FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-                        FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`父级分类`,`系统订单状态`
+                        FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`产品名称`,`父级分类`,`系统订单状态`
 								FROM {0}_order_list 
 								WHERE `日期`> '{1}'
 						) sl
