@@ -3885,7 +3885,7 @@ if __name__ == '__main__':
 
     if handle == '自动':
         last_month = '2023.03.20'
-        now_month = '2023.04.19'
+        now_month = '2023.04.20'
 
         handle_now_month,handle_last_month,handle_now_month_old,handle_last_month_old = '','','',''
     else:

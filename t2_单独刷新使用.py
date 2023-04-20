@@ -974,128 +974,130 @@ class Updata_gat(Settings):
 
 
     def creatMyOrderSl(self, begin, end) :  # 最近五天的全部订单信息
-            match = {'gat': '"神龙家族-台湾", "红杉家族-港澳台2", "金狮-港澳台", "红杉家族-港澳台", "火凤凰-台湾", "火凤凰-香港", "金鹏家族-4组", "神龙-香港", "奥创队", "客服中心-港台","研发部-研发团队","Line运营", "神龙-主页运营", "翼虎家族-mercadolibre","金蝉家族公共团队","金蝉家族优化组","金蝉项目组","APP运营","郑州-北美"',
-                     'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
-                     'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"'
-                     }
-            match2 = {'gat': '17, 24, 26, 78, 118, 132, 135, 138, 156, 161, 173, 179, 182, 209, 225, 226, 234, 45, 41',
-                     'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
-                     'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"'
-                     }
-            for i in range((end - begin).days):  # 按天循环获取订单状态
-                day = begin + datetime.timedelta(days=i)
-                yesterday = str(day) + ' 23:59:59'
-                last_month = str(day)
-                print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
-                sql = '''SELECT a.id,
-                            a.month 年月,
-                            a.month_mid 旬,
-                            a.rq 日期,
-                --            IF(dim_area.name = "红杉家族-港澳台2","红杉家族-港澳台",IF(dim_area.name = "神龙家族-台湾" and dim_currency_lang.pname = '香港',"神龙-香港",IF(dim_area.name = "神龙-香港" and dim_currency_lang.pname = '台湾',"神龙家族-台湾",IF(dim_area.name = "火凤凰-台湾" and dim_currency_lang.pname = '香港',"火凤凰-香港" ,IF(dim_area.name = "火凤凰-香港" and dim_currency_lang.pname = '台湾',"火凤凰-台湾" ,dim_area.name))))) 团队,
-                --            IF(dim_area.name in ('火凤凰-台湾','火凤凰-香港'),'火凤凰港台',IF(dim_area.name in ('神龙家族-台湾','神龙-香港'),'神龙港台',IF(dim_area.name = '客服中心-港台','客服中心港台',IF(dim_area.name = '研发部-研发团队','研发部港台',IF(dim_area.name = '神龙-主页运营','神龙主页运营',IF(dim_area.name = '红杉家族-港澳台','红杉港台',IF(dim_area.name = '郑州-北美','郑州北美',IF(dim_area.name = '金狮-港澳台','金狮港台',IF(dim_area.name = '金鹏家族-4组','金鹏港台',dim_area.name))))))))) 所属团队,
-                            IF(a.area_id IN (24,78),'红杉家族-港澳台',IF(a.area_id = 17 AND a.currency_id = 6,"神龙-香港",IF(a.area_id = 138 AND a.currency_id = 13,"神龙家族-台湾",IF(a.area_id = 118 AND a.currency_id = 6,"火凤凰-香港",IF(a.area_id = 132 AND a.currency_id = 13,"火凤凰-台湾",dim_area.name)))))  团队,
-                            IF(a.area_id in (118,132),'火凤凰港台',IF(a.area_id in (17,138),'神龙港台',IF(a.area_id = 161,'客服中心港台', IF(a.area_id = 173,'研发部港台',IF(a.area_id = 182,'神龙主页运营',IF(a.area_id in (24,78),'红杉港台',IF(a.area_id = 41,'郑州北美',IF(a.area_id = 26,'金狮港台',IF(a.area_id = 135,'金鹏港台',IF(a.area_id = 209,'翼虎港台',dim_area.name)))))))))) 所属团队,
-                            a.region_code 区域,
-                            dim_currency_lang.pname 币种,
-                            a.beform 订单来源,
-                            a.order_number 订单编号,
-                            a.qty 数量,
-                            a.ship_phone 电话号码,
-                            UPPER(a.waybill_number) 运单编号,
-                            IF(dim_trans_way.all_name LIKE "台湾-天马-711" AND LENGTH(a.waybill_number)=20, CONCAT(861,RIGHT(a.waybill_number,8)), UPPER(a.waybill_number)) 查件单号,
-                --            a.order_status 系统订单状态id,
-                --            IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
-                            os.name 系统订单状态,
-                            IF(ls.name ='发货中', null, ls.name) 系统物流状态,
-                            IF(a.second=0,'直发','改派') 是否改派,
-                            dim_trans_way.all_name 物流方式,
-                            null 物流渠道,
-                            dim_trans_way.simple_name 物流名称,
-                            dim_trans_way.remark 运输方式,
-                            a.logistics_type 货物类型,
-                            IF(a.low_price=0,'否','是') 是否低价,
-                            a.sale_id 商品id,
-                            gk_sale.product_id 产品id,
-                            gk_sale.product_name 产品名称,
-                            dim_cate.ppname 父级分类,
-                            dim_cate.pname 二级分类,
-                            dim_cate.name 三级分类,
-                            dim_payment.pay_name 付款方式,
-                            IF(dim_payment.pay_name NOT LIKE '%货到付款%','在线付款','货到付款') AS 支付类型,
-                            a.amount 价格,
-                            a.addtime 下单时间,
-                            a.verity_time 审核时间,
-                            a.delivery_time 仓储扫描时间,
-                            IF(a.finish_status=0,'未收款',IF(a.finish_status=2,'收款',IF(a.finish_status=3,'拒收',IF(a.finish_status=4,'退款',IF(a.finish_status=5,'售后订单',a.finish_status))))) 完结状态,
-                            a.endtime 完结状态时间,   
-                            a.salesRMB 价格RMB,
-                            intervals.intervals 价格区间,
-                            null 成本价,
-                            a.logistics_cost 物流花费,
-                            null 打包花费,
-                            a.other_fee 其它花费,
-                            a.weight 包裹重量,
-                            null 包裹体积,
-                            a.ship_zip 邮编,
-                            a.turn_purchase_time 添加物流单号时间,
-                            null 规格中文,
-                            a.ship_state 省洲,
-                            null 市区,
-                            null 审单类型,
-                            null 审单类型明细,
-                            null 拉黑率,
-                            null 订单配送总量,
-                            null 拒收量,
-                            null 签收量,
-                            a.del_reason 删除原因,
-                            null 删除时间,
-                            a.question_reason 问题原因,
-                            null 问题时间,
-                            null 下单人,
-                            null 克隆人,
-                            a.stock_type 下架类型,
-                            a.lower_time 下架时间,
-                            a.tihuo_time 物流提货时间,
-                            a.fahuo_time 物流发货时间,
-                            a.online_time 上线时间,
-                            a.guonei_time 国内清关时间,
-                            a.mudidi_time 目的清关时间,
-                            a.receipt_time 回款时间,
-                            a.ip IP,
-                            null 选品人,
-                            null 组合销售金额,
-                            null 姓名,
-                            null 地址,
-                            null 取货方式,
-                            null 标准电话,
-                            null 下单拒收率,
-                            null 发货仓库,
-                            null 克隆类型,
-                            null 是否盲盒,
-                            null 主订单,
-                            null 改派原运单号
-                    FROM gk_order a
-                            LEFT JOIN dim_area ON dim_area.id = a.area_id
-                            LEFT JOIN dim_payment ON dim_payment.id = a.payment_id
-                            LEFT JOIN gk_sale ON gk_sale.id = a.sale_id
-                            LEFT JOIN dim_trans_way ON dim_trans_way.id = a.logistics_id
-                            LEFT JOIN dim_cate ON dim_cate.id = gk_sale.third_cate_id
-                            LEFT JOIN intervals ON intervals.id = a.intervals
-                            LEFT JOIN dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
-                            LEFT JOIN dim_order_status os ON os.id = a.order_status
-                            LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
-                    WHERE  a.rq = '{0}' AND dim_area.id IN ({1});'''.format(last_month, match2[team])
-                df = pd.read_sql_query(sql=sql, con=self.engine2)
-                print('++++++正在将 ' + yesterday[8:10] + ' 号订单写入数据库++++++')
-                # 这一句会报错,需要修改my.ini文件中的[mysqld]段中的"max_allowed_packet = 1024M"
-                try:
-                    df.to_sql('sl_order_t22', con=self.engine1, index=False, if_exists='replace')
-                    sql = 'REPLACE INTO {0}_order_list SELECT *, NOW() 记录时间 FROM sl_order_t22; '.format('gat')
-                    pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-                except Exception as e:
-                    print('插入失败：', str(Exception) + str(e))
-                print('-' * 20 + '写入完成' + '-' * 20)
-            return '写入完成'
+        match = {
+            'gat': '"神龙家族-台湾", "红杉家族-港澳台2", "金狮-港澳台", "红杉家族-港澳台", "火凤凰-台湾", "火凤凰-香港", "金鹏家族-4组", "神龙-香港", "奥创队", "客服中心-港台","研发部-研发团队","Line运营", "神龙-主页运营", "翼虎家族-mercadolibre","金蝉家族公共团队","金蝉家族优化组","金蝉项目组","APP运营","郑州-北美","雪豹家族-运营1-11组","雪豹运营中心","西安-泰国GN","雪豹家族-马来西亚","雪豹家族-翻译","雪豹-锦鲤队","西安-小语种-西语3C","雪豹家族-产品","雪豹家族-设计","雪豹-江左盟","雪豹-客服","雪豹-烛龙队","雪豹-设计","雪豹家族-素材组"',
+            'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
+            'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"'
+            }
+        match2 = {
+            'gat': '17, 24, 26, 78, 118, 132, 135, 138, 156, 161, 173, 179, 182, 209, 225, 226, 234, 45, 41, 53,54,55,56,57,58,59,60,61,62,184,186,3,7,10,11,29,32,42,47,175,176,177,229',
+            'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
+            'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"'
+            }
+        for i in range((end - begin).days):  # 按天循环获取订单状态
+            day = begin + datetime.timedelta(days=i)
+            yesterday = str(day) + ' 23:59:59'
+            last_month = str(day)
+            print('正在获取 ' + match[team] + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单…………')
+            sql = '''SELECT a.id,
+                        a.month 年月,
+                        a.month_mid 旬,
+                        a.rq 日期,
+            --            IF(dim_area.name = "红杉家族-港澳台2","红杉家族-港澳台",IF(dim_area.name = "神龙家族-台湾" and dim_currency_lang.pname = '香港',"神龙-香港",IF(dim_area.name = "神龙-香港" and dim_currency_lang.pname = '台湾',"神龙家族-台湾",IF(dim_area.name = "火凤凰-台湾" and dim_currency_lang.pname = '香港',"火凤凰-香港" ,IF(dim_area.name = "火凤凰-香港" and dim_currency_lang.pname = '台湾',"火凤凰-台湾" ,dim_area.name))))) 团队,
+            --            IF(dim_area.name in ('火凤凰-台湾','火凤凰-香港'),'火凤凰港台',IF(dim_area.name in ('神龙家族-台湾','神龙-香港'),'神龙港台',IF(dim_area.name = '客服中心-港台','客服中心港台',IF(dim_area.name = '研发部-研发团队','研发部港台',IF(dim_area.name = '神龙-主页运营','神龙主页运营',IF(dim_area.name = '红杉家族-港澳台','红杉港台',IF(dim_area.name = '郑州-北美','郑州北美',IF(dim_area.name = '金狮-港澳台','金狮港台',IF(dim_area.name = '金鹏家族-4组','金鹏港台',dim_area.name))))))))) 所属团队,
+                        IF(a.area_id IN (24,78),'红杉家族-港澳台',IF(a.area_id = 17 AND a.currency_id = 6,"神龙-香港",IF(a.area_id = 138 AND a.currency_id = 13,"神龙家族-台湾",IF(a.area_id = 118 AND a.currency_id = 6,"火凤凰-香港",IF(a.area_id = 132 AND a.currency_id = 13,"火凤凰-台湾",dim_area.name)))))  团队,
+                        IF(a.area_id in (118,132),'火凤凰港台',IF(a.area_id in (17,138),'神龙港台',IF(a.area_id = 161,'客服中心港台', IF(a.area_id = 173,'研发部港台',IF(a.area_id = 182,'神龙主页运营',IF(a.area_id in (24,78),'红杉港台',IF(a.area_id = 41,'郑州北美',IF(a.area_id = 26,'金狮港台',IF(a.area_id = 135,'金鹏港台',IF(a.area_id = 209,'翼虎港台',IF(a.area_id IN (229,186,184,177,176,175,62,61,60,59,58,57,56,55,54,53,47,42,32,11,10,7,29,3),'雪豹港台',dim_area.name))))))))))) 所属团队,
+                        a.region_code 区域,
+                        dim_currency_lang.pname 币种,
+                        a.beform 订单来源,
+                        a.order_number 订单编号,
+                        a.qty 数量,
+                        a.ship_phone 电话号码,
+                        UPPER(a.waybill_number) 运单编号,
+                        IF(dim_trans_way.all_name LIKE "台湾-天马-711" AND LENGTH(a.waybill_number)=20, CONCAT(861,RIGHT(a.waybill_number,8)), UPPER(a.waybill_number)) 查件单号,
+            --            a.order_status 系统订单状态id,
+            --            IF(a.logistics_status = 1, 0, a.logistics_status) 系统物流状态id,
+                        os.name 系统订单状态,
+                        IF(ls.name ='发货中', null, ls.name) 系统物流状态,
+                        IF(a.second=0,'直发','改派') 是否改派,
+                        dim_trans_way.all_name 物流方式,
+                        null 物流渠道,
+                        dim_trans_way.simple_name 物流名称,
+                        dim_trans_way.remark 运输方式,
+                        a.logistics_type 货物类型,
+                        IF(a.low_price=0,'否','是') 是否低价,
+                        a.sale_id 商品id,
+                        gk_sale.product_id 产品id,
+                        gk_sale.product_name 产品名称,
+                        dim_cate.ppname 父级分类,
+                        dim_cate.pname 二级分类,
+                        dim_cate.name 三级分类,
+                        dim_payment.pay_name 付款方式,
+                        IF(dim_payment.pay_name NOT LIKE '%货到付款%','在线付款','货到付款') AS 支付类型,
+                        a.amount 价格,
+                        a.addtime 下单时间,
+                        a.verity_time 审核时间,
+                        a.delivery_time 仓储扫描时间,
+                        IF(a.finish_status=0,'未收款',IF(a.finish_status=2,'收款',IF(a.finish_status=3,'拒收',IF(a.finish_status=4,'退款',IF(a.finish_status=5,'售后订单',a.finish_status))))) 完结状态,
+                        a.endtime 完结状态时间,   
+                        a.salesRMB 价格RMB,
+                        intervals.intervals 价格区间,
+                        null 成本价,
+                        a.logistics_cost 物流花费,
+                        null 打包花费,
+                        a.other_fee 其它花费,
+                        a.weight 包裹重量,
+                        null 包裹体积,
+                        a.ship_zip 邮编,
+                        a.turn_purchase_time 添加物流单号时间,
+                        null 规格中文,
+                        a.ship_state 省洲,
+                        null 市区,
+                        null 审单类型,
+                        null 审单类型明细,
+                        null 拉黑率,
+                        null 订单配送总量,
+                        null 拒收量,
+                        null 签收量,
+                        a.del_reason 删除原因,
+                        null 删除时间,
+                        a.question_reason 问题原因,
+                        null 问题时间,
+                        null 下单人,
+                        null 克隆人,
+                        a.stock_type 下架类型,
+                        a.lower_time 下架时间,
+                        a.tihuo_time 物流提货时间,
+                        a.fahuo_time 物流发货时间,
+                        a.online_time 上线时间,
+                        a.guonei_time 国内清关时间,
+                        a.mudidi_time 目的清关时间,
+                        a.receipt_time 回款时间,
+                        a.ip IP,
+                        null 选品人,
+                        null 组合销售金额,
+                        null 姓名,
+                        null 地址,
+                        null 取货方式,
+                        null 标准电话,
+                        null 下单拒收率,
+                        null 发货仓库,
+                        null 克隆类型,
+                        null 是否盲盒,
+                        null 主订单,
+                        null 改派原运单号
+                FROM gk_order a
+                        LEFT JOIN dim_area ON dim_area.id = a.area_id
+                        LEFT JOIN dim_payment ON dim_payment.id = a.payment_id
+                        LEFT JOIN gk_sale ON gk_sale.id = a.sale_id
+                        LEFT JOIN dim_trans_way ON dim_trans_way.id = a.logistics_id
+                        LEFT JOIN dim_cate ON dim_cate.id = gk_sale.third_cate_id
+                        LEFT JOIN intervals ON intervals.id = a.intervals
+                        LEFT JOIN dim_currency_lang ON dim_currency_lang.id = a.currency_lang_id
+                        LEFT JOIN dim_order_status os ON os.id = a.order_status
+                        LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
+                WHERE  a.rq = '{0}' AND dim_area.id IN ({1});'''.format(last_month, match2[team])
+            df = pd.read_sql_query(sql=sql, con=self.engine2)
+            print('++++++正在将 ' + yesterday[8:10] + ' 号订单写入数据库++++++')
+            # 这一句会报错,需要修改my.ini文件中的[mysqld]段中的"max_allowed_packet = 1024M"
+            try:
+                df.to_sql('sl_order_t22', con=self.engine1, index=False, if_exists='replace')
+                sql = 'REPLACE INTO {0}_order_list SELECT *, NOW() 记录时间 FROM sl_order_t22; '.format('gat')
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            except Exception as e:
+                print('插入失败：', str(Exception) + str(e))
+            print('-' * 20 + '写入完成' + '-' * 20)
+        return '写入完成'
 
     # 更新团队订单明细（新后台的获取  方法一（2）的全部更新）
     def order_getList(self, handle, login_TmpCode, begin, end, proxy_handle, proxy_id):  # 进入订单检索界面
@@ -1599,7 +1601,7 @@ if __name__ == '__main__':
     login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
     team = 'gat'
 
-    if team == 'gat':
+    if team == 'gat0':
         # 更新时间
         timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
         data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
@@ -1608,9 +1610,9 @@ if __name__ == '__main__':
         end = datetime.datetime.strptime(timeEnd, '%Y-%m-%d').date()
     else:
         # 更新时间
-        data_begin = datetime.date(2022, 6, 1)  # 数据库更新
-        begin = datetime.date(2022, 6, 1)  # 单点更新
-        end = datetime.date(2022, 11, 1)
+        data_begin = datetime.date(2023, 3, 1)  # 数据库更新
+        begin = datetime.date(2023, 3, 1)  # 单点更新
+        end = datetime.date(2023, 4, 19)
 
     print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
     print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
