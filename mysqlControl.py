@@ -1,19 +1,14 @@
 import pandas as pd
 from sqlalchemy import create_engine
 from settings import Settings
+from settings_sso import Settings_sso
 from queryControl import QueryControl
 from emailControl import EmailControl
-from bpsControl import BpsControl
-from sltemMonitoring import SltemMonitoring
-import win32api,win32con
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
-from tkinter import messagebox
 import os
-import zipfile
 import xlwings as xl
 import datetime
 from dateutil.relativedelta import relativedelta
-import time
 
 
 class MysqlControl(Settings):
@@ -252,29 +247,6 @@ class MysqlControl(Settings):
                  'slsc': '"金鹏家族-品牌", "金鹏家族-品牌1组", "金鹏家族-品牌2组", "金鹏家族-品牌3组"',
                  'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"'
                  }
-        # 12-1月的
-        # if team in ('slsc', 'gat', 'sl_rb'): 182 138 118 132
-        #     # 获取日期时间
-        #     sql = 'SELECT MAX(`日期`) 日期 FROM {0}_order_list;'.format(team)
-        #     rq = pd.read_sql_query(sql=sql, con=self.engine1)
-        #     rq = pd.to_datetime(rq['日期'][0])
-        #     yy = int((rq - datetime.timedelta(days=4)).strftime('%Y'))
-        #     mm = int((rq - datetime.timedelta(days=4)).strftime('%m'))
-        #     dd = int((rq - datetime.timedelta(days=4)).strftime('%d'))
-        #     # print(dd)
-        #     begin = datetime.date(yy, mm, dd)
-        #     print(begin)
-        #     yy2 = int(datetime.datetime.now().strftime('%Y'))
-        #     mm2 = int(datetime.datetime.now().strftime('%m'))
-        #     dd2 = int(datetime.datetime.now().strftime('%d'))
-        #     end = datetime.date(yy2, mm2, dd2)
-        #     print(end)
-        # else:
-        #     # 11-12月的
-        #     begin = datetime.date(2022, 2, 12)
-        #     print(begin)
-        #     end = datetime.date(2022, 2, 13)
-        #     print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
             # print(str(day))
@@ -509,7 +481,12 @@ class MysqlControl(Settings):
                     LEFT JOIN dim_order_status os ON os.id = a.order_status
                     LEFT JOIN dim_logistics_status ls ON ls.id = a.logistics_status
                     WHERE  a.rq = '{0}' AND dim_area.id IN ({1});'''.format(last_month, match2[team])
-                df = pd.read_sql_query(sql=sql, con=self.engine2)
+                try:
+                    df = pd.read_sql_query(sql=sql, con=self.engine2)
+                except Exception as e:
+                    print('获取源数据失败，请检查原因》》》数据库：', str(Exception) + str(e))
+                    sso = Settings_sso()
+                    sso.send_dingtalk_message( "https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "获取源数据失败，请检查原因》》》数据库：", ['18538110674'], "是")
             # sql = 'SELECT * FROM dim_order_status;'
             # df1 = pd.read_sql_query(sql=sql, con=self.engine1)
             # print('+++合并订单状态中…………')
@@ -521,17 +498,15 @@ class MysqlControl(Settings):
             # df = df.drop(labels=['id', 'id_y', '系统订单状态id', '系统物流状态id'], axis=1)
             # df.rename(columns={'id_x': 'id', 'name_x': '系统订单状态', 'name_y': '系统物流状态'}, inplace=True)
             print('++++++正在将 ' + yesterday[8:10] + ' 号订单写入数据库++++++')
-            # 这一句会报错,需要修改my.ini文件中的[mysqld]段中的"max_allowed_packet = 1024M"
-            try:
+            try:    # 这一句会报错,需要修改my.ini文件中的[mysqld]段中的"max_allowed_packet = 1024M"
                 df.to_sql('sl_order', con=self.engine1, index=False, if_exists='replace')
-
-                # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-                # df.to_excel('G:\\输出文件\\数据库查验\\数据库文件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-
                 sql = 'REPLACE INTO {}_order_list SELECT *, NOW() 记录时间 FROM sl_order; '.format(team)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             except Exception as e:
-                print('插入失败：', str(Exception) + str(e))
+                print("源数据插入失败，请检查原因》》》本地数据库：：", str(Exception) + str(e))
+                sso = Settings_sso()
+                sso.send_dingtalk_message( "https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e","源数据插入失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
+
             print('-' * 20 + '写入完成' + '-' * 20)
         return '写入完成'
 
@@ -541,21 +516,6 @@ class MysqlControl(Settings):
                  'sl_rb': '"神龙家族-日本团队", "金狮-日本", "红杉家族-日本", "红杉家族-日本666", "精灵家族-日本", "精灵家族-韩国", "精灵家族-品牌", "火凤凰-日本", "金牛家族-日本", "金鹏家族-小虎队", "奎蛇-日本", "奎蛇-韩国", "神龙-韩国"',
                  }
         today = datetime.date.today().strftime('%Y.%m.%d')
-        # if team in ('sltg', 'slsc', 'slrb', 'slrb_jl', 'slrb_js', 'slrb_hs', 'gat', 'slgat', 'slgat_hfh', 'slgat_hs', 'slxmt', 'slxmt_t', 'slxmt_hfh'):
-        #     yy = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y'))
-        #     mm = int((datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%m'))
-        #     begin = datetime.date(yy, mm, 1)
-        #     print(begin)
-        #     yy2 = int(datetime.datetime.now().strftime('%Y'))
-        #     mm2 = int(datetime.datetime.now().strftime('%m'))
-        #     dd2 = int(datetime.datetime.now().strftime('%d'))
-        #     end = datetime.date(yy2, mm2, dd2)
-        #     print(end)
-        # else:
-        #     begin = datetime.date(2021, 5, 1)
-        #     print(begin)
-        #     end = datetime.date(2021, 7, 10)
-        #     print(end)
         for i in range((end - begin).days):  # 按天循环获取订单状态
             day = begin + datetime.timedelta(days=i)
             # print(str(day))
@@ -1013,7 +973,7 @@ class MysqlControl(Settings):
                 sql = '''SELECT * FROM d1_{0} sl WHERE sl.`团队`in ({1});'''.format(team, tem1)
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
                 df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace')
-                df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]),
+                df.to_excel('F:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]),
                             sheet_name=match[tem2], index=False)
                 print(tem2 + '----已写入excel')
                 # print('正在打印' + match[tem2] + ' 物流时效…………')
@@ -1045,7 +1005,7 @@ class MysqlControl(Settings):
                             LEFT JOIN {1}_return d ON a.订单编号 = d.订单编号
                             ORDER BY a.`下单时间`;'''.format('sl_rb', 'sl_rb', month_begin, month_last, month_yesterday, tem1)
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
-                df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]), sheet_name=match[tem2], index=False)
+                df.to_excel('F:\\输出文件\\{} {}签收表.xlsx'.format(today, match[tem2]), sheet_name=match[tem2], index=False)
                 print(tem2 + '----已写入excel')
                 df.to_sql('d1_{0}'.format(tem2), con=self.engine1, index=False, if_exists='replace')
                 sql = 'REPLACE INTO {0}_zqsb_rb SELECT *, NOW() 更新时间 FROM d1_{1};'.format('sl_rb', tem2)
@@ -1054,10 +1014,10 @@ class MysqlControl(Settings):
                 # print('正在打印' + match[tem2] + ' 物流时效…………')
                 # self.data_wl(tem2)
         else:
-            df.to_excel('G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[team]),
+            df.to_excel('F:\\输出文件\\{} {}签收表.xlsx'.format(today, match[team]),
                         sheet_name=match[team], index=False)
             print('----已写入excel')
-            filePath = ['G:\\输出文件\\{} {}签收表.xlsx'.format(today, match[team])]
+            filePath = ['F:\\输出文件\\{} {}签收表.xlsx'.format(today, match[team])]
         if team == 'slsc':
             self.e.send('{} {}签收表.xlsx'.format(today, match[team]), filePath, emailAdd[team])
 
@@ -1100,10 +1060,10 @@ class MysqlControl(Settings):
                     ORDER BY a.`下单时间`;'''.format(team, 'gat', month_begin, month_last, month_yesterday)
             print('正在获取---' + match[team] + ' ---商城IG和UP订单数据内容…………')
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_excel('G:\\输出文件\\{} 商城-{}签收表.xlsx'.format(today, match[team]),
+            df.to_excel('F:\\输出文件\\{} 商城-{}签收表.xlsx'.format(today, match[team]),
                         sheet_name=match[team], index=False)
             print('----已写入excel')
-            filePath = ['G:\\输出文件\\{} 商城-{}签收表.xlsx'.format(today, match[team])]
+            filePath = ['F:\\输出文件\\{} 商城-{}签收表.xlsx'.format(today, match[team])]
             self.e.send('{} 商城-{}签收表.xlsx'.format(today, match[team]), filePath,
                         emailAdd2[team])
 
@@ -1402,35 +1362,42 @@ class MysqlControl(Settings):
             print('正在写入excel…………')
             today = datetime.date.today().strftime('%Y.%m.%d')
             if team in ('slgat_hfh', 'slxmt_hfh'):
-                file_path = 'G:\\输出文件\\{} 火凤凰-{}物流时效.xlsx'.format(today, tem1)
+                file_path = 'F:\\输出文件\\{} 火凤凰-{}物流时效.xlsx'.format(today, tem1)
             elif team in ('slgat_hs', 'slrb_hs'):
-                file_path = 'G:\\输出文件\\{} 红杉-{}物流时效.xlsx'.format(today, tem1)
+                file_path = 'F:\\输出文件\\{} 红杉-{}物流时效.xlsx'.format(today, tem1)
             elif team == 'slxmt_t':
-                file_path = 'G:\\输出文件\\{} 神龙T-{}物流时效.xlsx'.format(today, tem1)
+                file_path = 'F:\\输出文件\\{} 神龙T-{}物流时效.xlsx'.format(today, tem1)
             elif team in ('slgat_js', 'slrb_js'):
-                file_path = 'G:\\输出文件\\{} 金狮-{}物流时效.xlsx'.format(today, tem1)
+                file_path = 'F:\\输出文件\\{} 金狮-{}物流时效.xlsx'.format(today, tem1)
             elif team in ('slgat_jp'):
-                file_path = 'G:\\输出文件\\{} 金鹏-{}物流时效.xlsx'.format(today, tem1)
+                file_path = 'F:\\输出文件\\{} 金鹏-{}物流时效.xlsx'.format(today, tem1)
             elif team == 'slrb_jl':
-                file_path = 'G:\\输出文件\\{} 精灵-{}物流时效.xlsx'.format(today, tem1)
+                file_path = 'F:\\输出文件\\{} 精灵-{}物流时效.xlsx'.format(today, tem1)
             else:
-                file_path = 'G:\\输出文件\\{} 神龙-{}物流时效.xlsx'.format(today, tem1)
+                file_path = 'F:\\输出文件\\{} 神龙-{}物流时效.xlsx'.format(today, tem1)
             sheet_name = ['下单出库时', '出库完成时', '下单完成时', '改派下单完成时', '下单出库(分旬)', '出库完成(分旬)', '下单完成(分旬)', '改派下单完成(分旬)']
-            df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-            df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-            book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-            for i in range(len(listT)):
-                listT[i]['签收率完成'] = listT[i]['签收率完成'].fillna(value=0)
-                listT[i]['签收率总计'] = listT[i]['签收率总计'].fillna(value=0)
-                listT[i]['签收率完成'] = listT[i]['签收率完成'].apply(lambda x: format(x, '.2%'))
-                listT[i]['签收率总计'] = listT[i]['签收率总计'].apply(lambda x: format(x, '.2%'))
-                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-            if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-                del book['Sheet1']
-            writer.save()
-            writer.close()
+            # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+            # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+            # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+            # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            # for i in range(len(listT)):
+            #     listT[i]['签收率完成'] = listT[i]['签收率完成'].fillna(value=0)
+            #     listT[i]['签收率总计'] = listT[i]['签收率总计'].fillna(value=0)
+            #     listT[i]['签收率完成'] = listT[i]['签收率完成'].apply(lambda x: format(x, '.2%'))
+            #     listT[i]['签收率总计'] = listT[i]['签收率总计'].apply(lambda x: format(x, '.2%'))
+            #     listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+            # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            #     del book['Sheet1']
+            # writer.save()
+            # writer.close()
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                for i in range(len(listT)):
+                    listT[i]['签收率完成'] = listT[i]['签收率完成'].fillna(value=0)
+                    listT[i]['签收率总计'] = listT[i]['签收率总计'].fillna(value=0)
+                    listT[i]['签收率完成'] = listT[i]['签收率完成'].apply(lambda x: format(x, '.2%'))
+                    listT[i]['签收率总计'] = listT[i]['签收率总计'].apply(lambda x: format(x, '.2%'))
+                    listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
             print('正在运行宏…………')
             app = xl.App(visible=False, add_book=False)  # 运行宏调整
             app.display_alerts = False
@@ -1946,19 +1913,22 @@ class MysqlControl(Settings):
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
         for wbbook in ['神龙', '火凤凰', '红杉', '金狮']:
-            file_path = 'G:\\输出文件\\{} {}-签收率.xlsx'.format(today, wbbook)
+            file_path = 'F:\\输出文件\\{} {}-签收率.xlsx'.format(today, wbbook)
             sheet_name = ['每日', '总表', '总表上月', '物流', '物流上月', '品类', '品类上月', '产品', '产品明细台湾', '产品明细香港']
-            df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-            df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-            book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-            for i in range(len(listT)):
-                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-            if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-                del book['Sheet1']
-            writer.save()
-            writer.close()
+            # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+            # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+            # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+            # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            # for i in range(len(listT)):
+            #     listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+            # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            #     del book['Sheet1']
+            # writer.save()
+            # writer.close()
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                for i in range(len(listT)):
+                    listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
             print('正在运行' + wbbook + '表宏…………')
             app = xl.App(visible=False, add_book=False)  # 运行宏调整
             app.display_alerts = False
@@ -2316,19 +2286,22 @@ class MysqlControl(Settings):
 
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
-        file_path = 'G:\\输出文件\\{} {}-签收率.xlsx'.format(today, match[team])
+        file_path = 'F:\\输出文件\\{} {}-签收率.xlsx'.format(today, match[team])
         sheet_name = ['每日各线路', '各月各线路', '各月各线路分旬', '各品类各线路', '各物流各线路', '同产品各团队', '同产品各月']
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        for i in range(len(listT)):
-            listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+        # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # for i in range(len(listT)):
+        #     listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+        # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            for i in range(len(listT)):
+                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
         print('正在运行' + match[team] + '表宏…………')
         app = xl.App(visible=False, add_book=False)  # 运行宏调整
         app.display_alerts = False
@@ -3082,7 +3055,7 @@ class MysqlControl(Settings):
         print(data)
         data = pd.json_normalize(data)
         print(data)
-        data.to_excel('G:\\输出文件\\列表-查询{22}.xlsx', sheet_name='查询', index=False, engine='xlsxwriter')
+        data.to_excel('F:\\输出文件\\列表-查询{22}.xlsx', sheet_name='查询', index=False, engine='xlsxwriter')
 
 
 if __name__ == '__main__':
@@ -3090,9 +3063,9 @@ if __name__ == '__main__':
     m = MysqlControl()
     start = datetime.datetime.now()
 
-    m._service_id_orderInfoTWO('')  # 派送问题  查询；订单检索
+    # m._service_id_orderInfoTWO('')  # 派送问题  查询；订单检索
 
-    select = 19
+    select = 1
     if select == 1:
         # 创建每日文件
         m.bulid_file()

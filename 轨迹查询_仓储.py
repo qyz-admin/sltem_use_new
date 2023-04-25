@@ -159,7 +159,7 @@ class Gwms_v3(Settings, Settings_sso):
         print(dp)
         # dp = dp[['orderNumber', 'wayBillNumber', 'track_date', '出货时间', '上线时间', '保管时间', '完成时间', 'track_info', 'track_status', '负责营业所', '轨迹备注', '序号']]
         # dp.columns = ['订单编号', '运单号', '物流轨迹时间', '出货时间', '上线时间', '保管时间', '完成时间', '物流轨迹', '轨迹代码', '负责营业所', '轨迹备注', '序号']
-        dp.to_excel('G:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+        dp.to_excel('F:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         print('查询已导出+++')
         print('*' * 50)
 
@@ -192,7 +192,7 @@ class Gwms_v3(Settings, Settings_sso):
                     if data is not None and len(data) > 0:
                         dlist.append(data)
                 dp = df.append(dlist, ignore_index=True)
-                dp.to_excel('G:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+                dp.to_excel('F:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         print('++++++查询成功+++++++')
         print('查询耗时：', datetime.datetime.now() - start)
         print('*' * 50)
@@ -491,7 +491,7 @@ class Gwms_v3(Settings, Settings_sso):
         # print(99)
         # print(data)
         # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        # data.to_excel('G:\\输出文件\\黑猫宅急便 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        # data.to_excel('F:\\输出文件\\黑猫宅急便 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         return data
 
 
@@ -526,7 +526,7 @@ class Gwms_v3(Settings, Settings_sso):
                     if data is not None and len(data) > 0:
                         dlist.append(data)
                 dp = df.append(dlist, ignore_index=True)
-                dp.to_excel('G:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+                dp.to_excel('F:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         print('++++++查询成功+++++++')
         print('查询耗时：', datetime.datetime.now() - start)
         print('*' * 50)
@@ -658,7 +658,7 @@ class Gwms_v3(Settings, Settings_sso):
         # data.columns = ['产品id', '产品名称', '一级分类', '二级分类', '三级分类', '产品状态', '价格(￥)', '选品人',
         #                 '供应商数', '采购人', '商品数', 'logisticsCost', '出借人', '特殊信息', '添加时间',
         #                 '产品分类', '产品图片']
-        # data.to_excel('G:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False,engine='xlsxwriter')
+        # data.to_excel('F:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False,engine='xlsxwriter')
         print('++++++本批次查询成功+++++++')
         # print('*' * 50)
         return data

@@ -82,10 +82,10 @@ if __name__ == '__main__':
                 'slzb': '直播团队',
                 'slyn': '越南',
                 'slrb': 'sunyaru@giikin.com'}
-    filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
+    filePath = ['F:\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
     e = EmailControl()
     e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath, emailAdd[team])
     #  for today in [datetime.date.today().strftime('%Y.%m.%d'), (datetime.datetime.now().replace(month=8, day=31)).strftime('%Y-%m-%d')]:
-    #     filePath = ['D:\\Users\\Administrator\\Desktop\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
+    #     filePath = ['F:\\输出文件\\{} 神龙{}签收表.xlsx'.format(today, match[team])]
     #     e = EmailControl()
     #     e.send('{} 神龙{}签收表.xlsx'.format(today, match[team]), filePath, emailAdd[team])

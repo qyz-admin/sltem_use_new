@@ -2063,12 +2063,12 @@ class Query_sso_updata(Settings):
                   '泰国': 'sltg'}
         start = datetime.datetime.now()
         if team == 'slsc':
-            path = r'D:\Users\Administrator\Desktop\需要用到的文件\品牌数据源'
+            path = r'F:\需要用到的文件\品牌数据源'
         else:
             if query == '导入':
-                path = r'D:\Users\Administrator\Desktop\需要用到的文件\数据库导入'
+                path = r'F:\需要用到的文件\数据库导入'
             else:
-                path = r'D:\Users\Administrator\Desktop\需要用到的文件\数据库'
+                path = r'F:\需要用到的文件\数据库'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -2914,10 +2914,6 @@ class Query_sso_updata(Settings):
                                        LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = TRIM(h.logisticsName);'''.format('gat_order_list')
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             df.to_sql('d1_cpy_cp', con=self.engine1, index=False, if_exists='replace')
-
-            # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-            # df.to_excel('G:\\输出文件\\单点查验\\单点文件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False,  engine='xlsxwriter')
-
             print('正在更新表总表中......')
             sql = '''update {0} a, d1_cpy_cp b
                                    set a.`币种`= b.`币种`,
@@ -3414,7 +3410,7 @@ class Query_sso_updata(Settings):
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         # print('正在写入Execl......')
         # print('正在写入Execl......')
-        # dp.to_excel('G:\\输出文件\\订单检索-时间查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+        # dp.to_excel('F:\\输出文件\\订单检索-时间查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         print('查询已导出+++')
     def _orderInfo_append(self, timeStart, timeEnd, n, areaId):  # 进入订单检索界面
         # print('......正在查询信息中......')

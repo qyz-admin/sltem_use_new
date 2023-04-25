@@ -15,8 +15,7 @@ from sqlalchemy import create_engine
 from settings import Settings
 from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
-from openpyxl.styles import Font, Border, Side, PatternFill, colors, \
-    Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
+from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
 
 
 # -*- coding:utf-8 -*-

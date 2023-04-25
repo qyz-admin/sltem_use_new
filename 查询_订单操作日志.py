@@ -260,7 +260,7 @@ class QueryTwo(Settings, Settings_sso):
                         n = n + 10
                     dp = df.append(dlist, ignore_index=True)
 
-                    dp.to_excel('G:\\输出文件\\订单操作日志-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+                    dp.to_excel('F:\\输出文件\\订单操作日志-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
                     print('查询已导出+++')
                 else:
                     print('----------数据为空,查询失败：' + sht.name)

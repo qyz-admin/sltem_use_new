@@ -66,7 +66,7 @@ class Updata_return_bill(Settings, Settings_sso):
                                                                                     self.mysql2['datebase']))
     def readFormHost(self):
         start = datetime.datetime.now()
-        path = r'D:\Users\Administrator\Desktop\需要用到的文件\B上下架表'
+        path = r'F:\需要用到的文件\B上下架表'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -307,7 +307,7 @@ class Updata_return_bill(Settings, Settings_sso):
         sql = '''SELECT * FROM customer c WHERE c.订单编号 IS  NULL OR c.运单编号 IS  NULL OR c.退货单号 IS  NULL;'''.format(team)
         df2 = pd.read_sql_query(sql=sql, con=self.engine1)
         if len(df2.index) > 0:
-            df2.to_excel('G:\\输出文件\\{0} 上下架数据不全表{1} .xlsx'.format(tem_data, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel('F:\\输出文件\\{0} 上下架数据不全表{1} .xlsx'.format(tem_data, rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''DELETE FROM customer c WHERE c.订单编号 IS  NULL OR c.运单编号 IS  NULL OR c.退货单号 IS  NULL;'''.format(team)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('已导出 并清除 上下架数据不全的订单......')
@@ -334,18 +334,18 @@ class Updata_return_bill(Settings, Settings_sso):
                 df2 = df[(df['仓库名称'].str.contains('新竹仓'))]
                 df3 = df[(df['仓库名称'].str.contains('顺丰仓'))]
 
-                old_path = 'G:\\输出文件\\{0} 新竹仓_导入收货 {1}.xlsx'.format(tem_data, rq)
+                old_path = 'F:\\输出文件\\{0} 新竹仓_导入收货 {1}.xlsx'.format(tem_data, rq)
                 df2.to_excel(old_path, sheet_name='查询', index=False, engine='xlsxwriter')
                 new_path = mkpath + '\\{0} 新竹仓_导入收货 {1}.xlsx'.format(tem_data, rq)
                 shutil.copyfile(old_path, new_path)
 
-                old_path = 'G:\\输出文件\\{0} 顺丰仓_导入收货 {1}.xlsx'.format(tem_data, rq)
+                old_path = 'F:\\输出文件\\{0} 顺丰仓_导入收货 {1}.xlsx'.format(tem_data, rq)
                 df3.to_excel(old_path, sheet_name='查询', index=False, engine='xlsxwriter')
                 new_path = mkpath + '\\{0} 顺丰仓_导入收货 {1}.xlsx'.format(tem_data, rq)
                 shutil.copyfile(old_path, new_path)
 
             else:
-                old_path = 'G:\\输出文件\\{0} 导入收货 {1}.xlsx'.format(tem_data, rq)
+                old_path = 'F:\\输出文件\\{0} 导入收货 {1}.xlsx'.format(tem_data, rq)
                 df.to_excel(old_path, sheet_name='查询', index=False, engine='xlsxwriter')
                 new_path = mkpath + '\\{0} 导入收货 {1}.xlsx'.format(tem_data, rq)
                 shutil.copyfile(old_path, new_path)     # copy到指定位置
@@ -358,7 +358,7 @@ class Updata_return_bill(Settings, Settings_sso):
                     # WHERE g.订单编号 IS NOT NULL
                     ;'''.format(team)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            old_path = 'G:\\输出文件\\{0} 导入上架 {1}.xlsx'.format(tem_data, rq)
+            old_path = 'F:\\输出文件\\{0} 导入上架 {1}.xlsx'.format(tem_data, rq)
             df.to_excel(old_path, sheet_name='查询', index=False, engine='xlsxwriter')
             new_path = mkpath + '\\{0} 导入上架 {1}.xlsx'.format(tem_data, rq)
             shutil.copyfile(old_path, new_path)  # copy到指定位置
@@ -366,7 +366,7 @@ class Updata_return_bill(Settings, Settings_sso):
 
             sql = '''SELECT DISTINCT '{0}' AS 库位名称, 退货上架货架 FROM customer c WHERE c.订单编号 NOT LIKE 'XM%';'''.format(tem_kuwei)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            old_path = 'G:\\输出文件\\{0} 导入库位 {1}.xlsx'.format(tem_data, rq)
+            old_path = 'F:\\输出文件\\{0} 导入库位 {1}.xlsx'.format(tem_data, rq)
             df.to_excel(old_path, sheet_name='查询', index=False, engine='xlsxwriter')
             new_path = mkpath + '\\{0} 导入库位 {1}.xlsx'.format(tem_data, rq)
             shutil.copyfile(old_path, new_path)  # copy到指定位置
@@ -377,7 +377,7 @@ class Updata_return_bill(Settings, Settings_sso):
                     FROM customer c
                     WHERE c.订单编号 NOT LIKE 'XM%';'''.format(team)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            old_path = 'G:\\输出文件\\{0} 下架 {1}.xlsx'.format(tem_data, rq)
+            old_path = 'F:\\输出文件\\{0} 下架 {1}.xlsx'.format(tem_data, rq)
             df.to_excel(old_path, sheet_name='查询', index=False, engine='xlsxwriter')
             new_path = mkpath + '\\{0} 下架 {1}.xlsx'.format(tem_data, rq)
             shutil.copyfile(old_path, new_path)  # copy到指定位置
@@ -396,7 +396,7 @@ class Updata_return_bill(Settings, Settings_sso):
 				WHERE s.`系统订单状态` <> '已退货(销售)';'''
         df2 = pd.read_sql_query(sql=sql, con=self.engine1)
         if len(df2.index) > 0:
-            df2.to_excel('G:\\输出文件\\{0} 需核实上架数据.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            df2.to_excel('F:\\输出文件\\{0} 需核实上架数据.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             print('已导出 需核实上架数据......')
         else:
             print('无异常 上架数据......')

@@ -142,7 +142,7 @@ class QueryUpdate(Settings):
 
         print('正在写入excel…………')
         rq = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-        df.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False)
+        df.to_excel('F:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False)
         print('----已写入excel')
 
     # 停用
@@ -216,7 +216,7 @@ class QueryUpdate(Settings):
                  '产品量', 'MIN(包裹重量)', 'MAX(包裹重量)', '重量差']]
         print('正在写入excel…………')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        df.to_excel('G:\\输出文件\\{} 运费总直发-查询{}.xlsx'.format(output, rq),
+        df.to_excel('F:\\输出文件\\{} 运费总直发-查询{}.xlsx'.format(output, rq),
                     sheet_name='查询', index=False)
         print('----已写入excel')
 
@@ -280,7 +280,7 @@ class QueryUpdate(Settings):
                  '产品量', 'MIN(包裹重量)', 'MAX(包裹重量)', '重量差']]
         print('正在写入excel…………')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        df.to_excel('G:\\输出文件\\{} 运费台湾直发-查询{}.xlsx'.format(output, rq),
+        df.to_excel('F:\\输出文件\\{} 运费台湾直发-查询{}.xlsx'.format(output, rq),
                     sheet_name='查询', index=False)
         print('----已写入excel')
 
@@ -344,7 +344,7 @@ class QueryUpdate(Settings):
                  '产品量', 'MIN(包裹重量)', 'MAX(包裹重量)', '重量差']]
         print('正在写入excel…………')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        df.to_excel('G:\\输出文件\\{} 运费-查询{}.xlsx'.format(output, rq),
+        df.to_excel('F:\\输出文件\\{} 运费-查询{}.xlsx'.format(output, rq),
                     sheet_name='查询', index=False)
         print('----已写入excel')
     def trans_way_cost_new(self, team):
@@ -468,7 +468,7 @@ class QueryUpdate(Settings):
         #          '价格', '仓储扫描时间', '完结状态', '物流花费', '包裹体积', '规格中文', '产品量', '包裹重量',  'MIN(包裹重量)', '差量']]
         # print('正在写入excel…………')
         # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        # df.to_excel('G:\\输出文件\\{} 运费台湾直发-查询{}.xlsx'.format(output, rq),
+        # df.to_excel('F:\\输出文件\\{} 运费台湾直发-查询{}.xlsx'.format(output, rq),
         #             sheet_name='查询', index=False)
         # print('----已写入excel')
 
@@ -527,7 +527,7 @@ class QueryUpdate(Settings):
                 ORDER BY 发货时间;'''.format()
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入excel…………')
-        file_pathT = 'G:\\输出文件\\{0} 在途未上线-总表.xlsx'.format(rq)
+        file_pathT = 'F:\\输出文件\\{0} 在途未上线-总表.xlsx'.format(rq)
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_pathT, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
@@ -547,7 +547,7 @@ class QueryUpdate(Settings):
             wy1 = wy.split('&')[0]
             wy2 = wy.split('&')[1]
             db1 = df[(df['物流方式'].str.contains(wy1))]
-            file_path = 'G:\\输出文件\\{0}{1} 在途未上线.xlsx'.format(rq, wy2)
+            file_path = 'F:\\输出文件\\{0}{1} 在途未上线.xlsx'.format(rq, wy2)
             writer2 = pd.ExcelWriter(file_path, engine='openpyxl')
             db1[['订单编号', '运单编号', '是否改派', '发货时间', '当前状态', '查询状态结果', '配送问题', '状态时间']].to_excel(writer2, sheet_name='查询', index=False, startrow=0)
             writer2.save()

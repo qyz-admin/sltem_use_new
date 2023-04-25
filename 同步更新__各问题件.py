@@ -344,7 +344,7 @@ class QueryTwo(Settings, Settings_sso):
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = df
-            # dp.to_excel('G:\\输出文件\\物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            # dp.to_excel('F:\输出文件\\物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp = dp[['order_number',  'currency', 'ship_phone', 'amount', 'customer_name', 'customer_mobile', 'arrived_address', 'arrived_time', 'create_time', 'dealStatus', 'dealContent',
                      'deal_time', 'dealTime', 'result_reson', 'result_info', 'questionType', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus', 'operatorName','contact',
                      'gift_reissue_order_number',  'addtime','update_time']]
@@ -354,7 +354,7 @@ class QueryTwo(Settings, Settings_sso):
             # dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞|张陈平', na=False))]
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            dp.to_excel('G:\\输出文件\\物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\输出文件\\物流问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO 物流问题件(订单编号, 下单时间, 联系电话, 币种, 问题类型, 物流反馈时间, 导入人,处理时间, 处理日期时间, 处理人, 联系方式,  处理结果,拒收原因, 克隆订单编号, 记录时间) 
                     SELECT 订单编号, 下单时间, 联系电话, 币种, 问题类型, 导入时间 AS 物流反馈时间, 导入人,IF(处理时间 = '',NULL,处理时间) AS 处理时间, IF(处理日期时间 = '',NULL,处理日期时间) AS 处理日期时间, 处理人, 联系方式, IF(最新处理结果 = '',问题类型状态,最新处理结果) AS 处理结果,拒收原因, 赠品补发订单编号 AS 克隆订单编号, NOW() 记录时间 
                     FROM customer;'''
@@ -479,7 +479,7 @@ class QueryTwo(Settings, Settings_sso):
             else:
                 dp = self._waybillInfoQuery_yadan(timeStart, timeEnd, n, proxy_handle, proxy_id)
             print(dp)
-            dp.to_excel('G:\\输出文件\\压单核实表-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\输出文件\\压单核实表-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             # dp = dp[(dp['questionTypeName'].str.contains('订单压单（giikin内部专用）'))]
             dp = dp[['order_number',  'deal_time', 'dealContent', 'traceUserName']]
             dp.columns = ['订单编号', '处理时间', '处理结果', '处理人']
@@ -493,7 +493,7 @@ class QueryTwo(Settings, Settings_sso):
                     SELECT 订单编号, 处理时间, 处理结果, 处理人, NOW() 记录时间 
                     FROM 压单表_已核实_info_copy1;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-            dp.to_excel('G:\\输出文件\\压单核实表-2查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\输出文件\\压单核实表-2查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             print('写入成功......')
         else:
             print('没有需要获取的信息！！！')
@@ -622,7 +622,7 @@ class QueryTwo(Settings, Settings_sso):
                           '订单类型', '物流渠道',  '派送问题首次时间', '处理人', '处理记录', '处理时间', '备注']
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            dp.to_excel('G:\\输出文件\\派送问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\输出文件\\派送问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO 派送问题件(订单编号,创建时间, 派送问题, 派送问题首次时间, 处理人, 处理记录, 处理时间,备注, 记录时间) 
                     SELECT 订单编号,创建时间, 派送问题, 派送问题首次时间, 处理人, 处理记录, IF(处理时间 = '',NULL,处理时间) 处理时间,备注,NOW() 记录时间 
                     FROM customer'''
@@ -706,7 +706,7 @@ class QueryTwo(Settings, Settings_sso):
             print('正在写入......')
             dp = dp[(dp['最新客服处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞|张陈平|李晓青', na=False))]
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            dp.to_excel('G:\\输出文件\\物流客诉件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\输出文件\\物流客诉件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO 物流客诉件(处理时间,物流反馈时间,处理人,订单编号,处理方案, 处理结果, 客诉原因, 赠品补发订单编号,币种, 历史处理记录, 记录时间) 
                     SELECT 最新客服处理日期 AS 处理时间,  导入时间 AS 物流反馈时间, 最新客服处理人 AS 处理人, 订单编号,最新客服处理 AS 处理方案, 
                            最新客服处理结果 AS 处理结果, 客诉原因, 赠品补发订单编号, 币种, 历史处理记录, NOW() 记录时间 
@@ -839,11 +839,11 @@ class QueryTwo(Settings, Settings_sso):
             dp = df.append(dlist, ignore_index=True)
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            dp.to_excel('G:\\输出文件\\采购问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\输出文件\\采购问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         else:
             print('正在写入......')
             df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            df.to_excel('G:\\输出文件\\采购问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel('F:\输出文件\\采购问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         sql = '''REPLACE INTO 采购异常(订单编号,处理结果,反馈时间,处理时间,取消原因, 处理人, 电话联系人, 联系时间,记录时间) 
                 SELECT 订单编号,处理结果,反馈时间,处理时间,取消原因, 处理人, null 电话联系人, null 联系时间, NOW() 记录时间 
                 FROM customer'''
@@ -907,7 +907,7 @@ class QueryTwo(Settings, Settings_sso):
             dp = df
         print('正在写入......')
         dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-        dp.to_excel('G:\\输出文件\\采购问题件-查询-副本{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        dp.to_excel('F:\输出文件\\采购问题件-查询-副本{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         sql = '''update 采购异常 a, customer b
                     set a.`电话联系人`= b.`name`,
                         a.`联系时间`= IF( b.`addTime` = '', a.`联系时间`,  b.`addTime`)
@@ -1012,7 +1012,7 @@ class QueryTwo(Settings, Settings_sso):
                 # dtlist.append(data)
             # print(99)
             # print(dtlist)
-            # dtlist.to_excel('G:\\输出文件\\采购问题件-查询-副本{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            # dtlist.to_excel('F:\输出文件\\采购问题件-查询-副本{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             print('写入成功......')
         else:
             print('没有需要获取的信息！！！')
@@ -1125,7 +1125,7 @@ class QueryTwo(Settings, Settings_sso):
                 dlist.append(data)
                 time.sleep(3)
             dp = df.append(dlist, ignore_index=True)
-            dp.to_excel('G:\\输出文件\\拒收问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\输出文件\\拒收问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp = dp[['id', '订单编号', 'currency', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'percentInfo.arriveCount', 'addTime', 'finishTime', 'tel_phone', 'shipInfo.shipPhone', 'ip','cloneUser', 'newCloneUser', 'newCloneStatus', 'newCloneLogisticsStatus', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
             dp.columns = ['订单id', '订单编号', '币种', '订单总量', '拒收量', '签收量','下单时间', '完成时间', '电话', '联系电话', 'ip','本单克隆人', '新单克隆人', '新单订单状态', '新单物流状态', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果', '是否需要商品']
             print('正在写入......')
@@ -1261,7 +1261,7 @@ class QueryTwo(Settings, Settings_sso):
             dp = dp[(dp['币种'].str.contains('港币|台币', na=False))]
             print('共有 ' + str(len(dp)) + '条 正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            dp.to_excel('G:\\输出文件\\{0}-查询{1}.xlsx'.format(match[team], rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\输出文件\\{0}-查询{1}.xlsx'.format(match[team], rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO 退换货表(订单编号,币种,团队,金额,数量, 反馈方式, 反馈问题类型, 新订单编号,克隆后金额, 退款金额, 导入时间, 登记人, 处理时间, 处理人, 售后类型, 记录时间) 
                     SELECT 订单编号,币种,团队,金额,数量, 反馈方式, 反馈问题类型, 新订单编号, IF(克隆后金额 = '',NULL,克隆后金额) 克隆后金额, IF(退款金额 = '',NULL,退款金额) 退款金额, 
                         导入时间, 登记人, 处理时间, 处理人, IF(售后类型 = '' OR 售后类型 IS NULL,'退货',售后类型) 售后类型, NOW() 记录时间
@@ -1490,7 +1490,7 @@ class QueryTwo(Settings, Settings_sso):
             dp.columns = ['id','订单编号','团队','币种','发送者的电话号码','发送时间','是否发送成功','短信内容','接收状态','接收异常原因','短信用途','短信模板']
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            dp.to_excel('G:\\输出文件\\短信模板-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\输出文件\\短信模板-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO 短信日志_发送时间(id, 订单编号,团队,币种,发送者的电话号码,发送时间,是否发送成功,短信内容,接收状态,接收异常原因,短信用途,短信模板,记录时间)
                      SELECT id, 订单编号,团队,币种,发送者的电话号码,IF(发送时间 = '',NULL, 发送时间) AS 发送时间,是否发送成功,短信内容,接收状态,接收异常原因,短信用途,短信模板,NOW() 记录时间
                     FROM  customer;'''
@@ -1576,7 +1576,7 @@ class QueryTwo(Settings, Settings_sso):
                           '最新处理描述','最新处理结果','处理记录','是否完成','同步人','同步状态','同步时间','同步类型','同步操作记录']
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            dp.to_excel('G:\\输出文件\\工单列表-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\输出文件\\工单列表-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO 工单列表(工单编号, 订单编号,所属团队,币种,运单编号,电话,支付方式,订单状态,物流状态,物流渠道,订单类型,下单时间,
 			                    发货时间,完成时间,问题类型,环节问题,来源渠道,提交形式,提交时间,受理客服,登记人,工单类型,
 			                    最新处理人,最新处理时间,最新处理描述,最新处理结果,处理记录,是否完成,同步人,同步状态,同步时间,同步类型,同步操作记录,记录时间)
@@ -1656,7 +1656,7 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
     select = 99
-    if int(select) == 99:
+    if int(select) == 909:
         handle = '手动0'
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
         proxy_handle = '代理服务器0'

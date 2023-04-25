@@ -178,7 +178,7 @@ class QueryOrder(Settings, Settings_sso):
                                           '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
                                           '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间', '异常提示', '异常拉黑率',
                                           '拉黑率总量','拉黑率签收','拉黑率拒收','留言']
-                            dp.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+                            dp.to_excel('F:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
                         print('查询已导出+++')
                     else:
                         print('----------数据为空,查询失败：' + sht.name)
@@ -250,7 +250,7 @@ class QueryOrder(Settings, Settings_sso):
                         #               '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
                         #               '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间', '异常提示', '异常拉黑率',
                         #               '拉黑率总量','拉黑率签收','拉黑率拒收','留言']
-                        dp.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+                        dp.to_excel('F:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
                         print('查询已导出+++')
                     else:
                         print('----------数据为空,查询失败：' + sht.name)
@@ -308,7 +308,7 @@ class QueryOrder(Settings, Settings_sso):
                         #               '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
                         #               '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间', '异常提示', '异常拉黑率',
                         #               '拉黑率总量','拉黑率签收','拉黑率拒收','留言']
-                        dp.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+                        dp.to_excel('F:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
                         print('查询已导出+++')
                     else:
                         print('----------数据为空,查询失败：' + sht.name)
@@ -383,7 +383,7 @@ class QueryOrder(Settings, Settings_sso):
         else:
             ord = ','.join(orderId[0:max_count])
             df = self.cs_orderInfoQuery(ord, searchType)
-        dp.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        dp.to_excel('F:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
     def cs_orderInfoQuery(self, ord, searchType):  # 进入订单检索界面
         print('+++正在查询订单信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
@@ -850,20 +850,23 @@ class QueryOrder(Settings, Settings_sso):
                 print('---无 铱熙无敌 订单')
 
             # ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]') # ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]')
-            file_path = 'G:\\输出文件\\{0} 订单检索-明细.xlsx'.format(timeEnd)
-            df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-            df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-            book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-            db1.to_excel(excel_writer=writer, sheet_name='明细', index=False)
-            db92.to_excel(excel_writer=writer, sheet_name='天马711', index=False)
-            db14.to_excel(excel_writer=writer, sheet_name='协来运直发', index=False)
-            if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-                del book['Sheet1']
-            writer.save()
-            writer.close()
-
+            file_path = 'F:\\输出文件\\{0} 订单检索-明细.xlsx'.format(timeEnd)
+            # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+            # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+            # db1.to_excel(excel_writer=writer, sheet_name='明细', index=False)
+            # db92.to_excel(excel_writer=writer, sheet_name='天马711', index=False)
+            # db14.to_excel(excel_writer=writer, sheet_name='协来运直发', index=False)
+            # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+            # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            #     del book['Sheet1']
+            # writer.save()
+            # writer.close()
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                db1.to_excel(excel_writer=writer, sheet_name='明细', index=False)
+                db92.to_excel(excel_writer=writer, sheet_name='天马711', index=False)
+                db14.to_excel(excel_writer=writer, sheet_name='协来运直发', index=False)
             print('昨日明细 查询已导出+++')
         else:
             print('无信息+++')
@@ -935,7 +938,7 @@ class QueryOrder(Settings, Settings_sso):
             print('转化失败： 重新获取中', str(Exception) + str(e))
         data = pd.json_normalize(ordersdict)
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        # data.to_excel('G:\\输出文件\\明细{0}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        # data.to_excel('F:\\输出文件\\明细{0}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         df = None
         try:
             df = data[['orderNumber', 'befrom', 'currency', 'area', 'productId', 'saleProduct', 'saleName', 'spec', 'shipInfo.shipName', 'shipInfo.shipPhone', 'tel_phone','percent', 'phoneLength',
@@ -1082,7 +1085,7 @@ class QueryOrder(Settings, Settings_sso):
                        '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库', '拒收原因', '物流更新时间', '状态时间', '更新时间']]
             db0.insert(0, '删除人', '')
             db0.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
-            db0.to_excel('G:\\输出文件\\{0} 神龙-火凤凰 删单明细.xlsx'.format(timeEnd), sheet_name='查询', index=False, engine='xlsxwriter')
+            db0.to_excel('F:\\输出文件\\{0} 神龙-火凤凰 删单明细.xlsx'.format(timeEnd), sheet_name='查询', index=False, engine='xlsxwriter')
 
             print('正在分析订单删除的原因......')
             sql = '''DELETE FROM `cache` gt WHERE gt.`订单编号` IN (SELECT * FROM gat_地址邮编错误);'''
@@ -3150,27 +3153,33 @@ SELECT 币种,运营团队,
             df7 = pd.read_sql_query(sql=sql7, con=self.engine1)
             listT.append(df7)   # 6 分币种个人
 
-            file_path = 'G:\\输出文件\\促单查询 {}.xlsx'.format(rq)
-            df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-            df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-            book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            file_path = 'F:\\输出文件\\促单查询 {}.xlsx'.format(rq)
+            # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+            # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+            # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+            # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            # listT[4].to_excel(excel_writer=writer, sheet_name='汇总', index=False)  # 个人
+            # listT[6].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startrow=22)  # 分币种个人
+            # listT[3].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=13)        # 明细
+            # listT[1].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=19)      # 有效单量
+            # listT[2].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=22)      # 总下单量
+            # listT[5].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=25)     # 分币种单量
+            # listT[0].to_excel(excel_writer=writer, sheet_name='明细', index=False)     # 明细单量
+            # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            #     del book['Sheet1']
+            # writer.save()
+            # writer.close()
+            # df.to_excel('F:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='有效单量', index=False, engine='xlsxwriter')
 
-            listT[4].to_excel(excel_writer=writer, sheet_name='汇总', index=False)  # 个人
-            listT[6].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startrow=22)  # 分币种个人
-
-            listT[3].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=13)        # 明细
-            listT[1].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=19)      # 有效单量
-            listT[2].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=22)      # 总下单量
-            listT[5].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=25)     # 分币种单量
-
-            listT[0].to_excel(excel_writer=writer, sheet_name='明细', index=False)     # 明细单量
-            if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-                del book['Sheet1']
-            writer.save()
-            writer.close()
-            # df.to_excel('G:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='有效单量', index=False, engine='xlsxwriter')
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                listT[4].to_excel(excel_writer=writer, sheet_name='汇总', index=False)  # 个人
+                listT[6].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startrow=22)  # 分币种个人
+                listT[3].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=13)  # 明细
+                listT[1].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=19)  # 有效单量
+                listT[2].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=22)  # 总下单量
+                listT[5].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=25)  # 分币种单量
+                listT[0].to_excel(excel_writer=writer, sheet_name='明细', index=False)  # 明细单量
 
             sql = '''SELECT 运单编号
                     FROM (
@@ -3224,7 +3233,7 @@ SELECT 币种,运营团队,
         # print('正在处理json数据转化为dataframe…………')
         try:
             for result in req['data']['list']:
-                print(result['orderNumber'])
+                # print(result['orderNumber'])
                 if result['specs'] != []:
                     result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
                     result['saleName'] = 0

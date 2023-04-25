@@ -714,24 +714,27 @@ class QueryControl(Settings):
         if len(listTValue) == 4:
             file_Path = []  # 发送邮箱文件使用
             filePath = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}上月产品花费表.xlsx'.format(today, tem)
-            if os.path.exists(filePath):  # 判断是否有需要的表格
-                print("正在使用(上月-单月)文件......")
-                filePath = filePath
-            else:  # 判断是否无需要的表格，进行初始化创建
-                print("正在创建文件......")
-                df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-                df0.to_excel(filePath, sheet_name='缓存使用', index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-                filePath = filePath
-            print('正在写入excel…………')
-            writer = pd.ExcelWriter(filePath, engine='openpyxl')  # 初始化写入对象
-            book = load_workbook(filePath)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-            for i in range(len(listTValue)):
-                listTValue[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-            if '缓存使用' in book.sheetnames:  # 删除新建文档时的第一个工作表
-                del book['缓存使用']
-            writer.save()
-            writer.close()
+            # if os.path.exists(filePath):  # 判断是否有需要的表格
+            #     print("正在使用(上月-单月)文件......")
+            #     filePath = filePath
+            # else:  # 判断是否无需要的表格，进行初始化创建
+            #     print("正在创建文件......")
+            #     df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+            #     df0.to_excel(filePath, sheet_name='缓存使用', index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            #     filePath = filePath
+            # print('正在写入excel…………')
+            # writer = pd.ExcelWriter(filePath, engine='openpyxl')  # 初始化写入对象
+            # book = load_workbook(filePath)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+            # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            # for i in range(len(listTValue)):
+            #     listTValue[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+            # if '缓存使用' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            #     del book['缓存使用']
+            # writer.save()
+            # writer.close()
+            with pd.ExcelWriter(filePath, engine='openpyxl') as writer:
+                for i in range(len(listTValue)):
+                    listTValue[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
             print('输出文件成功…………')
             print('正在运行宏…………')
             app = xl.App(visible=False, add_book=False)           # 运行宏调整
@@ -750,25 +753,32 @@ class QueryControl(Settings):
         else:
             file_Path = []  # 发送邮箱文件使用
             filePath = 'D:\\Users\\Administrator\\Desktop\\输出文件\\{} {}上月产品花费表.xlsx'.format(today, tem)
-            if os.path.exists(filePath):  # 判断是否有需要的表格
-                print("正在使用(上月)文件......")
-                filePath = filePath
-            else:  # 判断是否无需要的表格，进行初始化创建
-                print("正在创建文件......")
-                df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-                df0.to_excel(filePath, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-                filePath = filePath
-            print('正在写入excel…………')
-            writer = pd.ExcelWriter(filePath, engine='openpyxl')  # 初始化写入对象
-            book = load_workbook(filePath)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-            listTValue[0].to_excel(excel_writer=writer, sheet_name=sheet_name[0], index=False)
-            listTValue[1].to_excel(excel_writer=writer, sheet_name=sheet_name[1], index=False)
-            listTValue[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
-            listTValue[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
+            # if os.path.exists(filePath):  # 判断是否有需要的表格
+            #     print("正在使用(上月)文件......")
+            #     filePath = filePath
+            # else:  # 判断是否无需要的表格，进行初始化创建
+            #     print("正在创建文件......")
+            #     df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+            #     df0.to_excel(filePath, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            #     filePath = filePath
+            # print('正在写入excel…………')
+            # writer = pd.ExcelWriter(filePath, engine='openpyxl')  # 初始化写入对象
+            # book = load_workbook(filePath)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+            # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            # listTValue[0].to_excel(excel_writer=writer, sheet_name=sheet_name[0], index=False)
             # listTValue[1].to_excel(excel_writer=writer, sheet_name=sheet_name[1], index=False)
-            writer.save()
-            writer.close()
+            # listTValue[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
+            # listTValue[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
+            # # listTValue[1].to_excel(excel_writer=writer, sheet_name=sheet_name[1], index=False)
+            # writer.save()
+            # writer.close()
+            with pd.ExcelWriter(filePath, engine='openpyxl') as writer:
+                listTValue[0].to_excel(excel_writer=writer, sheet_name=sheet_name[0], index=False)
+                listTValue[1].to_excel(excel_writer=writer, sheet_name=sheet_name[1], index=False)
+                listTValue[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
+                listTValue[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
+                # listTValue[1].to_excel(excel_writer=writer, sheet_name=sheet_name[1], index=False)
+
             print('输出(上月)文件成功…………')
             print('正在运行宏…………')
             app = xl.App(visible=False, add_book=False)           # 运行宏调整

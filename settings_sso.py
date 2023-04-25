@@ -2,7 +2,6 @@ import datetime
 import time
 import win32api,win32con
 import sys
-import requests
 import json
 from sqlalchemy import create_engine
 from settings import Settings
@@ -831,7 +830,7 @@ class Settings_sso():
                         # 是否@所有人
                         "isAtAll": True
                     }
-                    }
+            }
         if isAtAll == '单个':
             data = {"msgtype": "text",
                     "text": {  # 要发送的内容【支持markdown】【！注意：content内容要包含机器人自定义关键字，不然消息不会发送出去，这个案例中是test字段】
@@ -842,7 +841,7 @@ class Settings_sso():
                         # 是否@所有人
                         "isAtAll": False
                     }
-                    }
+            }
         else:
             data = {
                 "msgtype": "text",
@@ -2571,7 +2570,7 @@ class Settings_sso():
             dp = self._updata(ord,data_df,data_df2)
         print('正在写入临时缓存表......')
         dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
-        dp.to_excel('G:\\输出文件\\订单-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        dp.to_excel('F:\\输出文件\\订单-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         print('查询已导出+++')
         print('正在更新订单跟进表中......')
         pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
@@ -2693,7 +2692,7 @@ class Settings_sso():
                     FROM `cache` c
                     LEFT JOIN gat_waybill_list g ON c.订单编号 = g.订单编号;'''
             df1 = pd.read_sql_query(sql=sql, con=self.engine1)
-            df1.to_excel('G:\\输出文件\\压单反馈-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            df1.to_excel('F:\\输出文件\\压单反馈-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             print('正在更新订单跟进表中......')
             pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
             print('更新耗时：', datetime.datetime.now() - start)
@@ -2779,7 +2778,7 @@ class Settings_sso():
             print('正在写入临时缓存表......')
             print(dp)
             print('查询已导出+++')
-            dp.to_excel('G:\\输出文件\\出库-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\\输出文件\\出库-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
             print('正在更新订单跟进表中......')
             pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
@@ -2849,13 +2848,13 @@ class Settings_sso():
             dp = None
         print('正在写入临时缓存表......')
         print(dp)
-        dp.to_excel('G:\\输出文件\\提货-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        dp.to_excel('F:\\输出文件\\提货-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         if dp.empty:
             print('查询为空，不需更新+++')
         else:
             # dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
             print('查询已导出+++')
-            # dp.to_excel('G:\\输出文件\\提货-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            # dp.to_excel('F:\\输出文件\\提货-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             # print('正在更新订单跟进表中......')
             # pd.read_sql_query(sql=sql2, con=self.engine1, chunksize=10000)
         print('更新耗时：', datetime.datetime.now() - start)

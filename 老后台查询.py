@@ -107,7 +107,7 @@ class BpsControl99(Settings):
 			data = self.newOrderInfo(order, '订单号')
 			# dlist.append(data)
 		# dp = df.append(dlist, ignore_index=True)
-		# dp.to_excel('G:\\输出文件\\产品检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+		# dp.to_excel('F:\\输出文件\\产品检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
 
 
 if __name__ == '__main__':                    # 以老后台的简单查询为主，

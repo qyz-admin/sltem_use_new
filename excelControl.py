@@ -56,7 +56,6 @@ class ExcelControl(Settings):
         app = xlwings.App(visible=False, add_book=False)
         # 不显示excel窗口
         app.display_alerts = False
-
         if 'xls' in fileType:
             # 打开excel文件，只读方式，不更新公式，连接
             wb = app.books.open(filePath, update_links=False, read_only=True)
@@ -445,7 +444,7 @@ class ExcelControl(Settings):
             else:
                 return para
 
-        path = r'D:\Users\Administrator\Desktop\需要用到的文件\A退货'
+        path = r'F:\需要用到的文件\A退货'
         dirs = os.listdir(path=path)
         for dir in dirs:
             filePath = os.path.join(path, dir)
@@ -541,7 +540,7 @@ class ExcelControl(Settings):
             else:
                 ordersDict.to_excel(new_path, sheet_name='查询', index=False,engine='xlsxwriter')
 
-                new_path2 = 'D:\\Users\\Administrator\\Desktop\\需要用到的文件\\数据库\\{0} 导退货状态-临时.xlsx'.format(rq)
+                new_path2 = 'F:\\需要用到的文件\\数据库\\{0} 导退货状态-临时.xlsx'.format(rq)
                 sql = '''SELECT 订单编号, 运单编号 AS 运单号, '已完成' AS 订单状态,  '已退货' AS 物流状态,  发货时间, 收货时间, 上线时间, 完成时间 
                         FROM {0}_return r 
                         WHERE DATE_FORMAT(r.添加时间, '%Y-%m-%d') = DATE_FORMAT(CURDATE() , '%Y-%m-%d')
@@ -558,8 +557,8 @@ class ExcelControl(Settings):
 
 if __name__ == '__main__':
     e = ExcelControl()
-    match = {'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\退货',
-             'sltg': r'D:\Users\Administrator\Desktop\需要用到的文件\退货',
-             'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\退货',
-             'slxmt': r'D:\Users\Administrator\Desktop\需要用到的文件\退货'}
+    match = {'slrb': r'F:\需要用到的文件\A退货',
+             'sltg': r'F:\需要用到的文件\A退货',
+             'slgat': r'F:\需要用到的文件\A退货',
+             'slxmt': r'F:\需要用到的文件\A退货'}
     e.readReturnOrder('slgat')                   # 先退货退款导入 后进行签收表的计算

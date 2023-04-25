@@ -65,7 +65,7 @@ class QueryTwo(Settings, Settings_sso):
                                                                                     self.mysql2['datebase']))
     def readFormHost(self, team):
         start = datetime.datetime.now()
-        path = r'D:\Users\Administrator\Desktop\需要用到的文件\B订单跟进表'
+        path = r'F:\需要用到的文件\B订单跟进表'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -447,14 +447,18 @@ class QueryTwo(Settings, Settings_sso):
 
         print('正在写入excel…………')
         today = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        file_path = 'G:\\输出文件\\{} 订单跟进.xlsx'.format(today)
+        file_path = 'F:\\输出文件\\{} 订单跟进.xlsx'.format(today)
 
-        writer2 = pd.ExcelWriter(file_path, engine='openpyxl')
-        df0.to_excel(writer2, sheet_name='汇总',index=False, startrow=1)
-        df1.to_excel(writer2, sheet_name='汇总',index=False, startrow=1, startcol=7)
-        df2.to_excel(writer2, sheet_name='明细表',index=False)
-        writer2.save()
-        writer2.close()
+        # writer2 = pd.ExcelWriter(file_path, engine='openpyxl')
+        # df0.to_excel(writer2, sheet_name='汇总',index=False, startrow=1)
+        # df1.to_excel(writer2, sheet_name='汇总',index=False, startrow=1, startcol=7)
+        # df2.to_excel(writer2, sheet_name='明细表',index=False)
+        # writer2.save()
+        # writer2.close()
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer2:
+            df0.to_excel(writer2, sheet_name='汇总', index=False, startrow=1)
+            df1.to_excel(writer2, sheet_name='汇总', index=False, startrow=1, startcol=7)
+            df2.to_excel(writer2, sheet_name='明细表', index=False)
 
         # 初始化赋值   https://openpyxl.readthedocs.io/en/stable/index.html
         # from openpyxl.utils import get_column_letter, column_index_from_string
@@ -536,7 +540,7 @@ if __name__ == '__main__':
     # 1、 点到表上传 team = 'gat_logisitis_googs'；2、上架表上传；；3、订单跟进上传 team = 'gat_waybill_list'--->>数据更新切换
     '''
 
-    select = 5
+    select = 3
     if int(select) == 1:
         team = 'gat_logisitis_googs'
         m.readFormHost(team)
@@ -546,6 +550,9 @@ if __name__ == '__main__':
         timeStart = '2022-03-28'
         timeEnd = '2022-03-29'
         # m.order_TimeQuery(timeStart, timeEnd)
+
+    elif int(select) == 3:
+        m.waybill_updata()
 
     elif int(select) == 4:
         team = 'gat_waybill_list'

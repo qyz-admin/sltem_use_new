@@ -608,34 +608,54 @@ class QueryTwo(Settings, Settings_sso):
 
         print('正在写入excel…………')
         file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况.xlsx'.format(rq)
-        df0 = pd.DataFrame([])
-        df0.to_excel(file_pathT, index=False)
-        writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_pathT)
-        writer.book = book
-        db2.drop(['币种', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='台湾', index=False)
-        # db2.drop(['币种', '月份', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='台湾各月', index=False)
-        db3.drop(['币种', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='香港', index=False)
-        # db3.drop(['币种', '月份', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='香港各月', index=False)
-        df1.to_excel(excel_writer=writer, sheet_name='明细', index=False)
-        df11.to_excel(excel_writer=writer, sheet_name='拒收', index=False)
-        df1211.to_excel(excel_writer=writer, sheet_name='台湾-物流', index=False)
-        df1222.to_excel(excel_writer=writer, sheet_name='香港-物流', index=False)
-        # df5[['创建日期', '总单量', '上月总单量', '派送问题件单量', '上月派送问题件单量', '签收率', '上月签收率']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False)
-        # df5[['创建日期', '上月总单量', '上月派送问题件单量']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False, startcol=10)
-        # df5[['创建日期', '总单量', '派送问题件单量']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False, startcol=15)
-        df51.to_excel(excel_writer=writer, sheet_name='同期完成订单', index=False)
-        df52.to_excel(excel_writer=writer, sheet_name='同期派送问题件', index=False)
-        df53.to_excel(excel_writer=writer, sheet_name='同期签收率', index=False)
-        df54.to_excel(excel_writer=writer, sheet_name='当日', index=False)
-        df55.to_excel(excel_writer=writer, sheet_name='上月', index=False)
-        df8.to_excel(excel_writer=writer, sheet_name='台湾 问题类型 签收率', index=False)
-        df81.to_excel(excel_writer=writer, sheet_name='香港 问题类型 签收率', index=False)
-        df82.to_excel(excel_writer=writer, sheet_name='台湾 语音外呼 签收率', index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表 cp
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        # df0 = pd.DataFrame([])
+        # df0.to_excel(file_pathT, index=False)
+        # writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
+        # book = load_workbook(file_pathT)
+        # writer.book = book
+        # db2.drop(['币种', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='台湾', index=False)
+        # # db2.drop(['币种', '月份', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='台湾各月', index=False)
+        # db3.drop(['币种', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='香港', index=False)
+        # # db3.drop(['币种', '月份', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='香港各月', index=False)
+        # df1.to_excel(excel_writer=writer, sheet_name='明细', index=False)
+        # df11.to_excel(excel_writer=writer, sheet_name='拒收', index=False)
+        # df1211.to_excel(excel_writer=writer, sheet_name='台湾-物流', index=False)
+        # df1222.to_excel(excel_writer=writer, sheet_name='香港-物流', index=False)
+        # # df5[['创建日期', '总单量', '上月总单量', '派送问题件单量', '上月派送问题件单量', '签收率', '上月签收率']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False)
+        # # df5[['创建日期', '上月总单量', '上月派送问题件单量']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False, startcol=10)
+        # # df5[['创建日期', '总单量', '派送问题件单量']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False, startcol=15)
+        # df51.to_excel(excel_writer=writer, sheet_name='同期完成订单', index=False)
+        # df52.to_excel(excel_writer=writer, sheet_name='同期派送问题件', index=False)
+        # df53.to_excel(excel_writer=writer, sheet_name='同期签收率', index=False)
+        # df54.to_excel(excel_writer=writer, sheet_name='当日', index=False)
+        # df55.to_excel(excel_writer=writer, sheet_name='上月', index=False)
+        # df8.to_excel(excel_writer=writer, sheet_name='台湾 问题类型 签收率', index=False)
+        # df81.to_excel(excel_writer=writer, sheet_name='香港 问题类型 签收率', index=False)
+        # df82.to_excel(excel_writer=writer, sheet_name='台湾 语音外呼 签收率', index=False)
+        # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表 cp
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+        with pd.ExcelWriter(file_pathT, engine='openpyxl') as writer:
+            db2.drop(['币种', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='台湾', index=False)
+            # db2.drop(['币种', '月份', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='台湾各月', index=False)
+            db3.drop(['币种', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='香港', index=False)
+            # db3.drop(['币种', '月份', '总单量', '上月总单量'], axis=1).to_excel(excel_writer=writer, sheet_name='香港各月', index=False)
+            df1.to_excel(excel_writer=writer, sheet_name='明细', index=False)
+            df11.to_excel(excel_writer=writer, sheet_name='拒收', index=False)
+            df1211.to_excel(excel_writer=writer, sheet_name='台湾-物流', index=False)
+            df1222.to_excel(excel_writer=writer, sheet_name='香港-物流', index=False)
+            # df5[['创建日期', '总单量', '上月总单量', '派送问题件单量', '上月派送问题件单量', '签收率', '上月签收率']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False)
+            # df5[['创建日期', '上月总单量', '上月派送问题件单量']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False, startcol=10)
+            # df5[['创建日期', '总单量', '派送问题件单量']].to_excel(excel_writer=writer, sheet_name='趋势图', index=False, startcol=15)
+            df51.to_excel(excel_writer=writer, sheet_name='同期完成订单', index=False)
+            df52.to_excel(excel_writer=writer, sheet_name='同期派送问题件', index=False)
+            df53.to_excel(excel_writer=writer, sheet_name='同期签收率', index=False)
+            df54.to_excel(excel_writer=writer, sheet_name='当日', index=False)
+            df55.to_excel(excel_writer=writer, sheet_name='上月', index=False)
+            df8.to_excel(excel_writer=writer, sheet_name='台湾 问题类型 签收率', index=False)
+            df81.to_excel(excel_writer=writer, sheet_name='香港 问题类型 签收率', index=False)
+            df82.to_excel(excel_writer=writer, sheet_name='台湾 语音外呼 签收率', index=False)
         try:
             print('正在运行 派送问题件表 宏…………')
             # app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
@@ -715,7 +735,7 @@ class QueryTwo(Settings, Settings_sso):
                           '订单类型', '物流渠道',  '派送问题首次时间', '处理人', '处理记录', '处理时间', '备注', '派送次数']
             print('正在写入......')
             dp.to_sql('cache_info', con=self.engine1, index=False, if_exists='replace')
-            # dp.to_excel('G:\\输出文件\\派送问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            # dp.to_excel('F:\\输出文件\\派送问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO 派送问题件_跟进表(订单编号,币种, 联系电话, 下单时间,完成时间,订单状态,物流状态,订单类型,物流渠道, 创建日期, 创建时间, 派送问题, 派送问题首次时间, 派送次数,处理人, 处理记录, 处理时间,备注, 记录时间) 
                     SELECT 订单编号,币种, 联系电话, 下单时间,完成时间,订单状态,物流状态,订单类型,物流渠道, DATE_FORMAT(创建时间,'%Y-%m-%d') 创建日期, 创建时间, 派送问题, 派送问题首次时间, 派送次数, 处理人, 处理记录, IF(处理时间 = '',NULL,处理时间) 处理时间,备注,NOW() 记录时间 
                     FROM cache_info;'''
@@ -1029,17 +1049,18 @@ class QueryTwo(Settings, Settings_sso):
         df11 = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入excel…………')
         file_pathT = 'F:\\神龙签收率\\A订单改派跟进\\{0} 派送问题件跟进情况.xlsx'.format(rq)
-        df0 = pd.DataFrame([])
-        df0.to_excel(file_pathT, index=False)
-        writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_pathT)
-        writer.book = book
-
-        df11.to_excel(excel_writer=writer, sheet_name='拒收', index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表 cp
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        # df0 = pd.DataFrame([])
+        # df0.to_excel(file_pathT, index=False)
+        # writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
+        # book = load_workbook(file_pathT)
+        # writer.book = book
+        # df11.to_excel(excel_writer=writer, sheet_name='拒收', index=False)
+        # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表 cp
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+        with pd.ExcelWriter(file_pathT, engine='openpyxl') as writer:
+            df11.to_excel(excel_writer=writer, sheet_name='拒收', index=False)
         try:
             print('正在运行 派送问题件表 宏…………')
             # # 通过Win32的方式并不限制xls和xlsx（因为操作是wps在做）  https://wenku.baidu.com/view/3d298b06de36a32d7375a417866fb84ae45cc3ef.html
@@ -1132,7 +1153,7 @@ class QueryTwo(Settings, Settings_sso):
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = df
-            dp.to_excel('G:\\输出文件\\拒收问题件-更新2{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\\输出文件\\拒收问题件-更新2{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp = dp[['订单编号', 'currency', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'percentInfo.arriveCount', 'addTime', 'finishTime', 'tel_phone', 'shipInfo.shipPhone', 'ip','newCloneUser', 'newCloneStatus', 'newCloneLogisticsStatus', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
             dp.columns = ['订单编号', '币种', '订单总量', '拒收量', '签收量','下单时间', '完成时间', '电话', '联系电话', 'ip','新单克隆人', '新单订单状态', '新单物流状态', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果', '是否需要商品']
             print('正在写入......')
@@ -1298,7 +1319,7 @@ class QueryTwo(Settings, Settings_sso):
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = df
-            dp.to_excel('G:\\输出文件\\物流问题件-更新2{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\\输出文件\\物流问题件-更新2{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp = dp[['order_number',  'currency', 'ship_phone', 'amount', 'customer_name', 'customer_mobile', 'arrived_address', 'arrived_time', 'create_time', 'dealStatus', 'dealContent',
                      'deal_time', 'dealTime', 'result_reson', 'result_info', 'questionType', 'questionTypeName', 'question_desc', 'traceRecord', 'traceUserName', 'giftStatus', 'operatorName','contact',
                      'gift_reissue_order_number',  'addtime','update_time']]
@@ -1308,7 +1329,7 @@ class QueryTwo(Settings, Settings_sso):
             # dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞|张陈平', na=False))]
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            # dp.to_excel('G:\\输出文件\\物流问题件-更新2{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            # dp.to_excel('F:\\输出文件\\物流问题件-更新2{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO 物流问题件_check_iphone(订单编号, 下单时间, 联系电话, 币种, 问题类型, 问题描述, 物流反馈时间, 导入人,处理时间, 处理日期时间, 处理人, 联系方式,  处理结果,拒收原因, 克隆订单编号, 记录时间) 
                     SELECT 订单编号, 下单时间, 联系电话, 币种, 问题类型, NULL AS 问题描述, 导入时间 AS 物流反馈时间, 导入人,IF(处理时间 = '',NULL,处理时间) AS 处理时间, IF(处理日期时间 = '',NULL,处理日期时间) AS 处理日期时间, 处理人, 联系方式, IF(最新处理结果 = '',问题类型状态,最新处理结果) AS 处理结果,拒收原因, 赠品补发订单编号 AS 克隆订单编号, NOW() 记录时间 
                     FROM customer;'''
@@ -1526,18 +1547,21 @@ class QueryTwo(Settings, Settings_sso):
                 ORDER BY s1.币种, s1.近两月订单量 DESC, s1.标准电话, s2.出现次数 DESC;'''.format(timeStart, timeEnd)
         df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
 
-        file_path = 'G:\\输出文件\\拒收&派送|物流问题件-电话检测 {}.xlsx'.format(rq)
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        df2.to_excel(excel_writer=writer, sheet_name='拒收-电话', index=False)
-        df3.to_excel(excel_writer=writer, sheet_name='派送&物流-电话', index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        file_path = 'F:\\输出文件\\拒收&派送|物流问题件-电话检测 {}.xlsx'.format(rq)
+        # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+        # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # df2.to_excel(excel_writer=writer, sheet_name='拒收-电话', index=False)
+        # df3.to_excel(excel_writer=writer, sheet_name='派送&物流-电话', index=False)
+        # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            df2.to_excel(excel_writer=writer, sheet_name='拒收-电话', index=False)
+            df3.to_excel(excel_writer=writer, sheet_name='派送&物流-电话', index=False)
         print('输出成功')
 
 if __name__ == '__main__':

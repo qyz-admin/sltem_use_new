@@ -80,9 +80,9 @@ class QueryTwoLower(Settings, Settings_sso):
         if select == 1:
             path = r'F:\神龙签收率\(未发货) 直发-仓库-压单\每日压单核实汇总'
         elif select == 2:
-            path = r'D:\Users\Administrator\Desktop\需要用到的文件\B导入头程提货单号'
+            path = r'F:\需要用到的文件\需要用到的文件\B导入头程提货单号'
         elif select == 4:
-            path = r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表'
+            path = r'F:\需要用到的文件\需要用到的文件\A查询导表'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -330,7 +330,7 @@ class QueryTwoLower(Settings, Settings_sso):
                     else:
                         dp = None
                     print(dp)
-                    dp.to_excel('G:\\输出文件\\新竹快递-查询{}.xlsx'.format(rq), sheet_name='查询', index=False,engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+                    dp.to_excel('F:\\输出文件\\新竹快递-查询{}.xlsx'.format(rq), sheet_name='查询', index=False,engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
                     print('查询已导出+++')
                     print('*' * 50)
                     print('++++成功导入：' + sht.name + '--->>>到压单表')
@@ -478,18 +478,20 @@ class QueryTwoLower(Settings, Settings_sso):
             else:
                 print(mkpath + ' 目录已存在')
             file_path = mkpath + '\\压单反馈 {0}.xlsx'.format(rq)
-            df0 = pd.DataFrame([])                                  # 创建空的dataframe数据框
-            df0.to_excel(file_path, index=False)                    # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-            writer = pd.ExcelWriter(file_path, engine='openpyxl')   # 初始化写入对象
-            book = load_workbook(file_path)                         # 可以向不同的sheet写入数据（对现有工作表的追加）
-            writer.book = book                                      # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-            df.to_excel(excel_writer=writer, sheet_name='查询', index=False)
-            df2.to_excel(excel_writer=writer, sheet_name='明细', index=False)
-            if 'Sheet1' in book.sheetnames:                         # 删除新建文档时的第一个工作表
-                del book['Sheet1']
-            writer.save()
-            writer.close()
-
+            # df0 = pd.DataFrame([])                                  # 创建空的dataframe数据框
+            # df0.to_excel(file_path, index=False)                    # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            # writer = pd.ExcelWriter(file_path, engine='openpyxl')   # 初始化写入对象
+            # book = load_workbook(file_path)                         # 可以向不同的sheet写入数据（对现有工作表的追加）
+            # writer.book = book                                      # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            # df.to_excel(excel_writer=writer, sheet_name='查询', index=False)
+            # df2.to_excel(excel_writer=writer, sheet_name='明细', index=False)
+            # if 'Sheet1' in book.sheetnames:                         # 删除新建文档时的第一个工作表
+            #     del book['Sheet1']
+            # writer.save()
+            # writer.close()
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                df.to_excel(excel_writer=writer, sheet_name='查询', index=False)
+                df2.to_excel(excel_writer=writer, sheet_name='明细', index=False)
             print('输出成功......')
             print('*' * 50)
         else:
@@ -740,7 +742,7 @@ class QueryTwoLower(Settings, Settings_sso):
                     FROM customer'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
-            dp.to_excel('G:\\输出文件\\已下架 {0} {1}-{2}.xlsx'.format(tem_name, type_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\\输出文件\\已下架 {0} {1}-{2}.xlsx'.format(tem_name, type_name, rq), sheet_name='查询', index=False, engine='xlsxwriter')
             # self.stockcompose_upload()
             # print('补充退货单号成功......')
         else:
@@ -757,7 +759,7 @@ class QueryTwoLower(Settings, Settings_sso):
                         WHERE yx.记录时间 >= TIMESTAMP(CURDATE()) AND yx.物流渠道 = '龟山备货' AND yx.`新运单号` IS NULL;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         if df is not None and len(df) > 0:
-            df.to_excel('G:\\输出文件\\{} 龟山备货.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel('F:\\输出文件\\{} 龟山备货.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             print('获取成功......')
         else:
             print('****** 今日无新增龟山备货数据！！！')
@@ -885,7 +887,7 @@ class QueryTwoLower(Settings, Settings_sso):
                 dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
             print(dp)
-            dp.to_excel('G:\\输出文件\\组合库存-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\\输出文件\\组合库存-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp.to_sql('customer_cp', con=self.engine1, index=False, if_exists='replace')
             sql = '''update `已下架表` a, `customer_cp` b
                         set a.`退货单号`= IF(b.`退货单号` = '' OR b.`退货单号` IS NULL,NULL, b.`退货单号`)
@@ -914,9 +916,9 @@ class QueryTwoLower(Settings, Settings_sso):
                      FROM 已下架表 yx
                      WHERE yx.记录时间 >= TIMESTAMP(CURDATE()) AND yx.仓库 = '易速配-桃园仓' AND (yx.`新运单号` IS NULL OR yx.`新运单号` = '');'''
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_excel('G:\\输出文件\\组合库存-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            df.to_excel('F:\\输出文件\\组合库存-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             if df is not None and len(df) > 0:
-                file_path = r'G:\\输出文件\\{0} 桃园仓重出 {1}单.xlsx'.format(rq, str(len(df)))
+                file_path = r'F:\\输出文件\\{0} 桃园仓重出 {1}单.xlsx'.format(rq, str(len(df)))
                 df.to_excel(file_path, sheet_name='查询', index=False, engine='xlsxwriter')
                 print('正在运行宏…………')
                 # 通过Win32的方式并不限制xls和xlsx（因为操作是wps在做）  https://wenku.baidu.com/view/3d298b06de36a32d7375a417866fb84ae45cc3ef.html
@@ -1157,7 +1159,7 @@ class QueryTwoLower(Settings, Settings_sso):
             else:
                 dp = df
             print('正在写入......')
-            dp.to_excel('G:\\输出文件\\改派无运单号 {}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\\输出文件\\改派无运单号 {}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             # dp = dp[['order_number', 'goods_id', 'goods_name', 'currency_id', 'area_id', 'ydtime', 'purid', 'other_reason', 'buyer', 'intime', 'addtime', 'is_lower', 'below_time', 'cate']]
             # dp.columns = ['订单编号', '产品ID', '产品名称', '币种', '团队', '反馈时间', '压单原因', '其他原因', '采购员', '入库时间', '下单时间', '是否下架', '下架时间', '品类']
             # dp = dp[(dp['币种'].str.contains('港币|台币', na=False))]
@@ -1327,7 +1329,7 @@ class QueryTwoLower(Settings, Settings_sso):
 
             print('共有 ' + str(len(df)) + '条 正在写入......')
             df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-            # df.to_excel('G:\\输出文件\\{0}-查询{1}.xlsx'.format(match[team], rq), sheet_name='查询', index=False,engine='xlsxwriter')
+            # df.to_excel('F:\\输出文件\\{0}-查询{1}.xlsx'.format(match[team], rq), sheet_name='查询', index=False,engine='xlsxwriter')
             sql = '''REPLACE INTO gat_take_delivery(id,提货单号,提货时间,提货日期,提货物流,提货物流id,运输方式,货物类型,运输公司,运输班次,箱号,线路,箱数,统计,出货时间, 交货时间,报关资料发送结果,更新时间, 主號,航班號,记录时间)
                      SELECT id,提货单号,提货时间,DATE_FORMAT(提货时间,'%Y-%m-%d') 提货日期,提货物流,提货物流id,运输方式,货物类型,IF(运输公司 = '',NULL,运输公司) 运输公司,IF(运输班次 = '',NULL,运输班次) 运输班次,箱号,线路,箱数,统计,
                             NULL 出货时间, IF(交货时间 = '',NULL,交货时间) 交货时间,报关资料发送结果,更新时间,NULL 主號,NULL 航班號,NOW() 记录时间
@@ -1456,7 +1458,7 @@ class QueryTwoLower(Settings, Settings_sso):
                 result = self._delivery_rejectDelivery(d)
                 ordersdict.append(result)
         df = pd.json_normalize(ordersdict)
-        df.to_excel('G:\\输出文件\\{0} 驳回发货-查询.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        df.to_excel('F:\\输出文件\\{0} 驳回发货-查询.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         print('写入完成++++++')
     def _delivery_rejectDelivery(self, waybill):
         print('+++正在驳回中')
@@ -1514,7 +1516,7 @@ class QueryTwoLower(Settings, Settings_sso):
             print('正在写入临时缓存表......')
             print(dp)
             print('查询已导出+++')
-            dp.to_excel('G:\\输出文件\\出库-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\\输出文件\\出库-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         # 进入运单扫描导出 界面
     def _gwms_chuku(self, ord ,timeStart, timeEnd):
         print('+++正在查询订单信息中')

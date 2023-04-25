@@ -1,31 +1,19 @@
 import os
 import win32com.client as win32
-from openpyxl import Workbook, load_workbook
+from openpyxl import load_workbook
 from excelControl import ExcelControl
 from mysqlControl import MysqlControl
 from wlMysql import WlMysql
 from wlExecl import WlExecl
 from sso_updata import Query_sso_updata
-from gat_update2 import QueryUpdate
+from gat_update import QueryUpdate
 import datetime
 from dateutil.relativedelta import relativedelta
 start: datetime = datetime.datetime.now()
 team = 'gat'
-match1 = {'gat': '港台',          'slsc': '品牌'} 
-match = {'slgat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
-         'slgat_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
-         'slgat_hs': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
-         'slrb': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
-         'slrb_jl': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
-         'slrb_js': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
-         'slrb_hs': r'D:\Users\Administrator\Desktop\需要用到的文件\A日本签收表',
-         'slsc': r'D:\Users\Administrator\Desktop\需要用到的文件\品牌',
-         'gat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
-         'gat_upload': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表 - 单独上传',
-         'sltg': r'D:\Users\Administrator\Desktop\需要用到的文件\A泰国签收表',
-         'slxmt': r'D:\Users\Administrator\Desktop\需要用到的文件\A新马签收表',
-         'slxmt_t': r'D:\Users\Administrator\Desktop\需要用到的文件\A新马签收表',
-         'slxmt_hfh': r'D:\Users\Administrator\Desktop\需要用到的文件\A新马签收表'}
+match1 = {'gat': '港台', 'slsc': '品牌'}
+match = {'gat': r'F:\需要用到的文件\A港台签收表',
+         'gat_upload': r'F:\需要用到的文件\A港台签收表 - 单独上传'}
 '''    msyql 语法:      show processlist（查看当前进程）;  
                         set global event_scheduler=0;（关闭定时器）;
 备注：  港台 需整理的表：香港立邦>(明细再copy一份保存) ； 台湾龟山改派>(copy保存为xlsx格式);
@@ -108,7 +96,7 @@ print('导入耗时：', datetime.datetime.now() - start)
 
 
 # ---获取 改派未发货 execl文件---
-mkpath = r"F:\神龙签收率\(未发货) 改派-物流"
+mkpath = r"F:\\神龙签收率\\(未发货) 改派-物流"
 dirs_gp = os.listdir(path=mkpath)
 wb = ''
 for dir in dirs_gp:

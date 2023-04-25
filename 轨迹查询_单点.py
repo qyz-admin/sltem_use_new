@@ -171,7 +171,7 @@ class QueryTwo(Settings, Settings_sso):
         print(dp)
         dp = dp[['orderNumber', 'wayBillNumber', 'track_date', '出货时间', '上线时间', '保管时间', '完成时间', 'track_info', 'track_status', '负责营业所', '轨迹备注', '序号', '便利店']]
         dp.columns = ['订单编号', '运单号', '物流轨迹时间', '出货时间', '上线时间', '保管时间', '完成时间', '物流轨迹', '轨迹代码', '负责营业所', '轨迹备注', '序号', '便利店']
-        dp.to_excel('G:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+        dp.to_excel('F:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         print('查询已导出+++')
         print('*' * 50)
 
@@ -214,7 +214,7 @@ class QueryTwo(Settings, Settings_sso):
             columns = ','.join(columns)
             sql = 'REPLACE INTO {0}({1}, 添加时间) SELECT *, NOW() 添加时间 FROM cache_waybill; '.format('轨迹查询', columns)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-            # dp.to_excel('G:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+            # dp.to_excel('F:\\输出文件\\运单轨迹-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
             print('查询已导出+++')
             print('*' * 50)
             n = n + 10
@@ -249,7 +249,7 @@ class QueryTwo(Settings, Settings_sso):
                     if data is not None and len(data) > 0:
                         dlist.append(data)
                 dp = df.append(dlist, ignore_index=True)
-                dp.to_excel('G:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+                dp.to_excel('F:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         print('++++++查询成功+++++++')
         print('查询耗时：', datetime.datetime.now() - start)
         print('*' * 50)
@@ -614,7 +614,7 @@ class QueryTwo(Settings, Settings_sso):
         # print(99)
         # print(data)
         # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        # data.to_excel('G:\\输出文件\\黑猫宅急便 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        # data.to_excel('F:\\输出文件\\黑猫宅急便 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         return data
 
 
@@ -649,7 +649,7 @@ class QueryTwo(Settings, Settings_sso):
                     if data is not None and len(data) > 0:
                         dlist.append(data)
                 dp = df.append(dlist, ignore_index=True)
-                dp.to_excel('G:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+                dp.to_excel('F:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         print('++++++查询成功+++++++')
         print('查询耗时：', datetime.datetime.now() - start)
         print('*' * 50)
@@ -781,7 +781,7 @@ class QueryTwo(Settings, Settings_sso):
         # data.columns = ['产品id', '产品名称', '一级分类', '二级分类', '三级分类', '产品状态', '价格(￥)', '选品人',
         #                 '供应商数', '采购人', '商品数', 'logisticsCost', '出借人', '特殊信息', '添加时间',
         #                 '产品分类', '产品图片']
-        # data.to_excel('G:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False,engine='xlsxwriter')
+        # data.to_excel('F:\\输出文件\\运单轨迹 {0} .xlsx'.format(rq), sheet_name='查询', index=False,engine='xlsxwriter')
         print('++++++本批次查询成功+++++++')
         # print('*' * 50)
         return data
@@ -836,7 +836,7 @@ class QueryTwo(Settings, Settings_sso):
                 dp.columns = ['id','订单编号', '运单编号', '币种', '下单时间', '金额','订单状态', '物流状态', '物流渠道','创建时间', '派送问题类型', '联系方式', '最新处理人', '最新处理状态', '最新处理结果', '处理时间', '派送次数', '最新抓取时间', '最新问题类型']
                 print('正在写入......')
                 dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-                dp.to_excel('G:\\输出文件\\派送问题件_语音外呼-{0}{1}.xlsx'.format(order_time,rq), sheet_name='查询', index=False, engine='xlsxwriter')
+                dp.to_excel('F:\\输出文件\\派送问题件_语音外呼-{0}{1}.xlsx'.format(order_time,rq), sheet_name='查询', index=False, engine='xlsxwriter')
                 sql = '''REPLACE INTO {0}(id,订单编号, 运单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,处理时间,派送次数,最新抓取时间,最新问题类型,统计日期, 物流轨迹时间, 物流轨迹,便利店, 商品名, 来源渠道,姓名,电话,地址,金额,付款类型,团队,时间,外呼类型,是否短信,记录时间) 
                         SELECT id,订单编号,运单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,IF(处理时间 = '',NULL,处理时间) 处理时间,派送次数,IF(最新抓取时间 = '',NULL,最新抓取时间) 最新抓取时间,最新问题类型,DATE_FORMAT({1},'%Y%m%d') 统计日期, 
                                 null 物流轨迹时间, null 物流轨迹, null 便利店, null 商品名, null 来源渠道,null 姓名,null 电话,null 地址,null 金额,null 付款类型,null 团队, '{2}' AS 时间, null 外呼类型,null 是否短信,NOW() 记录时间 
@@ -1153,25 +1153,28 @@ class QueryTwo(Settings, Settings_sso):
                   AND s.外呼类型 = '到站自取';'''.format('派送问题件_语音外呼', tm_data)
         df3 = pd.read_sql_query(sql=sql, con=self.engine1)
 
-        df1.to_excel('G:\\输出文件\\送至便利店-语音外呼{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
-        df2.to_excel('G:\\输出文件\\与客户另约时间配送-语音外呼{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
-        df3.to_excel('G:\\输出文件\\到站自取-语音外呼{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        df1.to_excel('F:\\输出文件\\送至便利店-语音外呼{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+        df2.to_excel('F:\\输出文件\\与客户另约时间配送-语音外呼{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+        df3.to_excel('F:\\输出文件\\到站自取-语音外呼{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
 
-        filePath = r'G:\\输出文件\\语音外呼-派送问题件{}.xlsx'.format(rq)
-        df0 = pd.DataFrame([])                                  # 创建空的dataframe数据框
-        df0.to_excel(filePath, index=False)                     # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        filePath = r'F:\\输出文件\\语音外呼-派送问题件{}.xlsx'.format(rq)
+        # df0 = pd.DataFrame([])                                  # 创建空的dataframe数据框
+        # df0.to_excel(filePath, index=False)                     # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
         print('正在写入excel…………')
-        writer = pd.ExcelWriter(filePath, engine='openpyxl')    # 初始化写入对象
-        book = load_workbook(filePath)                          # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book                                      # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        df1.to_excel(excel_writer=writer, sheet_name='超商', index=False)
-        df2.to_excel(excel_writer=writer, sheet_name='预约时间配送', index=False)
-        df3.to_excel(excel_writer=writer, sheet_name='到站自取', index=False)
-        if 'Sheet1' in book.sheetnames:                         # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
-
+        # writer = pd.ExcelWriter(filePath, engine='openpyxl')    # 初始化写入对象
+        # book = load_workbook(filePath)                          # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book                                      # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # df1.to_excel(excel_writer=writer, sheet_name='超商', index=False)
+        # df2.to_excel(excel_writer=writer, sheet_name='预约时间配送', index=False)
+        # df3.to_excel(excel_writer=writer, sheet_name='到站自取', index=False)
+        # if 'Sheet1' in book.sheetnames:                         # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+        with pd.ExcelWriter(filePath, engine='openpyxl') as writer:
+            df1.to_excel(excel_writer=writer, sheet_name='超商', index=False)
+            df2.to_excel(excel_writer=writer, sheet_name='预约时间配送', index=False)
+            df3.to_excel(excel_writer=writer, sheet_name='到站自取', index=False)
         print('查询已导出+++')
         print('*' * 50)
         # 语音外呼 派送的物流轨迹信息（三.2）
@@ -1193,7 +1196,7 @@ if __name__ == '__main__':
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 ；  cat = 1 、黑猫切换是否使用后台数据  0 、还是官网数据 
     '''
-    select = 52
+    select = 1
     isReal = 1
     cat = 0
     if int(select) == 1:

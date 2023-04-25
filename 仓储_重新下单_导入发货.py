@@ -66,7 +66,7 @@ class import_Data(Settings, Settings_sso):
         print(datetime.datetime.now())
         file_data = input('重新下单:  请输入 运单编号,多个以逗号分割:  ')
         # file_data ='7464302731,7464320043,7464314104'
-        mkpath = r"D:\Users\Administrator\Desktop\需要用到的文件\Temp"
+        mkpath = r"F:\需要用到的文件\Temp"
         isExists = os.path.exists(mkpath)
         if not isExists:
             os.makedirs(mkpath)
@@ -215,7 +215,7 @@ class import_Data(Settings, Settings_sso):
         print(dp)
         print('重新下单: 新单号已输出,请复制使用')
         print(dp['重新下单'].to_string(index=False))
-        dp.to_excel('G:\输出文件\\重新下单-新单号{}.xlsx'.format(rq), sheet_name='查询', index=False,  engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+        dp.to_excel('F:\输出文件\\重新下单-新单号{}.xlsx'.format(rq), sheet_name='查询', index=False,  engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         print('查询已导出+++')
         wb.close()
         app.quit()
@@ -261,4 +261,4 @@ if __name__ == '__main__':
     # 重新下单 - 上传文件
     m.order_change_logistics()
     # 重新下单 - 获取新单号
-    m.wb_sheet(r'D:\Users\Administrator\Desktop\需要用到的文件\Temp\临时写入文件.xlsx')
+    m.wb_sheet(r'F:\需要用到的文件\Temp\临时写入文件.xlsx')

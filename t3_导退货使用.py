@@ -1,13 +1,11 @@
 import os
-import win32api,win32con
 import win32com.client as win32
-from openpyxl import Workbook, load_workbook
+from openpyxl import load_workbook
 from excelControl import ExcelControl
 from mysqlControl import MysqlControl
 from wlMysql import WlMysql
 from wlExecl import WlExecl
-from sso_updata import Query_sso_updata
-from gat_update2 import QueryUpdate
+from gat_update import QueryUpdate
 import datetime
 from dateutil.relativedelta import relativedelta
 

@@ -85,7 +85,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                                                                                     self.mysql2['datebase']))
     def readFormHost(self, team, searchType,pople_Query, timeStart, timeEnd):
         start = datetime.datetime.now()
-        path = r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表'
+        path = r'F:\需要用到的文件\A查询导表'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -159,7 +159,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                                       '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
                                       '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间', '异常提示', '异常拉黑率',
                                       '拉黑率总量','拉黑率签收','拉黑率拒收','留言']
-                        dp.to_excel('G:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+                        dp.to_excel('F:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
                         print('查询已导出+++')
                     else:
                         print('----------数据为空,查询失败：' + sht.name)
@@ -207,7 +207,7 @@ class QueryOrder_Code(Settings, Settings_sso):
             dp = df.append(dlist, ignore_index=True)
             dp = dp[['orderNumber', 'currency', 'addTime', 'service', 'cloneUser', 'orderStatus', 'logisticsStatus']]
             dp.columns = ['订单编号', '币种', '下单时间', '代下单客服', '克隆人', '订单状态', '物流状态']
-            dp.to_excel('G:\\输出文件\\绩效促单-下单时间{}.xlsx'.format(rq), sheet_name='促单', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\\输出文件\\绩效促单-下单时间{}.xlsx'.format(rq), sheet_name='促单', index=False, engine='xlsxwriter')
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
             sql = '''REPLACE INTO 促单_下单时间(订单编号,币种, 下单时间, 代下单客服, 克隆人, 订单状态, 物流状态, 统计月份,记录时间) 
                     SELECT 订单编号,币种, 下单时间, 代下单客服, 克隆人, 订单状态, 物流状态, DATE_FORMAT(下单时间,'%Y%m') 统计月份,NOW() 记录时间 
@@ -331,7 +331,7 @@ class QueryOrder_Code(Settings, Settings_sso):
             dp = df.append(dlist, ignore_index=True)
             dp = dp[['id', 'order_number', 'redeemType', 'oldOrderStatus', 'oldLogisticsStatus', 'oldAmount', 'orderStatus','logisticsStatus','amount','logisticsName','operatorName','create_time','save_money','currencyName', 'delOperatorName','del_reason']]
             dp.columns = ['id', '订单编号', '挽单类型', '原订单状态', '原物流状态', '原订单金额', '当前订单状态', '当前物流状态','当前订单金额','当前物流渠道','创建人','创建时间','挽单金额','币种', '删除人', '删除原因']
-            dp.to_excel('G:\\输出文件\\挽单列表-查询{}.xlsx'.format(rq), sheet_name='挽单', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\\输出文件\\挽单列表-查询{}.xlsx'.format(rq), sheet_name='挽单', index=False, engine='xlsxwriter')
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
             sql = '''REPLACE INTO 挽单列表_创建时间(id, 订单编号,币种, 创建时间, 创建人, 挽单类型, 挽单金额, 当前订单状态, 当前物流状态, 回款状态, 删除人, 删除原因, 统计月份,记录时间) 
                     SELECT id, 订单编号,币种, 创建时间, 创建人, 挽单类型, 挽单金额, 当前订单状态, 当前物流状态,NULL as 回款状态, 删除人, 删除原因, DATE_FORMAT(创建时间,'%Y%m') 统计月份,NOW() 记录时间 
@@ -412,7 +412,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                 dp = df.append(dlist, ignore_index=True)
                 dp = dp[['orderNumber', 'currencyName', 'addtime', 'orderStatus', 'logisticsStatus', 'dealTime', 'dealName', 'dealProcess', 'description', 'create_time','fbName']]
                 dp.columns = ['订单编号', '币种', '下单时间', '订单状态', '物流状态', '处理时间', '处理人', '处理结果', '反馈描述', '创建时间','采购反馈人']
-                dp.to_excel('G:\\输出文件\\采购问题件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='采购', index=False, engine='xlsxwriter')
+                dp.to_excel('F:\\输出文件\\采购问题件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='采购', index=False, engine='xlsxwriter')
                 dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
                 sql = '''REPLACE INTO {0}(订单编号,币种,下单时间,订单状态,物流状态,处理时间,处理人, 处理结果, 反馈描述, 创建时间, 采购反馈人,客服处理时间,客服处理人, 客服处理结果,客服反馈描述,统计月份,记录时间) 
                          SELECT 订单编号,币种,下单时间,订单状态,物流状态,处理时间,处理人, 处理结果, 反馈描述, 创建时间, 采购反馈人,NULL 客服处理时间,NULL 客服处理人, NULL 客服处理结果,NULL 客服反馈描述,DATE_FORMAT({1},'%Y%m') 统计月份, NOW() 记录时间 
@@ -473,10 +473,10 @@ class QueryOrder_Code(Settings, Settings_sso):
                 if data is not None and len(data) > 0:
                     dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
-            # dp.to_excel('G:\\输出文件\\绩效采购-查询详情{}.xlsx'.format(rq), sheet_name='采购', index=False, engine='xlsxwriter')
+            # dp.to_excel('F:\\输出文件\\绩效采购-查询详情{}.xlsx'.format(rq), sheet_name='采购', index=False, engine='xlsxwriter')
             dp = dp[['orderNumber', 'addTime', 'name', 'dealProcess', 'content']]
             dp.columns = ['订单编号', '客服处理时间', '客服处理人', '客服处理结果', '客服反馈描述']
-            dp.to_excel('G:\\输出文件\\采购问题件-补充查询{}.xlsx'.format(rq), sheet_name='采购', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\\输出文件\\采购问题件-补充查询{}.xlsx'.format(rq), sheet_name='采购', index=False, engine='xlsxwriter')
             dp.to_sql('cache_check_cp', con=self.engine1, index=False, if_exists='replace')
             print('正在更新表处理详情中......')
             sql = '''update {0} a, {1} b
@@ -568,7 +568,7 @@ class QueryOrder_Code(Settings, Settings_sso):
             print('正在写入 物流问题件......')
             # dp1 = dp[(dp['问题类型'].str.contains('派送问题件', na=False))]  # 筛选 问题类型
             dp1 = dp[~(dp['问题类型'].str.contains('订单压单（giikin内部专用）', na=False))]  # 筛选 问题类型
-            dp1.to_excel('G:\\输出文件\\物流问题件-{0}{1}.xlsx'.format(data_woks2, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp1.to_excel('F:\\输出文件\\物流问题件-{0}{1}.xlsx'.format(data_woks2, rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp1.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
             sql = '''REPLACE INTO {0}(订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新客服处理人,联系方式, 跟进问题类型, 最新处理状态, 最新处理结果, 最新客服处理,
                                         最新处理时间, 最新客服处理日期,拒收原因,具体原因,赠品补发订单编号, 赠品补发订单状态, 问题类型,历史处理记录,统计月份,记录时间)
@@ -580,7 +580,7 @@ class QueryOrder_Code(Settings, Settings_sso):
 
             print('正在写入 压单核实......')
             dp2 = dp[(dp['问题类型'].str.contains('订单压单（giikin内部专用）', na=False))]  # 筛选 问题类型
-            dp2.to_excel('G:\\输出文件\\压单核实-{0}{1}.xlsx'.format(data_woks2, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp2.to_excel('F:\\输出文件\\压单核实-{0}{1}.xlsx'.format(data_woks2, rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp2.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
             sql = '''REPLACE INTO {0}(订单编号, 币种,下单时间, 订单状态,  物流状态, 导入时间,  最新处理人, 最新客服处理人,联系方式, 跟进问题类型, 最新处理状态, 最新处理结果, 最新客服处理,
                                     最新处理时间, 最新客服处理日期,拒收原因,具体原因,赠品补发订单编号, 赠品补发订单状态, 问题类型,历史处理记录,统计月份,记录时间)
@@ -735,7 +735,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                           '赠品补发订单编号', '赠品补发订单状态', '联系方式', '历史处理记录']
             print('正在写入......')
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-            dp.to_excel('G:\\输出文件\\物流客诉件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\\输出文件\\物流客诉件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO {0}(id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
                                                 最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
                                                 赠品补发订单编号,赠品补发订单状态,联系方式,历史处理记录,统计月份,记录时间) 
@@ -876,7 +876,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                 dp.columns = ['id','订单编号', '币种', '下单时间', '订单状态', '物流状态', '物流渠道','创建时间', '派送问题类型', '联系方式', '最新处理人', '最新处理状态', '最新处理结果', '处理时间', '派送次数', '最新抓取时间', '最新问题类型']
                 print('正在写入......')
                 dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-                dp.to_excel('G:\\输出文件\\派送问题件-{0}{1}.xlsx'.format(order_time,rq), sheet_name='查询', index=False, engine='xlsxwriter')
+                dp.to_excel('F:\\输出文件\\派送问题件-{0}{1}.xlsx'.format(order_time,rq), sheet_name='查询', index=False, engine='xlsxwriter')
                 sql = '''REPLACE INTO {0}(id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,处理时间,派送次数,最新抓取时间,最新问题类型,统计月份, 记录时间) 
                         SELECT id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,IF(处理时间 = '',NULL,处理时间) 处理时间,派送次数,IF(最新抓取时间 = '',NULL,最新抓取时间) 最新抓取时间,最新问题类型,DATE_FORMAT({1},'%Y%m') 统计月份, NOW() 记录时间 
                         FROM cache_check;'''.format(data_woks, data_woks2)
@@ -984,7 +984,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                 dlist.append(data)
                 time.sleep(3)
             dp = df.append(dlist, ignore_index=True)
-            dp.to_excel('G:\\输出文件\\拒收问题件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\\输出文件\\拒收问题件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp = dp[['订单编号', 'amount', 'logisticsName', 'wayBillNumber', 'shipInfo.shipPhone', '跟进人', '时间',  '问题类型', '问题原因', '内容', '录音链接']]
             dp.columns = ['订单编号', '订单金额', '物流渠道', '运单号', '联系电话', 'F跟进人','F时间', 'F问题类型', 'F问题原因', 'F内容',  '录音链接聊天截图']
             print('正在写入......')
@@ -1107,7 +1107,7 @@ class QueryOrder_Code(Settings, Settings_sso):
             dp = df.append(dlist, ignore_index=True)
             print('正在写入......')
             dp.to_sql('cache_ch', con=self.engine1, index=False, if_exists='replace')
-            dp.to_excel('G:\\输出文件\\系统问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\\输出文件\\系统问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO gat_order_list_log(id, orderId, orderNumber, orderStatus, updateTime, uid, remark, name, 统计月份,记录时间) 
                                               SELECT id, orderId, orderNumber, orderStatus, updateTime, uid, remark, name, DATE_FORMAT('{0}','%Y%m') 统计月份, NOW() 记录时间 
                     FROM cache_ch;'''.format(timeEnd)
@@ -1241,7 +1241,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         data = list(dict.values())
         data = pd.json_normalize(data)
         print(data)
-        data.to_excel('G:\\输出文件\\系统问题件-下单时间{0}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        data.to_excel('F:\\输出文件\\系统问题件-下单时间{0}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         data.to_sql('cache_ch', con=self.engine1, index=False, if_exists='replace')
         sql = '''REPLACE INTO 系统问题件_下单时间( id, 订单编号, 订单状态, 转化时间, 备注, 转化人,  系统订单状态, 系统物流状态, 统计月份,记录时间) 
                  SELECT id, 订单编号, 订单状态, 转化时间, 备注, 转化人, NULL AS 系统订单状态, NULL AS 系统物流状态, DATE_FORMAT('{0}','%Y%m') 统计月份, NOW() 记录时间 
@@ -1358,8 +1358,8 @@ if __name__ == '__main__':
         m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
 
     elif int(select) == 8:
-        timeStart = datetime.date(2023, 4, 17)         # 拒收问题  查询；订单检索@~@ok
-        timeEnd = datetime.date(2023, 4, 18)
+        timeStart = datetime.date(2023, 4, 14)         # 拒收问题  查询；订单检索@~@ok
+        timeEnd = datetime.date(2023, 4, 21)
         order_time = '跟进时间'
         for i in range((timeEnd - timeStart).days):  # 按天循环获取订单状态
             day = timeStart + datetime.timedelta(days=i)

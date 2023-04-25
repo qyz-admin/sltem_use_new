@@ -26,7 +26,7 @@ from 查询_产品明细 import QueryTwoT
 from mysqlControl import MysqlControl
 from sso_updata import Query_sso_updata
 
-# -*- coding:utf-8 -*-
+# -*- codinF:utf-8 -*-
 class QueryUpdate(Settings):
     def __init__(self):
         Settings.__init__(self)
@@ -70,7 +70,7 @@ class QueryUpdate(Settings):
     # 获取签收表内容---港澳台更新签收总表(一)
     def readFormHost(self, team, write, last_time, up_time):
         start = datetime.datetime.now()
-        path = r'D:\Users\Administrator\Desktop\需要用到的文件\数据库'
+        path = r'F:\需要用到的文件\数据库'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -566,12 +566,15 @@ class QueryUpdate(Settings):
         df2 = pd.read_sql_query(sql=sql, con=self.engine1)
 
         today = datetime.date.today().strftime('%Y.%m.%d')
-        file_path = 'G:\\输出文件\\\\{} 线付月数据.xlsx'.format(today)
-        writer2 = pd.ExcelWriter(file_path, engine='openpyxl')
-        df1.to_excel(writer2, index=False, startrow=1)     # 月数据
-        df2.to_excel(writer2, index=False, startcol=16)    # 天数据
-        writer2.save()
-        writer2.close()
+        file_path = 'F:\\输出文件\\\\{} 线付月数据.xlsx'.format(today)
+        # writer2 = pd.ExcelWriter(file_path, engine='openpyxl')
+        # df1.to_excel(writer2, index=False, startrow=1)     # 月数据
+        # df2.to_excel(writer2, index=False, startcol=16)    # 天数据
+        # writer2.save()
+        # writer2.close()
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer2:
+            df1.to_excel(writer2, index=False, startrow=1)  # 月数据
+            df2.to_excel(writer2, index=False, startcol=16)  # 天数据
 
         # wb = load_workbook(file_path)
         # sheet = wb.get_sheet_by_name("Sheet1")
@@ -703,23 +706,28 @@ class QueryUpdate(Settings):
                     LEFT JOIN (SELECT * FROM gat_order_list WHERE 年月 >= DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 6 MONTH),'%Y%m')) g ON g.订单编号 = y.订单编号;'''
         df86 = pd.read_sql_query(sql=sqltime86, con=self.engine1)
         print('线付订单明细')
-        df86.to_excel('G:\\输出文件\\{0} 线付订单明细.xlsx', sheet_name='查询', index=False, engine='xlsxwriter').format(rq)
+        df86.to_excel('F:\\输出文件\\{0} 线付订单明细.xlsx', sheet_name='查询', index=False, engine='xlsxwriter').format(rq)
 
-        file_path = 'G:\\输出文件\\{} 线付重复订单签收率.xlsx'.format(rq)
-        df0 = pd.DataFrame([])
-        df0.to_excel(file_path, index=False)
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')
-        book = load_workbook(file_path)
-        writer.book = book
-        listT[0].to_excel(excel_writer=writer, sheet_name='签收率', index=False)
-        listT[1].to_excel(excel_writer=writer, sheet_name='签收率', index=False, startcol=10)  # 明细
-        listT[2].to_excel(excel_writer=writer, sheet_name='签收率', index=False, startcol=20)  # 有效单量
-        listT[3].to_excel(excel_writer=writer, sheet_name='线付明细', index=False)  # 有效单量
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        file_path = 'F:\\输出文件\\{} 线付重复订单签收率.xlsx'.format(rq)
+        # df0 = pd.DataFrame([])
+        # df0.to_excel(file_path, index=False)
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')
+        # book = load_workbook(file_path)
+        # writer.book = book
+        # listT[0].to_excel(excel_writer=writer, sheet_name='签收率', index=False)
+        # listT[1].to_excel(excel_writer=writer, sheet_name='签收率', index=False, startcol=10)  # 明细
+        # listT[2].to_excel(excel_writer=writer, sheet_name='签收率', index=False, startcol=20)  # 有效单量
+        # listT[3].to_excel(excel_writer=writer, sheet_name='线付明细', index=False)  # 有效单量
+        # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
 
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            listT[0].to_excel(excel_writer=writer, sheet_name='签收率', index=False)
+            listT[1].to_excel(excel_writer=writer, sheet_name='签收率', index=False, startcol=10)  # 明细
+            listT[2].to_excel(excel_writer=writer, sheet_name='签收率', index=False, startcol=20)  # 有效单量
+            listT[3].to_excel(excel_writer=writer, sheet_name='线付明细', index=False)  # 有效单量
         print('输出成功......')
 
 
@@ -763,77 +771,77 @@ class QueryUpdate(Settings):
         emailAdd = {'gat': 'giikinliujun@163.com', 'slsc': 'sunyaru@giikin.com'}
         today = datetime.date.today().strftime('%Y.%m.%d')
         if check == '是':
-            # print('正在第一次检查父级分类为空的信息---')
-            # sql = '''SELECT 订单编号,商品id,dp.`product_id`, dp.`name` product_name, dp.third_cate_id, dc.`ppname` cate, dc.`pname` second_cate, dc.`name` third_cate
-            #         FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-            #                 FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`父级分类`,`系统订单状态`
-			# 					  FROM {0}_order_list
-			# 					  WHERE `日期`> '{1}'
-			# 				) sl
-            #                 WHERE (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
-            #              ) s
-            #         LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
-            #         LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''.format(team, month_begin)
-            # df = pd.read_sql_query(sql=sql, con=self.engine1)
-            # if df.empty:
-            #     print('  第一次检查没有为空的………… ')
-            # else:
-            #     print('正在更新父级分类的详情…………')
-            #     df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
-            #     sql = '''update {0}_order_list a, tem_product_id b
-            #                 set a.`父级分类`= IF(b.`cate` = '', a.`父级分类`, b.`cate`),
-            #                     a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
-            #                     a.`三级分类`= IF(b.`third_cate` = '', a.`三级分类`, b.`third_cate`)
-            #             where a.`订单编号`= b.`订单编号`;'''.format(team)
-            #     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-            #     print('更新完成+++')
-            #
-            #     print('正在第二次检查父级分类为空的信息---')
-            #     sql = '''SELECT 订单编号,商品id,dp.`product_id`, dp.`name` product_name, dp.third_cate_id, dc.`ppname` cate, dc.`pname` second_cate, dc.`name` third_cate
-            #             FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-            #                     FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`父级分类`,`系统订单状态`
-			# 						  FROM {0}_order_list
-			# 					      WHERE `日期`> '{1}'
-			# 					) sl
-            #                     WHERE (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
-            #                  ) s
-            #             LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
-            #             LEFT JOIN (SELECT * FROM dim_cate GROUP BY pid ) dc ON  dc.pid = dp.second_cate_id;'''.format(team, month_begin)
-            #     df = pd.read_sql_query(sql=sql, con=self.engine1)
-            #     if df.empty:
-            #         print('  第二次检查没有为空的………… ')
-            #     else:
-            #         print('正在更新父级分类的详情…………')
-            #         sql = '''update {0}_order_list a, tem_product_id b
-            #                     set a.`父级分类`= IF(b.`cate` = '', a.`父级分类`, b.`cate`),
-            #                         a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
-            #                         a.`三级分类`= IF(b.`third_cate` = '', a.`三级分类`, b.`third_cate`)
-            #                 where a.`订单编号`= b.`订单编号`;'''.format(team)
-            #         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-            #         print('更新完成+++')
-            #
-            # print('正在第一次检查产品id为空的信息---')
-            # sql = '''SELECT 订单编号,商品id,dp.product_id, dp.`name` product_name, dp.third_cate_id
-            #         FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
-            #             FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`产品名称`,`父级分类`,`系统订单状态`
-			# 					FROM {0}_order_list
-			# 					WHERE `日期`> '{1}'
-			# 			) sl
-            #             WHERE (sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
-            #         ) s
-            #         LEFT JOIN dim_product_gat dp ON dp.product_id = s.`产品id`;'''.format(team, month_begin)
-            # df = pd.read_sql_query(sql=sql, con=self.engine1)
-            # if df.empty:
-            #     print('  第一次检查没有为空的………… ')
-            # else:
-            #     print('正在更新产品详情…………')
-            #     df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
-            #     sql = '''update {0}_order_list a, tem_product_id b
-            #                 set a.`产品id`= IF(b.`product_id` = '',a.`产品id`, b.`product_id`),
-            #                     a.`产品名称`= IF(b.`product_name` = '',a.`产品名称`, b.`product_name`)
-            #         where a.`订单编号`= b.`订单编号`;'''.format(team)
-            #     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-            #     print('更新完成+++')
+            print('正在第一次检查父级分类为空的信息---')
+            sql = '''SELECT 订单编号,商品id,dp.`product_id`, dp.`name` product_name, dp.third_cate_id, dc.`ppname` cate, dc.`pname` second_cate, dc.`name` third_cate
+                    FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
+                            FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`父级分类`,`系统订单状态`
+								  FROM {0}_order_list
+								  WHERE `日期`> '{1}'
+							) sl
+                            WHERE (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+                         ) s
+                    LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
+                    LEFT JOIN dim_cate dc ON  dc.id = dp.third_cate_id;'''.format(team, month_begin)
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            if df.empty:
+                print('  第一次检查没有为空的………… ')
+            else:
+                print('正在更新父级分类的详情…………')
+                df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
+                sql = '''update {0}_order_list a, tem_product_id b
+                            set a.`父级分类`= IF(b.`cate` = '', a.`父级分类`, b.`cate`),
+                                a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
+                                a.`三级分类`= IF(b.`third_cate` = '', a.`三级分类`, b.`third_cate`)
+                        where a.`订单编号`= b.`订单编号`;'''.format(team)
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                print('更新完成+++')
+
+                print('正在第二次检查父级分类为空的信息---')
+                sql = '''SELECT 订单编号,商品id,dp.`product_id`, dp.`name` product_name, dp.third_cate_id, dc.`ppname` cate, dc.`pname` second_cate, dc.`name` third_cate
+                        FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
+                                FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`父级分类`,`系统订单状态`
+									  FROM {0}_order_list
+								      WHERE `日期`> '{1}'
+								) sl
+                                WHERE (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+                             ) s
+                        LEFT JOIN dim_product_gat dp ON  dp.product_id = s.`产品id`
+                        LEFT JOIN (SELECT * FROM dim_cate GROUP BY pid ) dc ON  dc.pid = dp.second_cate_id;'''.format(team, month_begin)
+                df = pd.read_sql_query(sql=sql, con=self.engine1)
+                if df.empty:
+                    print('  第二次检查没有为空的………… ')
+                else:
+                    print('正在更新父级分类的详情…………')
+                    sql = '''update {0}_order_list a, tem_product_id b
+                                set a.`父级分类`= IF(b.`cate` = '', a.`父级分类`, b.`cate`),
+                                    a.`二级分类`= IF(b.`second_cate` = '', a.`二级分类`, b.`second_cate`),
+                                    a.`三级分类`= IF(b.`third_cate` = '', a.`三级分类`, b.`third_cate`)
+                            where a.`订单编号`= b.`订单编号`;'''.format(team)
+                    pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                    print('更新完成+++')
+
+            print('正在第一次检查产品id为空的信息---')
+            sql = '''SELECT 订单编号,商品id,dp.product_id, dp.`name` product_name, dp.third_cate_id
+                    FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
+                        FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`产品名称`,`父级分类`,`系统订单状态`
+								FROM {0}_order_list
+								WHERE `日期`> '{1}'
+						) sl
+                        WHERE (sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
+                    ) s
+                    LEFT JOIN dim_product_gat dp ON dp.product_id = s.`产品id`;'''.format(team, month_begin)
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            if df.empty:
+                print('  第一次检查没有为空的………… ')
+            else:
+                print('正在更新产品详情…………')
+                df.to_sql('tem_product_id', con=self.engine1, index=False, if_exists='replace')
+                sql = '''update {0}_order_list a, tem_product_id b
+                            set a.`产品id`= IF(b.`product_id` = '',a.`产品id`, b.`product_id`),
+                                a.`产品名称`= IF(b.`product_name` = '',a.`产品名称`, b.`product_name`)
+                    where a.`订单编号`= b.`订单编号`;'''.format(team)
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                print('更新完成+++')
 
             print('正在综合检查 父级分类、产品id 为空的信息---')
             sql = '''SELECT id,日期,`订单编号`,`商品id`,`产品id`,`产品名称`,`父级分类`,`二级分类`,`三级分类`
@@ -866,8 +874,7 @@ class QueryUpdate(Settings):
                       and gt.`订单编号` IN (SELECT 订单编号 
                                             FROM gat_order_list gs
                                             WHERE gs.年月 >= {0}
-                                              and gs.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'));'''.format(
-                del_time)
+                                              and gs.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'));'''.format(del_time)
             print('正在清除港澳台-总表的可能删除了的订单…………')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('正在获取---' + match[team] + '---更新数据内容…………')
@@ -900,11 +907,9 @@ class QueryUpdate(Settings):
             df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
             if export == '导表':
                 print('正在写入excel…………')
-                df = df[['日期', '团队', '所属团队', '币种', '订单编号', '电话号码', '运单编号', '出货时间', '物流状态', '物流状态代码', '状态时间', '上线时间',
-                         '系统订单状态', '系统物流状态', '最终状态',
-                         '是否改派', '物流方式', '物流渠道', '物流名称', '签收表物流状态', '付款方式', '产品id', '产品名称', '父级分类', '二级分类', '下单时间',
-                         '审核时间', '仓储扫描时间', '完结状态时间']]
-                old_path = 'G:\\输出文件\\{} {} 更新-签收表.xlsx'.format(today, match[team])
+                df = df[['日期', '团队', '所属团队', '币种', '订单编号', '电话号码', '运单编号', '出货时间', '物流状态', '物流状态代码', '状态时间', '上线时间','系统订单状态', '系统物流状态', '最终状态',
+                         '是否改派', '物流方式', '物流渠道', '物流名称', '签收表物流状态', '付款方式', '产品id', '产品名称', '父级分类', '二级分类', '下单时间','审核时间', '仓储扫描时间', '完结状态时间']]
+                old_path = 'F:\\输出文件\\{} {} 更新-签收表.xlsx'.format(today, match[team])
                 df.to_excel(old_path, sheet_name=match[team], index=False)
                 new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\{} {} 更新-签收表.xlsx'.format(today, match[team])
                 shutil.copyfile(old_path, new_path)  # copy到指定位置
@@ -987,7 +992,7 @@ class QueryUpdate(Settings):
         for tem in tem_name:
             sql = '''SELECT * FROM d1_{0} sl WHERE sl.`所属团队`in ("{1}");'''.format(team, tem)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            old_path = 'G:\\输出文件\\{} {}签收表.xlsx'.format(today, tem)
+            old_path = 'F:\\输出文件\\{} {}签收表.xlsx'.format(today, tem)
             df.to_excel(old_path, sheet_name=tem, index=False)
             new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\{} {}签收表.xlsx'.format(today, tem)
             shutil.copyfile(old_path, new_path)     # copy到指定位置
@@ -1081,7 +1086,7 @@ class QueryUpdate(Settings):
                 print('正在运行 预估签收率 表宏…………')
                 app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
                 app.display_alerts = False
-                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
+                wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
                 wbsht1 = app.books.open(file_path)
                 wbsht.macro('预估签收率修饰_使用')()
                 wbsht1.save()
@@ -1150,7 +1155,7 @@ class QueryUpdate(Settings):
                 print('正在运行 同产品各团队对比 表宏…………')
                 app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
                 app.display_alerts = False
-                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
+                wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
                 wbsht1 = app.books.open(file_path)
                 wbsht.macro('同产品各团队对比_使用')()
                 wbsht1.save()
@@ -1207,7 +1212,7 @@ class QueryUpdate(Settings):
                 print('正在运行 同产品各团队对比 表宏…………')
                 app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
                 app.display_alerts = False
-                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
+                wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
                 wbsht1 = app.books.open(file_path)
                 wbsht.macro('同产品各团队对比_使用')()
                 wbsht1.save()
@@ -5214,33 +5219,38 @@ class QueryUpdate(Settings):
         today = datetime.date.today().strftime('%Y.%m.%d')
         sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品分旬台湾', '产品整月香港', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾']
         print('正在将物流品类写入excel…………')
-        file_path = 'G:\\输出文件\\港台-签收率.xlsx'
+        file_path = 'F:\\输出文件\\港台-签收率.xlsx'
         if currency_id == '全部付款':
-            file_path = 'G:\\输出文件\\{} {} 物流品类-签收率.xlsx'.format(today, match[team])
+            file_path = 'F:\\输出文件\\{} {} 物流品类-签收率.xlsx'.format(today, match[team])
         elif currency_id == '货到付款':
-            file_path = 'G:\\输出文件\\{} {} 物流品类-签收率-COD.xlsx'.format(today, match[team])
+            file_path = 'F:\\输出文件\\{} {} 物流品类-签收率-COD.xlsx'.format(today, match[team])
         elif currency_id == '在线付款':
-            file_path = 'G:\\输出文件\\{} {} 物流品类-签收率-在线.xlsx'.format(today, match[team])
-        df0 = pd.DataFrame([])                                    # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)                         # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')        # 初始化写入对象
-        book = load_workbook(file_path)                             # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book                                          # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        listT[0].to_excel(excel_writer=writer, sheet_name=sheet_name[0], index=False)
-        listT[1].to_excel(excel_writer=writer, sheet_name=sheet_name[1], index=False)
-        listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
-        listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
-        if 'Sheet1' in book.sheetnames:                                 # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+            file_path = 'F:\\输出文件\\{} {} 物流品类-签收率-在线.xlsx'.format(today, match[team])
+        # df0 = pd.DataFrame([])                                    # 创建空的dataframe数据框
+        # df0.to_excel(file_path, index=False)                         # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')        # 初始化写入对象
+        # book = load_workbook(file_path)                             # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book                                          # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # listT[0].to_excel(excel_writer=writer, sheet_name=sheet_name[0], index=False)
+        # listT[1].to_excel(excel_writer=writer, sheet_name=sheet_name[1], index=False)
+        # listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
+        # listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
+        # if 'Sheet1' in book.sheetnames:                                 # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            listT[0].to_excel(excel_writer=writer, sheet_name=sheet_name[0], index=False)
+            listT[1].to_excel(excel_writer=writer, sheet_name=sheet_name[1], index=False)
+            listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
+            listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
 
         print('正在运行' + match[team] + '表宏…………（xlwings方法一）')
         try:
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.screen_updating = False
             # app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
+            wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('zl_gat_report_new.gat_总_品类_物流_两月签收率')()
             wbsht1.save()
@@ -5259,29 +5269,32 @@ class QueryUpdate(Settings):
 
         print('正在将品类分旬写入excel…………')
         if currency_id == '全部付款':
-            file_path = 'G:\\输出文件\\{} {} 品类分旬-签收率.xlsx'.format(today, match[team])
+            file_path = 'F:\\输出文件\\{} {} 品类分旬-签收率.xlsx'.format(today, match[team])
         elif currency_id == '货到付款':
-            file_path = 'G:\\输出文件\\{} {} 品类分旬-签收率-COD.xlsx'.format(today, match[team])
+            file_path = 'F:\\输出文件\\{} {} 品类分旬-签收率-COD.xlsx'.format(today, match[team])
         elif currency_id == '在线付款':
-            file_path = 'G:\\输出文件\\{} {} 品类分旬-签收率-在线.xlsx'.format(today, match[team])
+            file_path = 'F:\\输出文件\\{} {} 品类分旬-签收率-在线.xlsx'.format(today, match[team])
         sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品整月香港', '产品分旬台湾', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾']
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
-        listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+        # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
+        # listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
+        # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
+            listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
         print('正在运行' + match[team] + '表宏…………')
         try:
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.screen_updating = False
             # app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
+            wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('zl_gat_report_new.gat_品类直发分旬签收率')()
             wbsht1.save()
@@ -5300,39 +5313,52 @@ class QueryUpdate(Settings):
 
         print('正在将产品写入excel…………')
         if currency_id == '全部付款':
-            file_path = 'G:\\输出文件\\{} {} 产品明细-签收率.xlsx'.format(today, match[team])
+            file_path = 'F:\\输出文件\\{} {} 产品明细-签收率.xlsx'.format(today, match[team])
         elif currency_id == '货到付款':
-            file_path = 'G:\\输出文件\\{} {} 产品明细-签收率-COD.xlsx'.format(today, match[team])
+            file_path = 'F:\\输出文件\\{} {} 产品明细-签收率-COD.xlsx'.format(today, match[team])
         elif currency_id == '在线付款':
-            file_path = 'G:\\输出文件\\{} {} 产品明细-签收率-在线.xlsx'.format(today, match[team])
+            file_path = 'F:\\输出文件\\{} {} 产品明细-签收率-在线.xlsx'.format(today, match[team])
         sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾','产品分旬台湾',  '产品整月香港', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾', '产品月_直发香港', '产品旬_直发香港', '产品月_改派香港', '产品旬_改派香港']
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        listT[4].to_excel(excel_writer=writer, sheet_name=sheet_name[4], index=False)       # 产品整月台湾
-        listT[5].to_excel(excel_writer=writer, sheet_name=sheet_name[5], index=False)       # 产品分旬台湾
-        listT[6].to_excel(excel_writer=writer, sheet_name=sheet_name[6], index=False)       # 产品整月香港
-        listT[7].to_excel(excel_writer=writer, sheet_name=sheet_name[7], index=False)       # 产品分旬香港
-        listT[8].to_excel(excel_writer=writer, sheet_name=sheet_name[8], index=False)       # 产品月_直发台湾
-        listT[9].to_excel(excel_writer=writer, sheet_name=sheet_name[9], index=False)       # 产品旬_直发台湾
-        listT[10].to_excel(excel_writer=writer, sheet_name=sheet_name[10], index=False)     # 产品月_改派台湾
-        listT[11].to_excel(excel_writer=writer, sheet_name=sheet_name[11], index=False)     # 产品旬_改派台湾
-        listT[12].to_excel(excel_writer=writer, sheet_name=sheet_name[12], index=False)     # 产品月_直发香港
-        listT[13].to_excel(excel_writer=writer, sheet_name=sheet_name[13], index=False)     # 产品旬_直发香港
-        listT[14].to_excel(excel_writer=writer, sheet_name=sheet_name[14], index=False)     # 产品月_改派香港
-        listT[15].to_excel(excel_writer=writer, sheet_name=sheet_name[15], index=False)     # 产品旬_改派香港
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+        # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # listT[4].to_excel(excel_writer=writer, sheet_name=sheet_name[4], index=False)       # 产品整月台湾
+        # listT[5].to_excel(excel_writer=writer, sheet_name=sheet_name[5], index=False)       # 产品分旬台湾
+        # listT[6].to_excel(excel_writer=writer, sheet_name=sheet_name[6], index=False)       # 产品整月香港
+        # listT[7].to_excel(excel_writer=writer, sheet_name=sheet_name[7], index=False)       # 产品分旬香港
+        # listT[8].to_excel(excel_writer=writer, sheet_name=sheet_name[8], index=False)       # 产品月_直发台湾
+        # listT[9].to_excel(excel_writer=writer, sheet_name=sheet_name[9], index=False)       # 产品旬_直发台湾
+        # listT[10].to_excel(excel_writer=writer, sheet_name=sheet_name[10], index=False)     # 产品月_改派台湾
+        # listT[11].to_excel(excel_writer=writer, sheet_name=sheet_name[11], index=False)     # 产品旬_改派台湾
+        # listT[12].to_excel(excel_writer=writer, sheet_name=sheet_name[12], index=False)     # 产品月_直发香港
+        # listT[13].to_excel(excel_writer=writer, sheet_name=sheet_name[13], index=False)     # 产品旬_直发香港
+        # listT[14].to_excel(excel_writer=writer, sheet_name=sheet_name[14], index=False)     # 产品月_改派香港
+        # listT[15].to_excel(excel_writer=writer, sheet_name=sheet_name[15], index=False)     # 产品旬_改派香港
+        # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            listT[4].to_excel(excel_writer=writer, sheet_name=sheet_name[4], index=False)  # 产品整月台湾
+            listT[5].to_excel(excel_writer=writer, sheet_name=sheet_name[5], index=False)  # 产品分旬台湾
+            listT[6].to_excel(excel_writer=writer, sheet_name=sheet_name[6], index=False)  # 产品整月香港
+            listT[7].to_excel(excel_writer=writer, sheet_name=sheet_name[7], index=False)  # 产品分旬香港
+            listT[8].to_excel(excel_writer=writer, sheet_name=sheet_name[8], index=False)  # 产品月_直发台湾
+            listT[9].to_excel(excel_writer=writer, sheet_name=sheet_name[9], index=False)  # 产品旬_直发台湾
+            listT[10].to_excel(excel_writer=writer, sheet_name=sheet_name[10], index=False)  # 产品月_改派台湾
+            listT[11].to_excel(excel_writer=writer, sheet_name=sheet_name[11], index=False)  # 产品旬_改派台湾
+            listT[12].to_excel(excel_writer=writer, sheet_name=sheet_name[12], index=False)  # 产品月_直发香港
+            listT[13].to_excel(excel_writer=writer, sheet_name=sheet_name[13], index=False)  # 产品旬_直发香港
+            listT[14].to_excel(excel_writer=writer, sheet_name=sheet_name[14], index=False)  # 产品月_改派香港
+            listT[15].to_excel(excel_writer=writer, sheet_name=sheet_name[15], index=False)  # 产品旬_改派香港
         print('正在运行' + match[team] + '表宏…………')
         try:
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.screen_updating = False
             # app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
+            wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('zl_gat_report_new.gat_产品签收率_总')()
             wbsht1.save()
@@ -6555,25 +6581,27 @@ class QueryUpdate(Settings):
 
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
-        file_path = 'G:\\输出文件\\{} {}-签收率.xlsx'.format(today, match[team])
+        file_path = 'F:\\输出文件\\{} {}-签收率.xlsx'.format(today, match[team])
         sheet_name = ['每日各团队', '审核率_删单率', '各月各团队', '各月各团队分旬', '各团队各品类', '各团队各物流', '各团队各平台', '各平台各团队', '各品类各团队', '各物流各团队', '同产品各团队','同产品各月', '各团队二级品类']
-        df0 = pd.DataFrame([])                                          # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)                            # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')           # 初始化写入对象
-        book = load_workbook(file_path)                                 # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book                                              # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        for i in range(len(listT)):
-            listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-        if 'Sheet1' in book.sheetnames:                                 # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
-
+        # df0 = pd.DataFrame([])                                          # 创建空的dataframe数据框
+        # df0.to_excel(file_path, index=False)                            # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')           # 初始化写入对象
+        # book = load_workbook(file_path)                                 # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book                                              # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # for i in range(len(listT)):
+        #     listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+        # if 'Sheet1' in book.sheetnames:                                 # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            for i in range(len(listT)):
+                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
         print('正在运行' + match[team] + '表宏…………（xlwings方法一）')
         try:
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
+            wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('zl_report_day')()
             wbsht1.save()
@@ -6588,7 +6616,7 @@ class QueryUpdate(Settings):
 
         # print('正在运行' + match[team] + '表宏…………（win32com方法二）')
         # xls = win32com.client.Dispatch("Excel.Application")
-        # wb = xls.workbooks.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')  ##存储vba代码的文件
+        # wb = xls.workbooks.open('E:/桌面文件/新版-格式转换(python表).xlsm')  ##存储vba代码的文件
         # wb.Application.DisplayAlerts = False
         # try:
         #     wb1 = xls.workbooks.open(file_path)
@@ -6796,23 +6824,26 @@ class QueryUpdate(Settings):
         listT.append(df1)
 
         print('正在将 地区签收率 写入excel…………')
-        file_path = 'G:\\输出文件\\{} {} 地区-签收率.xlsx'.format(today, match[team])
-        df0 = pd.DataFrame([])                                  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)                    # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')   # 初始化写入对象
-        book = load_workbook(file_path)                         # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book                                      # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        for i in range(len(listT)):
-            listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-        if 'Sheet1' in book.sheetnames:                         # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        file_path = 'F:\\输出文件\\{} {} 地区-签收率.xlsx'.format(today, match[team])
+        # df0 = pd.DataFrame([])                                  # 创建空的dataframe数据框
+        # df0.to_excel(file_path, index=False)                    # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')   # 初始化写入对象
+        # book = load_workbook(file_path)                         # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book                                      # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # for i in range(len(listT)):
+        #     listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+        # if 'Sheet1' in book.sheetnames:                         # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            for i in range(len(listT)):
+                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
         try:
             print('正在运行' + match[team] + '表宏…………')
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
+            wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('gat_总_地区_两月签收率')()
             wbsht1.save()
@@ -7331,23 +7362,27 @@ class QueryUpdate(Settings):
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
         for wbbook in ['神龙', '火凤凰', '红杉', '金狮']:
-            file_path = 'G:\\输出文件\\{} {}-签收率.xlsx'.format(today, wbbook)
+            file_path = 'F:\\输出文件\\{} {}-签收率.xlsx'.format(today, wbbook)
             sheet_name = ['每日', '总表', '总表上月', '物流', '物流上月', '品类', '品类上月', '产品', '产品明细台湾', '产品明细香港']
-            df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-            df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-            book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-            for i in range(len(listT)):
-                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-            if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-                del book['Sheet1']
-            writer.save()
-            writer.close()
+            # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+            # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+            # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+            # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            # for i in range(len(listT)):
+            #     listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+            # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            #     del book['Sheet1']
+            # writer.save()
+            # writer.close()
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                for i in range(len(listT)):
+                    listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+
             # print('正在运行' + wbbook + '表宏…………')
             # app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             # app.display_alerts = False
-            # wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
+            # wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
             # wbsht1 = app.books.open(file_path)
             # wbsht.macro('py_sl_总运行')()
             # wbsht1.save()
@@ -7778,23 +7813,26 @@ class QueryUpdate(Settings):
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%Y.%m.%d')
         for wbbook in ['神龙', '火凤凰', '红杉', '金狮']:
-            file_path = 'G:\\输出文件\\{} {}-签收率.xlsx'.format(today, wbbook)
+            file_path = 'F:\\输出文件\\{} {}-签收率.xlsx'.format(today, wbbook)
             sheet_name = ['每日', '总表', '总表上月', '物流', '物流上月', '品类', '品类上月', '产品', '产品明细台湾', '产品明细香港']
-            df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-            df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-            book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-            for i in range(len(listT)):
-                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-            if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-                del book['Sheet1']
-            writer.save()
-            writer.close()
+            # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+            # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+            # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+            # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            # for i in range(len(listT)):
+            #     listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+            # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            #     del book['Sheet1']
+            # writer.save()
+            # writer.close()
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                for i in range(len(listT)):
+                    listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
             # print('正在运行' + wbbook + '表宏…………')
             # app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             # app.display_alerts = False
-            # wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
+            # wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
             # wbsht1 = app.books.open(file_path)
             # wbsht.macro('py_sl_总运行')()
             # wbsht1.save()
@@ -7910,22 +7948,25 @@ class QueryUpdate(Settings):
         listT.append(df4)
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%m.%d')
-        file_path = 'G:\\输出文件\\{} 需核实拒收-每日数据源.xlsx'.format(today)
+        file_path = 'F:\\输出文件\\{} 需核实拒收-每日数据源.xlsx'.format(today)
         if os.path.exists(file_path):  # 判断是否有需要的表格
             print("正在清除重复文件......")
             os.remove(file_path)
         sheet_name = ['查询', '两月拒收', '两月拒收产品id', '每日新增订单']
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        for i in range(len(listT)):
-            listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+        # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # for i in range(len(listT)):
+        #     listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+        # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            for i in range(len(listT)):
+                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
         print('----已写入excel ')
 
     # 获取电话核实日报表 周报表
@@ -8231,24 +8272,27 @@ class QueryUpdate(Settings):
 
             print('正在写入excel…………')
             today = datetime.date.today().strftime('%Y.%m.%d')
-            file_path = r'''G:\\输出文件\\台湾电话核实({0}-{1})周报表{2}.xlsx'''.format(week_time1, week_time2, today)
+            file_path = r'''F:\\输出文件\\台湾电话核实({0}-{1})周报表{2}.xlsx'''.format(week_time1, week_time2, today)
             sheet_name = ['日报表', '周报表']
-            df0 = pd.DataFrame([])                                          # 创建空的dataframe数据框
-            df0.to_excel(file_path, index=False)                            # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-            writer = pd.ExcelWriter(file_path, engine='openpyxl')           # 初始化写入对象
-            book = load_workbook(file_path)                                 # 可以向不同的sheet写入数据（对现有工作表的追加）
-            writer.book = book                                              # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-            for i in range(len(listT)):
-                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-            if 'Sheet1' in book.sheetnames:                                 # 删除新建文档时的第一个工作表
-                del book['Sheet1']
-            writer.save()
-            writer.close()
+            # df0 = pd.DataFrame([])                                          # 创建空的dataframe数据框
+            # df0.to_excel(file_path, index=False)                            # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            # writer = pd.ExcelWriter(file_path, engine='openpyxl')           # 初始化写入对象
+            # book = load_workbook(file_path)                                 # 可以向不同的sheet写入数据（对现有工作表的追加）
+            # writer.book = book                                              # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            # for i in range(len(listT)):
+            #     listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+            # if 'Sheet1' in book.sheetnames:                                 # 删除新建文档时的第一个工作表
+            #     del book['Sheet1']
+            # writer.save()
+            # writer.close()
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                for i in range(len(listT)):
+                    listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
             try:
                 print('正在运行 日报表、周报表 宏…………')
                 app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
                 app.display_alerts = False
-                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
+                wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
                 wbsht1 = app.books.open(file_path)
                 wbsht.macro('电话核实日报表_周报表')()
                 wbsht1.save()
@@ -8312,26 +8356,29 @@ class QueryUpdate(Settings):
 
             print('正在写入excel…………')
             today = datetime.date.today().strftime('%Y.%m.%d')
-            file_path = 'G:\\输出文件\\{} 物流签收率-头部产品.xlsx'.format(today)
+            file_path = 'F:\\输出文件\\{} 物流签收率-头部产品.xlsx'.format(today)
             sheet_name = ['查询']
-            df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-            df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-            book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-            for i in range(len(listT)):
-                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-            if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-                del book['Sheet1']
-            writer.save()
-            writer.close()
+            # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+            # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+            # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+            # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            # for i in range(len(listT)):
+            #     listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+            # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            #     del book['Sheet1']
+            # writer.save()
+            # writer.close()
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                for i in range(len(listT)):
+                    listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
             new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\物流签收率\\{} {} 物流签收率-头部产品.xlsx'.format(today,match[team])
             shutil.copyfile(file_path, new_path)     # copy到指定位置
             try:
                 print('正在运行 物流头部产品签收率 宏…………')
                 app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
                 app.display_alerts = False
-                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
+                wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
                 wbsht1 = app.books.open(file_path)
                 wbsht.macro('物流头程产品签收率_月')()
                 wbsht1.save()
@@ -8435,27 +8482,30 @@ class QueryUpdate(Settings):
 
             print('正在写入excel…………')
             today = datetime.date.today().strftime('%Y.%m.%d')
-            file_path = 'G:\\输出文件\\{} 在线签收率_查询.xlsx'.format(today)
+            file_path = 'F:\\输出文件\\{} 在线签收率_查询.xlsx'.format(today)
             sheet_name = ['物流分类']
-            df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-            df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-            writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-            book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-            writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-            for i in range(len(listT)):
-                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-            if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-                del book['Sheet1']
-            writer.save()
-            writer.close()
+            # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+            # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+            # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+            # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+            # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+            # for i in range(len(listT)):
+            #     listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+            # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+            #     del book['Sheet1']
+            # writer.save()
+            # writer.close()
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                for i in range(len(listT)):
+                    listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
             new_path = "F:\\神龙签收率\\" + (datetime.datetime.now()).strftime('%m.%d') + '\\签收率\\{} {} 在线签收率_查询.xlsx'.format(today, match[team])
             shutil.copyfile(file_path, new_path)  # copy到指定位置
             try:
                 print('正在运行 在线签收率 宏…………')
                 app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
                 app.display_alerts = False
-                wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
-                wbsht1 = app.books.open(file_path)
+                wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
+                wbsht1 = app.books.open(new_path)
                 wbsht.macro('gat_总_品类_物流_两月签收率')()
                 wbsht1.save()
                 wbsht1.close()
@@ -11037,25 +11087,30 @@ class QueryUpdate(Settings):
         today = datetime.date.today().strftime('%Y.%m.%d')
         sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品整月香港', '产品分旬台湾', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾']
         print('正在将物流品类写入excel…………')
-        file_path = 'G:\\输出文件\\{} {} 物流品类-签收率.xlsx'.format(today, match[team])
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        listT[0].to_excel(excel_writer=writer, sheet_name=sheet_name[0], index=False)
-        listT[1].to_excel(excel_writer=writer, sheet_name=sheet_name[1], index=False)
-        listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
-        listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        file_path = 'F:\\输出文件\\{} {} 物流品类-签收率.xlsx'.format(today, match[team])
+        # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+        # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # listT[0].to_excel(excel_writer=writer, sheet_name=sheet_name[0], index=False)
+        # listT[1].to_excel(excel_writer=writer, sheet_name=sheet_name[1], index=False)
+        # listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
+        # listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
+        # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            listT[0].to_excel(excel_writer=writer, sheet_name=sheet_name[0], index=False)
+            listT[1].to_excel(excel_writer=writer, sheet_name=sheet_name[1], index=False)
+            listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
+            listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
         try:
             print('正在运行' + match[team] + '表宏…………')
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
+            wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('gat_总_品类_物流_两月签收率')()
             wbsht1.save()
@@ -11067,24 +11122,27 @@ class QueryUpdate(Settings):
         print('----已写入excel ')
 
         print('正在将品类分旬写入excel…………')
-        file_path = 'G:\\输出文件\\{} {} 品类分旬-签收率.xlsx'.format(today, match[team])
+        file_path = 'F:\\输出文件\\{} {} 品类分旬-签收率.xlsx'.format(today, match[team])
         sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品整月香港', '产品分旬台湾', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾']
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
-        listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+        # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
+        # listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
+        # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
+            listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
         try:
             print('正在运行' + match[team] + '表宏…………')
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
+            wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('gat_品类直发分旬签收率')()
             wbsht1.save()
@@ -11096,30 +11154,39 @@ class QueryUpdate(Settings):
         print('----已写入excel ')
 
         print('正在将产品写入excel…………')
-        file_path = 'G:\\输出文件\\{} {} 产品明细-签收率.xlsx'.format(today, match[team])
+        file_path = 'F:\\输出文件\\{} {} 产品明细-签收率.xlsx'.format(today, match[team])
         sheet_name = ['物流分类', '物流分旬', '一级分旬', '二级分旬', '产品整月台湾', '产品分旬台湾', '产品整月香港', '产品分旬香港', '产品月_直发台湾', '产品旬_直发台湾', '产品月_改派台湾', '产品旬_改派台湾']
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        listT[4].to_excel(excel_writer=writer, sheet_name=sheet_name[4], index=False)
-        listT[5].to_excel(excel_writer=writer, sheet_name=sheet_name[5], index=False)
-        listT[6].to_excel(excel_writer=writer, sheet_name=sheet_name[6], index=False)
-        listT[7].to_excel(excel_writer=writer, sheet_name=sheet_name[7], index=False)
-        listT[8].to_excel(excel_writer=writer, sheet_name=sheet_name[8], index=False)
-        listT[9].to_excel(excel_writer=writer, sheet_name=sheet_name[9], index=False)
-        listT[10].to_excel(excel_writer=writer, sheet_name=sheet_name[10], index=False)
-        listT[11].to_excel(excel_writer=writer, sheet_name=sheet_name[11], index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+        # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # listT[4].to_excel(excel_writer=writer, sheet_name=sheet_name[4], index=False)
+        # listT[5].to_excel(excel_writer=writer, sheet_name=sheet_name[5], index=False)
+        # listT[6].to_excel(excel_writer=writer, sheet_name=sheet_name[6], index=False)
+        # listT[7].to_excel(excel_writer=writer, sheet_name=sheet_name[7], index=False)
+        # listT[8].to_excel(excel_writer=writer, sheet_name=sheet_name[8], index=False)
+        # listT[9].to_excel(excel_writer=writer, sheet_name=sheet_name[9], index=False)
+        # listT[10].to_excel(excel_writer=writer, sheet_name=sheet_name[10], index=False)
+        # listT[11].to_excel(excel_writer=writer, sheet_name=sheet_name[11], index=False)
+        # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            listT[4].to_excel(excel_writer=writer, sheet_name=sheet_name[4], index=False)
+            listT[5].to_excel(excel_writer=writer, sheet_name=sheet_name[5], index=False)
+            listT[6].to_excel(excel_writer=writer, sheet_name=sheet_name[6], index=False)
+            listT[7].to_excel(excel_writer=writer, sheet_name=sheet_name[7], index=False)
+            listT[8].to_excel(excel_writer=writer, sheet_name=sheet_name[8], index=False)
+            listT[9].to_excel(excel_writer=writer, sheet_name=sheet_name[9], index=False)
+            listT[10].to_excel(excel_writer=writer, sheet_name=sheet_name[10], index=False)
+            listT[11].to_excel(excel_writer=writer, sheet_name=sheet_name[11], index=False)
         try:
             print('正在运行' + match[team] + '表宏…………')
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
             app.display_alerts = False
-            wbsht = app.books.open('D:/Users/Administrator/Desktop/新版-格式转换(python表).xlsm')
+            wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('gat_产品签收率_总')()
             wbsht1.save()

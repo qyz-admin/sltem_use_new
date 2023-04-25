@@ -1196,7 +1196,7 @@ class QueryUpdate(Settings):
 
         print('正在写入excel…………')
         today = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        file_path = 'G:\\输出文件\\\\客服处理汇总 {}.xlsx'.format(today)
+        file_path = 'F:\\输出文件\\\\客服处理汇总 {}.xlsx'.format(today)
         sheet_name = ['总团队', '分团队', '分团队2', '总体单量', '总体克隆金额', '总体金额', '分团队单量', '分团队克隆金额', '分团队金额']
         df0 = pd.DataFrame([])  # 创建空的dataframe数据框
         df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
@@ -1460,7 +1460,7 @@ class QueryUpdate(Settings):
 
         print('正在写入excel…………')
         today = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        file_path = 'G:\\输出文件\\\\工作数量 {}.xlsx'.format(today)
+        file_path = 'F:\\输出文件\\\\工作数量 {}.xlsx'.format(today)
 
         writer2 = pd.ExcelWriter(file_path, engine='openpyxl')
         df1.to_excel(writer2, index=False)                  # 采购
@@ -1643,23 +1643,26 @@ class QueryUpdate(Settings):
         # listT.append(df4)
         print('正在写入excel…………')
         today = datetime.date.today().strftime('%m.%d')
-        file_path = 'G:\\输出文件\\{} 需核实拒收-每日数据源.xlsx'.format(today)
+        file_path = 'F:\\输出文件\\{} 需核实拒收-每日数据源.xlsx'.format(today)
         if os.path.exists(file_path):  # 判断是否有需要的表格
             print("正在清除重复文件......")
             os.remove(file_path)
         # sheet_name = ['查询', '两月拒收', '两月拒收产品id', '每日新增订单']
         sheet_name = ['查询', '两月拒收', '两月拒收产品id']
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        for i in range(len(listT)):
-            listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+        # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # for i in range(len(listT)):
+        #     listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+        # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            for i in range(len(listT)):
+                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
         print('----已写入excel ')
 
 if __name__ == '__main__':

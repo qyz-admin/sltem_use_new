@@ -7,7 +7,7 @@ from mysqlControl import MysqlControl
 from wlMysql import WlMysql
 from wlExecl import WlExecl
 from sso_updata import Query_sso_updata
-from gat_update2临时 import QueryUpdate
+from gat_update import QueryUpdate
 import datetime
 import time
 from dateutil.relativedelta import relativedelta
@@ -1377,221 +1377,6 @@ class Updata_gat(Settings):
         # print('*************************查询成功***********************************')
         return data
 
-
-    # 更新团队订单明细（新后台的获取  方法三的每天新增的订单更新）
-    def orderInfo_append(self, timeStart, timeEnd, areaId, token,handle):  # 进入订单检索界面
-        print('+++正在查询订单信息中')
-        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-                    'origin': 'https: // gimp.giikin.com',
-                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
-        data = {'page': 1, 'pageSize': 500, 'order_number': None, 'shippingNumber': None,
-                'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None,
-                'type': None, 'collId': None, 'isClone': None,
-                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': areaId, 'reassignmentType': None, 'lowerstatus': '',
-                'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
-                'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
-                'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None,
-                'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
-                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
-                'timeStart': timeStart + '00:00:00', 'timeEnd': timeEnd + '23:59:59'}
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
-        req = json.loads(req.text)  # json类型数据转换为dict字典
-        print('******首次查询成功******')
-        max_count = req['data']['count']
-        in_count = math.ceil(max_count/500)
-        print('共 ' + str(max_count) + ' 条; 需查询' + str(in_count) + '次')
-        df = pd.DataFrame([])               # 创建空的dataframe数据框
-        dlist = []
-        n = 1
-        while n < in_count + 1:  # 这里用到了一个while循环，穿越过来的
-            print('第' + str(n) + '次 查询')
-            data = self._orderInfo_append(timeStart, timeEnd, n, areaId)
-            n = n + 1
-            dlist.append(data)
-        dp = df.append(dlist, ignore_index=True)
-        print('正在导入临时表中......')
-        dp.to_sql('d1_host', con=self.engine1, index=False, if_exists='replace')
-        sql = '''SELECT EXTRACT(YEAR_MONTH  FROM h.下单时间) 年月,
-                    				        IF(DAYOFMONTH(h.`下单时间`) > '20', '3', IF(DAYOFMONTH(h.`下单时间`) < '11', '1', '2')) 旬,
-                    			            DATE(h.下单时间) 日期,
-                    				        h.运营团队 团队,
-                    				        IF(h.`币种` = '台币', 'TW', IF(h.`币种` = '港币', 'HK', h.`币种`)) 区域,
-                    				        IF(h.`币种` = '台币', '台湾', IF(h.`币种` = '港币', '香港', h.`币种`)) 币种,
-                    				        h.平台 订单来源,
-                    				        订单编号,
-                    				        数量,
-                    				        h.联系电话 电话号码,
-                    				        h.运单号 运单编号,
-                    				        null 查件单号,
-                    				        h.订单状态 系统订单状态,
-                    				        IF(h.`物流状态` = '发货中', null, h.`物流状态`) 系统物流状态,
-                    				        IF(h.`订单类型` in ('未下架未改派','直发下架'), '直发', '改派') 是否改派,
-                    				        h.物流渠道 物流方式,
-                    				        dim_trans_way.simple_name 物流名称,
-                    				        dim_trans_way.remark 运输方式,
-                    				        IF(h.`货物类型` = 'P 普通货', 'P', IF(h.`货物类型` = 'T 特殊货', 'T', h.`货物类型`)) 货物类型,
-                    				        IF(h.`是否低价` = 0, '否', '是') 是否低价,
-                    				        商品ID,
-                    				        产品id,
-                    				        产品名称,
-                    				        dim_cate.ppname 父级分类,
-                    				        dim_cate.pname 二级分类,
-                        		            dim_cate.`name` 三级分类,
-                    				        h.支付方式 付款方式,
-                    				        h.应付金额 价格,
-                    				        IF(下单时间 = '',NULL,下单时间) 下单时间,
-                    				        IF(审核时间 = '',NULL,审核时间) 审核时间,
-                    				        IF(h.发货时间 = '',NULL,h.发货时间) 仓储扫描时间,
-                    				        null 完结状态,
-                    				        IF(h.完成时间 = '',NULL,h.完成时间) 完结状态时间,
-                    				        null 价格RMB,
-                    				        null 价格区间,
-                    				        null 成本价,
-                    				        null 物流花费,
-                    				        null 打包花费,
-                    				        null 其它花费,
-                    				        h.重量 包裹重量,
-                    				        h.体积 包裹体积,
-                    				        邮编,
-                    				        IF(h.转采购时间 = '',NULL,h.转采购时间) 添加物流单号时间,
-                    				        null 规格中文,
-                    				        h.省洲 省洲,
-                    				        null 审单类型,
-                    				        null 拉黑率,
-                    				        null 删除原因,
-                    				        null 删除时间,
-                    				        null 问题原因,
-                    				        null 问题时间,
-                    				        null 下单人,
-                    				        null 克隆人,
-                    				        null 下架类型,
-                    				        null 下架时间,
-                    				        null 物流提货时间,
-                    				        null 物流发货时间,
-                    				        IF(h.上线时间 = '',NULL,h.上线时间) 上线时间,
-                    				        null 国内清关时间,
-                    				        null 目的清关时间,
-                    				        null 回款时间,
-                                            null IP,
-                    				        null 选品人
-                                    FROM d1_host h
-                                    LEFT JOIN dim_product ON  dim_product.sale_id = h.商品id
-                                    LEFT JOIN dim_cate ON  dim_cate.id = dim_product.third_cate_id
-                                    LEFT JOIN dim_trans_way ON  dim_trans_way.all_name = h.`物流渠道`
-                                    WHERE h.下单时间 < TIMESTAMP(CURDATE()); '''.format('gat')
-        df = pd.read_sql_query(sql=sql, con=self.engine1)
-        df.to_sql('d1_host_cp', con=self.engine1, index=False, if_exists='replace')
-        columns = list(df.columns)
-        columns = ', '.join(columns)
-
-        print('正在综合检查 父级分类、产品id 为空的信息---')
-        sql = '''SELECT 日期,订单编号,商品id,产品id
-                FROM {0} sl
-                WHERE (sl.`父级分类` IS NULL or sl.`父级分类`= '' OR sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'));'''.format('d1_host_cp')
-        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
-        if ordersDict.empty:
-            print(' ****** 没有要补充的信息; ****** ')
-        else:
-            print('！！！ 请再次补充缺少的数据中！！！')
-            lw = QueryTwoT('+86-18538110674', 'qyz04163510.', token, handle)
-            lw.productInfo('d1_host_cp', ordersDict)
-
-        print('正在导入 总表中......')
-        sql = '''REPLACE INTO {0}_order_list({1}, 记录时间) SELECT *, CURDATE() 记录时间 FROM d1_host_cp; '''.format('gat', columns)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        # print('正在写入Execl......')
-        # print('正在写入Execl......')
-        # dp.to_excel('G:\\输出文件\\订单检索-时间查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
-        print('查询已导出+++')
-    def _orderInfo_append(self, timeStart, timeEnd, n, areaId):  # 进入订单检索界面
-        # print('......正在查询信息中......')
-        url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-                    'origin': 'https: // gimp.giikin.com',
-                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
-        data = {'page': n, 'pageSize': 500, 'order_number': None, 'shippingNumber': None,
-                'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None,
-                'type': None, 'collId': None, 'isClone': None,
-                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': areaId, 'reassignmentType': None, 'lowerstatus': '',
-                'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,
-                'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
-                'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None,
-                'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
-                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None,
-                'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59'}
-        # print(data)
-        proxy = '39.105.167.0:40005'  # 使用代理服务器
-        proxies = {'http': 'socks5://' + proxy,
-                   'https': 'socks5://' + proxy}
-        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
-        req = self.session.post(url=url, headers=r_header, data=data)
-        # print('......已成功发送请求......')
-        req = json.loads(req.text)  # json类型数据转换为dict字典
-        # print(req)
-        ordersdict = []
-        try:
-            for result in req['data']['list']:
-                if result['specs'] != '':
-                    result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
-                    result['saleName'] = 0
-                    result['productId'] = 0
-                    result['saleProduct'] = 0
-                    result['spec'] = 0
-                    result['chooser'] = 0
-                    result['saleId'] = result['specs'][0]['saleId']
-                    result['saleName'] = result['specs'][0]['saleName']
-                    result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
-                    result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
-                    result['spec'] = result['specs'][0]['spec']
-                    result['chooser'] = result['specs'][0]['chooser']
-                else:
-                    result['saleId'] = ''
-                    result['saleProduct'] = ''
-                    result['productId'] = ''
-                    result['spec'] = ''
-                quest = ''
-                for re in result['questionReason']:
-                    quest = quest + ';' + re
-                result['questionReason'] = quest
-                delr = ''
-                for re in result['delReason']:
-                    delr = delr + ';' + re
-                result['delReason'] = delr
-                auto = ''
-                for re in result['autoVerify']:
-                    auto = auto + ';' + re
-                result['autoVerify'] = auto
-                ordersdict.append(result)
-        except Exception as e:
-            print('转化失败： 重新获取中', str(Exception) + str(e))
-        data = pd.json_normalize(ordersdict)
-        df = None
-        try:
-            df = data[['orderNumber', 'befrom', 'currency', 'area', 'productId', 'saleProduct', 'saleName', 'spec', 'shipInfo.shipName', 'shipInfo.shipPhone', 'percent', 'phoneLength',
-                       'shipInfo.shipAddress', 'shipInfo.shipZip',  'amount', 'quantity', 'orderStatus', 'wayBillNumber', 'payType', 'addTime', 'username', 'verifyTime','logisticsName', 'dpeStyle',
-                       'hasLowPrice', 'collId', 'saleId', 'reassignmentTypeName', 'logisticsStatus', 'weight', 'delReason', 'questionReason', 'service', 'transferTime', 'deliveryTime', 'onlineTime',
-                        'finishTime', 'refundTime', 'remark', 'ip', 'volume', 'shipInfo.shipState', 'shipInfo.shipCity', 'chooser', 'optimizer','autoVerify', 'autoVerifyTip', 'cloneUser', 'isClone', 'warehouse',
-                       'smsStatus', 'logisticsControl', 'logisticsRefuse', 'logisticsUpdateTime', 'stateTime', 'collDomain', 'typeName', 'update_time']]
-            df.columns = ['订单编号', '平台', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格中文', '收货人', '联系电话', '拉黑率', '电话长度',
-                          '配送地址', '邮编', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
-                          '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
-                          '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '异常提示', '克隆人', '克隆ID', '发货仓库',
-                          '是否发送短信', '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间']
-        except Exception as e:
-            print('------查询为空')
-        print('......本批次查询成功......')
-        print(df)
-        return df
-
-
 if __name__ == '__main__':
     u = Updata_gat()
     # 初始化时间设置
@@ -1601,7 +1386,7 @@ if __name__ == '__main__':
     login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
     team = 'gat'
 
-    if team == 'gat0':
+    if team == 'gat':
         # 更新时间
         timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
         data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
@@ -1610,15 +1395,15 @@ if __name__ == '__main__':
         end = datetime.datetime.strptime(timeEnd, '%Y-%m-%d').date()
     else:
         # 更新时间
-        data_begin = datetime.date(2023, 3, 1)  # 数据库更新
-        begin = datetime.date(2023, 3, 1)  # 单点更新
+        data_begin = datetime.date(2023, 3, 9)  # 数据库更新
+        begin = datetime.date(2023, 3, 9)  # 单点更新
         end = datetime.date(2023, 4, 19)
 
     print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
     print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 
     # TODO------------------------------------更新数据  数据库分段读取------------------------------------
-    u.creatMyOrderSl(begin, end)
+    u.creatMyOrderSl(data_begin, end)
 
     # TODO------------------------------------更新数据  单点检索读取------------------------------------
     if proxy_handle == '代理服务器':
