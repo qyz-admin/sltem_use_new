@@ -76,7 +76,15 @@ class QueryUpdate(Settings):
                 print(filePath)
                 self.wbsheetHost(filePath, upload)
                 if upload == '查询运费':
-                    excel = win32.gencache.EnsureDispatch('Excel.Application')
+                    # excel = win32.gencache.EnsureDispatch('Excel.Application')
+                    # wb = excel.Workbooks.Open(filePath)
+                    # file_path = os.path.join(path, "~$ " + dir)
+                    # wb.SaveAs(file_path, FileFormat=51)  # FileFormat = 51 is for .xlsx extension
+                    # wb.Close()  # FileFormat = 56 is for .xls extension
+                    # excel.Application.Quit()
+                    # os.remove(filePath)
+
+                    excel = win32.DispatchEx('Excel.Application')
                     wb = excel.Workbooks.Open(filePath)
                     file_path = os.path.join(path, "~$ " + dir)
                     wb.SaveAs(file_path, FileFormat=51)  # FileFormat = 51 is for .xlsx extension
@@ -564,7 +572,7 @@ if __name__ == '__main__':
     # upload = '查询-订单号'
     # m.trans_way_cost(team)  # 同产品下的规格运费查询
     '''
-    select = 4
+    select = 2
     if int(select) == 1:
             upload = '查询-运单号'
             m.readFormHost(upload)
