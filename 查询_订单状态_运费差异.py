@@ -64,9 +64,9 @@ class QueryUpdate(Settings):
 
     # 获取签收表内容---港澳台更新签收总表
     def readFormHost(self, upload):
-        match = {'查询-运单号': r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表',
+        match = {'查询-运单号': r'F:\需要用到的文件\A查询导表',
                  '查询运费': r'F:\神龙签收率\A运费-核实',
-                 '其他': r'D:\Users\Administrator\Desktop\需要用到的文件\B客服工作表'}
+                 '其他': r'F:\需要用到的文件\B客服工作表'}
         path = match[upload]
         dirs = os.listdir(path=path)
         # ---读取execl文件---
@@ -216,8 +216,7 @@ class QueryUpdate(Settings):
                  '产品量', 'MIN(包裹重量)', 'MAX(包裹重量)', '重量差']]
         print('正在写入excel…………')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        df.to_excel('F:\\输出文件\\{} 运费总直发-查询{}.xlsx'.format(output, rq),
-                    sheet_name='查询', index=False)
+        df.to_excel('F:\\输出文件\\{} 运费总直发-查询{}.xlsx'.format(output, rq), sheet_name='查询', index=False)
         print('----已写入excel')
 
         sql = '''SELECT 年月,日期,团队,币种,订单编号,数量,电话号码,运单编号,是否改派,物流方式,商品id,ds.产品id,产品名称,价格,下单时间,审核时间,仓储扫描时间,完结状态,完结状态时间,物流花费,包裹重量,包裹体积,规格中文,产品量
@@ -275,13 +274,10 @@ class QueryUpdate(Settings):
 								    ) dss ON ds.`产品ID` = dss.`产品id2` and ds.`规格中文`= dss.`规格中文2`
                 ) s WHERE s.重量差 IS not null;'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
-        df = df[['年月', '团队', '日期', '币种', '订单编号', '数量', '电话号码', '运单编号', '是否改派', '物流方式', '商品id', '产品id', '产品名称',
-                 '价格', '仓储扫描时间', '完结状态', '物流花费', '包裹重量', '包裹体积', '规格中文',
-                 '产品量', 'MIN(包裹重量)', 'MAX(包裹重量)', '重量差']]
+        df = df[['年月', '团队', '日期', '币种', '订单编号', '数量', '电话号码', '运单编号', '是否改派', '物流方式', '商品id', '产品id', '产品名称',  '价格', '仓储扫描时间', '完结状态', '物流花费', '包裹重量', '包裹体积', '规格中文', '产品量', 'MIN(包裹重量)', 'MAX(包裹重量)', '重量差']]
         print('正在写入excel…………')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        df.to_excel('F:\\输出文件\\{} 运费台湾直发-查询{}.xlsx'.format(output, rq),
-                    sheet_name='查询', index=False)
+        df.to_excel('F:\\输出文件\\{} 运费台湾直发-查询{}.xlsx'.format(output, rq),  sheet_name='查询', index=False)
         print('----已写入excel')
 
         sql = '''SELECT 年月,日期,团队,币种,订单编号,数量,电话号码,运单编号,是否改派,物流方式,商品id,ds.产品id,产品名称,价格,下单时间,审核时间,仓储扫描时间,完结状态,完结状态时间,物流花费,包裹重量,包裹体积,规格中文,产品量
@@ -344,8 +340,7 @@ class QueryUpdate(Settings):
                  '产品量', 'MIN(包裹重量)', 'MAX(包裹重量)', '重量差']]
         print('正在写入excel…………')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        df.to_excel('F:\\输出文件\\{} 运费-查询{}.xlsx'.format(output, rq),
-                    sheet_name='查询', index=False)
+        df.to_excel('F:\\输出文件\\{} 运费-查询{}.xlsx'.format(output, rq),   sheet_name='查询', index=False)
         print('----已写入excel')
     def trans_way_cost_new(self, team):
         match = {'gat': '港台', 'slsc': '品牌'}
@@ -389,8 +384,7 @@ class QueryUpdate(Settings):
 	            WHERE s.产品id NOT IN ( SELECT  DISTINCT  产品id FROM 运费核实 y)
 	            ORDER BY s.选品人, s.产品id, s.规格中文;'''.format(month_yesterday, month_now)
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
-        df1 = df1[['年月', '团队',  '日期', '币种', '订单编号', '数量', '电话号码', '运单编号', '是否改派', '物流方式', '商品id', '产品id', '产品名称',
-                 '价格', '仓储扫描时间', '完结状态', '物流花费', '包裹体积', '规格中文', '产品量', '订单包裹重量',  '同规格最小包裹重量', '差量', '选品人', '备注']]
+        df1 = df1[['年月', '团队',  '日期', '币种', '订单编号', '数量', '电话号码', '运单编号', '是否改派', '物流方式', '商品id', '产品id', '产品名称', '价格', '仓储扫描时间', '完结状态', '物流花费', '包裹体积', '规格中文', '产品量', '订单包裹重量',  '同规格最小包裹重量', '差量', '选品人', '备注']]
         df1 = df1.loc[df1["币种"] == "台湾"]
         listT.append(df1)
 

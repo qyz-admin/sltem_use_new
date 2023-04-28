@@ -443,7 +443,6 @@ class ExcelControl(Settings):
                 return time
             else:
                 return para
-
         path = r'F:\需要用到的文件\A退货'
         dirs = os.listdir(path=path)
         for dir in dirs:

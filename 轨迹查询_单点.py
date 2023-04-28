@@ -79,7 +79,7 @@ class QueryTwo(Settings, Settings_sso):
     # 获取签收表内容
     def readFormHost(self, isReal, proxy_handle, proxy_id, cat):
         start = datetime.datetime.now()
-        path = r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表'
+        path = r'F:\需要用到的文件\A查询导表'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -1197,7 +1197,7 @@ if __name__ == '__main__':
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 ；  cat = 1 、黑猫切换是否使用后台数据  0 、还是官网数据 
     '''
-    select = 52
+    select = 51
     isReal = 1
     cat = 0
     if int(select) == 1:

@@ -20,8 +20,8 @@ start: datetime = datetime.datetime.now()
 team = 'gat'
 match1 = {'gat': '港台',
           'slsc': '品牌'}
-match = {'gat': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表',
-         'gat_upload': r'D:\Users\Administrator\Desktop\需要用到的文件\A港台签收表 - 单独上传'}
+match = {'gat': r'F:\需要用到的文件\A港台签收表',
+         'gat_upload': r'F:\需要用到的文件\A港台签收表 - 单独上传'}
 '''    msyql 语法:      show processlist（查看当前进程）;                        在cmd中键入命令（清理DNS）：ipconfig /flushdns
                         set global event_scheduler=0;（关闭定时器）;
 备注：  港台 需整理的表：香港立邦>(明细再copy一份保存) ； 台湾龟山改派>(copy保存为xlsx格式);

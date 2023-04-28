@@ -770,6 +770,7 @@ class QueryUpdate(Settings):
         match = {'gat': '港台', 'slsc': '品牌'}
         emailAdd = {'gat': 'giikinliujun@163.com', 'slsc': 'sunyaru@giikin.com'}
         today = datetime.date.today().strftime('%Y.%m.%d')
+        print('查询开始时间：', datetime.datetime.now())
         if check == '是':
             print('正在第一次检查父级分类为空的信息---')
             sql = '''SELECT 订单编号,商品id,dp.`product_id`, dp.`name` product_name, dp.third_cate_id, dc.`ppname` cate, dc.`pname` second_cate, dc.`name` third_cate
@@ -866,7 +867,7 @@ class QueryUpdate(Settings):
                     login_TmpCode = str(input())
                 lw = QueryTwoT('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
                 lw.productInfo('gat_order_list', ordersDict, proxy_handle, proxy_id)
-
+        print('查询结束时间：', datetime.datetime.now())
         if team in ('gat'):
             del_time = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y%m')
             sql = '''DELETE FROM gat_zqsb gt
@@ -11421,6 +11422,7 @@ if __name__ == '__main__':
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台'}
     team = 'gat'
+    print('开始时间：', datetime.datetime.now())
     '''  
         -----------------------------------------------手动导入状态运行（一）-----------------------------------------
         初始化配置>>> 
@@ -11446,7 +11448,7 @@ if __name__ == '__main__':
         m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
 
         currency_id = '全部付款'
-        # m.gat_new(team, month_last, month_yesterday, currency_id)   # 获取-货到付款& 在线付款 签收率-报表
+        m.gat_new(team, month_last, month_yesterday, currency_id)   # 获取-货到付款& 在线付款 签收率-报表
         m.qsb_new(team, month_old)                                  # 获取-每日-报表
         m.EportOrderBook(team, month_last, month_yesterday)         # 导出-总的-签收
         m.phone_report('handle', month_last, month_yesterday)       # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）
@@ -11486,5 +11488,6 @@ if __name__ == '__main__':
         # m.EportOrder(team)       #  导出需要更新的签收表
         m.qsb_report(team, '2021-06-26', '2021-05-26')
         pass
+    print('结束时间：', datetime.datetime.now())
     print('耗时：', datetime.datetime.now() - start)
     # win32api.MessageBox(0, "注意:>>>    程序运行结束， 请查看表  ！！！", "提 醒",win32con.MB_OK)
