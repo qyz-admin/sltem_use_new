@@ -138,48 +138,48 @@ class QueryTwo(Settings, Settings_sso):
 
         print('派送问题件 各类型签收率，导出时间》》》 ' + time_Start + "---" + timeEnd)
         sql8 = '''SELECT s2.派送类型, s2.月份, s2.总订单,
-                        concat(ROUND(IFNULL(s2.签收 / s2.已完成,0) * 100,2),'%') as 完成签收,
-                        -- concat(ROUND(IFNULL(s2.签收退货 / s2.已完成,0) * 100,2),'%') as 完成签收退货,
-                        concat(ROUND(IFNULL(s2.签收 / s2.总订单,0) * 100,2),'%') as 总计签收,
-                        concat(ROUND(IFNULL(s2.已完成 / s2.总订单,0) * 100,2),'%') as 完成占比,
-                        concat(ROUND(IFNULL(s2.已退货 / s2.总订单,0) * 100,2),'%') as 退货率,
-                        concat(ROUND(IFNULL(s2.总订单 / ss2.单量,0) * 100,2),'%') as 订单占比,NULL 处理方式
-                FROM( SELECT s1.月份, s1.派送类型, COUNT(ss3.订单编号) AS 总订单,
-                                    SUM(IF(ss3.系统物流状态 = "已签收" OR ss3.系统物流状态 = "已退货",1,0)) as 签收退货,
-                                    SUM(IF(ss3.系统物流状态 = "已签收",1,0)) as 签收,
-                                    SUM(IF(ss3.系统物流状态 = "拒收",1,0)) as 拒收,
-                                    SUM(IF(ss3.系统物流状态 = "已退货",1,0)) as 已退货,
-                                    SUM(IF(ss3.系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成
-                    FROM (  SELECT *,EXTRACT(YEAR_MONTH FROM 创建日期) AS 月份,
-                                    IF(w.订单号 IS NOT NULL,
-                                        IF(w.外呼类型 ='到站自取','营业所自取带挂机短信',IF(w.外呼类型 ='预约时间配送','预约时间配送不带挂机短信',
-										IF(w.外呼类型 ='超商' AND 是否短信 ='否','送至便利店不带挂机短信',IF(w.外呼类型 ='超商','送至便利店带挂机短信',派送问题)))),
-										IF(派送问题 = '送至便利店' OR 派送问题 = '客户自取','送至便利店',IF(派送问题 = '客户长期不在' OR 派送问题 = '送达客户不在','送达客户不在',派送问题))) AS 旧派送类型,
-									IF(w.订单号 IS NOT NULL,
-										IF(EXTRACT(YEAR_MONTH FROM 创建日期) <> '202304',
-											IF(w.外呼类型 ='到站自取','营业所自取带挂机短信',IF(w.外呼类型 ='预约时间配送','预约时间配送不带挂机短信',
-											IF(w.外呼类型 ='超商' AND 是否短信 ='否','送至便利店不带挂机短信',IF(w.外呼类型 ='超商' AND 是否短信 ='是','送至便利店带挂机短信',派送问题)))),
-											IF(w.外呼类型 ='超商' AND 是否短信 ='否','送至便利店不带挂机短信',
-												IF(派送问题 = '送至便利店' OR 派送问题 = '客户自取','送至便利店',IF(派送问题 = '客户长期不在' OR 派送问题 = '送达客户不在','送达客户不在',派送问题)))),
-										IF(派送问题 = '送至便利店' OR 派送问题 = '客户自取','送至便利店',IF(派送问题 = '客户长期不在' OR 派送问题 = '送达客户不在','送达客户不在',派送问题))) AS 派送类型
-                            FROM 派送问题件_跟进表 g
-							LEFT JOIN (SELECT 订单编号 AS 订单号, 外呼类型, 是否短信
-										 FROM 派送问题件_语音外呼 y
-										 WHERE y.便利店 IS NOT NULL AND y.时间 IS NOT NULL AND y.订单状态 NOT IN ('已完成','已退货(销售)','已退货(物流)','已退货(不拆包物流)')
-							) w ON g.订单编号 = w.订单号
-                            WHERE g.`创建日期` >= '{0}'  AND g.`创建日期` <= '{1}' AND g.币种 ='台币'
-                    ) s1
-                    LEFT JOIN (SELECT * FROM gat_order_list) ss3 ON s1.订单编号 = ss3.订单编号
-                    GROUP BY s1.月份, s1.派送类型
-                ) s2
-                LEFT JOIN (  SELECT 年月 AS 月份,  COUNT(订单编号) AS 单量
-                            FROM gat_zqsb g
-                            WHERE g.`日期` >= '{0}'  AND g.`日期` <= '{1}'  AND g.币种 ='台湾'
-                            GROUP BY 月份
-                ) ss2  ON s2.月份 = ss2.月份
-                ORDER BY 
-                FIELD(派送类型,'送至便利店','客户要求更改派送时间或者地址','客户不接电话','地址问题','送达客户不在','拒收','合计'),
-				月份, 总订单;'''.format(time_Start, timeEnd)
+                                concat(ROUND(IFNULL(s2.签收 / s2.已完成,0) * 100,2),'%') as 完成签收,
+                                -- concat(ROUND(IFNULL(s2.签收退货 / s2.已完成,0) * 100,2),'%') as 完成签收退货,
+                                concat(ROUND(IFNULL(s2.签收 / s2.总订单,0) * 100,2),'%') as 总计签收,
+                                concat(ROUND(IFNULL(s2.已完成 / s2.总订单,0) * 100,2),'%') as 完成占比,
+                                concat(ROUND(IFNULL(s2.已退货 / s2.总订单,0) * 100,2),'%') as 退货率,
+                                concat(ROUND(IFNULL(s2.总订单 / ss2.单量,0) * 100,2),'%') as 订单占比,NULL 处理方式
+                        FROM( SELECT s1.月份, s1.派送类型, COUNT(ss3.订单编号) AS 总订单,
+                                            SUM(IF(ss3.系统物流状态 = "已签收" OR ss3.系统物流状态 = "已退货",1,0)) as 签收退货,
+                                            SUM(IF(ss3.系统物流状态 = "已签收",1,0)) as 签收,
+                                            SUM(IF(ss3.系统物流状态 = "拒收",1,0)) as 拒收,
+                                            SUM(IF(ss3.系统物流状态 = "已退货",1,0)) as 已退货,
+                                            SUM(IF(ss3.系统物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成
+                            FROM (  SELECT *,EXTRACT(YEAR_MONTH FROM 创建日期) AS 月份,
+                                            IF(w.订单号 IS NOT NULL,
+                                                IF(w.外呼类型 ='到站自取','营业所自取带挂机短信',IF(w.外呼类型 ='预约时间配送','预约时间配送不带挂机短信',
+        										IF(w.外呼类型 ='超商' AND 是否短信 ='否','送至便利店不带挂机短信',IF(w.外呼类型 ='超商','送至便利店带挂机短信',派送问题)))),
+        										IF(派送问题 = '送至便利店' OR 派送问题 = '客户自取','送至便利店',IF(派送问题 = '客户长期不在' OR 派送问题 = '送达客户不在','送达客户不在',派送问题))) AS 旧派送类型,
+        									IF(w.订单号 IS NOT NULL,
+        										IF(EXTRACT(YEAR_MONTH FROM 创建日期) <> '202304',
+        											IF(w.外呼类型 ='到站自取','营业所自取带挂机短信',IF(w.外呼类型 ='预约时间配送','预约时间配送不带挂机短信',
+        											IF(w.外呼类型 ='超商' AND 是否短信 ='否','送至便利店不带挂机短信',IF(w.外呼类型 ='超商' AND 是否短信 ='是','送至便利店带挂机短信',派送问题)))),
+        											IF(w.外呼类型 ='超商' AND 是否短信 ='否','送至便利店不带挂机短信',
+        												IF(派送问题 = '送至便利店' OR 派送问题 = '客户自取','送至便利店',IF(派送问题 = '客户长期不在' OR 派送问题 = '送达客户不在','送达客户不在',派送问题)))),
+        										IF(派送问题 = '送至便利店' OR 派送问题 = '客户自取','送至便利店',IF(派送问题 = '客户长期不在' OR 派送问题 = '送达客户不在','送达客户不在',派送问题))) AS 派送类型
+                                    FROM 派送问题件_跟进表 g
+        							LEFT JOIN (SELECT 订单编号 AS 订单号, 外呼类型, 是否短信
+        										 FROM 派送问题件_语音外呼 y
+        										 WHERE y.便利店 IS NOT NULL AND y.时间 IS NOT NULL AND y.订单状态 NOT IN ('已完成','已退货(销售)','已退货(物流)','已退货(不拆包物流)')
+        							) w ON g.订单编号 = w.订单号
+                                    WHERE g.`创建日期` >= '{0}'  AND g.`创建日期` <= '{1}' AND g.币种 ='台币'
+                            ) s1
+                            LEFT JOIN (SELECT * FROM gat_order_list) ss3 ON s1.订单编号 = ss3.订单编号
+                            GROUP BY s1.月份, s1.派送类型
+                        ) s2
+                        LEFT JOIN (  SELECT 年月 AS 月份,  COUNT(订单编号) AS 单量
+                                    FROM gat_zqsb g
+                                    WHERE g.`日期` >= '{0}'  AND g.`日期` <= '{1}'  AND g.币种 ='台湾'
+                                    GROUP BY 月份
+                        ) ss2  ON s2.月份 = ss2.月份
+                        ORDER BY 
+                        FIELD(派送类型,'营业所自取带挂机短信','预约时间配送不带挂机短信','送至便利店带挂机短信','送至便利店不带挂机短信','送至便利店','客户要求更改派送时间或者地址','客户不接电话','地址问题','送达客户不在','拒收','合计'),
+        				月份, 总订单;'''.format(time_Start, timeEnd)
         df8 = pd.read_sql_query(sql=sql8, con=self.engine1)
 
         sql81 = '''SELECT s2.派送类型, s2.月份, s2.总订单,
@@ -208,7 +208,7 @@ class QueryTwo(Settings, Settings_sso):
                                     GROUP BY 月份
                         ) ss2  ON s2.月份 = ss2.月份
                         ORDER BY 
-                        FIELD(派送类型,'营业所自取带挂机短信','预约时间配送不带挂机短信','送至便利店带挂机短信','送至便利店不带挂机短信','送至便利店','客户要求更改派送时间或者地址','客户不接电话','地址问题','送达客户不在','拒收','合计'),
+                        FIELD(派送类型,'预约送达时间','客户要求更改派送时间或者地址','送达客户不在','客户自取','合计'),
         				月份, 总订单;'''.format(time_Start, timeEnd)
         df81 = pd.read_sql_query(sql=sql81, con=self.engine1)
 

@@ -1395,9 +1395,9 @@ if __name__ == '__main__':
         end = datetime.datetime.strptime(timeEnd, '%Y-%m-%d').date()
     else:
         # 更新时间
-        data_begin = datetime.date(2023, 3, 9)  # 数据库更新
-        begin = datetime.date(2023, 3, 9)  # 单点更新
-        end = datetime.date(2023, 4, 19)
+        data_begin = datetime.date(2023, 3, 16)  # 数据库更新
+        begin = datetime.date(2023, 3, 1)  # 单点更新
+        end = datetime.date(2023, 4, 1)
 
     print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
     print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')

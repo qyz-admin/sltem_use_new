@@ -990,7 +990,11 @@ class QueryOrder_Code(Settings, Settings_sso):
             print('正在写入......')
             dp.to_sql('query_cache', con=self.engine1, index=False, if_exists='replace')
             sql = '''REPLACE INTO {0}( 订单编号, 订单金额, 物流渠道, 服务商, 运单号, 联系电话, F跟进人, F时间, F问题类型, F问题原因, F内容, 录音链接聊天截图, 记录时间)
-                                SELECT 订单编号, 订单金额, 物流渠道, null 服务商, 运单号, 联系电话, F跟进人, F时间, F问题类型, F问题原因, F内容, 录音链接聊天截图, NOW() 记录时间
+                    SELECT 订单编号, 订单金额, 物流渠道, 
+                            IF(物流渠道 LIKE '%香港-立邦%','香港立邦',IF(物流渠道 LIKE '%速派-新竹%','速派',IF(物流渠道 LIKE '%速派-711%','速派-711',IF(物流渠道 LIKE '%台湾-天马%','天马',
+                            IF(物流渠道 LIKE '%铱熙无敌-711%','协来运-711',IF(物流渠道 LIKE '%铱熙无敌-黑猫%' OR 物流渠道 LIKE '%易速配头程-铱熙无敌尾%','协来运-黑猫',
+                            IF(物流渠道 LIKE '%铱熙无敌-新竹%','协来运-新竹',IF(物流渠道 LIKE '%速派-黑猫%','速派-黑猫',IF(物流渠道 LIKE '%立邦普货头程-易速配尾程%','易速配',物流渠道))))))))) 服务商, 
+                            运单号, 联系电话, F跟进人, F时间, F问题类型, F问题原因, F内容, 录音链接聊天截图, NOW() 记录时间
                     FROM {1};'''.format('拒收问题件检索','query_cache')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')

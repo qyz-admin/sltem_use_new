@@ -837,9 +837,9 @@ class QueryTwo(Settings, Settings_sso):
                 print('正在写入......')
                 dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
                 dp.to_excel('F:\\输出文件\\派送问题件_语音外呼-{0}{1}.xlsx'.format(order_time,rq), sheet_name='查询', index=False, engine='xlsxwriter')
-                sql = '''REPLACE INTO {0}(id,订单编号, 运单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,处理时间,派送次数,最新抓取时间,最新问题类型,统计日期, 物流轨迹时间, 物流轨迹,便利店, 商品名, 来源渠道,姓名,电话,地址,金额,付款类型,团队,时间,外呼类型,是否短信,记录时间) 
+                sql = '''REPLACE INTO {0}(id,订单编号, 运单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,处理时间,派送次数,最新抓取时间,最新问题类型,统计日期, 物流轨迹时间, 物流轨迹,便利店, 商品名, 来源渠道,姓名,电话,地址,金额,付款类型,团队,时间,外呼类型,是否短信,商品简称,记录时间) 
                         SELECT id,订单编号,运单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,IF(处理时间 = '',NULL,处理时间) 处理时间,派送次数,IF(最新抓取时间 = '',NULL,最新抓取时间) 最新抓取时间,最新问题类型,DATE_FORMAT({1},'%Y%m%d') 统计日期, 
-                                null 物流轨迹时间, null 物流轨迹, null 便利店, null 商品名, null 来源渠道,null 姓名,null 电话,null 地址,null 金额,null 付款类型,null 团队, '{2}' AS 时间, null 外呼类型,null 是否短信,NOW() 记录时间 
+                                null 物流轨迹时间, null 物流轨迹, null 便利店, null 商品名, null 来源渠道,null 姓名,null 电话,null 地址,null 金额,null 付款类型,null 团队, '{2}' AS 时间, null 外呼类型,null 是否短信,null 商品简称,NOW() 记录时间 
                         FROM cache_check;'''.format(data_woks, data_woks2, tm_data)
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                 print('写入成功......')
@@ -1020,7 +1020,7 @@ class QueryTwo(Settings, Settings_sso):
             print('剩余查询数' + str(in_count - n))
             n = n + 1
         dp = df.append(dlist, ignore_index=True)
-        dp = dp[['orderNumber', 'wayBillNumber','currency', 'area', 'befrom', 'amount','tel_phone', 'shipInfo.shipName', 'shipInfo.shipAddress', 'saleName', 'orderStatus', 'logisticsStatus', 'payType']]
+        dp = dp[['orderNumber', 'wayBillNumber','currency', 'area', 'befrom', 'amount','tel_phone', 'shipInfo.shipName', 'shipInfo.shipAddress', 'saleName', 'orderStatus', 'logisticsStatus', 'payType','abbreviation']]
         print(dp)
         dp.to_sql('ps', con=self.engine1, index=False, if_exists='replace')
         sql = '''update 派送问题件_语音外呼 a, ps b
@@ -1034,7 +1034,8 @@ class QueryTwo(Settings, Settings_sso):
                             a.`订单状态`= IF(b.`orderStatus` = '', NULL, b.`orderStatus`),
                             a.`物流状态`= IF(b.`logisticsStatus` = '', NULL, b.`logisticsStatus`),
                             a.`团队`= IF(b.`area` = '', NULL, b.`area`),
-                            a.`运单编号`= IF(b.`wayBillNumber` = '', NULL, b.`wayBillNumber`)
+                            a.`运单编号`= IF(b.`wayBillNumber` = '', NULL, b.`wayBillNumber`),
+                            a.`商品简称`= IF(b.`abbreviation` = '', NULL, b.`abbreviation`)
                 where a.`订单编号`= b.`orderNumber`;'''.format('team')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('查询已更新+++')
@@ -1131,7 +1132,7 @@ class QueryTwo(Settings, Settings_sso):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在获取 超商 语音外呼…………')
         sql = '''SELECT 姓名 AS 客户名,	NULL 性别,	电话 AS 'contact number', NULL 客户分组, NULL 微信, 来源渠道 AS 购买渠道, substring_index(商品名,'#',-1) AS 商品名, 便利店 AS 超商名称, IF(付款类型 NOT LIKE '%货到付款%', 0, 金额) as 金额, 
-                       NULL 副号码1, NULL 副号码2, NULL 副号码3, NULL 副号码4, NULL 副号码5, NULL 副号码6, NULL 副号码7, NULL 副号码8, NULL 副号码9, 订单编号, 团队
+                       NULL 副号码1, NULL 副号码2, NULL 副号码3, NULL 副号码4, NULL 副号码5, NULL 副号码6, NULL 副号码7, NULL 副号码8, NULL 副号码9, 订单编号, 团队,商品简称
                 FROM 派送问题件_语音外呼 s 
                 WHERE s.`时间` = '{1}' AND s.币种 = '台币' and s.订单状态 not in ('已完成','已退货(销售)','已退货(物流)','已退货(不拆包物流)')
                   AND s.外呼类型 = '超商';'''.format('派送问题件_语音外呼', tm_data)
@@ -1139,7 +1140,7 @@ class QueryTwo(Settings, Settings_sso):
 
         print('正在获取 预约时间配送 语音外呼…………')
         sql = '''SELECT 姓名 AS 客户名,	NULL 性别,	电话 AS 'contact number', NULL 客户分组, NULL 微信, 来源渠道 AS 购买渠道, substring_index(商品名,'#',-1) AS 商品名, 地址, IF(付款类型 NOT LIKE '%货到付款%', 0, 金额) as 金额, 
-                       NULL 副号码1, NULL 副号码2, NULL 副号码3, NULL 副号码4, NULL 副号码5, NULL 副号码6, NULL 副号码7, NULL 副号码8, NULL 副号码9, 订单编号, 团队
+                       NULL 副号码1, NULL 副号码2, NULL 副号码3, NULL 副号码4, NULL 副号码5, NULL 副号码6, NULL 副号码7, NULL 副号码8, NULL 副号码9, 订单编号, 团队,商品简称
                 FROM 派送问题件_语音外呼 s 
                 WHERE s.`时间` = '{1}' AND s.币种 = '台币' and s.订单状态 not in ('已完成','已退货(销售)','已退货(物流)','已退货(不拆包物流)')
                   AND s.外呼类型 = '预约时间配送';'''.format('派送问题件_语音外呼', tm_data)
@@ -1147,7 +1148,7 @@ class QueryTwo(Settings, Settings_sso):
 
         print('正在获取 到站自取 语音外呼…………')
         sql = '''SELECT 姓名 AS 客户名,	NULL 性别,	电话 AS 'contact number', NULL 客户分组, NULL 微信, 便利店 AS 营业所, 来源渠道 AS 购买渠道, 运单编号 AS 快递单号, substring_index(商品名,'#',-1) AS 商品名, IF(付款类型 NOT LIKE '%货到付款%', 0, 金额) as 金额, 
-                       NULL 副号码1, NULL 副号码2, NULL 副号码3, NULL 副号码4, NULL 副号码5, NULL 副号码6, NULL 副号码7, NULL 副号码8, NULL 副号码9, 订单编号, 团队
+                       NULL 副号码1, NULL 副号码2, NULL 副号码3, NULL 副号码4, NULL 副号码5, NULL 副号码6, NULL 副号码7, NULL 副号码8, NULL 副号码9, 订单编号, 团队,商品简称
                 FROM 派送问题件_语音外呼 s 
                 WHERE s.`时间` = '{1}' AND s.币种 = '台币' and s.订单状态 not in ('已完成','已退货(销售)','已退货(物流)','已退货(不拆包物流)')
                   AND s.外呼类型 = '到站自取';'''.format('派送问题件_语音外呼', tm_data)
@@ -1196,7 +1197,7 @@ if __name__ == '__main__':
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 ；  cat = 1 、黑猫切换是否使用后台数据  0 、还是官网数据 
     '''
-    select = 1
+    select = 52
     isReal = 1
     cat = 0
     if int(select) == 1:
