@@ -497,7 +497,7 @@ class MysqlControl(Settings):
             # df = pd.merge(left=df, right=df1, left_on='系统物流状态id', right_on='id', how='left')
             # df = df.drop(labels=['id', 'id_y', '系统订单状态id', '系统物流状态id'], axis=1)
             # df.rename(columns={'id_x': 'id', 'name_x': '系统订单状态', 'name_y': '系统物流状态'}, inplace=True)
-            print('++++++正在将 ' + yesterday[8:10] + ' 号订单写入数据库++++++')
+            print('++++++正在将 ' + last_month[5:7] + '-' + yesterday[8:10] + ' 号订单写入数据库++++++')
             try:    # 这一句会报错,需要修改my.ini文件中的[mysqld]段中的"max_allowed_packet = 1024M"
                 df.to_sql('sl_order', con=self.engine1, index=False, if_exists='replace')
                 sql = 'REPLACE INTO {}_order_list SELECT *, NOW() 记录时间 FROM sl_order; '.format(team)
