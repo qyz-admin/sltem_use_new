@@ -85,7 +85,7 @@ class QueryOrder(Settings, Settings_sso):
                                                                                     self.mysql2['datebase']))
     def readFormHost(self, team, searchType,pople_Query, timeStart, timeEnd, to_sql, proxy_id, proxy_handle):
         start = datetime.datetime.now()
-        path = r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表'
+        path = r'F:\需要用到的文件\A查询导表'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -3181,29 +3181,29 @@ SELECT 币种,运营团队,
                 listT[5].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=25)  # 分币种单量
                 listT[0].to_excel(excel_writer=writer, sheet_name='明细', index=False)  # 明细单量
 
-            sql = '''SELECT 运单编号
-                    FROM (
-                            SELECT * 
-                            FROM `cache` s 
-                            WHERE (s.克隆人 IS NULL OR s.克隆人 = "") and s.代下单客服 = "刘文君" 
-                    ) s1
-                    WHERE s1.物流状态 <> '已签收' and (s1.运单编号 IS not NULL and s1.运单编号 <> "");'''
-            ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
-            if ordersDict.empty:
-                print(' ****** 没有要查询物流轨迹的信息; ****** ')
-            else:
-                print('！！！ 查询物流轨迹数据中！！！')
-                handle = '自动'
-                login_TmpCode = 'login_TmpCode'
-                if handle == '手动':
-                    print('请输入口令Token:  回车确认')
-                    login_TmpCode = str(input())
-                login_TmpCode = '0b04de569eb6395e88a34a2e9cde8e92'  # 输入登录口令Tkoen
-                proxy_handle = '代理服务器0'
-                proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
-                lw = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
-                lw.Search_online(ordersDict, 1, '运单编号', proxy_handle, proxy_id, 0)
-                print('物流轨迹已输出！！！')
+            # sql = '''SELECT 运单编号
+            #         FROM (
+            #                 SELECT *
+            #                 FROM `cache` s
+            #                 WHERE (s.克隆人 IS NULL OR s.克隆人 = "") and s.代下单客服 = "刘文君"
+            #         ) s1
+            #         WHERE s1.物流状态 <> '已签收' and (s1.运单编号 IS not NULL and s1.运单编号 <> "");'''
+            # ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+            # if ordersDict.empty:
+            #     print(' ****** 没有要查询物流轨迹的信息; ****** ')
+            # else:
+            #     print('！！！ 查询物流轨迹数据中！！！')
+            #     handle = '自动'
+            #     login_TmpCode = 'login_TmpCode'
+            #     if handle == '手动':
+            #         print('请输入口令Token:  回车确认')
+            #         login_TmpCode = str(input())
+            #     login_TmpCode = '0b04de569eb6395e88a34a2e9cde8e92'  # 输入登录口令Tkoen
+            #     proxy_handle = '代理服务器0'
+            #     proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
+            #     lw = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+            #     lw.Search_online(ordersDict, 1, '运单编号', proxy_handle, proxy_id, 0)
+            #     print('物流轨迹已输出！！！')
 
 
         print('++++++本批次查询成功+++++++')
@@ -3350,7 +3350,7 @@ if __name__ == '__main__':
     # m.order_TimeQuery('2021-11-01', '2021-11-09')auto_VerifyTip
     # m.del_reson()
 
-    select = 3                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    select = 1                                 # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'

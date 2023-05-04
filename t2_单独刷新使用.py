@@ -1386,7 +1386,7 @@ if __name__ == '__main__':
     login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
     team = 'gat'
 
-    if team == 'gat':
+    if team == 'gat0':
         # 更新时间
         timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
         data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
@@ -1395,7 +1395,7 @@ if __name__ == '__main__':
         end = datetime.datetime.strptime(timeEnd, '%Y-%m-%d').date()
     else:
         # 更新时间
-        data_begin = datetime.date(2023, 3, 16)  # 数据库更新
+        data_begin = datetime.date(2023, 3, 1)  # 数据库更新
         begin = datetime.date(2023, 3, 1)  # 单点更新
         end = datetime.date(2023, 4, 1)
 

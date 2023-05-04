@@ -1362,8 +1362,8 @@ if __name__ == '__main__':
         m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
 
     elif int(select) == 8:
-        timeStart = datetime.date(2023, 4, 14)         # 拒收问题  查询；订单检索@~@ok
-        timeEnd = datetime.date(2023, 4, 21)
+        timeStart = datetime.date(2023, 4, 18)         # 拒收问题  查询；订单检索@~@ok
+        timeEnd = datetime.date(2023, 5, 4)
         order_time = '跟进时间'
         for i in range((timeEnd - timeStart).days):  # 按天循环获取订单状态
             day = timeStart + datetime.timedelta(days=i)

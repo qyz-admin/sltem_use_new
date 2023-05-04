@@ -11433,14 +11433,14 @@ if __name__ == '__main__':
     select = 99
     handle_time = '自动'
     if int(select) == 99:
-        if handle_time == '自动':
+        if handle_time == '自动0':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'     # 获取-每日-报表 开始的时间
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
         else:
-            month_last = '2023-02-01'
-            month_old = '2023-02-01'                                # 获取-每日-报表 开始的时间
-            month_yesterday = '2023-03-16'
+            month_last = '2023-03-01'
+            month_old = '2023-03-01'                                # 获取-每日-报表 开始的时间
+            month_yesterday = '2023-04-30'
 
         last_time = '2021-01-01'
         up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期

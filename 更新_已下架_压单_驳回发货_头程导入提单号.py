@@ -92,7 +92,14 @@ class QueryTwoLower(Settings, Settings_sso):
                 rq = ''
                 if select == 1:
                     if '压单上传表' in filePath:
-                        excel = win32.gencache.EnsureDispatch('Excel.Application')
+                        # excel = win32.gencache.EnsureDispatch('Excel.Application')
+                        # wb = excel.Workbooks.Open(filePath)
+                        # file_path = os.path.join(path, "~$ " + dir)
+                        # wb.SaveAs(file_path, FileFormat=51)  # FileFormat = 51 is for .xlsx extension
+                        # wb.Close()  # FileFormat = 56 is for .xls extension
+                        # excel.Application.Quit()
+                        # os.remove(filePath)
+                        excel = win32.DispatchEx('Excel.Application')
                         wb = excel.Workbooks.Open(filePath)
                         file_path = os.path.join(path, "~$ " + dir)
                         wb.SaveAs(file_path, FileFormat=51)  # FileFormat = 51 is for .xlsx extension
