@@ -427,20 +427,25 @@ class QueryUpdate(Settings):
         # listT.append(df2)
 
         print('正在写入excel…………')
-        file_path = 'F:\\神龙签收率\\A运费-核实\\{} 运费差异-查询{}.xlsx'.format(output, rq)
-        # sheet_name = ['运费查询', '运费总']
         sheet_name = ['运费查询']
-        df0 = pd.DataFrame([])                                      # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)                        # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')       # 初始化写入对象
-        book = load_workbook(file_path)                             # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book                                          # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        for i in range(len(listT)):
-            listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
-        if 'Sheet1' in book.sheetnames:                             # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        file_path = 'F:\\神龙签收率\\A运费-核实\\{} 运费差异-查询{}.xlsx'.format(output, rq)
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            for i in range(len(listT)):
+                listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+
+        # sheet_name = ['运费查询', '运费总']
+        # sheet_name = ['运费查询']
+        # df0 = pd.DataFrame([])                                      # 创建空的dataframe数据框
+        # df0.to_excel(file_path, index=False)                        # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')       # 初始化写入对象
+        # book = load_workbook(file_path)                             # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book                                          # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # for i in range(len(listT)):
+        #     listT[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i], index=False)
+        # if 'Sheet1' in book.sheetnames:                             # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
         print('----已写入excel ')
 
         # sql = '''SELECT *
@@ -530,17 +535,22 @@ class QueryUpdate(Settings):
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         print('正在写入excel…………')
         file_pathT = 'F:\\输出文件\\{0} 在途未上线-总表.xlsx'.format(rq)
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_pathT, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_pathT)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        df[(df['当前状态'].str.contains('在途'))].to_excel(excel_writer=writer, sheet_name='在途', index=False)
-        df[(df['当前状态'].str.contains('未上线'))].to_excel(excel_writer=writer, sheet_name='未上线', index=False)
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+
+        # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        # df0.to_excel(file_pathT, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_pathT, engine='openpyxl')  # 初始化写入对象
+        # book = load_workbook(file_pathT)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # df[(df['当前状态'].str.contains('在途'))].to_excel(excel_writer=writer, sheet_name='在途', index=False)
+        # df[(df['当前状态'].str.contains('未上线'))].to_excel(excel_writer=writer, sheet_name='未上线', index=False)
+        # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
+
+        with pd.ExcelWriter(file_pathT, engine='openpyxl') as writer:
+            df[(df['当前状态'].str.contains('在途'))].to_excel(excel_writer=writer, sheet_name='在途', index=False)
+            df[(df['当前状态'].str.contains('未上线'))].to_excel(excel_writer=writer, sheet_name='未上线', index=False)
 
         # print(df)
         waybill = ['天马&天马', '速派&速派', '龟山|易速配&易速配', '铱熙无敌&协来运', '香港-立邦&立邦', '香港-圆通&圆通']
@@ -550,10 +560,13 @@ class QueryUpdate(Settings):
             wy2 = wy.split('&')[1]
             db1 = df[(df['物流方式'].str.contains(wy1))]
             file_path = 'F:\\输出文件\\{0}{1} 在途未上线.xlsx'.format(rq, wy2)
-            writer2 = pd.ExcelWriter(file_path, engine='openpyxl')
-            db1[['订单编号', '运单编号', '是否改派', '发货时间', '当前状态', '查询状态结果', '配送问题', '状态时间']].to_excel(writer2, sheet_name='查询', index=False, startrow=0)
-            writer2.save()
-            writer2.close()
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                db1[['订单编号', '运单编号', '是否改派', '发货时间', '当前状态', '查询状态结果', '配送问题', '状态时间']].to_excel(writer, sheet_name='查询', index=False, startrow=0)
+
+            # writer2 = pd.ExcelWriter(file_path, engine='openpyxl')
+            # db1[['订单编号', '运单编号', '是否改派', '发货时间', '当前状态', '查询状态结果', '配送问题', '状态时间']].to_excel(writer2, sheet_name='查询', index=False, startrow=0)
+            # writer2.save()
+            # writer2.close()
         print('----已写入excel')
 
 
@@ -591,7 +604,7 @@ if __name__ == '__main__':
 
     elif int(select) == 4:
         m.readFormHost('查询运费')
-        m.trans_way_cost_new(team)  # 同产品下的规格运费查询
+        # m.trans_way_cost_new(team)  # 同产品下的规格运费查询
         
         # if week.isoweekday() == 2 or week.isoweekday() == 5:
         upload = '查询-运单号'    # 获取在途未上线 催促的

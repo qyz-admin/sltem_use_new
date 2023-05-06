@@ -11433,7 +11433,7 @@ if __name__ == '__main__':
     select = 99
     handle_time = '自动'
     if int(select) == 99:
-        if handle_time == '自动0':
+        if handle_time == '自动':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'     # 获取-每日-报表 开始的时间
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')

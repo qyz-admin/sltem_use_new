@@ -119,11 +119,18 @@ class QueryTwoLower(Settings, Settings_sso):
                     self._readFile_select(filePath, rq, tem)                # 工作表的   头程物流  信息
                 elif select == 4:
                     self._readFile_Yixiwudi(filePath)  # 工作表的   头程物流  信息
-                excel = win32.gencache.EnsureDispatch('Excel.Application')
+                # excel = win32.gencache.EnsureDispatch('Excel.Application')
+                # wb = excel.Workbooks.Open(filePath)
+                # file_path = os.path.join(path, "~$ " + dir)
+                # wb.SaveAs(file_path, FileFormat=51)              # FileFormat = 51 is for .xlsx extension
+                # wb.Close()                                      # FileFormat = 56 is for .xls extension
+                # excel.Application.Quit()
+                # os.remove(filePath)
+                excel = win32.DispatchEx('Excel.Application')
                 wb = excel.Workbooks.Open(filePath)
                 file_path = os.path.join(path, "~$ " + dir)
-                wb.SaveAs(file_path, FileFormat=51)              # FileFormat = 51 is for .xlsx extension
-                wb.Close()                                      # FileFormat = 56 is for .xls extension
+                wb.SaveAs(file_path, FileFormat=51)  # FileFormat = 51 is for .xlsx extension
+                wb.Close()  # FileFormat = 56 is for .xls extension
                 excel.Application.Quit()
                 os.remove(filePath)
         print('处理耗时：', datetime.datetime.now() - start)

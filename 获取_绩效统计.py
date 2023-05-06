@@ -245,18 +245,26 @@ class QueryOrder_Code(Settings, Settings_sso):
         # print('正在处理json数据转化为dataframe…………')
         try:
             for result in req['data']['list']:
-                result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
-                result['saleName'] = 0
-                result['productId'] = 0
-                result['saleProduct'] = 0
-                result['spec'] = 0
-                result['chooser'] = 0
-                result['saleId'] = result['specs'][0]['saleId']
-                result['saleName'] = result['specs'][0]['saleName']
-                result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
-                result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
-                result['spec'] = result['specs'][0]['spec']
-                result['chooser'] = result['specs'][0]['chooser']
+                if result['specs'] != []:
+                    result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
+                    result['saleName'] = 0
+                    result['productId'] = 0
+                    result['saleProduct'] = 0
+                    result['spec'] = 0
+                    result['chooser'] = 0
+                    result['saleId'] = result['specs'][0]['saleId']
+                    result['saleName'] = result['specs'][0]['saleName']
+                    result['productId'] = (result['specs'][0]['saleProduct']).split('#')[1]
+                    result['saleProduct'] = (result['specs'][0]['saleProduct']).split('#')[2]
+                    result['spec'] = result['specs'][0]['spec']
+                    result['chooser'] = result['specs'][0]['chooser']
+                else:
+                    result['saleId'] = ''        # 添加新的字典键-值对，为下面的重新赋值用
+                    result['saleName'] = ''
+                    result['productId'] = ''
+                    result['saleProduct'] = ''
+                    result['spec'] = ''
+                    result['chooser'] = ''
                 quest = ''
                 for re in result['questionReason']:
                     quest = quest + ';' + re
@@ -620,9 +628,11 @@ class QueryOrder_Code(Settings, Settings_sso):
         ordersDict = []
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
-                result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
                 if 'traceRecord' in result:
+                    result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
                     result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
+                    if '地址;' in result['traceRecord']:
+                        result['traceRecord'] = result['traceRecord'].replace('地址;', '地址:')
                     if ';' in result['traceRecord'] and '地址' not in result['traceRecord']:
                         # print(55)
                         # print(result['order_number'])
@@ -741,7 +751,9 @@ class QueryOrder_Code(Settings, Settings_sso):
                                                 最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
                                                 赠品补发订单编号,赠品补发订单状态,联系方式,历史处理记录,统计月份,记录时间) 
                     SELECT id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
-                            最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
+                            最新处理状态,IF(最新处理时间 = '' OR 最新处理时间 IS NULL,导入时间,最新处理时间) as 最新处理时间,
+                            IF(最新客服处理日期 = '' OR 最新客服处理日期 IS NULL,DATE_FORMAT(导入时间,'%Y-%m-%d'),最新客服处理日期) as 最新客服处理日期,
+                            最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
                             赠品补发订单编号,赠品补发订单状态,联系方式,历史处理记录,DATE_FORMAT({1},'%Y%m') 统计月份,NOW() 记录时间 
                     FROM cache_check;'''.format(data_woks, data_woks2)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
@@ -771,35 +783,59 @@ class QueryOrder_Code(Settings, Settings_sso):
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
                 # print(result['order_number'])
-                result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
-                result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
-                if ';' in result['traceRecord']:
-                    trace_record = result['traceRecord'].split(";")
-                    result['deal_time'] = ''
-                    result['result_reson'] = ''
-                    result['result_info'] = ''
-                    result['result_content'] = ''
-                    result['deal_Content'] = ''
-                    result['trace_UserName'] = ''
-                    for record in trace_record:
-                        if '物流' not in record:
-                            rec = record.split("#处理结果：")[1]
-                            # print(record)
-                            # print(rec)
-                            if rec != "" and rec != " ":
-                                result['deal_time'] = record.split()[0]
-                                if len(rec.split()) > 3:
-                                    result['result_reson'] = rec.split()[3]       # 最新客服 具体原因
-                                if len(rec.split()) > 2:
-                                    result['result_info'] = rec.split()[2]        # 最新客服 客诉原因
-                                if len(rec.split()) > 1:
-                                    result['result_content'] = rec.split()[1]     # 最新客服 处理结果
-                                result['deal_Content'] = rec.split()[0]           # 最新客服 处理
-                                rec_name = record.split("#处理结果：")[0]
-                                if '客服' in rec_name:
-                                    recname = (rec_name.split())[2]
-                                    result['trace_UserName'] = recname.replace('(客服)', '')
-                    ordersDict.append(result.copy())    # append()方法只是将字典的地址存到list中，而键赋值的方式就是修改地址，所以才导致覆盖的问题;  使用copy() 或者 deepcopy()  当字典中存在list的时候需要使用deepcopy()
+                # print(result)
+                if 'traceRecord' in result:
+                    result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
+                    result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
+                    if ';' in result['traceRecord']:
+                        trace_record = result['traceRecord'].split(";")
+                        result['deal_time'] = ''
+                        result['result_reson'] = ''
+                        result['result_info'] = ''
+                        result['result_content'] = ''
+                        result['deal_Content'] = ''
+                        result['trace_UserName'] = ''
+                        for record in trace_record:
+                            if '物流' not in record:
+                                rec = record.split("#处理结果：")[1]
+                                # print(record)
+                                # print(rec)
+                                if rec != "" and rec != " ":
+                                    result['deal_time'] = record.split()[0]
+                                    if len(rec.split()) > 3:
+                                        result['result_reson'] = rec.split()[3]       # 最新客服 具体原因
+                                    if len(rec.split()) > 2:
+                                        result['result_info'] = rec.split()[2]        # 最新客服 客诉原因
+                                    if len(rec.split()) > 1:
+                                        result['result_content'] = rec.split()[1]     # 最新客服 处理结果
+                                    result['deal_Content'] = rec.split()[0]           # 最新客服 处理
+                                    rec_name = record.split("#处理结果：")[0]
+                                    if '客服' in rec_name:
+                                        recname = (rec_name.split())[2]
+                                        result['trace_UserName'] = recname.replace('(客服)', '')
+                        ordersDict.append(result.copy())    # append()方法只是将字典的地址存到list中，而键赋值的方式就是修改地址，所以才导致覆盖的问题;  使用copy() 或者 deepcopy()  当字典中存在list的时候需要使用deepcopy()
+                    else:
+                        result['deal_time'] = ''
+                        result['result_reson'] = ''
+                        result['result_info'] = ''
+                        result['result_content'] = ''
+                        result['deal_Content'] = ''
+                        result['trace_UserName'] = ''
+                        if len(result['dealContent'].split()) > 3:
+                            result['result_reson'] = result['dealContent'].split()[3]       # 最新客服 具体原因
+                        if len(result['dealContent'].split()) > 2:
+                            result['result_info'] = result['dealContent'].split()[2]        # 最新客服 客诉原因
+                        if len(result['dealContent'].split()) > 1:
+                            result['result_content'] = result['dealContent'].split()[1]     # 最新客服 处理内容
+                        result['deal_Content'] = result['dealContent'].split()[0]           # 最新客服 处理
+
+                        if result['traceRecord'] != '' or result['traceRecord'] != []:
+                            result['deal_time'] = result['traceRecord'].split()[0]
+                        if result['traceUserName'] != '' or result['traceUserName'] != []:
+                            # if '赠品' in result['traceRecord'] or '退款' in result['traceRecord'] or '补发' in result['traceRecord'] or '换货' in result['traceRecord']:
+                            if '客服' in result['traceRecord']:
+                                result['trace_UserName'] = result['traceUserName'].replace('客服：', '')
+                        ordersDict.append(result.copy())
                 else:
                     result['deal_time'] = ''
                     result['result_reson'] = ''
@@ -807,20 +843,6 @@ class QueryOrder_Code(Settings, Settings_sso):
                     result['result_content'] = ''
                     result['deal_Content'] = ''
                     result['trace_UserName'] = ''
-                    if len(result['dealContent'].split()) > 3:
-                        result['result_reson'] = result['dealContent'].split()[3]       # 最新客服 具体原因
-                    if len(result['dealContent'].split()) > 2:
-                        result['result_info'] = result['dealContent'].split()[2]        # 最新客服 客诉原因
-                    if len(result['dealContent'].split()) > 1:
-                        result['result_content'] = result['dealContent'].split()[1]     # 最新客服 处理内容
-                    result['deal_Content'] = result['dealContent'].split()[0]           # 最新客服 处理
-
-                    if result['traceRecord'] != '' or result['traceRecord'] != []:
-                        result['deal_time'] = result['traceRecord'].split()[0]
-                    if result['traceUserName'] != '' or result['traceUserName'] != []:
-                        # if '赠品' in result['traceRecord'] or '退款' in result['traceRecord'] or '补发' in result['traceRecord'] or '换货' in result['traceRecord']:
-                        if '客服' in result['traceRecord']:
-                            result['trace_UserName'] = result['traceUserName'].replace('客服：', '')
                     ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
@@ -1354,25 +1376,36 @@ class QueryOrder_Code(Settings, Settings_sso):
         listT.append(df6)
 
         file_path = r'''F:\\输出文件\\{0}绩效数据明细 {1}.xlsx'''.format(rq_month, rq)
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        df11.to_excel(excel_writer=writer, sheet_name='挽单', index=False)
-        df21.to_excel(excel_writer=writer, sheet_name='促单', index=False)
-        df3.to_excel(excel_writer=writer, sheet_name='采购异常', index=False)
-        df32.to_excel(excel_writer=writer, sheet_name='压单核实', index=False)
-        df33.to_excel(excel_writer=writer, sheet_name='系统问题件', index=False)
-        df4.to_excel(excel_writer=writer, sheet_name='物流问题', index=False)
-        df43.to_excel(excel_writer=writer, sheet_name='派送问题', index=False)
-        df5.to_excel(excel_writer=writer, sheet_name='物流客诉', index=False)
-        df6.to_excel(excel_writer=writer, sheet_name='拒收问题件', index=False)
+        # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
+        # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
+        # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
+        # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
+        # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
+        # df11.to_excel(excel_writer=writer, sheet_name='挽单', index=False)
+        # df21.to_excel(excel_writer=writer, sheet_name='促单', index=False)
+        # df3.to_excel(excel_writer=writer, sheet_name='采购异常', index=False)
+        # df32.to_excel(excel_writer=writer, sheet_name='压单核实', index=False)
+        # df33.to_excel(excel_writer=writer, sheet_name='系统问题件', index=False)
+        # df4.to_excel(excel_writer=writer, sheet_name='物流问题', index=False)
+        # df43.to_excel(excel_writer=writer, sheet_name='派送问题', index=False)
+        # df5.to_excel(excel_writer=writer, sheet_name='物流客诉', index=False)
+        # df6.to_excel(excel_writer=writer, sheet_name='拒收问题件', index=False)
+        # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
+        #     del book['Sheet1']
+        # writer.save()
+        # writer.close()
 
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            df11.to_excel(excel_writer=writer, sheet_name='挽单', index=False)
+            df21.to_excel(excel_writer=writer, sheet_name='促单', index=False)
+            df3.to_excel(excel_writer=writer, sheet_name='采购异常', index=False)
+            df32.to_excel(excel_writer=writer, sheet_name='压单核实', index=False)
+            df33.to_excel(excel_writer=writer, sheet_name='系统问题件', index=False)
+            df4.to_excel(excel_writer=writer, sheet_name='物流问题', index=False)
+            df43.to_excel(excel_writer=writer, sheet_name='派送问题', index=False)
+            df5.to_excel(excel_writer=writer, sheet_name='物流客诉', index=False)
+            df6.to_excel(excel_writer=writer, sheet_name='拒收问题件', index=False)
+
         # df.to_excel('F:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='有效单量', index=False, engine='xlsxwriter')
 
 
@@ -2299,7 +2332,7 @@ if __name__ == '__main__':
     login_TmpCode = '4b84b336ab9739218a563cde0be598ee'  # 输入登录口令Tkoen
     proxy_handle = '代理服务器0'
     proxy_id = '192.168.13.89:37469'  # 输入代理服务器节点和端口
-    select = 9
+    select = 99
     m = QueryOrder_Code('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id, select)
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
@@ -2326,58 +2359,62 @@ if __name__ == '__main__':
                 timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
                 timeEnd = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         else:
-            timeStart = '2023-03-01'
-            timeEnd = '2023-03-31'
+            timeStart = '2023-04-01'
+            timeEnd = '2023-04-30'
         print(timeStart + "---" + timeEnd)
         '''
             开始获取 绩效数据
         '''
-        order_time = '跟进时间'                                                                  # 拒收问题  查询；订单检索@~@ok
-        timeStart = datetime.date(2023, 3, 15)
-        timeEnd = datetime.date(2023, 4, 1)
-        for i in range((timeEnd - timeStart).days):  # 按天循环获取订单状态
-            day = timeStart + datetime.timedelta(days=i)
-            day_time = str(day)
-            print('****** 更新      起止时间：' + day_time + ' - ' + day_time + ' ******')
-            # m.service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time)      # (需处理两次)
-
-        timeStart = '2023-03-22'
-        timeEnd = '2023-03-31'
-        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # (需处理两次)
-        order_time = '下单跟进时间'
-        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
-        order_time = '下单时间'
-        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
-
         m.service_id_order(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)      # 促单查询；下单时间 @~@ok
 
         order_time = '创建时间'
         m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；创建时间 （一、获取订单内容）@~@ok
         m.service_id_ssale_info(proxy_handle, proxy_id, '采购异常_创建时间')                             # 采购查询；创建时间 （二、获取处理详情）@~@ok
-        order_time = '跟进时间'
-        m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；处理时间 （一、获取订单内容）@~@ok
-        m.service_id_ssale_info(proxy_handle, proxy_id, '采购问题件_跟进时间')                             # 采购查询；处理时间 （二、获取处理详情）@~@ok
 
+        order_time = '创建时间'
         m.service_id_getRedeemOrderList(timeStart, timeEnd, proxy_handle, proxy_id)  # 挽单列表  查询@~@ok
 
         order_time = '处理时间'                                                                 # 派送问题  处理时间:登记结果处理时间； 创建时间： 订单放入时间@~@
         m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)    # (需处理两次)
         m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)    # (需处理两次)
-        order_time = '创建时间'                                                                 # 派送问题   创建时间： 订单放入时间（每次导出时需要更新数据）@~@
-        m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
 
-        order_time = '跟进时间'
-        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
         order_time = '创建时间'
         m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
 
-        order_time = '跟进时间'
-        m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
         order_time = '创建时间'
         m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
 
         m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)            # 系统问题件  查询；订单检索
 
+        order_time = '跟进时间'                                                                  # 拒收问题  查询；订单检索@~@ok
+        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # (需处理两次)
+
+
+        '''
+            开始获取 其他数据
+        '''
+        order_time = '跟进时间'
+        m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；处理时间 （一、获取订单内容）@~@ok
+        m.service_id_ssale_info(proxy_handle, proxy_id, '采购问题件_跟进时间')                             # 采购查询；处理时间 （二、获取处理详情）@~@ok
+
+        order_time = '跟进时间'
+        m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
+
+        order_time = '跟进时间'
+        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
+
+        order_time = '创建时间'                                                                 # 派送问题   创建时间： 订单放入时间（每次导出时需要更新数据）@~@
+        m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
+
+        order_time = '下单跟进时间'
+        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
+        order_time = '下单时间'
+        begin = datetime.date(2023, 4, 22)  # 单点更新
+        end = datetime.date(2023, 4, 23)
+        for i in range((end - begin).days):  # 按天循环获取订单状态
+            day = begin + datetime.timedelta(days=i)
+            day_time = str(day)
+            m.service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
 
     elif int(select) == 8:
         m.service_check()
