@@ -3005,13 +3005,24 @@ SELECT 币种,运营团队,
     # 进入订单检索界面     促单查询
     def order_track_Query(self, time_handle, timeStart, timeEnd, proxy_id, proxy_handle):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        team = '促单_分析'
         if time_handle == '自动':
-            if (datetime.datetime.now()).strftime('%d') == 1:
-                timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m-%d')
-                timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-            else:
-                timeStart = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
-                timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            # sql = '''SELECT DISTINCT 下单时间 FROM {0} d GROUP BY 下单时间 ORDER BY 下单时间 DESC'''.format(team)
+            # rq = pd.read_sql_query(sql=sql, con=self.engine1)
+            # rq = pd.to_datetime(rq['下单时间'][0])
+            # timeStart = (rq + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            # timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            timeStart = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'
+            timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        else:
+            timeStart = timeStart
+            timeEnd = timeEnd
+            # if (datetime.datetime.now()).strftime('%d') == 1:
+            #     timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m-%d')
+            #     timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            # else:
+            #     timeStart = (datetime.datetime.now().replace(day=1)).strftime('%Y-%m-%d')
+            #     timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         print('+++正在查询 促单订单 信息中：' + str(timeStart) + " *** " + str(timeEnd))
 
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
@@ -3056,45 +3067,35 @@ SELECT 币种,运营团队,
                                SELECT id,订单编号,币种,下单时间,订单状态, 物流状态, 代下单客服,克隆人,来源渠道, NOW() 记录时间 
                     FROM cache;'''.format('促单_分析')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
             listT = []
             listT.append(dp)    # 0 明细单量
-
-            sql2 = '''SELECT 代下单客服, COUNT(订单编号) as 有效转化单量
-                    FROM ( SELECT *
-                            FROM `cache` s
-                            WHERE (s.克隆人 IS NULL OR s.克隆人 = "") AND s.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核")
-                    ) ss
-                    GROUP BY 代下单客服
-                    ORDER BY FIELD(代下单客服,'李若兰','刘文君','曲开拓','马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
-            df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
-            listT.append(df2)   # 1 有效单量
-
-            sql3 = '''SELECT 代下单客服, COUNT(订单编号) as 总代下单量
-                    FROM ( SELECT *
-                            FROM `cache` s
-                            WHERE s.克隆人 IS NULL OR s.克隆人 = ""
-                    ) ss
-                    GROUP BY 代下单客服
-                    ORDER BY FIELD(代下单客服,'李若兰','刘文君','曲开拓','马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
-            df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
-            listT.append(df3)   # 2 总下单量
-
-            sql4 = '''SELECT EXTRACT(DAY FROM 下单时间) AS 天, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 日期, 代下单客服, COUNT(订单编号) as 总代下单量,
-							SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量
-                    FROM ( SELECT *
-                            FROM `cache` s
+            print('不分币种 分月份 的整体 - 促单分析')
+            sql1 = '''SELECT IFNULL(月份,'总计') as 月份,
+                            COUNT(订单编号) as 总代下单量,
+                            SUM(IF(订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效代下单量,
+                            concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 完成签收,
+                            SUM(IF(物流状态 = "已签收",1,0)) as 签收,
+                            SUM(IF(物流状态 = "拒收",1,0)) as 拒收,
+                            SUM(IF(物流状态 = "已退货",1,0)) as 已退货,
+                            SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
+                            concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / COUNT(订单编号),0) * 100,2),'%') as 总计签收,
+                            concat(ROUND(IFNULL(SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / COUNT(订单编号),0) * 100,2),'%') as 完成占比,
+                            concat(ROUND(IFNULL(SUM(IF(物流状态 = "已退货",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
+                    FROM ( SELECT *,  DATE_FORMAT(下单时间, '%Y%m') AS 月份
+                            FROM `促单_分析` s
                             WHERE s.克隆人 IS NULL OR s.克隆人 = ""
                     ) ss1
-                    GROUP BY 天, 代下单客服
+                    GROUP BY 月份
                     WITH ROLLUP 
-                    ORDER BY 天,
-					FIELD(代下单客服,'李若兰','刘文君','曲开拓','马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
-            df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
-            listT.append(df4)   # 3 明细
+                    ORDER BY 月份 DESC;'''
+            df1 = pd.read_sql_query(sql=sql1, con=self.engine1)
+            listT.append(df1)  # 1 不分币种
 
-            sql5 = '''SELECT 代下单客服, COUNT(订单编号) as 总代下单量,
-                            SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量,
+            print('不分币种 分月份 的个人 - 促单分析')
+            sql2 = '''SELECT IFNULL(月份,'总计') as 月份,
+                            IFNULL(代下单客服,'总计') 代下单客服,
+                            COUNT(订单编号) as 总代下单量,
+                            SUM(IF(订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效代下单量,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 完成签收,
                             SUM(IF(物流状态 = "已签收",1,0)) as 签收,
                             SUM(IF(物流状态 = "拒收",1,0)) as 拒收,
@@ -3103,18 +3104,46 @@ SELECT 币种,运营团队,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / COUNT(订单编号),0) * 100,2),'%') as 总计签收,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / COUNT(订单编号),0) * 100,2),'%') as 完成占比,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 = "已退货",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
-                        FROM ( SELECT *
-                                FROM `cache` s
+                    FROM ( SELECT *,  DATE_FORMAT(下单时间, '%Y%m') AS 月份
+                            FROM `促单_分析` s
+                            WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                    ) ss1
+                    GROUP BY 月份, 代下单客服
+                    WITH ROLLUP 
+                    ORDER BY 月份 DESC, FIELD(代下单客服,'马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','刘文君','曲开拓','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','李若兰','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','周思文','张静','张登锋','苑亚平','谢玲玲','王正正','王芬','汤楠英','宋晓利','秦小燕','孟芮羽','吕龙飞','李晓青','李青','李丹妮','惠珣','何金蓉','郝淑蓉','丁娜','代下单客服','总计');'''
+            df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
+            listT.append(df2)   # 2 不分币种
+
+            print('不分币种 分月份 分日期 的个人 - 促单分析')
+            sql3 = '''SELECT IFNULL(月份,'总计') as 月份,
+                                IFNULL(日期,'总计') as 日期,
+                                IFNULL(代下单客服,'总计') 代下单客服,
+                                COUNT(订单编号) as 总代下单量,
+                                SUM(IF(订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效代下单量,
+                                concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 完成签收,
+                                SUM(IF(物流状态 = "已签收",1,0)) as 签收,
+                                SUM(IF(物流状态 = "拒收",1,0)) as 拒收,
+                                SUM(IF(物流状态 = "已退货",1,0)) as 已退货,
+                                SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
+                                concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / COUNT(订单编号),0) * 100,2),'%') as 总计签收,
+                                concat(ROUND(IFNULL(SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / COUNT(订单编号),0) * 100,2),'%') as 完成占比,
+                                concat(ROUND(IFNULL(SUM(IF(物流状态 = "已退货",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
+                        FROM ( SELECT *,  DATE_FORMAT(下单时间, '%Y%m') AS 月份, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 日期
+                                FROM `促单_分析` s
                                 WHERE s.克隆人 IS NULL OR s.克隆人 = ""
                         ) ss1
-                        GROUP BY 代下单客服
+                        GROUP BY 月份, 日期, 代下单客服
                         WITH ROLLUP 
-                        ORDER BY FIELD(代下单客服,'李若兰','刘文君','曲开拓','马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
-            df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
-            listT.append(df5)   # 4 个人
+            	        ORDER BY 月份 DESC, 日期 DESC, FIELD(代下单客服,'马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','刘文君','曲开拓','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','李若兰','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','周思文','张静','张登锋','苑亚平','谢玲玲','王正正','王芬','汤楠英','宋晓利','秦小燕','孟芮羽','吕龙飞','李晓青','李青','李丹妮','惠珣','何金蓉','郝淑蓉','丁娜','代下单客服','总计');'''
+            df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
+            listT.append(df3)  # 3 不分币种
 
-            sql6 = '''SELECT 币种, COUNT(订单编号) as 总代下单量,
-                            SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量,
+
+            print('分币种 分月份 的整体 - 促单分析')
+            sql11 = '''SELECT IFNULL(币种,'总计') as 币种,
+                            IFNULL(月份,'总计') as 月份,
+                            COUNT(订单编号) as 总代下单量,
+                            SUM(IF(订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效代下单量,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 完成签收,
                             SUM(IF(物流状态 = "已签收",1,0)) as 签收,
                             SUM(IF(物流状态 = "拒收",1,0)) as 拒收,
@@ -3123,18 +3152,22 @@ SELECT 币种,运营团队,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / COUNT(订单编号),0) * 100,2),'%') as 总计签收,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / COUNT(订单编号),0) * 100,2),'%') as 完成占比,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 = "已退货",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
-                        FROM ( SELECT *
-                                FROM `cache` s
-                                WHERE s.克隆人 IS NULL OR s.克隆人 = ""
-                        ) ss1
-                        GROUP BY 币种
-                        WITH ROLLUP 
-                        ORDER BY 币种;'''
-            df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
-            listT.append(df6)   # 5 分币种单量
+                    FROM ( SELECT *,  DATE_FORMAT(下单时间, '%Y%m') AS 月份
+                            FROM `促单_分析` s
+                            WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                    ) ss1
+                    GROUP BY 币种, 月份
+                    WITH ROLLUP 
+                    ORDER BY 币种, 月份 DESC;'''
+            df11 = pd.read_sql_query(sql=sql11, con=self.engine1)
+            listT.append(df11)  # 1 分币种
 
-            sql7 = '''SELECT 币种,代下单客服, COUNT(订单编号) as 总代下单量,
-                            SUM(IF(ss1.订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效转化单量,
+            print('分币种 分月份 的个人 - 促单分析')
+            sql22 = '''SELECT IFNULL(币种,'总计') as 币种,
+                            IFNULL(月份,'总计') as 月份,
+                            IFNULL(代下单客服,'总计') 代下单客服,
+                            COUNT(订单编号) as 总代下单量,
+                            SUM(IF(订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效代下单量,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 完成签收,
                             SUM(IF(物流状态 = "已签收",1,0)) as 签收,
                             SUM(IF(物流状态 = "拒收",1,0)) as 拒收,
@@ -3143,28 +3176,281 @@ SELECT 币种,运营团队,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / COUNT(订单编号),0) * 100,2),'%') as 总计签收,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / COUNT(订单编号),0) * 100,2),'%') as 完成占比,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 = "已退货",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
-                        FROM ( SELECT *
-                                FROM `cache` s
+                    FROM ( SELECT *,  DATE_FORMAT(下单时间, '%Y%m') AS 月份
+                            FROM `促单_分析` s
+                            WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                    ) ss1
+                    GROUP BY 币种, 月份, 代下单客服
+                    WITH ROLLUP 
+                    ORDER BY 币种, 月份 DESC, FIELD(代下单客服,'马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','刘文君','曲开拓','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','李若兰','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','周思文','张静','张登锋','苑亚平','谢玲玲','王正正','王芬','汤楠英','宋晓利','秦小燕','孟芮羽','吕龙飞','李晓青','李青','李丹妮','惠珣','何金蓉','郝淑蓉','丁娜','代下单客服','总计');'''
+            df22 = pd.read_sql_query(sql=sql22, con=self.engine1)
+            listT.append(df22)   # 2 分币种
+
+            print('分币种 分月份 分日期 的个人 - 促单分析')
+            sql33 = '''SELECT IFNULL(币种,'总计') as 币种,
+                                IFNULL(月份,'总计') as 月份,
+                                IFNULL(日期,'总计') as 日期,
+                                IFNULL(代下单客服,'总计') 代下单客服,
+                                COUNT(订单编号) as 总代下单量,
+                                SUM(IF(订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效代下单量,
+                                concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 完成签收,
+                                SUM(IF(物流状态 = "已签收",1,0)) as 签收,
+                                SUM(IF(物流状态 = "拒收",1,0)) as 拒收,
+                                SUM(IF(物流状态 = "已退货",1,0)) as 已退货,
+                                SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
+                                concat(ROUND(IFNULL(SUM(IF(物流状态 = "已签收",1,0)) / COUNT(订单编号),0) * 100,2),'%') as 总计签收,
+                                concat(ROUND(IFNULL(SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / COUNT(订单编号),0) * 100,2),'%') as 完成占比,
+                                concat(ROUND(IFNULL(SUM(IF(物流状态 = "已退货",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
+                        FROM ( SELECT *,  DATE_FORMAT(下单时间, '%Y%m') AS 月份, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 日期
+                                FROM `促单_分析` s
                                 WHERE s.克隆人 IS NULL OR s.克隆人 = ""
                         ) ss1
-                        GROUP BY 币种,代下单客服
+                        GROUP BY 币种, 月份, 日期, 代下单客服
                         WITH ROLLUP 
-                        ORDER BY 币种,FIELD(代下单客服,'李若兰','刘文君','曲开拓','马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','合计');'''
-            df7 = pd.read_sql_query(sql=sql7, con=self.engine1)
-            listT.append(df7)   # 6 分币种个人
+            	        ORDER BY 币种, 月份 DESC, 日期 DESC, FIELD(代下单客服,'马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','刘文君','曲开拓','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','李若兰','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','周思文','张静','张登锋','苑亚平','谢玲玲','王正正','王芬','汤楠英','宋晓利','秦小燕','孟芮羽','吕龙飞','李晓青','李青','李丹妮','惠珣','何金蓉','郝淑蓉','丁娜','代下单客服','总计');'''
+            df33 = pd.read_sql_query(sql=sql33, con=self.engine1)
+            listT.append(df33)  # 3 分币种
 
-            file_path = 'F:\\输出文件\\促单查询 {}.xlsx'.format(rq)
+
+            print('不分币种 分月份 不分类型 的整体 - 挽单列表分析')
+            sql111 = '''SELECT IFNULL(月份,'总计') as 月份,
+                                IFNULL(创建人,'总计') 创建人,
+                                COUNT(订单编号) as 总代下单量,
+                                SUM(IF(当前订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效代下单量,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 = "已签收",1,0)) / SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 完成签收,
+                                SUM(IF(当前物流状态 = "已签收",1,0)) as 签收,
+                                SUM(IF(当前物流状态 = "拒收",1,0)) as 拒收,
+                                SUM(IF(当前物流状态 = "已退货",1,0)) as 已退货,
+                                SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 = "已签收",1,0)) / COUNT(订单编号),0) * 100,2),'%') as 总计签收,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / COUNT(订单编号),0) * 100,2),'%') as 完成占比,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 = "已退货",1,0)) / SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
+                        FROM ( SELECT *,  DATE_FORMAT(创建时间, '%Y%m') AS 月份, DATE_FORMAT(创建时间, '%Y-%m-%d' ) AS 日期
+                                FROM `挽单列表_分析` s
+                                WHERE s.删除人 IS NULL OR s.删除人 = ""
+                        ) ss1
+                        GROUP BY 月份,  创建人
+                        WITH ROLLUP 
+            	        ORDER BY 月份 DESC,  FIELD(创建人,'马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','刘文君','曲开拓','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','李若兰','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','周思文','张静','张登锋','苑亚平','谢玲玲','王正正','王芬','汤楠英','宋晓利','秦小燕','孟芮羽','吕龙飞','李晓青','李青','李丹妮','惠珣','何金蓉','郝淑蓉','丁娜','代下单客服','总计');'''
+            df111 = pd.read_sql_query(sql=sql111, con=self.engine1)
+            listT.append(df111)  # 111 不分币种
+
+            print('不分币种 分月份 分类型 的整体 - 挽单列表分析')
+            sql222 = '''SELECT  IFNULL(月份,'总计') as 月份,
+                                IFNULL(挽单类型,'总计') as 挽单类型,
+                                IFNULL(创建人,'总计') 创建人,
+                                COUNT(订单编号) as 总代下单量,
+                                SUM(IF(当前订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效代下单量,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 = "已签收",1,0)) / SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 完成签收,
+                                SUM(IF(当前物流状态 = "已签收",1,0)) as 签收,
+                                SUM(IF(当前物流状态 = "拒收",1,0)) as 拒收,
+                                SUM(IF(当前物流状态 = "已退货",1,0)) as 已退货,
+                                SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 = "已签收",1,0)) / COUNT(订单编号),0) * 100,2),'%') as 总计签收,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / COUNT(订单编号),0) * 100,2),'%') as 完成占比,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 = "已退货",1,0)) / SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
+                        FROM ( SELECT *,  DATE_FORMAT(创建时间, '%Y%m') AS 月份, DATE_FORMAT(创建时间, '%Y-%m-%d' ) AS 日期
+                                FROM `挽单列表_分析` s
+                                WHERE s.删除人 IS NULL OR s.删除人 = ""
+                        ) ss1
+                        GROUP BY 月份, 挽单类型, 创建人
+                        WITH ROLLUP 
+            	        ORDER BY 月份 DESC, 挽单类型, FIELD(创建人,'马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','刘文君','曲开拓','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','李若兰','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','周思文','张静','张登锋','苑亚平','谢玲玲','王正正','王芬','汤楠英','宋晓利','秦小燕','孟芮羽','吕龙飞','李晓青','李青','李丹妮','惠珣','何金蓉','郝淑蓉','丁娜','代下单客服','总计');'''
+            df222 = pd.read_sql_query(sql=sql222, con=self.engine1)
+            listT.append(df222)  # 222 不分币种
+
+            print('不分币种 分月份 分日期 不分类型 的整体 - 挽单列表分析')
+            sql333 = '''SELECT  IFNULL(月份,'总计') as 月份,
+                                IFNULL(日期,'总计') as 日期,
+                                IFNULL(创建人,'总计') 创建人,
+                                COUNT(订单编号) as 总代下单量,
+                                SUM(IF(当前订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效代下单量,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 = "已签收",1,0)) / SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 完成签收,
+                                SUM(IF(当前物流状态 = "已签收",1,0)) as 签收,
+                                SUM(IF(当前物流状态 = "拒收",1,0)) as 拒收,
+                                SUM(IF(当前物流状态 = "已退货",1,0)) as 已退货,
+                                SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 = "已签收",1,0)) / COUNT(订单编号),0) * 100,2),'%') as 总计签收,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / COUNT(订单编号),0) * 100,2),'%') as 完成占比,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 = "已退货",1,0)) / SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
+                        FROM ( SELECT *,  DATE_FORMAT(创建时间, '%Y%m') AS 月份, DATE_FORMAT(创建时间, '%Y-%m-%d' ) AS 日期
+                                FROM `挽单列表_分析` s
+                                WHERE s.删除人 IS NULL OR s.删除人 = ""
+                        ) ss1
+                        GROUP BY 月份, 日期, 创建人
+                        WITH ROLLUP 
+            	        ORDER BY 月份 DESC, 日期 DESC, FIELD(创建人,'马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','刘文君','曲开拓','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','李若兰','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','周思文','张静','张登锋','苑亚平','谢玲玲','王正正','王芬','汤楠英','宋晓利','秦小燕','孟芮羽','吕龙飞','李晓青','李青','李丹妮','惠珣','何金蓉','郝淑蓉','丁娜','代下单客服','总计');'''
+            df333 = pd.read_sql_query(sql=sql333, con=self.engine1)
+            listT.append(df333)  # 333 不分币种
+
+            print('不分币种 分月份 分日期 分类型 的整体 - 挽单列表分析')
+            sql444 = '''SELECT IFNULL(月份,'总计') as 月份,
+                                IFNULL(日期,'总计') as 日期,
+                                IFNULL(挽单类型,'总计') as 挽单类型,
+                                IFNULL(创建人,'总计') 创建人,
+                                COUNT(订单编号) as 总代下单量,
+                                SUM(IF(当前订单状态 NOT IN ("已删除","问题订单审核","问题订单","待审核","未支付","待发货","支付失败","已取消","截单","截单中（面单已打印，等待仓库审核）","待发货转审核"),1,0)) AS 有效代下单量,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 = "已签收",1,0)) / SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 完成签收,
+                                SUM(IF(当前物流状态 = "已签收",1,0)) as 签收,
+                                SUM(IF(当前物流状态 = "拒收",1,0)) as 拒收,
+                                SUM(IF(当前物流状态 = "已退货",1,0)) as 已退货,
+                                SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 = "已签收",1,0)) / COUNT(订单编号),0) * 100,2),'%') as 总计签收,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) / COUNT(订单编号),0) * 100,2),'%') as 完成占比,
+                                concat(ROUND(IFNULL(SUM(IF(当前物流状态 = "已退货",1,0)) / SUM(IF(当前物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
+                        FROM ( SELECT *,  DATE_FORMAT(创建时间, '%Y%m') AS 月份, DATE_FORMAT(创建时间, '%Y-%m-%d' ) AS 日期
+                                FROM `挽单列表_分析` s
+                                WHERE s.删除人 IS NULL OR s.删除人 = ""
+                        ) ss1
+                        GROUP BY 月份, 日期, 挽单类型, 创建人
+                        WITH ROLLUP 
+            	        ORDER BY 月份 DESC, 日期 DESC, 挽单类型, FIELD(创建人,'马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','刘文君','曲开拓','蔡利英','杨嘉仪','张陈平','曹玉婉','刘君','齐元章','李若兰','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','周思文','张静','张登锋','苑亚平','谢玲玲','王正正','王芬','汤楠英','宋晓利','秦小燕','孟芮羽','吕龙飞','李晓青','李青','李丹妮','惠珣','何金蓉','郝淑蓉','丁娜','代下单客服','总计');'''
+            df444 = pd.read_sql_query(sql=sql444, con=self.engine1)
+            listT.append(df444)  # 444 不分币种
+
+
+            print('不分币种 分月份 分登记处理人 的整体 - 拒收挽单分析')
+            sql1111 = '''SELECT 月份, 登记处理人,联系单量, 有效联系量, 挽单量,
+                                concat(ROUND(有效联系量 / 联系单量 * 100,2),'%') AS 有效联系率,	
+                                concat(ROUND(挽单量 / 有效联系量 * 100,2),'%') AS 挽单率, 
+                                concat(ROUND(挽单签收量 / 挽单完成量 * 100,2),'%') AS 挽单完成签收,
+                                concat(ROUND(挽单签收量 / 挽单量 * 100,2),'%') AS 挽单总计签收, 
+                                concat(ROUND(挽单完成量 / 挽单量 * 100,2),'%') AS 挽单完成占比,
+                                挽单签收量, 挽单完成量
+                        FROM  (	SELECT IFNULL(s1.月份,'总计') as 月份,
+                                        IFNULL(s1.登记处理人,'总计') as 登记处理人,
+                                        COUNT(s1.`订单编号`) AS 联系单量, 
+                                        SUM(IF(s1.`具体原因` NOT IN ('无人接听','无效号码','未联系上客户','联系不上客户') ,1,0)) AS 有效联系量,
+                                        SUM(IF(s1.`再次克隆下单` IS NOT NULL AND s1.`再次克隆下单` <> '',1,0)) AS 挽单量,
+                                        SUM(IF(s1.`再次克隆下单` IS NOT NULL AND s1.`再次克隆下单` <> '' AND gt.`系统物流状态` = '已签收',1,0)) AS 挽单签收量,
+                                        SUM(IF(s1.`再次克隆下单` IS NOT NULL AND s1.`再次克隆下单` <> '' AND gt.`系统物流状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0)) AS 挽单完成量
+                                FROM ( SELECT *
+                                        FROM (SELECT *,  DATE_FORMAT(处理时间, '%Y%m') AS 月份, DATE_FORMAT(处理时间, '%Y-%m-%d' ) AS 日期, IF(处理人 = "" OR 处理人 IS NULL,联系方式,处理人) AS 登记处理人
+                                                    FROM 拒收问题件 j
+                                                    WHERE j.id IN (SELECT MAX(id) FROM 拒收问题件 w  GROUP BY 订单编号)
+                                        ) lp
+                                        WHERE lp.`月份` >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 12 month),'%Y%m')
+                                ) s1
+                                LEFT JOIN gat_order_list gt ON s1.`再次克隆下单` = gt.`订单编号` 
+                                GROUP BY 月份,  登记处理人
+                                WITH ROLLUP
+                        ) ss1
+                        WHERE ss1.月份 <> '总计'
+                        GROUP BY 月份, 登记处理人
+                        ORDER BY 月份 DESC,  FIELD(登记处理人,'蔡利英','杨嘉仪','张陈平','邮件','电话','Line','短信','whatsapp','客户问题','刘文君','曲开拓','马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','曹玉婉','刘君','齐元章','李若兰','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','周思文','张静','张登锋','苑亚平','谢玲玲','王正正','王芬','汤楠英','宋晓利','秦小燕','孟芮羽','吕龙飞','李晓青','李青','李丹妮','惠珣','何金蓉','郝淑蓉','丁娜','代下单客服','总计');'''
+            df1111 = pd.read_sql_query(sql=sql1111, con=self.engine1)
+            listT.append(df1111)  # 1111 不分币种
+
+            print('不分币种 分月份 分新单克隆人 的整体 - 拒收挽单分析')
+            sql2222 = '''SELECT 月份, 新单克隆人,联系单量, 有效联系量, 挽单量,
+                                concat(ROUND(有效联系量 / 联系单量 * 100,2),'%') AS 有效联系率,	
+                                concat(ROUND(挽单量 / 有效联系量 * 100,2),'%') AS 挽单率, 
+                                concat(ROUND(挽单签收量 / 挽单完成量 * 100,2),'%') AS 挽单完成签收,
+                                concat(ROUND(挽单签收量 / 挽单量 * 100,2),'%') AS 挽单总计签收, 
+                                concat(ROUND(挽单完成量 / 挽单量 * 100,2),'%') AS 挽单完成占比,
+                                挽单签收量, 挽单完成量
+                        FROM  (	SELECT IFNULL(s1.月份,'总计') as 月份,
+                                        IFNULL(s1.新单克隆人,'总计') as 新单克隆人,
+                                        COUNT(s1.`订单编号`) AS 联系单量, 
+                                        SUM(IF(s1.`具体原因` NOT IN ('无人接听','无效号码','未联系上客户','联系不上客户') ,1,0)) AS 有效联系量,
+                                        SUM(IF(s1.`再次克隆下单` IS NOT NULL AND s1.`再次克隆下单` <> '',1,0)) AS 挽单量,
+                                        SUM(IF(s1.`再次克隆下单` IS NOT NULL AND s1.`再次克隆下单` <> '' AND gt.`系统物流状态` = '已签收',1,0)) AS 挽单签收量,
+                                        SUM(IF(s1.`再次克隆下单` IS NOT NULL AND s1.`再次克隆下单` <> '' AND gt.`系统物流状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0)) AS 挽单完成量
+                                FROM ( SELECT *
+                                        FROM (SELECT *,  DATE_FORMAT(处理时间, '%Y%m') AS 月份, DATE_FORMAT(处理时间, '%Y-%m-%d' ) AS 日期, IF(处理人 = "" OR 处理人 IS NULL,联系方式,处理人) AS 登记处理人
+                                                    FROM 拒收问题件 j
+                                                    WHERE j.id IN (SELECT MAX(id) FROM 拒收问题件 w  GROUP BY 订单编号)
+                                        ) lp
+                                        WHERE lp.`月份` >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 12 month),'%Y%m')
+                                ) s1
+                                LEFT JOIN gat_order_list gt ON s1.`再次克隆下单` = gt.`订单编号` 
+                                GROUP BY 月份,  新单克隆人
+                                WITH ROLLUP
+                        ) ss1
+                        WHERE ss1.月份 <> '总计'
+                        GROUP BY 月份, 新单克隆人
+                        ORDER BY 月份 DESC,  FIELD(新单克隆人,'蔡利英','杨嘉仪','张陈平','邮件','电话','Line','短信','whatsapp','客户问题','刘文君','曲开拓','马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','曹玉婉','刘君','齐元章','李若兰','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','周思文','张静','张登锋','苑亚平','谢玲玲','王正正','王芬','汤楠英','宋晓利','秦小燕','孟芮羽','吕龙飞','李晓青','李青','李丹妮','惠珣','何金蓉','郝淑蓉','丁娜','代下单客服','总计');'''
+            df2222 = pd.read_sql_query(sql=sql2222, con=self.engine1)
+            listT.append(df2222)  # 2222 不分币种
+
+            print('分币种 分月份 分登记处理人 的整体 - 拒收挽单分析')
+            sql3333 = '''SELECT 币种, 月份, 登记处理人,联系单量, 有效联系量, 挽单量,
+                                concat(ROUND(有效联系量 / 联系单量 * 100,2),'%') AS 有效联系率,	
+                                concat(ROUND(挽单量 / 有效联系量 * 100,2),'%') AS 挽单率, 
+                                concat(ROUND(挽单签收量 / 挽单完成量 * 100,2),'%') AS 挽单完成签收,
+                                concat(ROUND(挽单签收量 / 挽单量 * 100,2),'%') AS 挽单总计签收, 
+                                concat(ROUND(挽单完成量 / 挽单量 * 100,2),'%') AS 挽单完成占比,
+                                挽单签收量, 挽单完成量
+                        FROM (	SELECT IFNULL(s1.币种,'总计') as 币种,
+                                        IFNULL(s1.月份,'总计') as 月份,
+                                        IFNULL(s1.登记处理人,'总计') as 登记处理人,
+                                        COUNT(s1.`订单编号`) AS 联系单量, 
+                                        SUM(IF(s1.`具体原因` NOT IN ('无人接听','无效号码','未联系上客户','联系不上客户') ,1,0)) AS 有效联系量,
+                                        SUM(IF(s1.`再次克隆下单` IS NOT NULL AND s1.`再次克隆下单` <> '',1,0)) AS 挽单量,
+                                        SUM(IF(s1.`再次克隆下单` IS NOT NULL AND s1.`再次克隆下单` <> '' AND gt.`系统物流状态` = '已签收',1,0)) AS 挽单签收量,
+                                        SUM(IF(s1.`再次克隆下单` IS NOT NULL AND s1.`再次克隆下单` <> '' AND gt.`系统物流状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0)) AS 挽单完成量
+                                FROM (  SELECT *
+                                        FROM (SELECT *,  DATE_FORMAT(处理时间, '%Y%m') AS 月份, DATE_FORMAT(处理时间, '%Y-%m-%d' ) AS 日期, IF(处理人 = "" OR 处理人 IS NULL,联系方式,处理人) AS 登记处理人
+                                                    FROM 拒收问题件 j
+                                                    WHERE j.id IN (SELECT MAX(id) FROM 拒收问题件 w  GROUP BY 订单编号)
+                                        ) lp
+                                        WHERE lp.`月份` >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 12 month),'%Y%m')
+                                ) s1
+                                LEFT JOIN gat_order_list gt ON s1.`再次克隆下单` = gt.`订单编号` 
+                                GROUP BY 币种, 月份,  登记处理人
+                                WITH ROLLUP
+                        ) ss1
+                        WHERE ss1.币种 IS NOT NULL
+                        GROUP BY 币种, 月份, 登记处理人
+                        ORDER BY 币种, 月份 DESC,  FIELD(登记处理人,'蔡利英','杨嘉仪','张陈平','邮件','电话','Line','短信','whatsapp','客户问题','刘文君','曲开拓','马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','曹玉婉','刘君','齐元章','李若兰','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','周思文','张静','张登锋','苑亚平','谢玲玲','王正正','王芬','汤楠英','宋晓利','秦小燕','孟芮羽','吕龙飞','李晓青','李青','李丹妮','惠珣','何金蓉','郝淑蓉','丁娜','代下单客服','总计');'''
+            df3333 = pd.read_sql_query(sql=sql3333, con=self.engine1)
+            listT.append(df3333)  # 3333 不分币种
+
+            print('分币种 分月份 分新单克隆人 的整体 - 拒收挽单分析')
+            sql4444 = '''SELECT 币种, 月份, 新单克隆人,联系单量, 有效联系量, 挽单量,
+                                concat(ROUND(有效联系量 / 联系单量 * 100,2),'%') AS 有效联系率,	
+                                concat(ROUND(挽单量 / 有效联系量 * 100,2),'%') AS 挽单率, 
+                                concat(ROUND(挽单签收量 / 挽单完成量 * 100,2),'%') AS 挽单完成签收,
+                                concat(ROUND(挽单签收量 / 挽单量 * 100,2),'%') AS 挽单总计签收, 
+                                concat(ROUND(挽单完成量 / 挽单量 * 100,2),'%') AS 挽单完成占比,
+                                挽单签收量, 挽单完成量
+                        FROM (	SELECT IFNULL(s1.币种,'总计') as 币种,
+                                        IFNULL(s1.月份,'总计') as 月份,
+                                        IFNULL(s1.新单克隆人,'总计') as 新单克隆人,
+                                        COUNT(s1.`订单编号`) AS 联系单量, 
+                                        SUM(IF(s1.`具体原因` NOT IN ('无人接听','无效号码','未联系上客户','联系不上客户') ,1,0)) AS 有效联系量,
+                                        SUM(IF(s1.`再次克隆下单` IS NOT NULL AND s1.`再次克隆下单` <> '',1,0)) AS 挽单量,
+                                        SUM(IF(s1.`再次克隆下单` IS NOT NULL AND s1.`再次克隆下单` <> '' AND gt.`系统物流状态` = '已签收',1,0)) AS 挽单签收量,
+                                        SUM(IF(s1.`再次克隆下单` IS NOT NULL AND s1.`再次克隆下单` <> '' AND gt.`系统物流状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件'),1,0)) AS 挽单完成量
+                                FROM (  SELECT *
+                                        FROM (SELECT *,  DATE_FORMAT(处理时间, '%Y%m') AS 月份, DATE_FORMAT(处理时间, '%Y-%m-%d' ) AS 日期, IF(处理人 = "" OR 处理人 IS NULL,联系方式,处理人) AS 登记处理人
+                                                    FROM 拒收问题件 j
+                                                    WHERE j.id IN (SELECT MAX(id) FROM 拒收问题件 w  GROUP BY 订单编号)
+                                        ) lp
+                                        WHERE lp.`月份` >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 12 month),'%Y%m')
+                                ) s1
+                                LEFT JOIN gat_order_list gt ON s1.`再次克隆下单` = gt.`订单编号` 
+                                GROUP BY 币种, 月份,  新单克隆人
+                                WITH ROLLUP
+                        ) ss1
+                        WHERE ss1.币种 IS NOT NULL
+                        GROUP BY 币种, 月份, 新单克隆人
+                        ORDER BY 币种, 月份 DESC,  FIELD(新单克隆人,'蔡利英','杨嘉仪','张陈平','邮件','电话','Line','短信','whatsapp','客户问题','刘文君','曲开拓','马育慧','闫凯歌','杨昊','于海洋','周浩迪','曹可可','曹玉婉','刘君','齐元章','李若兰','袁焕欣','张雨诺','史永巧','康晓雅','蔡贵敏','关梦楠','王苏楠','孙亚茹','夏绍琛','周思文','张静','张登锋','苑亚平','谢玲玲','王正正','王芬','汤楠英','宋晓利','秦小燕','孟芮羽','吕龙飞','李晓青','李青','李丹妮','惠珣','何金蓉','郝淑蓉','丁娜','代下单客服','总计');'''
+            df4444 = pd.read_sql_query(sql=sql4444, con=self.engine1)
+            listT.append(df4444)  # 2222 不分币种
+
+            file_path = 'F:\\输出文件\\促单&挽单列表查询-分析 {}.xlsx'.format(rq)
             # df0 = pd.DataFrame([])  # 创建空的dataframe数据框
             # df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
             # writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
             # book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
             # writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
             # listT[4].to_excel(excel_writer=writer, sheet_name='汇总', index=False)  # 个人
-            # listT[6].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startrow=22)  # 分币种个人
-            # listT[3].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=13)        # 明细
+            # listT[6].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startrow=22)      # 不分币种 分月份 的整体
+            # listT[3].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=13)      # 不分币种 分月份 的个人
             # listT[1].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=19)      # 有效单量
             # listT[2].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=22)      # 总下单量
-            # listT[5].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=25)     # 分币种单量
+            # listT[5].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=25)      # 分币种单量
             # listT[0].to_excel(excel_writer=writer, sheet_name='明细', index=False)     # 明细单量
             # if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
             #     del book['Sheet1']
@@ -3173,14 +3459,20 @@ SELECT 币种,运营团队,
             # df.to_excel('F:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='有效单量', index=False, engine='xlsxwriter')
 
             with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-                listT[4].to_excel(excel_writer=writer, sheet_name='汇总', index=False)  # 个人
-                listT[6].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startrow=22)  # 分币种个人
-                listT[3].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=13)  # 明细
-                listT[1].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=19)  # 有效单量
-                listT[2].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=22)  # 总下单量
-                listT[5].to_excel(excel_writer=writer, sheet_name='汇总', index=False, startcol=25)  # 分币种单量
-                listT[0].to_excel(excel_writer=writer, sheet_name='明细', index=False)  # 明细单量
-
+                df1.to_excel(excel_writer=writer, sheet_name='促单分析', index=False)               # 不分币种 分月份 的整体
+                df2.to_excel(excel_writer=writer, sheet_name='促单分析', index=False, startcol=16)  # 不分币种 分月份 的个人
+                df3.to_excel(excel_writer=writer, sheet_name='促单分析', index=False, startcol=31)  # 不分币种 分月份 分日期 的个人
+                df11.to_excel(excel_writer=writer, sheet_name='促单分析', index=False, startcol=46)  # 分币种 分月份 的整体
+                df22.to_excel(excel_writer=writer, sheet_name='促单分析', index=False, startcol=61)  # 分币种 分月份 的个人
+                df33.to_excel(excel_writer=writer, sheet_name='促单分析', index=False, startcol=76)  # 分币种 分月份 分日期 的个人
+                df111.to_excel(excel_writer=writer, sheet_name='挽单分析', index=False)              # 挽单明细
+                df222.to_excel(excel_writer=writer, sheet_name='挽单分析', index=False, startcol=17)  # 分币种 分月份 的整体
+                df333.to_excel(excel_writer=writer, sheet_name='挽单分析', index=False, startcol=32)  # 分币种 分月份 的个人
+                df444.to_excel(excel_writer=writer, sheet_name='挽单分析', index=False, startcol=47)  # 分币种 分月份 分日期 的个人
+                df1111.to_excel(excel_writer=writer, sheet_name='拒收挽单分析', index=False)               # 拒收挽单明细
+                df2222.to_excel(excel_writer=writer, sheet_name='拒收挽单分析', index=False, startcol=16)  # 分币种 分月份 的整体
+                df3333.to_excel(excel_writer=writer, sheet_name='拒收挽单分析', index=False, startcol=31)  # 分币种 分月份 的整体
+                df4444.to_excel(excel_writer=writer, sheet_name='拒收挽单分析', index=False, startcol=46)  # 分币种 分月份 的整体
             # sql = '''SELECT 运单编号
             #         FROM (
             #                 SELECT *

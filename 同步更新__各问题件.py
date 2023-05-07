@@ -235,6 +235,12 @@ class QueryTwo(Settings, Settings_sso):
             rq = pd.to_datetime(rq['提交日期'][0])
             last_time = (rq - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
             now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        elif team == '挽单列表':
+            sql = '''SELECT DISTINCT 创建时间 FROM {0}_分析 d GROUP BY 创建时间 ORDER BY 创建时间 DESC;'''.format(team)
+            rq = pd.read_sql_query(sql=sql, con=self.engine1)
+            rq = pd.to_datetime(rq['创建时间'][0])
+            last_time = (rq + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+            now_time = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         elif team == '拒收问题件':
             sql = '''SELECT DISTINCT 处理时间 FROM {0} d GROUP BY 处理时间 ORDER BY 处理时间 DESC'''.format(team)
             rq = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -1484,7 +1490,7 @@ class QueryTwo(Settings, Settings_sso):
         return data
 
     # 工单列表
-    def getOrderCollectionList(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入订单检索界面
+    def getOrderCollectionList(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入工单列表界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('+++正在查询信息中---工单列表......')
         url = r'https://gimp.giikin.com/service?service=gorder.orderCollection&action=getOrderCollectionList'
@@ -1542,7 +1548,7 @@ class QueryTwo(Settings, Settings_sso):
             print('没有需要获取的信息！！！')
             return
         print('*' * 50)
-    def _getOrderCollectionList(self, timeStart, timeEnd, n, proxy_handle, proxy_id):  # 进入物流问题件界面
+    def _getOrderCollectionList(self, timeStart, timeEnd, n, proxy_handle, proxy_id):  # 进入工单界面界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.orderCollection&action=getOrderCollectionList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -1582,6 +1588,75 @@ class QueryTwo(Settings, Settings_sso):
         print('*' * 50)
         return data
 
+    # 挽单列表
+    # 绩效-查询 挽单列表（一.2）
+    def getRedeemOrderList(self, timeStart, timeEnd, proxy_handle, proxy_id):    # 进入订单检索界面     挽单列表查询
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('正在查询 挽单列表 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
+        url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRedeemOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/saveOrder'}
+        data = {'order_number': None, 'type': None, 'order_status': None, 'logistics_status': None, 'old_order_status': None, 'old_logistics_status': None, 'operator': None,
+                'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'is_del': None, 'page': 1, 'pageSize': 10, 'area_id': None}
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        max_count = req['data']['count']
+        print('共...' + str(max_count) + '...单量')
+        if max_count != 0:
+            df = pd.DataFrame([])
+            n = 1
+            in_count = math.ceil(max_count / 90)
+            dlist = []
+            while n <= in_count:  # 这里用到了一个while循环，穿越过来的
+                data = self._getRedeemOrderList(timeStart, timeEnd, n, proxy_handle, proxy_id)
+                dlist.append(data)
+                print('剩余查询次数' + str(in_count - n))
+                n = n + 1
+            dp = df.append(dlist, ignore_index=True)
+            dp = dp[['id', 'order_number', 'redeemType', 'oldOrderStatus', 'oldLogisticsStatus', 'oldAmount', 'orderStatus','logisticsStatus','amount','logisticsName','operatorName','create_time','save_money','currencyName', 'delOperatorName','del_reason']]
+            dp.columns = ['id', '订单编号', '挽单类型', '原订单状态', '原物流状态', '原订单金额', '当前订单状态', '当前物流状态','当前订单金额','当前物流渠道','创建人','创建时间','挽单金额','币种', '删除人', '删除原因']
+            dp.to_excel('F:\\输出文件\\挽单列表-分析{}.xlsx'.format(rq), sheet_name='挽单', index=False, engine='xlsxwriter')
+            dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            sql = '''REPLACE INTO 挽单列表_分析(id, 订单编号,币种, 创建时间, 创建人, 挽单类型, 挽单金额, 当前订单状态, 当前物流状态, 回款状态, 删除人, 删除原因, 统计月份,记录时间) 
+                    SELECT id, 订单编号,币种, 创建时间, 创建人, 挽单类型, 挽单金额, 当前订单状态, 当前物流状态,NULL as 回款状态, 删除人, 删除原因, DATE_FORMAT(创建时间,'%Y%m') 统计月份,NOW() 记录时间 
+                    FROM customer;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('写入成功......')
+        print('-' * 50)
+        print('-' * 50)
+    def _getRedeemOrderList(self, timeStart, timeEnd, n, proxy_handle, proxy_id):
+        url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRedeemOrderList'
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                    'origin': 'https: // gimp.giikin.com',
+                    'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
+        data = {'order_number': None, 'type': None, 'order_status': None, 'logistics_status': None, 'old_order_status': None, 'old_logistics_status': None, 'operator': None,
+                'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'is_del': None, 'page': n, 'pageSize': 90, 'area_id': None}
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
+        # print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型数据转换为dict字典
+        # print(req)
+        ordersdict = []
+        # print('正在处理json数据转化为dataframe…………')
+        try:
+            for result in req['data']['list']:
+                ordersdict.append(result)
+        except Exception as e:
+            print('转化失败： 重新获取中', str(Exception) + str(e))
+        df = pd.json_normalize(ordersdict)
+        print('++++++本批次查询成功+++++++')
+        print('*' * 50)
+        return df
+
+
 if __name__ == '__main__':
     start: datetime = datetime.datetime.now()
     # timeStart = datetime.date(2023, 3, 27)
@@ -1607,7 +1682,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 909
+    select = 99
     if int(select) == 99:
         handle = '手动0'
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
@@ -1645,6 +1720,9 @@ if __name__ == '__main__':
         
         timeStart, timeEnd = m.readInfo('工单列表')
         m.getOrderCollectionList(timeStart, timeEnd, proxy_handle, proxy_id)                  # 工单列表-物流客诉件
+
+        timeStart, timeEnd = m.readInfo('挽单列表')
+        m.getRedeemOrderList(timeStart, timeEnd, proxy_handle, proxy_id)                  # 挽单列表-物流客诉件
         print('查询耗时：', datetime.datetime.now() - start)
     '''
     # -----------------------------------------------自动获取 单点 昨日头程直发渠道 & 天马711的订单明细  | 删单原因 状态运行（二）-----------------------------------------
@@ -1673,8 +1751,8 @@ if __name__ == '__main__':
 
 
         time_handle = '自动'
-        timeStart = '2022-09-19'
-        timeEnd = '2022-09-19'
+        timeStart = '2023-04-01'
+        timeEnd = '2023-04-27'
         js.order_track_Query(time_handle, timeStart, timeEnd, proxy_handle, proxy_id)  # 促单查询；订单检索@--ok
 
     '''
@@ -1720,12 +1798,12 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    handle = '手动0'
-    login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
-    proxy_handle = '代理服务器0'
-    proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
-    m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
-    start: datetime = datetime.datetime.now()
+    # handle = '手动0'
+    # login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
+    # proxy_handle = '代理服务器0'
+    # proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
+    # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+    # start: datetime = datetime.datetime.now()
 
 
     # timeStart, timeEnd = m.readInfo('压单表_已核实')
@@ -1751,7 +1829,7 @@ if __name__ == '__main__':
 
     # timeStart, timeEnd = m.readInfo('物流问题件')
     # m.waybill_InfoQuery('2022-09-19', '2022-09-22')  # 查询更新-物流问题件
-    m.waybill_InfoQuery('2023-04-15', '2023-05-05', proxy_handle, proxy_id)  # 查询更新-物流问题件
+    # m.waybill_InfoQuery('2023-04-15', '2023-05-05', proxy_handle, proxy_id)  # 查询更新-物流问题件
 
 
     # timeStart, timeEnd = m.readInfo('派送问题件')
@@ -1775,9 +1853,12 @@ if __name__ == '__main__':
 
     # m._sale_Query_info('NR112180927421695')
 
-    # timeStart = '2022-09-01'
-    # timeEnd = '2023-03-26'
+    # timeStart = '2023-01-01'
+    # timeEnd = '2023-04-01'
     # m.getOrderCollectionList(timeStart, timeEnd, proxy_handle, proxy_id)   # 工单列表-物流客诉件
+
+    # timeStart, timeEnd = m.readInfo('挽单列表')
+    # m.getRedeemOrderList(timeStart, timeEnd, proxy_handle, proxy_id)  # 挽单列表-物流客诉件
 
     # for team in [1, 2]:
         # m.orderReturnList_Query(team, '2022-02-15', '2022-02-16')           # 查询更新-退换货
