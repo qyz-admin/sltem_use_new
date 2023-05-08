@@ -1255,9 +1255,9 @@ class Settings_sso():
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        # print(req)
+        print(req)
         # print(req.headers)
-        url = req.headers['Location']
+        # url = req.headers['Location']
 
 
         '''
@@ -1284,7 +1284,7 @@ class Settings_sso():
         # 此处跳转换新的地址了
         # print('5.1、加载： ' + 'https://gimp.giikin.com//admin/login_by_dingtalk/finishLoginJump?jump_url=https://gimp.giikin.com')
         time.sleep(1)
-        if url == '/admin/login_by_dingtalk/finishLoginJump?jump_url=https://gimp.giikin.com':
+        if '/admin/login_by_dingtalk/finishLoginJump?jump_url=https://gimp.giikin.com' in url:
             index = req.headers['Location']
             url = 'https://gsso.giikin.com' + index
             r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -1592,7 +1592,7 @@ class Settings_sso():
         # 此处跳转换新的地址了
         # print('5.1、加载： ' + 'https://gimp.giikin.com//admin/login_by_dingtalk/finishLoginJump?jump_url=https://gimp.giikin.com')
         time.sleep(1)
-        if url == '/admin/login_by_dingtalk/finishLoginJump?jump_url=https://gimp.giikin.com':
+        if '/admin/login_by_dingtalk/finishLoginJump?jump_url=https://gimp.giikin.com' in url:
             index = req.headers['Location']
             url = 'https://gsso.giikin.com' + index
             r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -2927,7 +2927,8 @@ class Settings_sso():
 if __name__ == '__main__':
     m = Settings_sso()
     # m.sso_online_Two_Five()
-    m.sso__online_auto22()
+    # m.sso__online_auto22()
+    m.sso__online_auto()
     # m.test()
     # m._updata_tihuo('GT203302314025681','','')
 

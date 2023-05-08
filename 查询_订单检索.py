@@ -3067,6 +3067,7 @@ SELECT 币种,运营团队,
                                SELECT id,订单编号,币种,下单时间,订单状态, 物流状态, 代下单客服,克隆人,来源渠道, NOW() 记录时间 
                     FROM cache;'''.format('促单_分析')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('正在查询 - 促单分析；挽单列表；拒收问题件 数据')
             listT = []
             listT.append(dp)    # 0 明细单量
             print('不分币种 分月份 的整体 - 促单分析')
@@ -3584,7 +3585,7 @@ SELECT 币种,运营团队,
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
         df = pd.json_normalize(ordersdict)
-        print('++++++本批次查询成功+++++++')
+        print('++++++查询输出成功+++++++')
         print('*' * 50)
         return df
 

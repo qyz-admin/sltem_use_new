@@ -961,7 +961,6 @@ class QueryUpdate(Settings):
             mobile_list = ['18538110674']  # 要@的人的手机号，可以是多个，注意：钉钉机器人设置中需要添加这些人，否则不会接收到消息
             isAtAll = '单个'  # 是、 否、 单个、 @所有人
             self.dk.send_dingtalk_message(url, content, mobile_list, isAtAll)
-
             print('订单重量异常 信息 已发送 请注意查看......')
         else:
             print('无 订单重量异常 信息！！！')
@@ -5396,13 +5395,13 @@ class QueryUpdate(Settings):
                             WHERE gs.年月 >= {0}
                               and gs.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)')
                         );'''.format(del_time)
-        print('正在清除港澳台-总表的可能删除了的订单…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        # print('正在清除港澳台-总表的可能删除了的订单…………')
+        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
         sql = '''DELETE FROM gat_zqsb gz 
                 WHERE gz.`系统订单状态` = '已转采购' and gz.`是否改派` = '改派' and gz.`审核时间` >= '{0} 00:00:00' AND gz.`日期` >= '{1}';'''.format(month_now, month_last)
-        print('正在清除不参与计算的今日改派订单…………')
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        # print('正在清除不参与计算的今日改派订单…………')
+        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
         # print('正在修改-港澳台-物流渠道…………')
         # self.update_logistics_name()
