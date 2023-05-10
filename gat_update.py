@@ -5699,7 +5699,7 @@ class QueryUpdate(Settings):
                             concat(ROUND(SUM(改派签收) / SUM(改派完成) * 100,2),'%') as 改派完成签收,
                             concat(ROUND(SUM(改派签收) / SUM(改派单量) * 100,2),'%') as 改派总计签收,
                             concat(ROUND(SUM(改派完成) / SUM(改派单量) * 100,2),'%') as 改派完成占比
-                FROM(SELECT 年月 月份, 币种 地区, 是否改派, 所属团队 as 家族, 物流方式,
+                FROM(SELECT 年月 月份, 币种 地区, 是否改派, 所属团队 as 家族, 物流渠道 as 物流方式,
                                 COUNT(订单编号) as 总单量,
 								SUM(IF(最终状态 = "已签收",1,0)) 签收,
 								SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 完成,
@@ -5714,7 +5714,7 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM gat_zqsb cx
 						WHERE cx.年月 >= '{5}' and cx.`运单编号` is not null  AND cx.所属团队 NOT IN ({2})       
-						GROUP BY cx.年月,cx.币种,cx.是否改派,cx.所属团队,cx.物流方式
+						GROUP BY cx.年月,cx.币种,cx.是否改派,cx.所属团队,cx.物流渠道
                 ) s
 				GROUP BY 月份,地区,是否改派,家族,物流方式
                 WITH ROLLUP
@@ -5772,11 +5772,11 @@ class QueryUpdate(Settings):
             ORDER BY 月份 DESC,
                     FIELD(地区, '台湾', '香港', '总计' ),
                     FIELD(家族, {3}, '总计'),
-                    FIELD(平台, "interpark","kol","tiktokpage","mercado","Qoo10","ozon","w_service","s_service","e_service","allegro","hepsi","clone","tikshop","gmarket",
-                                "11st","shopline","aws","pre_sale_clone","coupang","detain_goods","aliexpress","bigo","refuse_clone","line_natural","youtube_natural",
-                                "facebook_natural","instagram_natural","tiktok_natural","postsaleclone","outplay","outbrain","email","shangwutong","lazada","headline",
-                                "shopee","recommend","propellerads","snapchat","tenmax","shopify","Dragon","taboola","naver","mf","速卖通发货","tiktok","topbuzz","Criteo",
-                                "vivishop","sms","edm","facebookpage","line","recomm","native","twitter","yahoo","bing","facebook","google","总计"),
+                    FIELD(平台, "facebook","google","line","tiktok","clone","Criteo","interpark","kol","tiktokpage","mercado","Qoo10","ozon","w_service","s_service","e_service",
+                                "allegro","hepsi","tikshop","gmarket","11st","shopline","aws","pre_sale_clone","coupang","detain_goods","aliexpress","bigo","refuse_clone","line_natural",
+                                "youtube_natural","facebook_natural","instagram_natural","tiktok_natural","postsaleclone","outplay","outbrain","email","shangwutong","lazada","headline",
+                                "shopee","recommend","propellerads","snapchat","tenmax","shopify","Dragon","taboola","naver","mf","速卖通发货","topbuzz",
+                                "vivishop","sms","edm","facebookpage","recomm","native","twitter","yahoo","bing","总计"),
                     总单量 DESC;'''.format(month_last, team, not_team, self.team_name2, gat_time)
         df30 = pd.read_sql_query(sql=sql30, con=self.engine1)
         listT.append(df30)
@@ -5813,7 +5813,7 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM gat_zqsb cx
-						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null AND cx.所属团队 NOT IN ({2})
+						WHERE cx.年月 >= '{4}' and cx.`运单编号` is not null AND cx.所属团队 NOT IN ({2})
                         GROUP BY cx.年月,cx.币种,cx.订单来源,cx.所属团队
                         ) s
 					GROUP BY 月份,地区,平台,家族
@@ -5821,13 +5821,13 @@ class QueryUpdate(Settings):
             ) ss
             ORDER BY 月份 DESC,
                     FIELD(地区, '台湾', '香港', '总计' ),
-                    FIELD(平台, "interpark","kol","tiktokpage","mercado","Qoo10","ozon","w_service","s_service","e_service","allegro","hepsi","clone","tikshop","gmarket",
-                                "11st","shopline","aws","pre_sale_clone","coupang","detain_goods","aliexpress","bigo","refuse_clone","line_natural","youtube_natural",
-                                "facebook_natural","instagram_natural","tiktok_natural","postsaleclone","outplay","outbrain","email","shangwutong","lazada","headline",
-                                "shopee","recommend","propellerads","snapchat","tenmax","shopify","Dragon","taboola","naver","mf","速卖通发货","tiktok","topbuzz","Criteo",
-                                "vivishop","sms","edm","facebookpage","line","recomm","native","twitter","yahoo","bing","facebook","google","总计"),
+                    FIELD(平台, "facebook","google","line","tiktok","clone","Criteo","interpark","kol","tiktokpage","mercado","Qoo10","ozon","w_service","s_service","e_service",
+                                "allegro","hepsi","tikshop","gmarket","11st","shopline","aws","pre_sale_clone","coupang","detain_goods","aliexpress","bigo","refuse_clone","line_natural",
+                                "youtube_natural","facebook_natural","instagram_natural","tiktok_natural","postsaleclone","outplay","outbrain","email","shangwutong","lazada","headline",
+                                "shopee","recommend","propellerads","snapchat","tenmax","shopify","Dragon","taboola","naver","mf","速卖通发货","topbuzz",
+                                "vivishop","sms","edm","facebookpage","recomm","native","twitter","yahoo","bing","总计"),
                     FIELD(家族, {3}, '总计'),
-                    总单量 DESC;'''.format(month_last, team, not_team, self.team_name2)
+                    总单量 DESC;'''.format(month_last, team, not_team, self.team_name2, gat_time)
         df31 = pd.read_sql_query(sql=sql31, con=self.engine1)
         listT.append(df31)
 
@@ -5864,7 +5864,7 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM gat_zqsb cx
-						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null  AND cx.所属团队 NOT IN ({2})               
+						WHERE cx.年月 >= '{4}' and cx.`运单编号` is not null  AND cx.所属团队 NOT IN ({2})               
                         GROUP BY cx.年月,cx.币种,cx.父级分类,cx.所属团队
                     ) s
 					GROUP BY 月份,地区,父级分类,家族
@@ -5874,7 +5874,7 @@ class QueryUpdate(Settings):
                         FIELD(地区, '台湾', '香港', '总计' ),
                         FIELD(父级分类, '居家百货', '电子电器', '服饰', '医药保健',  '鞋类', '美容个护', '包类','钟表珠宝','母婴玩具','包材类','总计' ),
                         FIELD(家族, {3}, '总计'),
-                        总单量 DESC;'''.format(month_last, team,not_team, self.team_name2)
+                        总单量 DESC;'''.format(month_last, team,not_team, self.team_name2, gat_time)
         df40 = pd.read_sql_query(sql=sql40, con=self.engine1)
         listT.append(df40)
         # 8、各物流-各团队
@@ -5910,7 +5910,7 @@ class QueryUpdate(Settings):
 								SUM(IF(是否改派 = '改派' AND 最终状态 = "已签收",1,0)) 改派签收,
 								SUM(IF(是否改派 = '改派' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) 改派完成
                         FROM gat_zqsb cx
-						WHERE cx.日期 >= '{0}' and cx.`运单编号` is not null  AND cx.所属团队 NOT IN ({2})                         
+						WHERE cx.年月 >= '{4}' and cx.`运单编号` is not null  AND cx.所属团队 NOT IN ({2})                         
                         GROUP BY cx.年月,cx.币种,cx.是否改派,cx.物流方式,cx.所属团队
                     ) s
 					GROUP BY 月份, 地区, 是否改派, 物流方式, 家族
@@ -5923,7 +5923,7 @@ class QueryUpdate(Settings):
                     FIELD(是否改派, '直发', '改派', '总计' ),
                     FIELD(物流方式, {3}, '总计'),
                     FIELD(家族, {4}, '总计'),
-                    总单量 DESC;'''.format(month_last, team, not_team, self.logistics_name, self.team_name2)
+                    总单量 DESC;'''.format(month_last, team, not_team, self.logistics_name, self.team_name2, gat_time)
         df41 = pd.read_sql_query(sql=sql41, con=self.engine1)
         listT.append(df41)
 
@@ -5931,6 +5931,7 @@ class QueryUpdate(Settings):
         print('正在获取---9、同产品各团队的对比…………')
         sql50 = '''SELECT *, IF(神龙完成签收 = '0.00%' OR 神龙完成签收 IS NULL, 神龙完成签收, concat(ROUND(神龙完成签收-完成签收,2),'%')) as 神龙港台对比,
     			            IF(火凤凰完成签收 = '0.00%' OR 火凤凰完成签收 IS NULL, 火凤凰完成签收, concat(ROUND(火凤凰完成签收-完成签收,2),'%')) as 火凤凰港台对比,
+    			            IF(雪豹完成签收 = '0.00%' OR 雪豹完成签收 IS NULL, 雪豹完成签收, concat(ROUND(雪豹完成签收-完成签收,2),'%')) as 雪豹港台对比,
     			            IF(金蝉项目完成签收 = '0.00%' OR 金蝉项目完成签收 IS NULL, 金蝉项目完成签收, concat(ROUND(金蝉项目完成签收-完成签收,2),'%')) as 金蝉项目组对比,
     			            IF(金蝉优化完成签收 = '0.00%' OR 金蝉优化完成签收 IS NULL, 金蝉优化完成签收, concat(ROUND(金蝉优化完成签收-完成签收,2),'%')) as 金蝉家族优化组对比,
     			        IF(金蝉公共完成签收 = '0.00%' OR 金蝉公共完成签收 IS NULL, 金蝉公共完成签收, concat(ROUND(金蝉公共完成签收-完成签收,2),'%')) as 金蝉家族公共团队对比,
@@ -5961,6 +5962,11 @@ class QueryUpdate(Settings):
                                 concat(ROUND(SUM(火凤凰签收) / SUM(火凤凰单量) * 100,2),'%') as 火凤凰总计签收,
                                 concat(ROUND(SUM(火凤凰签收) / SUM(火凤凰完成) * 100,2),'%') as 火凤凰完成签收,
                                 concat(ROUND(SUM(火凤凰完成) / SUM(火凤凰单量) * 100,2),'%') as 火凤凰完成占比,	
+							SUM(雪豹单量) 雪豹单量, SUM(雪豹签收) 雪豹签收, SUM(雪豹拒收) 雪豹拒收,
+                                concat(ROUND(SUM(雪豹改派) / SUM(雪豹单量) * 100,2),'%') as 雪豹改派占比,
+                                concat(ROUND(SUM(雪豹签收) / SUM(雪豹单量) * 100,2),'%') as 雪豹总计签收,
+                                concat(ROUND(SUM(雪豹签收) / SUM(雪豹完成) * 100,2),'%') as 雪豹完成签收,
+                                concat(ROUND(SUM(雪豹完成) / SUM(雪豹单量) * 100,2),'%') as 雪豹完成占比,	
 							SUM(金蝉项目单量) 金蝉项目单量, SUM(金蝉项目签收) 金蝉项目签收, SUM(金蝉项目拒收) 金蝉项目拒收,
                                 concat(ROUND(SUM(金蝉项目改派) / SUM(金蝉项目单量) * 100,2),'%') as 金蝉项目改派占比,
                                 concat(ROUND(SUM(金蝉项目签收) / SUM(金蝉项目单量) * 100,2),'%') as 金蝉项目总计签收,
@@ -6048,6 +6054,11 @@ class QueryUpdate(Settings):
                                 SUM(IF(所属团队 = '火凤凰港台' AND 最终状态 = "拒收",1,0)) as 火凤凰拒收,
                                 SUM(IF(所属团队 = '火凤凰港台' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 火凤凰完成,
                                 SUM(IF(所属团队 = '火凤凰港台' AND 是否改派 = '改派',1,0)) as 火凤凰改派,
+                            SUM(IF(所属团队 = '雪豹港台',1,0)) as 雪豹单量,
+                                SUM(IF(所属团队 = '雪豹港台' AND 最终状态 = "已签收",1,0)) as 雪豹签收,
+                                SUM(IF(所属团队 = '雪豹港台' AND 最终状态 = "拒收",1,0)) as 雪豹拒收,
+                                SUM(IF(所属团队 = '雪豹港台' AND 最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 雪豹完成,
+                                SUM(IF(所属团队 = '雪豹港台' AND 是否改派 = '改派',1,0)) as 雪豹改派,
                             SUM(IF(所属团队 = '金蝉项目组',1,0)) as 金蝉项目单量,
                                 SUM(IF(所属团队 = '金蝉项目组' AND 最终状态 = "已签收",1,0)) as 金蝉项目签收,
                                 SUM(IF(所属团队 = '金蝉项目组' AND 最终状态 = "拒收",1,0)) as 金蝉项目拒收,
@@ -6358,99 +6369,87 @@ class QueryUpdate(Settings):
                         ss.总单量 DESC;'''.format(not_team, t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13, self.team_name2)
         sql51 = '''SELECT *
                 FROM (SELECT IFNULL(家族, '总计') 家族, IFNULL(地区, '总计') 地区, IFNULL(产品id, '总计') 产品id,  IFNULL(产品名称, '总计') 产品名称, IFNULL(父级分类, '总计') 父级分类, SUM(总单量) 总单量,
-				--		SUM("04总量") AS "11总单量",
-				--			concat(ROUND(SUM("04签收量") / SUM("04总量") * 100,2),'%') as "11总计签收",
-				--			concat(ROUND(SUM("04签收量") / SUM("04完成量") * 100,2),'%') as "11完成签收",
-				--			concat(ROUND(SUM("04完成量") / SUM("04总量") * 100,2),'%') as "11完成占比",
-				--		SUM("05总量") AS "22总单量",
-				--			concat(ROUND(SUM("05签收量") / SUM("05总量") * 100,2),'%') as "22总计签收",
-				--			concat(ROUND(SUM("05签收量") / SUM("05完成量") * 100,2),'%') as "22完成签收",
-				--			concat(ROUND(SUM("05完成量") / SUM("05总量") * 100,2),'%') as "22完成占比",
-				--		SUM("06总量") AS "33总单量",
-				--			concat(ROUND(SUM("06签收量") / SUM("06总量") * 100,2),'%') as "33总计签收",
-				--			concat(ROUND(SUM("06签收量") / SUM("06完成量") * 100,2),'%') as "33完成签收",
-				--			concat(ROUND(SUM("06完成量") / SUM("06总量") * 100,2),'%') as "33完成占比",
-				--		SUM("07总量") AS "44总单量",
-				--			concat(ROUND(SUM("07签收量") / SUM("07总量") * 100,2),'%') as "44总计签收",
-				--			concat(ROUND(SUM("07签收量") / SUM("07完成量") * 100,2),'%') as "44完成签收",
-				--			concat(ROUND(SUM("07完成量") / SUM("07总量") * 100,2),'%') as "44完成占比",
-				--		SUM("08总量") AS "55总单量",
-				--			concat(ROUND(SUM("08签收量") / SUM("08总量") * 100,2),'%') as "55总计签收",
-				--			concat(ROUND(SUM("08签收量") / SUM("08完成量") * 100,2),'%') as "55完成签收",
-				--			concat(ROUND(SUM("08完成量") / SUM("08总量") * 100,2),'%') as "55完成占比",
-				--		SUM("09总量") AS "66总单量",
-				--			concat(ROUND(SUM("09签收量") / SUM("09总量") * 100,2),'%') as "66总计签收",
-				--			concat(ROUND(SUM("09签收量") / SUM("09完成量") * 100,2),'%') as "66完成签收",
-				--			concat(ROUND(SUM("09完成量") / SUM("09总量") * 100,2),'%') as "66完成占比",
-						SUM("10总量") AS "77总单量",
-							concat(ROUND(SUM("10签收量") / SUM("10总量") * 100,2),'%') as "77总计签收",
-							concat(ROUND(SUM("10签收量") / SUM("10完成量") * 100,2),'%') as "77完成签收",
-							concat(ROUND(SUM("10完成量") / SUM("10总量") * 100,2),'%') as "77完成占比",
-						SUM("11总量") AS "88总单量",
-							concat(ROUND(SUM("11签收量") / SUM("11总量") * 100,2),'%') as "88总计签收",
-							concat(ROUND(SUM("11签收量") / SUM("11完成量") * 100,2),'%') as "88完成签收",
-							concat(ROUND(SUM("11完成量") / SUM("11总量") * 100,2),'%') as "88完成占比",
-						SUM("12总量") AS "99总单量",
-							concat(ROUND(SUM("12签收量") / SUM("12总量") * 100,2),'%') as "99总计签收",
-							concat(ROUND(SUM("12签收量") / SUM("12完成量") * 100,2),'%') as "99完成签收",
-							concat(ROUND(SUM("12完成量") / SUM("12总量") * 100,2),'%') as "99完成占比",
-						SUM("13总量") AS "100总单量",
-							concat(ROUND(SUM("12签收量") / SUM("12总量") * 100,2),'%') as "100总计签收",
-							concat(ROUND(SUM("12签收量") / SUM("12完成量") * 100,2),'%') as "100完成签收",
-							concat(ROUND(SUM("12完成量") / SUM("12总量") * 100,2),'%') as "100完成占比",
-						SUM("14总量") AS "110总单量",
-							concat(ROUND(SUM("14签收量") / SUM("14总量") * 100,2),'%') as "110总计签收",
-							concat(ROUND(SUM("14签收量") / SUM("14完成量") * 100,2),'%') as "110完成签收",
-							concat(ROUND(SUM("14完成量") / SUM("14总量") * 100,2),'%') as "110完成占比",
-						SUM("15总量") AS "120总单量",
-							concat(ROUND(SUM("15签收量") / SUM("15总量") * 100,2),'%') as "120总计签收",
-							concat(ROUND(SUM("15签收量") / SUM("15完成量") * 100,2),'%') as "120完成签收",
-							concat(ROUND(SUM("15完成量") / SUM("15总量") * 100,2),'%') as "120完成占比",
-						SUM("16总量") AS "130总单量",
-							concat(ROUND(SUM("16签收量") / SUM("16总量") * 100,2),'%') as "130总计签收",
-							concat(ROUND(SUM("16签收量") / SUM("16完成量") * 100,2),'%') as "130完成签收",
-							concat(ROUND(SUM("16完成量") / SUM("16总量") * 100,2),'%') as "130完成占比"
+                    -- 	SUM(04总量) AS 040总单量, concat(ROUND(SUM(04签收量) / SUM(04总量) * 100,2),'%') as 040总计签收,
+                    -- 		concat(ROUND(SUM(04签收量) / SUM(04完成量) * 100,2),'%') as 040完成签收,concat(ROUND(SUM(04完成量) / SUM(04总量) * 100,2),'%') as 040完成占比,
+                    -- 	SUM(05总量) AS 050总单量,concat(ROUND(SUM(05签收量) / SUM(05总量) * 100,2),'%') as 050总计签收,
+                    -- 		concat(ROUND(SUM(05签收量) / SUM(05完成量) * 100,2),'%') as 050完成签收,concat(ROUND(SUM(05完成量) / SUM(05总量) * 100,2),'%') as 050完成占比,
+                    -- 	SUM(06总量) AS 060总单量,concat(ROUND(SUM(06签收量) / SUM(06总量) * 100,2),'%') as 060总计签收,
+                    -- 		concat(ROUND(SUM(06签收量) / SUM(06完成量) * 100,2),'%') as 060完成签收,concat(ROUND(SUM(06完成量) / SUM(06总量) * 100,2),'%') as 060完成占比,
+                    -- 	SUM(07总量) AS 070总单量,concat(ROUND(SUM(07签收量) / SUM(07总量) * 100,2),'%') as 070总计签收,
+                    -- 		concat(ROUND(SUM(07签收量) / SUM(07完成量) * 100,2),'%') as 070完成签收,concat(ROUND(SUM(07完成量) / SUM(07总量) * 100,2),'%') as 070完成占比,
+                    -- 	SUM(08总量) AS 080总单量,concat(ROUND(SUM(08签收量) / SUM(08总量) * 100,2),'%') as 080总计签收,
+                    -- 		concat(ROUND(SUM(08签收量) / SUM(08完成量) * 100,2),'%') as 080完成签收,concat(ROUND(SUM(08完成量) / SUM(08总量) * 100,2),'%') as 080完成占比,
+                    -- 	SUM(09总量) AS 090总单量,concat(ROUND(SUM(09签收量) / SUM(09总量) * 100,2),'%') as 090总计签收,
+                    -- 		concat(ROUND(SUM(09签收量) / SUM(09完成量) * 100,2),'%') as 090完成签收,concat(ROUND(SUM(09完成量) / SUM(09总量) * 100,2),'%') as 090完成占比,
+						SUM(10总量) AS 100总单量,
+							concat(ROUND(SUM(10签收量) / SUM(10总量) * 100,2),'%') as 100总计签收,
+							concat(ROUND(SUM(10签收量) / SUM(10完成量) * 100,2),'%') as 100完成签收,
+							concat(ROUND(SUM(10完成量) / SUM(10总量) * 100,2),'%') as 100完成占比,
+						SUM(11总量) AS 110总单量,
+							concat(ROUND(SUM(11签收量) / SUM(11总量) * 100,2),'%') as 110总计签收,
+							concat(ROUND(SUM(11签收量) / SUM(11完成量) * 100,2),'%') as 110完成签收,
+							concat(ROUND(SUM(11完成量) / SUM(11总量) * 100,2),'%') as 110完成占比,
+						SUM(12总量) AS 120总单量,
+							concat(ROUND(SUM(12签收量) / SUM(12总量) * 100,2),'%') as 120总计签收,
+							concat(ROUND(SUM(12签收量) / SUM(12完成量) * 100,2),'%') as 120完成签收,
+							concat(ROUND(SUM(12完成量) / SUM(12总量) * 100,2),'%') as 120完成占比,
+						SUM(13总量) AS 130总单量,
+							concat(ROUND(SUM(13签收量) / SUM(13总量) * 100,2),'%') as 130总计签收,
+							concat(ROUND(SUM(13签收量) / SUM(13完成量) * 100,2),'%') as 130完成签收,
+							concat(ROUND(SUM(13完成量) / SUM(13总量) * 100,2),'%') as 130完成占比,
+						SUM(14总量) AS 140总单量,
+							concat(ROUND(SUM(14签收量) / SUM(14总量) * 100,2),'%') as 140总计签收,
+							concat(ROUND(SUM(14签收量) / SUM(14完成量) * 100,2),'%') as 140完成签收,
+							concat(ROUND(SUM(14完成量) / SUM(14总量) * 100,2),'%') as 140完成占比,
+						SUM(15总量) AS 150总单量,
+							concat(ROUND(SUM(15签收量) / SUM(15总量) * 100,2),'%') as 150总计签收,
+							concat(ROUND(SUM(15签收量) / SUM(15完成量) * 100,2),'%') as 150完成签收,
+							concat(ROUND(SUM(15完成量) / SUM(15总量) * 100,2),'%') as 150完成占比,
+						SUM(16总量) AS 160总单量,
+							concat(ROUND(SUM(16签收量) / SUM(16总量) * 100,2),'%') as 160总计签收,
+							concat(ROUND(SUM(16签收量) / SUM(16完成量) * 100,2),'%') as 160完成签收,
+							concat(ROUND(SUM(16完成量) / SUM(16总量) * 100,2),'%') as 160完成占比
                     FROM(SELECT 所属团队 as 家族,币种 地区, 产品id, 产品名称, 父级分类,
                                 COUNT(cx.`订单编号`) as 总单量,
-                    --        SUM(IF(年月 = '{1}',1,0)) as "04总量",
-                    --            SUM(IF(年月 = '{1}' AND 最终状态 = "已签收",1,0)) as "04签收量",
-                    --            SUM(IF(年月 = '{1}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as "04完成量",
-                    --        SUM(IF(年月 = '{2}',1,0)) as "05总量",
-                    --            SUM(IF(年月 = '{2}' AND 最终状态 = "已签收",1,0)) as "05签收量",
-                    --            SUM(IF(年月 = '{2}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as "05完成量",
-                    --        SUM(IF(年月 = '{3}',1,0)) as "06总量",
-                    --            SUM(IF(年月 = '{3}' AND 最终状态 = "已签收",1,0)) as "06签收量",
-                    --            SUM(IF(年月 = '{3}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as "06完成量",
-                    --        SUM(IF(年月 = '{4}',1,0)) as "07总量",
-                    --            SUM(IF(年月 = '{4}' AND 最终状态 = "已签收",1,0)) as "07签收量",
-                    --            SUM(IF(年月 = '{4}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as "07完成量",
-                    --        SUM(IF(年月 = '{5}',1,0)) as "08总量",
-                    --            SUM(IF(年月 = '{5}' AND 最终状态 = "已签收",1,0)) as "08签收量",
-                    --            SUM(IF(年月 = '{5}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as "08完成量",
-                    --        SUM(IF(年月 = '{6}',1,0)) as "09总量",
-                    --            SUM(IF(年月 = '{6}' AND 最终状态 = "已签收",1,0)) as "09签收量",
-                    --            SUM(IF(年月 = '{6}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as "09完成量",
-                            SUM(IF(年月 = '{7}',1,0)) as "10总量",
-                                SUM(IF(年月 = '{7}' AND 最终状态 = "已签收",1,0)) as "10签收量",
-                                SUM(IF(年月 = '{7}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as "10完成量",
-                            SUM(IF(年月 = '{8}',1,0)) as "11总量",
-                                SUM(IF(年月 = '{8}' AND 最终状态 = "已签收",1,0)) as "11签收量",
-                                SUM(IF(年月 = '{8}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as "11完成量",
-                            SUM(IF(年月 = '{9}',1,0)) as "12总量",
-                                SUM(IF(年月 = '{9}' AND 最终状态 = "已签收",1,0)) as "12签收量",
-                                SUM(IF(年月 = '{9}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as "12完成量",
-                            SUM(IF(年月 = '{10}',1,0)) as "13总量",
-                                SUM(IF(年月 = '{10}' AND 最终状态 = "已签收",1,0)) as "13签收量",
-                                SUM(IF(年月 = '{10}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as "13完成量",
-                            SUM(IF(年月 = '{11}',1,0)) as "14总量",
-                                SUM(IF(年月 = '{11}' AND 最终状态 = "已签收",1,0)) as "14签收量",
-                                SUM(IF(年月 = '{11}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as "14完成量",
-                            SUM(IF(年月 = '{12}',1,0)) as "15总量",
-                                SUM(IF(年月 = '{12}' AND 最终状态 = "已签收",1,0)) as "15签收量",
-                                SUM(IF(年月 = '{12}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as "15完成量",
-                            SUM(IF(年月 = '{13}',1,0)) as "16总量",
-                                SUM(IF(年月 = '{13}' AND 最终状态 = "已签收",1,0)) as "16签收量",
-                                SUM(IF(年月 = '{13}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as "16完成量"
+                    --        SUM(IF(年月 = '{1}',1,0)) as 04总量,
+                    --            SUM(IF(年月 = '{1}' AND 最终状态 = 已签收,1,0)) as 04签收量,
+                    --            SUM(IF(年月 = '{1}' AND 最终状态 IN (已签收,拒收,已退货,理赔, 自发头程丢件),1,0)) as 04完成量,
+                    --        SUM(IF(年月 = '{2}',1,0)) as 05总量,
+                    --            SUM(IF(年月 = '{2}' AND 最终状态 = 已签收,1,0)) as 05签收量,
+                    --            SUM(IF(年月 = '{2}' AND 最终状态 IN (已签收,拒收,已退货,理赔, 自发头程丢件),1,0)) as 05完成量,
+                    --        SUM(IF(年月 = '{3}',1,0)) as 06总量,
+                    --            SUM(IF(年月 = '{3}' AND 最终状态 = 已签收,1,0)) as 06签收量,
+                    --            SUM(IF(年月 = '{3}' AND 最终状态 IN (已签收,拒收,已退货,理赔, 自发头程丢件),1,0)) as 06完成量,
+                    --        SUM(IF(年月 = '{4}',1,0)) as 07总量,
+                    --            SUM(IF(年月 = '{4}' AND 最终状态 = 已签收,1,0)) as 07签收量,
+                    --            SUM(IF(年月 = '{4}' AND 最终状态 IN (已签收,拒收,已退货,理赔, 自发头程丢件),1,0)) as 07完成量,
+                    --        SUM(IF(年月 = '{5}',1,0)) as 08总量,
+                    --            SUM(IF(年月 = '{5}' AND 最终状态 = 已签收,1,0)) as 08签收量,
+                    --            SUM(IF(年月 = '{5}' AND 最终状态 IN (已签收,拒收,已退货,理赔, 自发头程丢件),1,0)) as 08完成量,
+                    --        SUM(IF(年月 = '{6}',1,0)) as 09总量,
+                    --            SUM(IF(年月 = '{6}' AND 最终状态 = 已签收,1,0)) as 09签收量,
+                    --            SUM(IF(年月 = '{6}' AND 最终状态 IN (已签收,拒收,已退货,理赔, 自发头程丢件),1,0)) as 09完成量,
+                            SUM(IF(年月 = '{7}',1,0)) as 10总量,
+                                SUM(IF(年月 = '{7}' AND 最终状态 = '已签收',1,0)) as 10签收量,
+                                SUM(IF(年月 = '{7}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 10完成量,
+                            SUM(IF(年月 = '{8}',1,0)) as 11总量,
+                                SUM(IF(年月 = '{8}' AND 最终状态 = '已签收',1,0)) as 11签收量,
+                                SUM(IF(年月 = '{8}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 11完成量,
+                            SUM(IF(年月 = '{9}',1,0)) as 12总量,
+                                SUM(IF(年月 = '{9}' AND 最终状态 = '已签收',1,0)) as 12签收量,
+                                SUM(IF(年月 = '{9}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 12完成量,
+                            SUM(IF(年月 = '{10}',1,0)) as 13总量,
+                                SUM(IF(年月 = '{10}' AND 最终状态 = '已签收',1,0)) as 13签收量,
+                                SUM(IF(年月 = '{10}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 13完成量,
+                            SUM(IF(年月 = '{11}',1,0)) as 14总量,
+                                SUM(IF(年月 = '{11}' AND 最终状态 = '已签收',1,0)) as 14签收量,
+                                SUM(IF(年月 = '{11}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 14完成量,
+                            SUM(IF(年月 = '{12}',1,0)) as 15总量,
+                                SUM(IF(年月 = '{12}' AND 最终状态 = '已签收',1,0)) as 15签收量,
+                                SUM(IF(年月 = '{12}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 15完成量,
+                            SUM(IF(年月 = '{13}',1,0)) as 16总量,
+                                SUM(IF(年月 = '{13}' AND 最终状态 = '已签收',1,0)) as 16签收量,
+                                SUM(IF(年月 = '{13}' AND 最终状态 IN ("已签收","拒收","已退货","理赔", "自发头程丢件"),1,0)) as 16完成量
                         FROM gat_zqsb cx
                         where cx.年月 >= '{1}' AND cx.`运单编号` is not null AND cx.所属团队 NOT IN ({0})
                         GROUP BY cx.所属团队,cx.币种,cx.产品id
@@ -6460,7 +6459,7 @@ class QueryUpdate(Settings):
 				) ss
                 ORDER BY FIELD(ss.`家族`,{14}, '总计'),
                         FIELD(ss.地区, '台湾', '香港', '总计' ),
-                        ss.总单量 DESC;;'''.format(not_team, t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13, self.team_name2)
+                        ss.总单量 DESC;'''.format(not_team, t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13, self.team_name2)
         # sql51 = '''SELECT *
         #         FROM (SELECT IFNULL(家族, '总计') 家族, IFNULL(地区, '总计') 地区, IFNULL(产品id, '总计') 产品id,  IFNULL(产品名称, '总计') 产品名称, IFNULL(父级分类, '总计') 父级分类,
 		# 				    SUM(总单量) 总单量,
@@ -6583,15 +6582,13 @@ class QueryUpdate(Settings):
         #                      '120总单量': t12 + '总单量', '120总计签收': t12 + '总计签收', '120完成签收': t12 + '完成签收', '120完成占比': t12 + '完成占比',
         #                      '130总单量': t13 + '总单量', '130总计签收': t13 + '总计签收', '130完成签收': t13 + '完成签收', '130完成占比': t13 + '完成占比'
         #                      }, inplace=True)
-        df51.rename(columns={
-                             '77总单量': t7 + '总单量', '77总计签收': t7 + '总计签收', '77完成签收': t7 + '完成签收', '77完成占比': t7 + '完成占比',
-                             '88总单量': t8 + '总单量', '88总计签收': t8 + '总计签收', '88完成签收': t8 + '完成签收', '88完成占比': t8 + '完成占比',
-                             '99总单量': t9 + '总单量', '99总计签收': t9 + '总计签收', '99完成签收': t9 + '完成签收', '99完成占比': t9 + '完成占比',
-                             '100总单量': t10 + '总单量', '100总计签收': t10 + '总计签收', '100完成签收': t10 + '完成签收', '100完成占比': t10 + '完成占比',
-                             '110总单量': t11 + '总单量', '110总计签收': t11 + '总计签收', '110完成签收': t11 + '完成签收', '110完成占比': t11 + '完成占比',
-                             '120总单量': t12 + '总单量', '120总计签收': t12 + '总计签收', '120完成签收': t12 + '完成签收', '120完成占比': t12 + '完成占比',
-                             '130总单量': t13 + '总单量', '130总计签收': t13 + '总计签收', '130完成签收': t13 + '完成签收', '130完成占比': t13 + '完成占比'
-                             }, inplace=True)
+        df51.rename(columns={'100总单量': t7 + '总单量', '100总计签收': t7 + '总计签收', '100完成签收': t7 + '完成签收', '100完成占比': t7 + '完成占比',
+                             '110总单量': t8 + '总单量', '110总计签收': t8 + '总计签收', '110完成签收': t8 + '完成签收', '110完成占比': t8 + '完成占比',
+                             '120总单量': t9 + '总单量', '120总计签收': t9 + '总计签收', '120完成签收': t9 + '完成签收', '120完成占比': t9 + '完成占比',
+                             '130总单量': t10 + '总单量', '130总计签收': t10 + '总计签收', '130完成签收': t10 + '完成签收', '130完成占比': t10 + '完成占比',
+                             '140总单量': t11 + '总单量', '140总计签收': t11 + '总计签收', '140完成签收': t11 + '完成签收', '140完成占比': t11 + '完成占比',
+                             '150总单量': t12 + '总单量', '150总计签收': t12 + '总计签收', '150完成签收': t12 + '完成签收', '150完成占比': t12 + '完成占比',
+                             '160总单量': t13 + '总单量', '160总计签收': t13 + '总计签收', '160完成签收': t13 + '完成签收', '160完成占比': t13 + '完成占比' }, inplace=True)
         print(df51.columns)
         listT.append(df51)
 
@@ -11430,15 +11427,15 @@ if __name__ == '__main__':
         3、last_time：   切换：更新上传时间；
     '''
     select = 99
-    handle_time = '自动0'
+    handle_time = '自动'
     if int(select) == 99:
         if handle_time == '自动':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
-            month_old = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'     # 获取-每日-报表 开始的时间
+            month_old = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'     # 获取-每日-报表 各产品各团队 最近三个月的 开始的时间
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
         else:
             month_last = '2023-03-01'
-            month_old = '2023-03-01'                                # 获取-每日-报表 开始的时间
+            month_old = '2023-03-01'                                # 获取-每日-报表 各产品各团队 最近三个月的 开始的时间
             month_yesterday = '2023-04-30'
 
         last_time = '2021-01-01'
@@ -11447,10 +11444,10 @@ if __name__ == '__main__':
         m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
 
         currency_id = '全部付款'
-        m.gat_new(team, month_last, month_yesterday, currency_id)   # 获取-货到付款& 在线付款 签收率-报表
+        # m.gat_new(team, month_last, month_yesterday, currency_id)   # 获取-货到付款& 在线付款 签收率-报表
         m.qsb_new(team, month_old)                                  # 获取-每日-报表
-        m.EportOrderBook(team, month_last, month_yesterday)         # 导出-总的-签收
-        m.phone_report('handle', month_last, month_yesterday)       # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）
+        # m.EportOrderBook(team, month_last, month_yesterday)         # 导出-总的-签收
+        # m.phone_report('handle', month_last, month_yesterday)       # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）
 
         # currency_id = '在线付款'
         # m.gat_new(team, month_last, month_yesterday, currency_id)  # 获取-在线付款 签收率-报表

@@ -79,8 +79,7 @@ class ExcelControl(Settings):
                     except Exception as e:
                         print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
                     if db is not None and len(db) > 0:
-                        print('++++正在导入：' + sht.name + ' 共：' + str(len(db)) + '行', 'sheet共：' + str(
-                            sht.used_range.last_cell.row) + '行')
+                        print('++++正在导入：' + sht.name + ' 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
                         # 将返回的dateFrame导入数据库的临时表
                         self.sql.writeSqlReplace(db)
                         print('++++正在更新：' + sht.name + '--->>>到总订单')
@@ -455,6 +454,7 @@ class ExcelControl(Settings):
                 #     if '订单编号' != column_val:
                 #         df.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
                 print(df.columns)
+                print(df)
                 if '吉客印新竹退款明细' in filePath:
                     df.insert(0, '物流', '速派')
                 else:

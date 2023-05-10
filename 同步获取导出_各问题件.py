@@ -926,7 +926,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         return data
 
     # 绩效-查询 拒收问题件           （二.50）
-    def service_id_order_js_Query(self, timeStart, timeEnd, proxy_handle, proxy_id, order_time):  # 进入拒收问题件界面
+    def service_id_order_js_Query(self, timeStart, timeEnd, proxy_handle, proxy_id, order_time, time_Start, time_End):  # 进入拒收问题件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 拒收问题件(' + order_time + ') 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRejectList'
@@ -997,6 +997,10 @@ class QueryOrder_Code(Settings, Settings_sso):
                             运单号, 联系电话, F跟进人, F时间, F问题类型, F问题原因, F内容, 录音链接聊天截图, NOW() 记录时间
                     FROM {1};'''.format('拒收问题件检索','query_cache')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+
+            sql = '''SELECT * FROM 拒收问题件检索 j WHERE j.`F时间` >= '{0} 00:00:00' and j.`F时间` <= '{1} 23:59:59';'''.format(time_Start, time_End)
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            df.to_excel('F:\\输出文件\\{0}{1}拒收问题件 汇总-{2}.xlsx'.format(time_Start, time_End, rq), sheet_name='查询', index=False,  engine='xlsxwriter')
             print('写入成功......')
         else:
             print('****** 没有信息！！！')
@@ -1362,14 +1366,14 @@ if __name__ == '__main__':
         m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
 
     elif int(select) == 8:
-        timeStart = datetime.date(2023, 4, 18)         # 拒收问题  查询；订单检索@~@ok
-        timeEnd = datetime.date(2023, 5, 4)
+        timeStart = datetime.date(2023, 5, 4)         # 拒收问题  查询；订单检索@~@ok
+        timeEnd = datetime.date(2023, 5, 10)
         order_time = '跟进时间'
         for i in range((timeEnd - timeStart).days):  # 按天循环获取订单状态
             day = timeStart + datetime.timedelta(days=i)
             day_time = str(day)
             print('****** 更新      起止时间：' + day_time + ' - ' + day_time + ' ******')
-            m.service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time)      # (需处理两次)
+            m.service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time, timeStart, timeEnd)      # (需处理两次)
 
 
         # order_time = '跟进时间'
