@@ -936,6 +936,8 @@ class QueryOrder(Settings, Settings_sso):
                 ordersdict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "订单检索-获取数据 失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersdict)
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         # data.to_excel('F:\\输出文件\\明细{0}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
@@ -3584,6 +3586,8 @@ SELECT 币种,运营团队,
                 ordersdict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "订单检索-获取数据 失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         df = pd.json_normalize(ordersdict)
         print('++++++查询输出成功+++++++')
         print('*' * 50)

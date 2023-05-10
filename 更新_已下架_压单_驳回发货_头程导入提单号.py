@@ -538,6 +538,9 @@ class QueryTwoLower(Settings, Settings_sso):
                     ordersdict.append(result)
             except Exception as e:
                 print('转化失败： 重新获取中', str(Exception) + str(e))
+                sso = Settings_sso()
+                sso.send_dingtalk_message(
+                    "https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "压单反馈-更新失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
             data = pd.json_normalize(ordersdict)
             # print(data)
         else:
@@ -849,6 +852,9 @@ class QueryTwoLower(Settings, Settings_sso):
                     ordersDict.append(result)
             except Exception as e:
                 print('转化失败： 重新获取中', str(Exception) + str(e))
+                sso = Settings_sso()
+                sso.send_dingtalk_message(
+                    "https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "已下架-更新失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
             data = pd.json_normalize(ordersDict)
             data = data[['order_number', 'addtime', 'billno', 'old_billno', 'goods_id', 'product_name', 'intime', 'whid', 'waill_name', 'currency_id', 'area_id', 'product_spec', 'quantity', 'ship_name', 'ship_address', 'ship_phone', 'amount', 'userId', 'in_sqs', 'count_time']]
             data.columns = ['订单编号', '下单时间', '新运单号', '原运单号', '产品id', '商品名称', '下架时间', '仓库', '物流渠道', '币种', '团队', '商品规格', '购买数量', '收货人', '收货地址', '联系电话', '订单金额', '下架人', '获取单号结果', '统计时间']

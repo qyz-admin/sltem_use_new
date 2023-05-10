@@ -386,6 +386,8 @@ class QueryTwo(Settings, Settings_sso):
                     ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "物流问题件-更新失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersDict)
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
@@ -518,6 +520,8 @@ class QueryTwo(Settings, Settings_sso):
                     ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "压单核实-更新失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersDict)
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
@@ -604,6 +608,8 @@ class QueryTwo(Settings, Settings_sso):
                 ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "派送问题件-更新失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersDict)
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
@@ -745,6 +751,8 @@ class QueryTwo(Settings, Settings_sso):
                     ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "物流客诉件-更新失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersDict)
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
@@ -976,7 +984,7 @@ class QueryTwo(Settings, Settings_sso):
             print('没有需要获取的信息！！！')
             return
         print('*' * 50)
-    def _ssale_Query(self, timeStart, timeEnd, n, proxy_handle, proxy_id):  # 进入物流问题件界面
+    def _ssale_Query(self, timeStart, timeEnd, n, proxy_handle, proxy_id):  # 进入采购问题件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.afterSale&action=getPurchaseAbnormalList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -999,6 +1007,8 @@ class QueryTwo(Settings, Settings_sso):
                 ordersDict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "采购问题件-更新失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersDict)
         print('++++++单次查询成功+++++++')
         print('*' * 50)
@@ -1038,6 +1048,8 @@ class QueryTwo(Settings, Settings_sso):
                 pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "采购问题件 补充消息-更新失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(orders_dict)
         print('++++++本次 查询成功+++++++')
         print('*' * 50)
@@ -1175,6 +1187,8 @@ class QueryTwo(Settings, Settings_sso):
                 ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 请检查出错点！！！', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "拒收问题件-更新失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersDict)
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
@@ -1271,6 +1285,8 @@ class QueryTwo(Settings, Settings_sso):
                 ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "退换货-更新失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersDict)
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
@@ -1482,6 +1498,9 @@ class QueryTwo(Settings, Settings_sso):
                     ordersDict.append(result.copy())
             except Exception as e:
                 print('转化失败： 重新获取中', str(Exception) + str(e))
+                sso = Settings_sso()
+                sso.send_dingtalk_message(
+                    "https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "短信日志-更新失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
             data = pd.json_normalize(ordersDict)
         else:
             data = None
@@ -1581,6 +1600,9 @@ class QueryTwo(Settings, Settings_sso):
                     ordersDict.append(result.copy())
             except Exception as e:
                 print('转化失败： 重新获取中', str(Exception) + str(e))
+                sso = Settings_sso()
+                sso.send_dingtalk_message(
+                    "https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e","工单列表-更新失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
             data = pd.json_normalize(ordersDict)
         else:
             data = None
@@ -1651,6 +1673,8 @@ class QueryTwo(Settings, Settings_sso):
                 ordersdict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "挽单列表-更新失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         df = pd.json_normalize(ordersdict)
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
