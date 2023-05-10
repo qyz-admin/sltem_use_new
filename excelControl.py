@@ -208,7 +208,7 @@ class ExcelControl(Settings):
         needDrop = []
         columns = list(df.columns)
         # print(columns)
-        if '协来运-新竹' in shtName or '协来运-黑貓' in shtName or '协来运-重出' in shtName:
+        if '协来运-新竹' in shtName or '协来运-黑貓' in shtName or '协来运-重出' in shtName or '协来运-宅配通' in shtName:
             if '單號' in df.columns:
                 df.drop(labels=['單號'], axis=1, inplace=True)
         if '圓通-轉單表' in shtName:
