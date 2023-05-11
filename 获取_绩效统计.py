@@ -1316,62 +1316,62 @@ class QueryOrder_Code(Settings, Settings_sso):
         print('挽单列表-绩效 数据整理 写入各 计算统计表 中（零）......')
         sql11 = '''SELECT *
                 FROM 挽单列表_创建时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 0 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
         df11 = pd.read_sql_query(sql=sql11, con=self.engine1)
 
         print('促单-绩效 源数据 获取中（一.1）......')
         sql21 = '''SELECT *
                 FROM 促单_下单时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 0 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
         df21 = pd.read_sql_query(sql=sql21, con=self.engine1)
         listT.append(df21)
 
         print('采购异常-绩效 源数据 获取中（二.1）......')
         sql3 = '''SELECT *
                 FROM 采购异常_创建时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 0 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
         df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
         listT.append(df3)
 
         print('压单核实-绩效 源数据 获取中（二.2）......')
         sql32 = '''SELECT *
                 FROM 压单核实_创建时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 0 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
         df32 = pd.read_sql_query(sql=sql32, con=self.engine1)
         listT.append(df32)
 
         print('系统问题件-绩效 源数据 获取中（二.3）......')
         sql33 = '''SELECT *
                 FROM 系统问题件_下单时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 0 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
         df33 = pd.read_sql_query(sql=sql33, con=self.engine1)
         listT.append(df33)
 
         print('物流问题-绩效 源数据 获取中（三.1）......')
         sql4 = '''SELECT *
                 FROM 物流问题件_创建时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 0 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
         df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
         listT.append(df4)
 
         print('派送问题-绩效 源数据 获取中（三.3）......')
         sql43 = '''SELECT *
                 FROM 派送问题件_处理时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 0 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
         df43 = pd.read_sql_query(sql=sql43, con=self.engine1)
         listT.append(df43)
 
         print('物流客诉-绩效 源数据 获取中（四.1）......')
         sql5 = '''SELECT *, IF(赠品补发订单编号 <> "",IF(最新客服处理结果 LIKE '%补发海外仓%','统计','不统计'),'不统计') AS 是否统计	
                 FROM 物流客诉件_创建时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(curdate(),'%Y%m%d') AND s1.最新处理状态 <> "" ;'''
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 0 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(curdate(),'%Y%m%d') AND s1.最新处理状态 <> "" ;'''
         df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
         listT.append(df5)
 
         print('拒收问题件-绩效 源数据 获取中（五.1）......')
         sql6 = '''SELECT *
                 FROM 拒收问题件_跟进时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(curdate(),'%Y%m%d');'''
+                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 0 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(curdate(),'%Y%m%d');'''
         df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
         listT.append(df6)
 
@@ -2332,7 +2332,7 @@ if __name__ == '__main__':
     login_TmpCode = '4b84b336ab9739218a563cde0be598ee'  # 输入登录口令Tkoen
     proxy_handle = '代理服务器0'
     proxy_id = '192.168.13.89:37469'  # 输入代理服务器节点和端口
-    select = 99
+    select = 8
     m = QueryOrder_Code('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id, select)
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
@@ -2359,8 +2359,8 @@ if __name__ == '__main__':
                 timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
                 timeEnd = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
         else:
-            timeStart = '2023-04-01'
-            timeEnd = '2023-04-30'
+            timeStart = '2023-05-01'
+            timeEnd = '2023-05-10'
         print(timeStart + "---" + timeEnd)
         '''
             开始获取 绩效数据
@@ -2393,28 +2393,28 @@ if __name__ == '__main__':
         '''
             开始获取 其他数据
         '''
-        order_time = '跟进时间'
-        m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；处理时间 （一、获取订单内容）@~@ok
-        m.service_id_ssale_info(proxy_handle, proxy_id, '采购问题件_跟进时间')                             # 采购查询；处理时间 （二、获取处理详情）@~@ok
-
-        order_time = '跟进时间'
-        m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
-
-        order_time = '跟进时间'
-        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
-
-        order_time = '创建时间'                                                                 # 派送问题   创建时间： 订单放入时间（每次导出时需要更新数据）@~@
-        m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
-
-        order_time = '下单跟进时间'
-        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
-        order_time = '下单时间'
-        begin = datetime.date(2023, 4, 22)  # 单点更新
-        end = datetime.date(2023, 4, 23)
-        for i in range((end - begin).days):  # 按天循环获取订单状态
-            day = begin + datetime.timedelta(days=i)
-            day_time = str(day)
-            m.service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
+        # order_time = '跟进时间'
+        # m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；处理时间 （一、获取订单内容）@~@ok
+        # m.service_id_ssale_info(proxy_handle, proxy_id, '采购问题件_跟进时间')                             # 采购查询；处理时间 （二、获取处理详情）@~@ok
+        #
+        # order_time = '跟进时间'
+        # m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
+        #
+        # order_time = '跟进时间'
+        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
+        #
+        # order_time = '创建时间'                                                                 # 派送问题   创建时间： 订单放入时间（每次导出时需要更新数据）@~@
+        # m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
+        #
+        # order_time = '下单跟进时间'
+        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
+        # order_time = '下单时间'
+        # begin = datetime.date(2023, 4, 22)  # 单点更新
+        # end = datetime.date(2023, 4, 23)
+        # for i in range((end - begin).days):  # 按天循环获取订单状态
+        #     day = begin + datetime.timedelta(days=i)
+        #     day_time = str(day)
+        #     m.service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
 
     elif int(select) == 8:
         m.service_check()

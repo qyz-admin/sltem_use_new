@@ -3919,8 +3919,8 @@ if __name__ == '__main__':
     # ready = '上期宏'
 
     if handle == '自动':
-        last_month = '2023.04.10'
-        now_month = '2023.05.10'
+        last_month = '2023.04.11'
+        now_month = '2023.05.11'
         handle_now_month,handle_last_month,handle_now_month_old,handle_last_month_old = '','','',''
     else:
         now_month = '2023.05.09'            # 本月记录日期
