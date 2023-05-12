@@ -877,9 +877,8 @@ class QueryUpdate(Settings):
             sql = '''DELETE FROM gat_zqsb gt
                     WHERE gt.年月 >= {0}
                       and gt.`订单编号` IN (SELECT 订单编号 
-                                            FROM gat_order_list gs
-                                            WHERE gs.年月 >= {0}
-                                              and gs.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'));'''.format(del_time)
+                                        FROM gat_order_list gs
+                                        WHERE gs.年月 >= {0} and gs.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'));'''.format(del_time)
             print('正在清除港澳台-总表的可能删除了的订单…………')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('正在获取---' + match[team] + '---更新数据内容…………')
@@ -921,12 +920,12 @@ class QueryUpdate(Settings):
                 print('----已写入excel; 并复制到指定文件夹中')
             else:
                 print('不 写入excel…………')
+        print('查询开始时间：', datetime.datetime.now())
         sql = '''DELETE FROM d1_gat gt WHERE gt.`订单编号` IN (SELECT 订单编号 FROM gat_易速配退运);'''
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-        sql = '''DELETE FROM gat_zqsb gt WHERE gt.年月 BETWEEN '202206' AND '202207' AND gt.`订单编号` IN (SELECT 订单编号 FROM gat_易速配退运);'''
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('已清除不参与计算的易速配退运订单（总表中）…………')
 
+        print('查询开始时间：', datetime.datetime.now())
         print('正在写入' + match[team] + ' 全部签收表中…………')
         sql = 'REPLACE INTO {0}_zqsb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
@@ -940,12 +939,14 @@ class QueryUpdate(Settings):
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
 
+        print('查询开始时间：', datetime.datetime.now())
         sql = '''DELETE FROM gat_zqsb gz 
                  WHERE gz.`系统订单状态` = '已转采购' and gz.`是否改派` = '改派'
                    and gz.`审核时间` >= '{0} 00:00:00' AND gz.`日期` >= '{1}';'''.format(month_yesterday, month_last)
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('已清除不参与计算的今日改派订单…………')
 
+        print('查询开始时间：', datetime.datetime.now())
         print('正在检查总表 订单重量异常 信息 ......')
         sql = '''SELECT 订单编号, 币种, 下单时间, 电话号码, 产品id, 产品名称
                 FROM {0} s 
@@ -968,6 +969,7 @@ class QueryUpdate(Settings):
             print('订单重量异常 信息 已发送 请注意查看......')
         else:
             print('无 订单重量异常 信息！！！')
+        print('查询开始时间：', datetime.datetime.now())
 
     # 导出总的签收表---各家族-港澳台(三)
     def EportOrderBook(self, team, month_last, month_yesterday):
@@ -5326,9 +5328,8 @@ class QueryUpdate(Settings):
         with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
             listT[0].to_excel(excel_writer=writer, sheet_name=sheet_name[0], index=False)
             listT[1].to_excel(excel_writer=writer, sheet_name=sheet_name[1], index=False)
-            listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
-            listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
-
+            # listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
+            # listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
         print('正在运行' + match[team] + '表宏…………（xlwings方法一）')
         try:
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
@@ -5336,7 +5337,7 @@ class QueryUpdate(Settings):
             # app.display_alerts = False
             wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
-            wbsht.macro('zl_gat_report_new.gat_总_品类_物流_两月签收率')()
+            wbsht.macro('zl_gat_report_new2.gat_总_品类_物流_两月签收率')()
             wbsht1.save()
             wbsht.save()
             wbsht1.close()
@@ -5380,7 +5381,7 @@ class QueryUpdate(Settings):
             # app.display_alerts = False
             wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
-            wbsht.macro('zl_gat_report_new.gat_品类直发分旬签收率')()
+            wbsht.macro('zl_gat_report_new2.gat_品类直发分旬签收率')()
             wbsht1.save()
             wbsht1.close()
             wbsht.save()
@@ -5444,7 +5445,7 @@ class QueryUpdate(Settings):
             # app.display_alerts = False
             wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
-            wbsht.macro('zl_gat_report_new.gat_产品签收率_总')()
+            wbsht.macro('zl_gat_report_new2.gat_产品签收率_总')()
             wbsht1.save()
             wbsht1.close()
             wbsht.save()
@@ -5455,7 +5456,6 @@ class QueryUpdate(Settings):
             app.quit()
         except Exception as e:
             print('运行失败：', str(Exception) + str(e))
-
         new_path = 'F:\\神龙签收率\\' + (datetime.datetime.now()).strftime('%m.%d') + '\\签收率\\{} {} 产品明细-签收率.xlsx'.format(today, match[team])
         shutil.copyfile(file_path, new_path)        # copy到指定位置
         print('----已写入excel; 并复制到指定文件夹中')
@@ -5856,7 +5856,7 @@ class QueryUpdate(Settings):
             ORDER BY 月份 DESC,
                     FIELD(地区, '台湾', '香港', '总计' ),
                     FIELD(家族, {3}, '总计'),
-                    FIELD(平台, "facebook","google","line","tiktok","clone","Criteo","interpark","kol","tiktokpage","mercado","Qoo10","ozon","w_service","s_service","e_service",
+                    FIELD(平台, "google","facebook","line","tiktok","clone","Criteo","interpark","kol","tiktokpage","mercado","Qoo10","ozon","w_service","s_service","e_service",
                                 "allegro","hepsi","tikshop","gmarket","11st","shopline","aws","pre_sale_clone","coupang","detain_goods","aliexpress","bigo","refuse_clone","line_natural",
                                 "youtube_natural","facebook_natural","instagram_natural","tiktok_natural","postsaleclone","outplay","outbrain","email","shangwutong","lazada","headline",
                                 "shopee","recommend","propellerads","snapchat","tenmax","shopify","Dragon","taboola","naver","mf","速卖通发货","topbuzz",
@@ -5905,7 +5905,7 @@ class QueryUpdate(Settings):
             ) ss
             ORDER BY 月份 DESC,
                     FIELD(地区, '台湾', '香港', '总计' ),
-                    FIELD(平台, "facebook","google","line","tiktok","clone","Criteo","interpark","kol","tiktokpage","mercado","Qoo10","ozon","w_service","s_service","e_service",
+                    FIELD(平台, "google","facebook","line","tiktok","clone","Criteo","interpark","kol","tiktokpage","mercado","Qoo10","ozon","w_service","s_service","e_service",
                                 "allegro","hepsi","tikshop","gmarket","11st","shopline","aws","pre_sale_clone","coupang","detain_goods","aliexpress","bigo","refuse_clone","line_natural",
                                 "youtube_natural","facebook_natural","instagram_natural","tiktok_natural","postsaleclone","outplay","outbrain","email","shangwutong","lazada","headline",
                                 "shopee","recommend","propellerads","snapchat","tenmax","shopify","Dragon","taboola","naver","mf","速卖通发货","topbuzz",
@@ -11510,7 +11510,7 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    select = 88
+    select = 1
     handle_time = '自动'
     if int(select) == 99:
         if handle_time == '自动':
@@ -11520,7 +11520,7 @@ if __name__ == '__main__':
         else:
             month_last = '2023-03-01'
             month_old = '2023-03-01'                                # 获取-每日-报表 各产品各团队 最近三个月的 开始的时间
-            month_yesterday = '2023-04-30'
+            month_yesterday = '2023-05-11'
 
         last_time = '2021-01-01'
         up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期

@@ -1707,7 +1707,7 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
     select = 99
-    if int(select) == 909:
+    if int(select) == 99:
         handle = '手动0'
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
         proxy_handle = '代理服务器0'
@@ -1738,7 +1738,7 @@ if __name__ == '__main__':
         
         timeStart, timeEnd = m.readInfo('采购异常')
         m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'), proxy_handle, proxy_id)  # 查询更新-采购问题件（一、简单查询）
-        
+
         timeStart, timeEnd = m.readInfo('短信模板')
         m.getMessage_Log(timeStart, timeEnd, proxy_handle, proxy_id)                            # 查询更新-短信模板 @--ok
         
@@ -1763,7 +1763,7 @@ if __name__ == '__main__':
         time_now = (datetime.datetime.now()).strftime('%Y-%m-%d')
         query = '下单时间'
         areaId = None                                   # 团队id
-        # js.order_Query_Yiwudi(time_yesterday, time_now, areaId, query, proxy_handle, proxy_id)   # 检查 头程直发渠道 & 天马711@--ok
+        js.order_Query_Yiwudi(time_yesterday, time_now, areaId, query, proxy_handle, proxy_id)   # 检查 头程直发渠道 & 天马711@--ok
 
 
         timeStart = '2023-03-21'

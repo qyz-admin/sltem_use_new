@@ -1399,20 +1399,20 @@ if __name__ == '__main__':
         month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
     else:
         # 更新时间
-        data_begin = datetime.date(2023, 2, 11)  # 数据库更新
+        data_begin = datetime.date(2023, 1, 1)  # 数据库更新
         begin = datetime.date(2023, 1, 1)  # 单点更新
         end = datetime.date(2023, 3, 1)
         # 更新总表时间
-        month_last = '2023-03-01'
-        month_yesterday = '2023-03-31'
-        month_begin = '2023-02-01'
+        month_last = '2023-01-01'
+        month_yesterday = '2023-02-28'
+        month_begin = '2022-12-01'
 
     print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
     print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
     print('****** 更新  总表起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
 
     # TODO------------------------------------更新数据  数据库分段读取------------------------------------
-    # u.creatMyOrderSl(data_begin, end)
+    u.creatMyOrderSl(data_begin, end)
 
     # TODO------------------------------------更新数据  单点检索读取------------------------------------
     if proxy_handle == '代理服务器':
@@ -1428,7 +1428,7 @@ if __name__ == '__main__':
     for i in range((end - begin).days):                             # 按天循环获取订单状态
         day = begin + datetime.timedelta(days=i)
         day_time = str(day)
-        # u.order_getList(handle, login_TmpCode, day_time, day_time, proxy_handle, proxy_id)
+        u.order_getList(handle, login_TmpCode, day_time, day_time, proxy_handle, proxy_id)
 
     # TODO------------------------------------更新 总表时间------------------------------------
     qu = QueryUpdate()
