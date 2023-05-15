@@ -781,7 +781,7 @@ class QueryUpdate(Settings):
                     FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
                             FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`父级分类`,`系统订单状态`
 								  FROM {0}_order_list
-								  WHERE `日期`> '{1}'
+								  WHERE `日期` >= '{1}'
 							) sl
                             WHERE (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
                          ) s
@@ -806,7 +806,7 @@ class QueryUpdate(Settings):
                         FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
                                 FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`父级分类`,`系统订单状态`
 									  FROM {0}_order_list
-								      WHERE `日期`> '{1}'
+								      WHERE `日期` >= '{1}'
 								) sl
                                 WHERE (sl.`父级分类` IS NULL or sl.`父级分类`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
                              ) s
@@ -830,7 +830,7 @@ class QueryUpdate(Settings):
                     FROM (SELECT id,日期,`订单编号`,`商品id`,sl.`产品id`
                         FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`产品名称`,`父级分类`,`系统订单状态`
 								FROM {0}_order_list
-								WHERE `日期`> '{1}'
+								WHERE `日期` >= '{1}'
 						) sl
                         WHERE (sl.`产品名称` IS NULL or sl.`产品名称`= '') AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'))
                     ) s
@@ -852,7 +852,7 @@ class QueryUpdate(Settings):
             sql = '''SELECT id,日期,`订单编号`,`商品id`,`产品id`,`产品名称`,`父级分类`,`二级分类`,`三级分类`
                     FROM (SELECT id,日期,`订单编号`,`商品id`,`产品id`,`产品名称`,`父级分类`,`二级分类`,`三级分类`,`系统订单状态`
 							FROM {0}_order_list 
-							WHERE `日期`> '{1}'
+							WHERE `日期` >= '{1}'
 					) sl
                     WHERE (sl.`父级分类` IS NULL or sl.`父级分类`= '' OR sl.`产品名称` IS NULL or sl.`产品名称`= '')
                         AND ( NOT sl.`系统订单状态` IN ('已删除', '问题订单', '支付失败', '未支付'));'''.format(team, month_begin)
@@ -880,7 +880,7 @@ class QueryUpdate(Settings):
                                         FROM gat_order_list gs
                                         WHERE gs.年月 >= {0} and gs.`系统订单状态` NOT IN ('已审核', '已转采购', '已发货', '已收货', '已完成', '已退货(销售)', '已退货(物流)', '已退货(不拆包物流)'));'''.format(del_time)
             print('正在清除港澳台-总表的可能删除了的订单…………')
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=20000)
             print('正在获取---' + match[team] + '---更新数据内容…………')
             sql = '''SELECT 年月, 旬, 日期, 团队, 所属团队, 币种, null 区域, 订单来源, a.订单编号, 电话号码, a.运单编号,
                             -- IF(ISNULL(a.仓储扫描时间), IF(出货时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), null, 出货时间), a.仓储扫描时间) 出货时间,
@@ -908,7 +908,7 @@ class QueryUpdate(Settings):
                         ORDER BY a.`下单时间`;'''.format(team, month_begin, month_last, month_yesterday)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             print('正在写入---' + match[team] + ' ---临时缓存…………')  # 备用临时缓存表
-            df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=10000)
+            df.to_sql('d1_{0}'.format(team), con=self.engine1, index=False, if_exists='replace', chunksize=20000)
             if export == '导表':
                 print('正在写入excel…………')
                 df = df[['日期', '团队', '所属团队', '币种', '订单编号', '电话号码', '运单编号', '出货时间', '物流状态', '物流状态代码', '状态时间', '上线时间','系统订单状态', '系统物流状态', '最终状态',
@@ -922,20 +922,20 @@ class QueryUpdate(Settings):
                 print('不 写入excel…………')
         print('查询开始时间：', datetime.datetime.now())
         sql = '''DELETE FROM d1_gat gt WHERE gt.`订单编号` IN (SELECT 订单编号 FROM gat_易速配退运);'''
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=20000)
         print('已清除不参与计算的易速配退运订单（总表中）…………')
 
         print('查询开始时间：', datetime.datetime.now())
         print('正在写入' + match[team] + ' 全部签收表中…………')
         sql = 'REPLACE INTO {0}_zqsb SELECT *, NOW() 更新时间 FROM d1_{0};'.format(team)
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=20000)
         try:
             print('正在 回滚更新订单总表......')
             sql = '''update {0}_order_list a, d1_gat b
                             set a.`系统物流状态`= IF(b.`最终状态` = '', NULL, b.`最终状态`),
                                 a.`上线时间`= IF(a.`上线时间` = '0000-00-00 00:00:00' OR a.`上线时间` IS NULL, IF(b.`上线时间` = '0000-00-00 00:00:00', NULL, b.`上线时间`), a.`上线时间`)
                     where a.`订单编号`= b.`订单编号`;'''.format(team)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=20000)
         except Exception as e:
             print('更新失败：', str(Exception) + str(e))
 
@@ -8570,10 +8570,22 @@ class QueryUpdate(Settings):
             df1 = pd.read_sql_query(sql=sql, con=self.engine1)
             listT.append(df1)
 
+            print('正在获取 周报表 拒收明细数据内容…………')
+            sql = '''SELECT cg.*, g.`系统订单状态`, g.`系统物流状态`
+                    FROM (SELECT * 
+                            FROM 拒收问题件 
+                            WHERE 联系方式 = '电话' AND 币种 = '台币' AND id IN (SELECT MAX(id) FROM 拒收问题件 w WHERE w.`处理时间` BETWEEN subdate(curdate(),date_format(curdate(),'%w')+6) AND subdate(curdate(),date_format(curdate(),'%w')-0) GROUP BY 订单编号) 
+                            ORDER BY id
+                        ) cg
+                    LEFT JOIN gat_order_list g ON  cg.`订单编号` = g.`订单编号`
+                    WHERE g.币种 = '台湾' ;'''
+            df12 = pd.read_sql_query(sql=sql, con=self.engine1)
+            listT.append(df12)
+
             print('正在写入excel…………')
             today = datetime.date.today().strftime('%Y.%m.%d')
             file_path = r'''F:\\输出文件\\台湾电话核实({0}-{1})周报表{2}.xlsx'''.format(week_time1, week_time2, today)
-            sheet_name = ['日报表', '周报表']
+            sheet_name = ['日报表', '周报表', '拒收明细']
             # df0 = pd.DataFrame([])                                          # 创建空的dataframe数据框
             # df0.to_excel(file_path, index=False)                            # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
             # writer = pd.ExcelWriter(file_path, engine='openpyxl')           # 初始化写入对象
@@ -11510,7 +11522,7 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    select = 1
+    select = 99
     handle_time = '自动'
     if int(select) == 99:
         if handle_time == '自动':

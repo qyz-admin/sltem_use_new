@@ -1223,11 +1223,12 @@ class Updata_gat(Settings):
                                                         IF(b.`物流方式` LIKE '香港-易速配-顺丰%','香港-易速配-顺丰', 
                                                             IF(b.`物流方式` LIKE '台湾-天马-711%' or b.`物流方式` LIKE '台湾-天马-新竹%','台湾-天马-新竹', 
                                                             IF(b.`物流方式` LIKE '台湾-铱熙无敌-新竹%' or b.`物流方式` LIKE '%优美宇通-新竹%','台湾-铱熙无敌-新竹', 
-                                                            IF(b.`物流方式` LIKE '台湾-铱熙无敌-黑猫%','台湾-铱熙无敌-黑猫', 
+                                                            IF(b.`物流方式` LIKE '台湾-铱熙无敌-黑猫%' or b.`物流方式` LIKE '台湾-易速配头程-铱熙无敌尾%','台湾-铱熙无敌-黑猫', 
                                                             IF(b.`物流方式` LIKE '台湾-铱熙无敌-711%','台湾-铱熙无敌-711超商', 
+                                                            IF(b.`物流方式` LIKE '台湾-铱熙无敌-宅配通%','台湾-铱熙无敌-宅配通', 
                                                             IF(b.`物流方式` LIKE '台湾-速派-新竹%','台湾-速派-新竹', 
                                                             IF(b.`物流方式` LIKE '香港-立邦-改派','香港-立邦-顺丰', 
-                                                            IF(b.`物流方式` LIKE '香港-圆通-改派','香港-圆通', b.`物流方式`)))))) )),
+                                                            IF(b.`物流方式` LIKE '香港-圆通-改派','香港-圆通', b.`物流方式`)))))) ))),
                                                         IF(b.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
                                                             IF(b.`物流方式` LIKE '香港-立邦-顺丰%','香港-立邦-改派',
                                                             IF(b.`物流方式` LIKE '香港-易速配%','香港-易速配-改派',
@@ -1399,9 +1400,9 @@ if __name__ == '__main__':
         month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
     else:
         # 更新时间
-        data_begin = datetime.date(2023, 1, 1)  # 数据库更新
-        begin = datetime.date(2023, 1, 1)  # 单点更新
-        end = datetime.date(2023, 3, 1)
+        data_begin = datetime.date(2023, 3, 1)  # 数据库更新
+        begin = datetime.date(2023, 3, 1)  # 单点更新
+        end = datetime.date(2023, 5, 1)
         # 更新总表时间
         month_last = '2023-01-01'
         month_yesterday = '2023-02-28'
@@ -1431,10 +1432,10 @@ if __name__ == '__main__':
         u.order_getList(handle, login_TmpCode, day_time, day_time, proxy_handle, proxy_id)
 
     # TODO------------------------------------更新 总表时间------------------------------------
-    qu = QueryUpdate()
-    export = '导0表'  # 导表 是否导出明细表
-    check = '是'  # 是否 检查产品id 产品名称 父级分类 等有缺失的数据
-    qu.EportOrder(team, month_last, month_yesterday, month_begin, check, export, handle, proxy_handle, proxy_id)  # 最近两个月的更新信息导出
+    # qu = QueryUpdate()
+    # export = '导0表'  # 导表 是否导出明细表
+    # check = '是'  # 是否 检查产品id 产品名称 父级分类 等有缺失的数据
+    # qu.EportOrder(team, month_last, month_yesterday, month_begin, check, export, handle, proxy_handle, proxy_id)  # 最近两个月的更新信息导出
 
 
     # # TODO------------------------------------新增数据  单点检索读取------------------------------------

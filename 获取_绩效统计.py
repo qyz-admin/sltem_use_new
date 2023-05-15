@@ -749,12 +749,12 @@ class QueryOrder_Code(Settings, Settings_sso):
             dp.to_excel('F:\\输出文件\\物流客诉件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False, engine='xlsxwriter')
             sql = '''REPLACE INTO {0}(id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
                                                 最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
-                                                赠品补发订单编号,赠品补发订单状态,联系方式,历史处理记录,统计月份,记录时间) 
+                                                赠品补发订单编号,赠品补发订单状态,赠品补发物流状态,联系方式,历史处理记录,统计月份,记录时间) 
                     SELECT id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
                             最新处理状态,IF(最新处理时间 = '' OR 最新处理时间 IS NULL,导入时间,最新处理时间) as 最新处理时间,
                             IF(最新客服处理日期 = '' OR 最新客服处理日期 IS NULL,DATE_FORMAT(导入时间,'%Y-%m-%d'),最新客服处理日期) as 最新客服处理日期,
                             最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
-                            赠品补发订单编号,赠品补发订单状态,联系方式,历史处理记录,DATE_FORMAT({1},'%Y%m') 统计月份,NOW() 记录时间 
+                            赠品补发订单编号,赠品补发订单状态,null 赠品补发物流状态,联系方式,历史处理记录,DATE_FORMAT({1},'%Y%m') 统计月份,NOW() 记录时间 
                     FROM cache_check;'''.format(data_woks, data_woks2)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -1313,10 +1313,11 @@ class QueryOrder_Code(Settings, Settings_sso):
 
         username = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可"'
         listT = []
-        print('挽单列表-绩效 数据整理 写入各 计算统计表 中（零）......')
-        sql11 = '''SELECT *
+        print('挽单列表-绩效 数据整理 获取中 中（零）......')
+        sql11 = '''SELECT *, IF(当前物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 当前物流状态, IF(当前物流状态 IN ('已签收','理赔'), IF(当前订单状态 = '已退货(销售)','拒收',当前物流状态), 
+                        IF(当前物流状态 = '发货中','在途', IF(当前物流状态 = '' or 当前物流状态 IS NULL or 当前物流状态 = '暂无物流状态', IF(当前订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),当前物流状态)))) as 最终状态
                 FROM 挽单列表_创建时间 s1
-                WHERE  s1.`统计月份` = '{0}' and DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{1}';'''.format(month_time, day_time)
+                WHERE  s1.`统计月份` = '{0}' and DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{1}' AND 删除人 = '';'''.format(month_time, day_time)
         df11 = pd.read_sql_query(sql=sql11, con=self.engine1)
 
         print('促单-绩效 源数据 获取中（一.1）......')
@@ -1335,16 +1336,78 @@ class QueryOrder_Code(Settings, Settings_sso):
                                 SUM(IF(最终状态 = "已签收",1,0)) as 已签收, SUM(IF(最终状态 = "拒收",1,0)) as 拒收, SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
                                 SUM(IF(最终状态 = "理赔",1,0)) as 理赔, SUM(IF(最终状态 = "未发货",1,0)) as 未发货, SUM(IF(最终状态 = "在途",1,0)) as 在途,
                                 SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成, SUM(IF(最终状态 = "无效订单",1,0)) as 无效订单
-                        FROM ( SELECT '促单' as 类型, 代下单客服, 订单编号, 订单状态,物流状态, 
-                                       IF(物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 物流状态, IF(物流状态 IN ('已签收','理赔'), IF(订单状态 = '已退货(销售)','拒收',物流状态), IF(物流状态 = '发货中','在途',
-                                         IF(物流状态 = '' or 物流状态 IS NULL or 物流状态 = '暂无物流状态', IF(订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),物流状态)))) as 最终状态, 统计月份, 记录时间
-                                FROM 促单_下单时间 s1
-                                WHERE  s1.代下单客服 in ({0}) AND s1.克隆人 = '' AND s1.`统计月份` = '{1}' AND DATE_FORMAT( s1.`记录时间`, '%Y-%m-%d') = '{2}'
+                        FROM (
+                                (	SELECT '促单' as 类型, 代下单客服, 订单编号, 订单状态,物流状态, 
+                                            IF(物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 物流状态, IF(物流状态 IN ('已签收','理赔'), IF(订单状态 = '已退货(销售)','拒收',物流状态), IF(物流状态 = '发货中','在途',
+                                            IF(物流状态 = '' or 物流状态 IS NULL or 物流状态 = '暂无物流状态', IF(订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),物流状态)))) as 最终状态, 统计月份
+                                    FROM 促单_下单时间 s1
+                                    WHERE  s1.代下单客服 in ({0}}) AND s1.克隆人 = '' AND s1.`统计月份` = '{0}' AND DATE_FORMAT( s1.`记录时间`, '%Y-%m-%d') = '{1}'
+                                )
+                                UNION
+                                (	SELECT '挽单列表' as 类型, 创建人, 订单编号,  当前订单状态, 当前物流状态, 
+                                            IF(当前物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 当前物流状态, IF(当前物流状态 IN ('已签收','理赔'), IF(当前订单状态 = '已退货(销售)','拒收',当前物流状态),  IF(当前物流状态 = '发货中','在途',
+                                            IF(当前物流状态 = '' or 当前物流状态 IS NULL or 当前物流状态 = '暂无物流状态', IF(当前订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),当前物流状态)))) as 最终状态, 统计月份
+                                    FROM 挽单列表_创建时间 w
+                                    WHERE  w.`统计月份` = '{0}' and DATE_FORMAT(w.`记录时间`, '%Y-%m-%d') = '{1}' AND w.删除人 = '' AND w.挽单类型 IN ("取消挽单","未支付/支付失败挽单")
+                                )
                         ) s1
                         GROUP BY  代下单客服
                 ) s ORDER BY FIELD(代下单客服,"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可",'合计');'''.format(username_Cudan, month_time, day_time)
         df22 = pd.read_sql_query(sql=sql22, con=self.engine1)
         listT.append(df22)
+
+        print('物流客诉-绩效 源数据 获取中（二.1）......')
+        sql3 = '''SELECT *, IF(赠品补发订单编号 <> "",IF(最新客服处理结果 LIKE '%补发海外仓%','统计','不统计'),'不统计') AS 是否统计	
+                FROM 物流客诉件_创建时间 s1
+                WHERE  s1.`统计月份` = '{0}' and DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{1}';'''.format(month_time, day_time)
+        df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
+        listT.append(df3)
+
+        print('物流客诉-绩效 统计分析 获取中（二.2）......')
+        sql31 = '''SELECT 最新客服处理人,
+						SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
+						SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+						SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
+						SUM(IF(最终状态 = "理赔",1,0)) as 理赔,
+						SUM(IF(最终状态 = "未发货",1,0)) as 未发货,
+						SUM(IF(最终状态 = "在途",1,0)) as 在途,
+						SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成,
+						SUM(IF(最终状态 = "无效订单",1,0)) as 无效订单,
+						count(订单编号) as 总计
+			    FROM (
+						(	SELECT '客诉退货' as 类型, 最新客服处理人, 订单编号, 赠品补发订单编号, 订单状态,	物流状态,	赠品补发订单状态,	赠品补发物流状态,
+										IF(物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 物流状态, IF(物流状态 IN ('已签收','理赔'), IF(订单状态 = '已退货(销售)','拒收',物流状态), IF(物流状态 = '发货中','在途',
+											IF(物流状态 = '' or 物流状态 IS NULL or 物流状态 = '暂无物流状态', IF(订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),物流状态)))) as 最终状态,
+										IF(赠品补发物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 赠品补发物流状态, IF(赠品补发物流状态 IN ('已签收','理赔'), IF(赠品补发订单状态 = '已退货(销售)','拒收',赠品补发物流状态), 
+											IF(赠品补发物流状态 = '发货中','在途', 
+											IF(赠品补发物流状态 = '' or 赠品补发物流状态 IS NULL or 赠品补发物流状态 = '暂无物流状态', IF(赠品补发订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),赠品补发物流状态)))) as 赠品补发最终状态, 统计月份
+							FROM (	SELECT *, IF(赠品补发订单编号 <> "",IF(最新客服处理结果 LIKE '%补发海外仓%','统计','不统计'),'不统计') AS 是否统计	
+									FROM 物流客诉件_创建时间 k1
+									WHERE  k1.`统计月份` = '{0}' and DATE_FORMAT(k1.`记录时间`,'%Y-%m-%d') = '{1}'
+							) k	
+							WHERE  赠品补发订单编号 <> ""
+						)
+						UNION
+						(	SELECT '挽单列表' as 类型, 创建人, 订单编号, NULL AS 赠品补发订单编号, 当前订单状态, 当前物流状态, NULL AS 赠品补发订单状态,	NULL AS 赠品补发物流状态,
+											IF(当前物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 当前物流状态, IF(当前物流状态 IN ('已签收','理赔'), IF(当前订单状态 = '已退货(销售)','拒收',当前物流状态),  IF(当前物流状态 = '发货中','在途',
+												IF(当前物流状态 = '' or 当前物流状态 IS NULL or 当前物流状态 = '暂无物流状态', IF(当前订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),当前物流状态)))) as 最终状态, NULL AS 赠品补发最终状态, 统计月份
+							FROM 挽单列表_创建时间 w
+							WHERE  w.`统计月份` = '{0}' and DATE_FORMAT(w.`记录时间`, '%Y-%m-%d') = '{1}' AND w.删除人 = '' AND w.挽单类型 IN ("退换补挽单")
+						)
+				) k	
+				GROUP BY  最新客服处理人;'''.format(month_time, day_time)
+        df31 = pd.read_sql_query(sql=sql31, con=self.engine1)
+        listT.append(df31)
+
+        print('拒收问题件-绩效 源数据 获取中（五.1）......')
+        sql6 = '''SELECT *
+                FROM 拒收问题件_跟进时间 s1
+                WHERE  s1.`统计月份` = '{0}' and DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{1}';'''.format(month_time, day_time)
+        df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
+        listT.append(df6)
+
+
+
 
 
         print('采购异常-绩效 源数据 获取中（二.1）......')
@@ -1382,26 +1445,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         df43 = pd.read_sql_query(sql=sql43, con=self.engine1)
         listT.append(df43)
 
-        print('物流客诉-绩效 源数据 获取中（四.1）......')
-        sql5 = '''SELECT *, IF(赠品补发订单编号 <> "",IF(最新客服处理结果 LIKE '%补发海外仓%','统计','不统计'),'不统计') AS 是否统计	
-                FROM 物流客诉件_创建时间 s1
-                WHERE  s1.`统计月份` = '{0}' and DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{1}';'''.format(month_time, day_time)
-        df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
-        listT.append(df5)
 
-        print('物流客诉-绩效 源数据 获取中（四.1）......')
-        sql51 = '''SELECT *, IF(赠品补发订单编号 <> "",IF(最新客服处理结果 LIKE '%补发海外仓%','统计','不统计'),'不统计') AS 是否统计	
-                FROM 物流客诉件_创建时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 0 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = DATE_FORMAT(curdate(),'%Y-%m-%d') AND s1.最新处理状态 <> "" ;'''
-        df51 = pd.read_sql_query(sql=sql51, con=self.engine1)
-        listT.append(df51)
-
-        print('拒收问题件-绩效 源数据 获取中（五.1）......')
-        sql6 = '''SELECT *
-                FROM 拒收问题件_跟进时间 s1
-                WHERE  s1.`统计月份` = '{0}' and DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{1}';'''.format(month_time, day_time)
-        df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
-        listT.append(df6)
 
         file_path = r'''F:\\输出文件\\{0}绩效数据明细 {1}.xlsx'''.format(rq_month, rq)
         with pd.ExcelWriter(file_path, engine='openpyxl') as writer:

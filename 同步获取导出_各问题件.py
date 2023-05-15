@@ -39,16 +39,16 @@ class QueryOrder_Code(Settings, Settings_sso):
         # self._online_Two()
         # self.sso__online_auto()
 
-        if proxy_handle == '代理服务器':
-            if handle == '手动':
-                self.sso__online_handle_proxy(login_TmpCode, proxy_id)
-            else:
-                self.sso__online_auto_proxy(proxy_id)
-        else:
-            if handle == '手动':
-                self.sso__online_handle(login_TmpCode)
-            else:
-                self.sso__online_auto()
+        # if proxy_handle == '代理服务器':
+        #     if handle == '手动':
+        #         self.sso__online_handle_proxy(login_TmpCode, proxy_id)
+        #     else:
+        #         self.sso__online_auto_proxy(proxy_id)
+        # else:
+        #     if handle == '手动':
+        #         self.sso__online_handle(login_TmpCode)
+        #     else:
+        #         self.sso__online_auto()
 
         # self.sso__online_handle(login_TmpCode)
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
@@ -171,7 +171,7 @@ class QueryOrder_Code(Settings, Settings_sso):
 
 
     # 绩效-查询 促单（一.1）
-    def service_id_order(self, hanlde, timeStart, timeEnd, proxy_handle, proxy_id):    # 进入订单检索界面     促单查询
+    def service_id_order(self, timeStart, timeEnd, proxy_handle, proxy_id):    # 进入订单检索界面     促单查询
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 促单订单 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
@@ -682,7 +682,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         return data
 
     # 绩效-查询 物流客诉件           （二.3）
-    def service_id_waybill_Query(self, timeStart, timeEnd, proxy_handle, proxy_id, order_time):  # 进入物流客诉件界面
+    def service_id_waybill_Query(self, timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type):  # 进入物流客诉件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 物流客诉件(' + order_time + ') 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.orderCustomerComplaint&action=getCustomerComplaintList'
@@ -696,11 +696,11 @@ class QueryOrder_Code(Settings, Settings_sso):
         data_woks2 = None
         if order_time == '跟进时间':
             data.update({'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
-            data_woks = '物流客诉件_跟进时间'
+            data_woks = '物流客诉件检索'
             data_woks2 = '最新处理时间'
         elif order_time == '创建时间':
             data.update({'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
-            data_woks = '物流客诉件_创建时间'
+            data_woks = '物流客诉件检索'
             data_woks2 = '导入时间'
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
@@ -727,24 +727,39 @@ class QueryOrder_Code(Settings, Settings_sso):
         if dp.empty:
             print("今日无更新数据")
         else:
-            dp = dp[['id','order_number',  'currency', 'addtime', 'areaName', 'payType', 'reassignmentTypeName', 'orderStatus', 'logisticsStatus', 'logisticsName', 'questionTypeName', 'create_time',
+            dp = dp[['id','order_number',  'currency', 'addtime', 'areaName', 'payType', 'reassignmentTypeName', 'orderStatus', 'logisticsStatus', 'logisticsName', 'question_desc','questionTypeName', 'create_time',
                      'dealStatus', 'dealTime', 'deal_time', 'traceUserName', 'trace_UserName', 'dealContent', 'deal_Content', 'result_content', 'result_info', 'result_reson',
                      'gift_reissue_order_number', 'giftStatus', 'contact', 'traceRecord']]
-            dp.columns = ['id','订单编号', '币种', '下单时间', '归属团队', '支付类型', '订单类型', '订单状态', '物流状态', '物流渠道', '问题类型', '导入时间',
+            dp.columns = ['id','订单编号', '币种', '下单时间', '归属团队', '支付类型', '订单类型', '订单状态', '物流状态', '物流渠道', '问题描述', '问题类型','导入时间',
                           '最新处理状态', '最新处理时间', '最新客服处理日期', '最新处理人', '最新客服处理人', '最新处理结果', '最新客服处理', '最新客服处理结果', '客诉原因',  '具体原因',
                           '赠品补发订单编号', '赠品补发订单状态', '联系方式', '历史处理记录']
             print('正在写入......')
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-            dp.to_excel('F:\\输出文件\\物流客诉件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            sql = '''REPLACE INTO {0}(id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
+            dp.to_excel('F:\\输出文件\\物流客诉件检索-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            sql = '''REPLACE INTO {0}(id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题描述,问题类型, 导入时间,
                                                 最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
                                                 赠品补发订单编号,赠品补发订单状态,联系方式,历史处理记录,统计月份,记录时间) 
-                    SELECT id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
+                    SELECT id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题描述,问题类型, 导入时间,
                             最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
                             赠品补发订单编号,赠品补发订单状态,联系方式,历史处理记录,DATE_FORMAT({1},'%Y%m') 统计月份,NOW() 记录时间 
                     FROM cache_check;'''.format(data_woks, data_woks2)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
+
+            if export_type == '客诉原因-每周核实':
+                sql = '''SELECT 最新客服处理日期 AS 处理时间,导入时间 AS 物流反馈时间,最新客服处理人 AS 处理人,	物流渠道 AS 物流公司,运单编号 AS 物流单号,订单编号,价格 AS 代收货款,产品id,产品名称,姓名 AS 客户,电话号码 as 收款人电话,	地址,	
+                                问题描述,NULL AS 送达时间,最新客服处理 AS 处理方案,最新客服处理结果 AS 处理结果,客诉原因 AS 核实原因,具体原因 AS 具体原因,NULL AS 客诉截图,赠品补发订单编号 AS 赠品订单号,下单时间,归属团队, 币种
+                        FROM (  SELECT k.*, g.运单编号 , g.价格 , g.产品id , g.产品名称 , g.姓名 , g.地址 , g.电话号码
+                                FROM {0} k 
+                                LEFT JOIN gat_order_list g ON k.订单编号 = g.订单编号
+                                WHERE k.`最新处理时间` >= '{1} 00:00:00' and k.`最新处理时间` <= '{2} 23:59:59'
+                        ) kk;'''.format(data_woks, timeStart, timeEnd)
+                df = pd.read_sql_query(sql=sql, con=self.engine1)
+                file_pathT = r'F:\\输出文件\\{0}-{1}拒收问题件检索-{2}.xlsx'.format(timeStart, timeEnd, rq)
+                with pd.ExcelWriter(file_pathT, engine='openpyxl') as writer:
+                    df.to_excel(excel_writer=writer, sheet_name='港湾', index=False)
+                print('导出成功......')
+
         print('*' * 50)
     def _service_id_waybill_Query(self, timeStart, timeEnd, n, proxy_handle, proxy_id, order_time):  # 进入物流客诉件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
@@ -926,7 +941,34 @@ class QueryOrder_Code(Settings, Settings_sso):
         return data
 
     # 绩效-查询 拒收问题件           （二.50）
-    def service_id_order_js_Query(self, timeStart, timeEnd, proxy_handle, proxy_id, order_time, time_Start, time_End):  # 进入拒收问题件界面
+    def service_id_order_js_Query(self, timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type):  # 进入拒收问题件界面
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        for i in range((timeEnd - timeStart).days):  # 按天循环获取订单状态
+            day = timeStart + datetime.timedelta(days=i)
+            day_time = str(day)
+            print('****** 更新      起止时间：' + day_time + ' - ' + day_time + ' ******')
+            self._service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time)
+
+        print('正在查询 ' + str(timeStart) + '-' + str(timeEnd) + '号数据 中......')
+        if export_type == '拒收核实-物流问题':
+            sql = '''SELECT 订单编号, 订单金额, 物流渠道, 服务商, 运单号, 联系电话, F跟进人, F时间, F问题类型, F问题原因, F内容, 录音链接聊天截图, 记录时间
+                    FROM 拒收问题件检索 j 
+                    WHERE j.`F时间` >= '{0} 00:00:00' and j.`F时间` <= '{1} 23:59:59';'''.format(timeStart, timeEnd)
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            df.to_excel('F:\\输出文件\\{0}{1}拒收物流问题 汇总-{2}.xlsx'.format(timeStart, timeEnd, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        elif export_type == '拒收原因-每周核实':
+            sql = '''SELECT F时间 AS 处理日期,团队,订单编号,产品id,产品名称,下单时间,完结状态时间,电话号码,F问题类型 AS 问题类型,F问题原因 AS 核实原因,F内容 AS 具体原因,
+                            NULL AS 通话截图,NULL AS ID,	NULL AS 再次下单,NULL AS 备注,F跟进人 AS 处理人,NULL AS F联系方式,NULL AS F处理结果,币种,DATE_FORMAT(下单时间,'%Y%m') AS 下单月份
+                    FROM (  SELECT k.*, g.运单编号 , g.价格 , g.产品id , g.产品名称 , g.姓名 , g.地址 , g.电话号码, g.团队, g.下单时间, g.完结状态时间, g.币种
+                            FROM 拒收问题件检索 k
+                            LEFT JOIN gat_order_list g ON k.订单编号 = g.订单编号
+                            WHERE k.下单时间 >= '{0} 00:00:00' and k.下单时间 <= '{1} 23:59:59'
+                    ) kk;'''.format(timeStart, timeEnd)
+            df = pd.read_sql_query(sql=sql, con=self.engine1)
+            df.to_excel('F:\\输出文件\\{0}{1}拒收问题件检索-{2}.xlsx'.format(timeStart, timeEnd, rq), sheet_name='查询',  index=False, engine='xlsxwriter')
+        print('导出成功......')
+
+    def _service_id_order_js_Query(self, timeStart, timeEnd, proxy_handle, proxy_id, order_time):  # 进入拒收问题件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 拒收问题件(' + order_time + ') 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRejectList'
@@ -944,11 +986,11 @@ class QueryOrder_Code(Settings, Settings_sso):
         data_woks2 = None
         if order_time == '跟进时间':
             data.update({'traceItemIds': -1, 'traceTimeStart': timeStart + ' 00:00:00,', 'traceTimeEnd': timeEnd + ' 23:59:59'})
-            data_woks = '拒收问题件_跟进时间'
+            data_woks = '拒收问题件检索'
             data_woks2 = '处理时间'
         elif order_time == '下单跟进时间':
             data.update({'traceItemIds': -1, 'timeStart': timeStart + ' 00:00:00,', 'timeEnd': timeEnd + ' 23:59:59'})
-            data_woks = '拒收问题件_下单跟进时间'
+            data_woks = '拒收问题件检索'
             data_woks2 = '下单时间'
         elif order_time == '下单时间':
             # for i in range((timeEnd - timeStart).days):  # 按天循环获取订单状态
@@ -979,33 +1021,29 @@ class QueryOrder_Code(Settings, Settings_sso):
             n = 1
             while n <= in_count:  # 这里用到了一个while循环，穿越过来的
                 print('剩余查询次数' + str(in_count - n))
-                data = self._service_id_order_js_Query(timeStart, timeEnd, n, proxy_handle, proxy_id, order_time)
+                data = self.__service_id_order_js_Query(timeStart, timeEnd, n, proxy_handle, proxy_id, order_time)
                 n = n + 1
                 dlist.append(data)
                 time.sleep(3)
             dp = df.append(dlist, ignore_index=True)
-            dp.to_excel('F:\\输出文件\\拒收问题件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            dp = dp[['订单编号', 'amount', 'logisticsName', 'wayBillNumber', 'shipInfo.shipPhone', '跟进人', '时间',  '问题类型', '问题原因', '内容', '录音链接']]
-            dp.columns = ['订单编号', '订单金额', '物流渠道', '运单号', '联系电话', 'F跟进人','F时间', 'F问题类型', 'F问题原因', 'F内容',  '录音链接聊天截图']
+            # dp.to_excel('F:\\输出文件\\拒收问题件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp = dp[['订单编号','addTime', 'amount', 'logisticsName', 'wayBillNumber', 'shipInfo.shipPhone', '跟进人', '时间',  '问题类型', '问题原因', '内容', '录音链接']]
+            dp.columns = ['订单编号', '下单时间', '订单金额', '物流渠道', '运单号', '联系电话', 'F跟进人','F时间', 'F问题类型', 'F问题原因', 'F内容',  '录音链接聊天截图']
             print('正在写入......')
             dp.to_sql('query_cache', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO {0}( 订单编号, 订单金额, 物流渠道, 服务商, 运单号, 联系电话, F跟进人, F时间, F问题类型, F问题原因, F内容, 录音链接聊天截图, 记录时间)
-                    SELECT 订单编号, 订单金额, 物流渠道, 
+            sql = '''REPLACE INTO {0}( 订单编号, 下单时间, 订单金额, 物流渠道, 服务商, 运单号, 联系电话, F跟进人, F时间, F问题类型, F问题原因, F内容, 录音链接聊天截图, 记录时间)
+                    SELECT 订单编号, 下单时间, 订单金额, 物流渠道, 
                             IF(物流渠道 LIKE '%香港-立邦%','香港立邦',IF(物流渠道 LIKE '%速派-新竹%','速派',IF(物流渠道 LIKE '%速派-711%','速派-711',IF(物流渠道 LIKE '%台湾-天马%','天马',
                             IF(物流渠道 LIKE '%铱熙无敌-711%','协来运-711',IF(物流渠道 LIKE '%铱熙无敌-黑猫%' OR 物流渠道 LIKE '%易速配头程-铱熙无敌尾%','协来运-黑猫',
                             IF(物流渠道 LIKE '%铱熙无敌-新竹%','协来运-新竹',IF(物流渠道 LIKE '%速派-黑猫%','速派-黑猫',IF(物流渠道 LIKE '%立邦普货头程-易速配尾程%','易速配',物流渠道))))))))) 服务商, 
                             运单号, 联系电话, F跟进人, F时间, F问题类型, F问题原因, F内容, 录音链接聊天截图, NOW() 记录时间
-                    FROM {1};'''.format('拒收问题件检索','query_cache')
+                    FROM {1};'''.format(data_woks,'query_cache')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
-            sql = '''SELECT * FROM 拒收问题件检索 j WHERE j.`F时间` >= '{0} 00:00:00' and j.`F时间` <= '{1} 23:59:59';'''.format(time_Start, time_End)
-            df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_excel('F:\\输出文件\\{0}{1}拒收问题件 汇总-{2}.xlsx'.format(time_Start, time_End, rq), sheet_name='查询', index=False,  engine='xlsxwriter')
             print('写入成功......')
         else:
             print('****** 没有信息！！！')
         print('*' * 50)
-    def _service_id_order_js_Query(self, timeStart, timeEnd, n, proxy_handle, proxy_id, order_time):  # 进入拒收问题件界面
+    def __service_id_order_js_Query(self, timeStart, timeEnd, n, proxy_handle, proxy_id, order_time):  # 进入拒收问题件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRejectList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1661.62',
@@ -1303,6 +1341,51 @@ class QueryOrder_Code(Settings, Settings_sso):
                 print('无需补充数据')
         print('更新成功......')
 
+    # 最近三月 产品签收率 以及 客诉件 拒收件导出
+    def export_List(self):
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        print('+++正在查询 最近三月 产品签收率 信息中')
+        sql = '''SELECT 家族, 地区, 月份,  产品id,	产品名称, 父级分类,二级分类,
+                        SUM(s1.已签收) as 已签收, SUM(s1.拒收) as 拒收, SUM(s1.已退货) as 已退货,SUM(s1.已完成) as 已完成, SUM(s1.总订单) as 总订单,
+                        concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.已完成),0) * 100,2),'%') as 完成签收,
+                            concat(ROUND(IFNULL(SUM(s1.已签收) / SUM(s1.总订单),0) * 100,2),'%') as 总计签收,
+                            concat(ROUND(IFNULL(SUM(s1.已完成) / SUM(s1.总订单),0) * 100,2),'%') as 完成占比,
+                            concat(ROUND(IFNULL(SUM(s1.已退货) / SUM(s1.总订单),0) * 100,2),'%') as 退货率,
+                            concat(ROUND(IFNULL(SUM(s1.拒收) / SUM(s1.已完成),0) * 100,2),'%') as 拒收率
+                FROM(SELECT IFNULL(cx.`所属团队`, '合计') 家族,  IFNULL(cx.`币种`, '合计') 地区, IFNULL(cx.`年月`, '合计') 月份, IFNULL(cx.产品id, '合计') 产品id,
+                            IFNULL(cx.产品名称, '合计') 产品名称, IFNULL(cx.父级分类, '合计') 父级分类, IFNULL(cx.二级分类, '合计') 二级分类,
+                            COUNT(cx.`订单编号`) as 总订单,
+                                SUM(IF(最终状态 = "已签收",1,0)) as 已签收,
+                                SUM(IF(最终状态 = "拒收",1,0)) as 拒收,
+                                SUM(IF(最终状态 = "已退货",1,0)) as 已退货,
+                                SUM(IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)) as 已完成
+                    FROM (SELECT 团队, 订单编号, 币种, 年月, 产品id, 产品名称, 父级分类, 二级分类, 最终状态, 所属团队
+                                FROM gat_zqsb cc 
+                                where cc.`运单编号` is not null AND cc.年月 >=  DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 2 MONTH),'%Y%m')
+                     ) cx 
+                    WHERE cx.所属团队 IN ('神龙港台','火凤凰港台')
+                    GROUP BY cx.所属团队,cx.币种,cx.年月,cx.产品id
+                    -- WITH ROLLUP 
+                ) s1
+                GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
+                ORDER BY 家族, 地区, 月份, 总订单 DESC;'''.format()
+        df = pd.read_sql_query(sql=sql, con=self.engine1)
+
+        file_pathT = r'F:\\输出文件\\神龙-火凤凰港台 签收率-{0}.xlsx'.format(rq)
+        month_time2 = datetime.datetime.now().strftime('%Y%m')
+        month_time3 = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y%m')
+        month_time4 = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y%m')
+        with pd.ExcelWriter(file_pathT, engine='openpyxl') as writer:
+            df.to_excel(excel_writer=writer, sheet_name='港湾', index=False)
+            for team in ['神龙港台', '火凤凰港台']:
+                for currery in ['台湾', '香港']:
+                    for month in [month_time2, month_time3, month_time4]:
+                        df2 = df[df['家族'].str.contains(team)]
+                        df3 = df2[df2['地区'].str.contains(currery)]
+                        df4 = df3[df3['月份'].str.contains(month)]
+                        df4.to_excel(excel_writer=writer, sheet_name=team + currery + month, index=False)
+        print('写入成功......')
+
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
@@ -1318,26 +1401,19 @@ if __name__ == '__main__':
     '''
         # -----------------------------------------------查询状态运行（一）-----------------------------------------
     '''
-    hanlde = '自0动'
-    if hanlde == '自动':
-        if (datetime.datetime.now()).strftime('%d') == 1:
-            timeStart = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'
-            timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        else:
-            timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
-            timeEnd = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-    else:
+    select = 9
+    if int(select) == 1:
         timeStart = '2023-03-01'
         timeEnd = '2023-03-31'
-    print(timeStart + "---" + timeEnd)
-
-    select = 8
-    if int(select) == 1:
-        m.service_id_order(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)      # 促单查询；下单时间 @~@ok
+        m.service_id_order(timeStart, timeEnd, proxy_handle, proxy_id)      # 促单查询；下单时间 @~@ok
     elif int(select) == 2:
+        timeStart = '2023-03-01'
+        timeEnd = '2023-03-31'
         m.service_id_getRedeemOrderList(timeStart, timeEnd, proxy_handle, proxy_id)  # 挽单列表  查询@~@ok
 
     elif int(select) == 3:
+        timeStart = '2023-03-01'
+        timeEnd = '2023-03-31'
         order_time = '创建时间'
         m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；创建时间 （一、获取订单内容）@~@ok
         m.service_id_ssale_info(proxy_handle, proxy_id, '采购异常_创建时间')                             # 采购查询；创建时间 （二、获取处理详情）@~@ok
@@ -1345,36 +1421,44 @@ if __name__ == '__main__':
         m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；处理时间 （一、获取订单内容）@~@ok
         m.service_id_ssale_info(proxy_handle, proxy_id, '采购问题件_跟进时间')                             # 采购查询；处理时间 （二、获取处理详情）@~@ok
     elif int(select) == 4:
+        timeStart = '2023-03-01'
+        timeEnd = '2023-03-31'
         m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)            # 系统问题件  查询；订单检索
 
     elif int(select) == 5:
+        timeStart = '2023-03-01'
+        timeEnd = '2023-03-31'
         order_time = '处理时间'                                                                 # 派送问题  处理时间:登记结果处理时间； 创建时间： 订单放入时间@~@
         m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)    # (需处理两次)
         m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)    # (需处理两次)
         order_time = '创建时间'                                                                 # 派送问题   创建时间： 订单放入时间（每次导出时需要更新数据）@~@
         m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
     elif int(select) == 6:
+        timeStart = '2023-03-01'
+        timeEnd = '2023-03-31'
         order_time = '跟进时间'
         m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
         order_time = '创建时间'
         m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
 
     elif int(select) == 7:
-        order_time = '跟进时间'
-        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
+        timeStart = '2023-05-08'
+        timeEnd = '2023-05-14'
+        # order_time = '跟进时间'
         order_time = '创建时间'
-        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
+        export_type = '客诉原因-每周核实'
+        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type)       # 物流客诉件  查询；订单检索@~@ok
+        # order_time = '创建时间'
+        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
 
     elif int(select) == 8:
-        timeStart = datetime.date(2023, 5, 4)         # 拒收问题  查询；订单检索@~@ok
-        timeEnd = datetime.date(2023, 5, 10)
-        order_time = '跟进时间'
-        for i in range((timeEnd - timeStart).days):  # 按天循环获取订单状态
-            day = timeStart + datetime.timedelta(days=i)
-            day_time = str(day)
-            print('****** 更新      起止时间：' + day_time + ' - ' + day_time + ' ******')
-            m.service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time, timeStart, timeEnd)      # (需处理两次)
-
+        timeStart = datetime.date(2023, 3, 1)         # 拒收问题  查询；订单检索@~@ok
+        timeEnd = datetime.date(2023, 4, 3)
+        # order_time = '跟进时间'
+        # export_type = '拒收核实-物流问题'
+        order_time = '下单跟进时间'
+        export_type = '拒收原因-每周核实'
+        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type)      # (需处理两次)
 
         # order_time = '跟进时间'
         # m.service_id_order_js_Query(str(timeStart), str(timeEnd), proxy_handle, proxy_id, order_time)      # (需处理两次)
@@ -1382,6 +1466,25 @@ if __name__ == '__main__':
         # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
         # order_time = '下单时间'
         # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
+
+
+    elif int(select) == 9:      # 每周 各团队与爆品前十
+        # timeStart = '2023-05-08'
+        # timeEnd = '2023-05-14'
+        # order_time = '创建时间'
+        # export_type = '客诉原因-每周核实'
+        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type)       # 物流客诉件  查询；订单检索@~@ok
+        #
+        # timeStart = datetime.date(2023, 4, 2)                                                                 # 拒收问题  查询；订单检索@~@ok
+        # timeEnd = datetime.date(2023, 5, 15)
+        # order_time = '下单跟进时间'
+        # export_type = '拒收原因-每周核实'
+        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type)      # (需处理两次)
+
+        m.export_List()          # 最近三月 产品签收率 以及 客诉件 拒收件导出
+
+
+
 
 
 

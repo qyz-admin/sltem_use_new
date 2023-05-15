@@ -902,8 +902,9 @@ class QueryOrder(Settings, Settings_sso):
         ordersdict = []
         try:
             for result in req['data']['list']:
-                # print(result['orderNumber'])
-                if result['specs'] != '':
+                e_val =result['orderNumber']
+                print(result['orderNumber'])
+                if result['specs'] != '' and result['specs'] != []:
                     result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
                     result['saleName'] = 0
                     result['productId'] = 0
@@ -935,7 +936,7 @@ class QueryOrder(Settings, Settings_sso):
                 result['autoVerify'] = auto
                 ordersdict.append(result)
         except Exception as e:
-            print('转化失败： 重新获取中', str(Exception) + str(e))
+            print('转化失败： 重新获取中', str(Exception) + str(e) + str(e_val))
             sso = Settings_sso()
             sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "订单检索-获取数据 失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersdict)
