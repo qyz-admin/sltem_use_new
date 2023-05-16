@@ -365,7 +365,7 @@ class QueryUpdate(Settings):
         print('正在获取 新增的' + match[team] + ' 运费核实…………')
         sql = '''SELECT *
                 FROM( SELECT * 
-                        FROM ( SELECT *,yu.订单包裹重量 - yu.`同规格最小包裹重量` as 差量, CAST(yu.订单包裹重量 AS FLOAT)- CAST(yu.`同规格最小包裹重量` AS FLOAT) as 差量2
+                        FROM ( SELECT *,yu.订单包裹重量 - yu.`同规格最小包裹重量` as 差量2, CAST(yu.订单包裹重量 AS FLOAT)- CAST(yu.`同规格最小包裹重量` AS FLOAT) as 差量
         				        FROM ( SELECT 年月,日期,团队,币种,订单编号,数量,电话号码,运单编号,是否改派,物流方式,商品id,ds.产品id,产品名称,价格,下单时间,审核时间,仓储扫描时间,完结状态,完结状态时间,物流花费,包裹重量 as 订单包裹重量,包裹体积,ds.规格中文,产品量, 
         				                    单量,重量小 as '同规格最小包裹重量', 重量大 as '同规格最大包裹重量',重量差, 选品人, null 备注
         								FROM (SELECT *
@@ -586,7 +586,7 @@ if __name__ == '__main__':
     # upload = '查询-订单号'
     # m.trans_way_cost(team)  # 同产品下的规格运费查询
     '''
-    select = 2
+    select = 4
     if int(select) == 1:
         upload = '查询-运单号'
         m.readFormHost(upload)
@@ -604,8 +604,8 @@ if __name__ == '__main__':
 
 
     elif int(select) == 4:
-        m.readFormHost('查询运费')
-        m.trans_way_cost_new(team)  # 同产品下的规格运费查询
+        # m.readFormHost('查询运费')
+        # m.trans_way_cost_new(team)  # 同产品下的规格运费查询
         
         # if week.isoweekday() == 2 or week.isoweekday() == 5:
         upload = '查询-运单号'    # 获取在途未上线 催促的
