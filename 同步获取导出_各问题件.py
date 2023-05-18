@@ -39,16 +39,16 @@ class QueryOrder_Code(Settings, Settings_sso):
         # self._online_Two()
         # self.sso__online_auto()
 
-        # if proxy_handle == '代理服务器':
-        #     if handle == '手动':
-        #         self.sso__online_handle_proxy(login_TmpCode, proxy_id)
-        #     else:
-        #         self.sso__online_auto_proxy(proxy_id)
-        # else:
-        #     if handle == '手动':
-        #         self.sso__online_handle(login_TmpCode)
-        #     else:
-        #         self.sso__online_auto()
+        if proxy_handle == '代理服务器':
+            if handle == '手动':
+                self.sso__online_handle_proxy(login_TmpCode, proxy_id)
+            else:
+                self.sso__online_auto_proxy(proxy_id)
+        else:
+            if handle == '手动':
+                self.sso__online_handle(login_TmpCode)
+            else:
+                self.sso__online_auto()
 
         # self.sso__online_handle(login_TmpCode)
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
@@ -1401,7 +1401,7 @@ if __name__ == '__main__':
     '''
         # -----------------------------------------------查询状态运行（一）-----------------------------------------
     '''
-    select = 9
+    select = 8
     if int(select) == 1:
         timeStart = '2023-03-01'
         timeEnd = '2023-03-31'
@@ -1452,12 +1452,12 @@ if __name__ == '__main__':
         # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
 
     elif int(select) == 8:
-        timeStart = datetime.date(2023, 3, 1)         # 拒收问题  查询；订单检索@~@ok
-        timeEnd = datetime.date(2023, 4, 3)
-        # order_time = '跟进时间'
-        # export_type = '拒收核实-物流问题'
-        order_time = '下单跟进时间'
-        export_type = '拒收原因-每周核实'
+        timeStart = datetime.date(2023, 5, 10)         # 拒收问题  查询；订单检索@~@ok
+        timeEnd = datetime.date(2023, 5, 18)
+        order_time = '跟进时间'
+        export_type = '拒收核实-物流问题'
+        # order_time = '下单跟进时间'
+        # export_type = '拒收原因-每周核实'
         m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type)      # (需处理两次)
 
         # order_time = '跟进时间'

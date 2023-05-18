@@ -3920,7 +3920,7 @@ if __name__ == '__main__':
 
     if handle == '自动':
         last_month = '2023.04.21'
-        now_month = '2023.05.17'
+        now_month = '2023.05.18'
         handle_now_month,handle_last_month,handle_now_month_old,handle_last_month_old = '','','',''
     else:
         now_month = '2023.05.09'            # 本月记录日期
