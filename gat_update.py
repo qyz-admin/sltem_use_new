@@ -774,6 +774,11 @@ class QueryUpdate(Settings):
         match = {'gat': '港台', 'slsc': '品牌'}
         emailAdd = {'gat': 'giikinliujun@163.com', 'slsc': 'sunyaru@giikin.com'}
         today = datetime.date.today().strftime('%Y.%m.%d')
+
+        print('正在清 测试使用的 订单…………"GT230517100501MWLEK8","GT230517100520A6XW26","GT230517100534R0BU66","GT230517100551Q32PX8"')
+        sql = '''DELETE FROM gat_order_list WHERE gat_order_list.`订单编号` IN ("GT230517100501MWLEK8","GT230517100520A6XW26","GT230517100534R0BU66","GT230517100551Q32PX8");'''
+        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=20000)
+
         print('查询开始时间：', datetime.datetime.now())
         if check == '是':
             print('正在第一次检查父级分类为空的信息---')

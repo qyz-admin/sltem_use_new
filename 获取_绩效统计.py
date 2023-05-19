@@ -41,7 +41,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         # self._online_Two()
         # self.sso__online_auto()
 
-        if select == 99:
+        if select >= 10:
             if proxy_handle == '代理服务器':
                 if handle == '手动':
                     self.sso__online_handle_proxy(login_TmpCode, proxy_id)
@@ -181,7 +181,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         app.quit()
 
     # 绩效-查询 促单（一.1）
-    def service_id_order(self, hanlde, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入订单检索界面     促单查询
+    def service_id_order(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入订单检索界面     促单查询
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 促单订单 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
@@ -1313,7 +1313,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                 print('无需补充数据')
         print('更新成功......')
 
-    # 绩效-汇总输出 - 单独获取使用
+    # 绩效-汇总输出 - 单独获取使用    # 单独 本月绩效数据使用 不包含上月的留底数据
     def service_check(self, username_Cudan, username_Jushou, username_caigou_yadan_wentijian, month_time, day_time):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         listT = []
@@ -1442,8 +1442,8 @@ class QueryOrder_Code(Settings, Settings_sso):
                                 )
                         ) s1
                         GROUP BY  新单克隆人
-                ) s ORDER BY FIELD(新单克隆人,{2},'合计');
-                ;'''.format(month_time, day_time, username_Jushou)
+                ) s 
+                ORDER BY FIELD(新单克隆人,{2},'合计');'''.format(month_time, day_time, username_Jushou)
         df42 = pd.read_sql_query(sql=sql42, con=self.engine1)
         listT.append(df42)
 
@@ -1631,6 +1631,7 @@ class QueryOrder_Code(Settings, Settings_sso):
             df82.to_excel(excel_writer=writer, sheet_name='派送问题', index=False)
             df83.to_excel(excel_writer=writer, sheet_name='物流问题&派送问题分析', index=False)
 
+    # 先更新 获取上月的订单，再去更新之前未完结的订单状态，然后再去更新 需要统计的时间
     def service_check3(self):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         rq_month = datetime.datetime.now().strftime('%Y%m')
@@ -2521,22 +2522,13 @@ if __name__ == '__main__':
         m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd')  # 导入；，更新--->>数据更新切换
 
     elif int(select) == 99:             # 绩效使用   更新数据使用
-        hanlde = '自0动'
-        if hanlde == '自动':
-            if (datetime.datetime.now()).strftime('%d') == 1:
-                timeStart = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'
-                timeEnd = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-            else:
-                timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
-                timeEnd = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        else:
-            timeStart = '2023-05-01'
-            timeEnd = '2023-05-10'
-        print(timeStart + "---" + timeEnd)
         '''
             开始获取 绩效数据
         '''
-        m.service_id_order(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)  # 促单查询；下单时间 @~@ok
+        timeStart = '2023-05-01'
+        timeEnd = '2023-05-10'
+        print('开始获取 绩效数据:>>>' + timeStart + "---" + timeEnd)
+        m.service_id_order(timeStart, timeEnd, proxy_handle, proxy_id)  # 促单查询；下单时间 @~@ok
 
         order_time = '创建时间'
         user_caigou = '"蔡利英", "张陈平", "杨嘉仪", "李晓青"'
@@ -2556,36 +2548,41 @@ if __name__ == '__main__':
         order_time = '创建时间'
         m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 物流问题  压单核实 查询；订单检索ok
 
+        order_time = '创建时间'
         m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)  # 系统问题件  查询；订单检索（处理人员： "蔡利英", "张陈平", "杨嘉仪", "李晓青"）
 
         order_time = '跟进时间'  # 拒收问题  查询；订单检索@~@ok
         m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # (需处理两次)
 
+    elif int(select) == 999:  # 绩效使用   更新数据使用
         '''
             开始获取 其他数据
         '''
-        # order_time = '跟进时间'
-        # m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；处理时间 （一、获取订单内容）@~@ok
-        # m.service_id_ssale_info(proxy_handle, proxy_id, '采购问题件_跟进时间')                             # 采购查询；处理时间 （二、获取处理详情）@~@ok
-        #
-        # order_time = '跟进时间'
-        # m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
-        #
-        # order_time = '跟进时间'
-        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
-        #
-        # order_time = '创建时间'                                                                 # 派送问题   创建时间： 订单放入时间（每次导出时需要更新数据）@~@
-        # m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
-        #
-        # order_time = '下单跟进时间'
-        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
-        # order_time = '下单时间'
-        # begin = datetime.date(2023, 4, 22)  # 单点更新
-        # end = datetime.date(2023, 4, 23)
-        # for i in range((end - begin).days):  # 按天循环获取订单状态
-        #     day = begin + datetime.timedelta(days=i)
-        #     day_time = str(day)
-        #     m.service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
+        timeStart = '2023-05-01'
+        timeEnd = '2023-05-10'
+        order_time = '跟进时间'
+        user_caigou = '"蔡利英", "张陈平", "杨嘉仪", "李晓青"'
+        m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；处理时间 （一、获取订单内容）@~@ok
+        m.service_id_ssale_info(proxy_handle, proxy_id, '采购问题件_跟进时间', user_caigou)                             # 采购查询；处理时间 （二、获取处理详情）@~@ok
+
+        order_time = '跟进时间'
+        m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
+
+        order_time = '跟进时间'
+        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
+
+        order_time = '创建时间'                                                                 # 派送问题   创建时间： 订单放入时间（每次导出时需要更新数据）@~@
+        m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)
+
+        order_time = '下单跟进时间'
+        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
+        order_time = '下单时间'
+        begin = datetime.date(2023, 4, 22)  # 单点更新
+        end = datetime.date(2023, 4, 23)
+        for i in range((end - begin).days):  # 按天循环获取订单状态
+            day = begin + datetime.timedelta(days=i)
+            day_time = str(day)
+            m.service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
 
     elif int(select) == 8:      # 单独 本月绩效数据使用 不包含上月的留底数据
         username_Cudan = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可"'         # 促单人
