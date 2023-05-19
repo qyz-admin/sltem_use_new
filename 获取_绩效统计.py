@@ -1,4 +1,4 @@
-#coding=utf-8
+# coding=utf-8
 import pandas as pd
 import os
 import datetime
@@ -10,21 +10,23 @@ import requests
 from requests.adapters import HTTPAdapter
 import json
 import sys
-import zhconv          # transform2_zh_hant：转为繁体;transform2_zh_hans：转为简体
+import zhconv  # transform2_zh_hant：转为繁体;transform2_zh_hans：转为简体
 from queue import Queue
 from dateutil.relativedelta import relativedelta
-from threading import Thread #  使用 threading 模块创建线程
+from threading import Thread  # 使用 threading 模块创建线程
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 import pandas.io.formats.excel
-import win32api,win32con
+import win32api, win32con
 import math
 from sqlalchemy import create_engine
 from settings import Settings
 from settings_sso import Settings_sso
 from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
-from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
+from openpyxl.styles import Font, Border, Side, PatternFill, colors, \
+    Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
 from 查询_订单检索 import QueryOrder
+
 
 # -*- coding:utf-8 -*-
 class QueryOrder_Code(Settings, Settings_sso):
@@ -63,16 +65,17 @@ class QueryOrder_Code(Settings, Settings_sso):
                                                                                     self.mysql2['port'],
                                                                                     self.mysql2['datebase']))
         self.engine20 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql20['user'],
-                                                                                    self.mysql20['password'],
-                                                                                    self.mysql20['host'],
-                                                                                    self.mysql20['port'],
-                                                                                    self.mysql20['datebase']))
+                                                                                     self.mysql20['password'],
+                                                                                     self.mysql20['host'],
+                                                                                     self.mysql20['port'],
+                                                                                     self.mysql20['datebase']))
         self.engine3 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql3['user'],
                                                                                     self.mysql3['password'],
                                                                                     self.mysql3['host'],
                                                                                     self.mysql3['port'],
                                                                                     self.mysql3['datebase']))
         self.e = EmailControl()
+
     def reSetEngine(self):
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -84,7 +87,8 @@ class QueryOrder_Code(Settings, Settings_sso):
                                                                                     self.mysql2['host'],
                                                                                     self.mysql2['port'],
                                                                                     self.mysql2['datebase']))
-    def readFormHost(self, team, searchType,pople_Query, timeStart, timeEnd):
+
+    def readFormHost(self, team, searchType, pople_Query, timeStart, timeEnd):
         start = datetime.datetime.now()
         path = r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表'
         dirs = os.listdir(path=path)
@@ -96,6 +100,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                 self.wbsheetHost(filePath, team, searchType)
                 # self.cs_wbsheetHost(filePath, team, searchType)
         print('处理耗时：', datetime.datetime.now() - start)
+
     # 工作表的订单信息
     def wbsheetHost(self, filePath, team, searchType):
         fileType = os.path.splitext(filePath)[1]
@@ -111,7 +116,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                         db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
                         print(db.columns)
                         # db = db[['订单编号']]
-                        columns_value = list(db.columns)                             # 获取数据的标题名，转为列表
+                        columns_value = list(db.columns)  # 获取数据的标题名，转为列表
                         if searchType == '订单号':
                             tem = '订单编号'
                             if '订单号' in columns_value:
@@ -119,7 +124,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                             for column_val in columns_value:
                                 if '订单编号' != column_val:
                                     db.drop(labels=[column_val], axis=1, inplace=True)  # 去掉多余的旬列表
-                            db.dropna(axis=0, how='any', inplace=True)                  # 空值（缺失值），将空值所在的行/列删除后
+                            db.dropna(axis=0, how='any', inplace=True)  # 空值（缺失值），将空值所在的行/列删除后
                         elif searchType == '运单号':
                             tem = '运单编号'
                             if '运单号' in columns_value:
@@ -131,9 +136,10 @@ class QueryOrder_Code(Settings, Settings_sso):
                     if db is not None and len(db) > 0:
                         # print(db)
                         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-                        print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                        print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行',
+                              'sheet共：' + str(sht.used_range.last_cell.row) + '行')
                         orderId = list(db[tem])
-                        max_count = len(orderId)                                    # 使用len()获取列表的长度，上节学的
+                        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
                         # print(orderId)
                         # print(max_count)
                         if max_count > 500:
@@ -143,7 +149,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                             # print(df)
                             dlist = []
                             n = 0
-                            while n < max_count-500:                                # 这里用到了一个while循环，穿越过来的
+                            while n < max_count - 500:  # 这里用到了一个while循环，穿越过来的
                                 n = n + 500
                                 ord = ','.join(orderId[n:n + 500])
                                 data = self.orderInfoQuery(ord, searchType)
@@ -154,13 +160,18 @@ class QueryOrder_Code(Settings, Settings_sso):
                         else:
                             ord = ','.join(orderId[0:max_count])
                             dp = self.orderInfoQuery(ord, searchType)
-                        dp.columns = ['订单编号', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '拉黑率', '电话长度',
-                                      '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道', '货物类型',
-                                      '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间', '发货时间', '上线时间',
-                                      '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '克隆人', '克隆ID', '发货仓库', '是否发送短信',
+                        dp.columns = ['订单编号', '币种', '运营团队', '产品id', '产品名称', '出货单名称', '规格(中文)', '收货人', '联系电话', '拉黑率',
+                                      '电话长度',
+                                      '配送地址', '应付金额', '数量', '订单状态', '运单号', '支付方式', '下单时间', '审核人', '审核时间', '物流渠道',
+                                      '货物类型',
+                                      '是否低价', '站点ID', '商品ID', '订单类型', '物流状态', '重量', '删除原因', '问题原因', '下单人', '转采购时间',
+                                      '发货时间', '上线时间',
+                                      '完成时间', '销售退货时间', '备注', 'IP', '体积', '省洲', '市/区', '选品人', '优化师', '审单类型', '克隆人',
+                                      '克隆ID', '发货仓库', '是否发送短信',
                                       '物流渠道预设方式', '拒收原因', '物流更新时间', '状态时间', '来源域名', '订单来源类型', '更新时间', '异常提示', '异常拉黑率',
-                                      '拉黑率总量','拉黑率签收','拉黑率拒收','留言']
-                        dp.to_excel('F:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+                                      '拉黑率总量', '拉黑率签收', '拉黑率拒收', '留言']
+                        dp.to_excel('F:\\输出文件\\订单检索-查询{}.xlsx'.format(rq), sheet_name='查询', index=False,
+                                    engine='xlsxwriter')  # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
                         print('查询已导出+++')
                     else:
                         print('----------数据为空,查询失败：' + sht.name)
@@ -169,24 +180,21 @@ class QueryOrder_Code(Settings, Settings_sso):
             wb.close()
         app.quit()
 
-
-
     # 绩效-查询 促单（一.1）
-    def service_id_order(self, hanlde, timeStart, timeEnd, proxy_handle, proxy_id):    # 进入订单检索界面     促单查询
+    def service_id_order(self, hanlde, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入订单检索界面     促单查询
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 促单订单 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+        r_header = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
-        data = {'page': 1, 'pageSize': 500, 'orderPrefix': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None,'isClone': None,
-                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None,  'reassignmentType': None, 'lowerstatus': None, 'warehouse': None,
-                'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None, 'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None,
-                'volumeEnd': None, 'volumeStart': None, 'chooser_id': None, 'service_id': -1, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None,
-                'shipState': None, 'weightStart': None,'weightEnd': None,  'estimateWeightStart': None,  'estimateWeightEnd': None, 'order': None, 'sortField': None,
-                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None,
-                'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59'}
+        data = {'page': 1, 'pageSize': 500, 'orderPrefix': None, 'orderNumberFuzzy': None, 'shipUsername': None,'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None,
+                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None,  'lowerstatus': None, 'warehouse': None,
+                'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None,  'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None,
+                'volumeEnd': None, 'volumeStart': None, 'chooser_id': None, 'service_id': -1, 'autoVerifyStatus': None,'shipZip': None, 'remark': None,
+                'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
+                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None, 'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59'}
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -222,31 +230,27 @@ class QueryOrder_Code(Settings, Settings_sso):
         print('-' * 50)
     def _service_id_order(self, timeStart, timeEnd, n, proxy_handle, proxy_id):
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+        r_header = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
         data = {'page': n, 'pageSize': 500, 'orderPrefix': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None,'isClone': None,
-                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None,  'reassignmentType': None, 'lowerstatus': None, 'warehouse': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None,
+                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': None, 'warehouse': None,
                 'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None, 'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None,
                 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None, 'service_id': -1, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None,
-                'shipState': None, 'weightStart': None,'weightEnd': None,  'estimateWeightStart': None,  'estimateWeightEnd': None, 'order': None, 'sortField': None,
-                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None,
-                'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59'}
-        if proxy_handle == '代理服务器':
+                'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
+                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None, 'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59'}
+        if proxy_handle == '代理服务器':     # print('+++已成功发送请求......')
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         else:
             req = self.session.post(url=url, headers=r_header, data=data)
-        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
-        # print(req)
         ordersdict = []
-        # print('正在处理json数据转化为dataframe…………')
-        try:
+        try:    # print('正在处理json数据转化为dataframe…………')
             for result in req['data']['list']:
                 if result['specs'] != []:
-                    result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
+                    result['saleId'] = 0  # 添加新的字典键-值对，为下面的重新赋值用
                     result['saleName'] = 0
                     result['productId'] = 0
                     result['saleProduct'] = 0
@@ -259,7 +263,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                     result['spec'] = result['specs'][0]['spec']
                     result['chooser'] = result['specs'][0]['chooser']
                 else:
-                    result['saleId'] = ''        # 添加新的字典键-值对，为下面的重新赋值用
+                    result['saleId'] = ''  # 添加新的字典键-值对，为下面的重新赋值用
                     result['saleName'] = ''
                     result['productId'] = ''
                     result['saleProduct'] = ''
@@ -302,13 +306,15 @@ class QueryOrder_Code(Settings, Settings_sso):
                 ordersdict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "订单检索-绩效数据 失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         df = pd.json_normalize(ordersdict)
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         return df
 
     # 绩效-查询 挽单列表（一.2）
-    def service_id_getRedeemOrderList(self, timeStart, timeEnd, proxy_handle, proxy_id):    # 进入订单检索界面     挽单列表查询
+    def service_id_getRedeemOrderList(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入订单检索界面     挽单列表查询
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 挽单列表 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.order&action=getRedeemOrderList'
@@ -323,7 +329,6 @@ class QueryOrder_Code(Settings, Settings_sso):
         else:
             req = self.session.post(url=url, headers=r_header, data=data)
         req = json.loads(req.text)  # json类型数据转换为dict字典
-        # print(req)
         max_count = req['data']['count']
         print('共...' + str(max_count) + '...单量')
         if max_count != 0:
@@ -338,8 +343,9 @@ class QueryOrder_Code(Settings, Settings_sso):
                 print('剩余查询次数' + str(in_count - n))
                 n = n + 1
             dp = df.append(dlist, ignore_index=True)
-            dp = dp[['id', 'order_number', 'redeemType', 'oldOrderStatus', 'oldLogisticsStatus', 'oldAmount', 'orderStatus','logisticsStatus','amount','logisticsName','operatorName','create_time','save_money','currencyName', 'delOperatorName','del_reason']]
-            dp.columns = ['id', '订单编号', '挽单类型', '原订单状态', '原物流状态', '原订单金额', '当前订单状态', '当前物流状态','当前订单金额','当前物流渠道','创建人','创建时间','挽单金额','币种', '删除人', '删除原因']
+            dp = dp[['id', 'order_number', 'redeemType', 'oldOrderStatus', 'oldLogisticsStatus', 'oldAmount', 'orderStatus', 'logisticsStatus', 'amount', 'logisticsName', 'operatorName',
+                     'create_time', 'save_money', 'currencyName', 'delOperatorName', 'del_reason']]
+            dp.columns = ['id', '订单编号', '挽单类型', '原订单状态', '原物流状态', '原订单金额', '当前订单状态', '当前物流状态', '当前订单金额', '当前物流渠道', '创建人', '创建时间', '挽单金额', '币种', '删除人', '删除原因']
             dp.to_excel('F:\\输出文件\\挽单列表-查询{}.xlsx'.format(rq), sheet_name='挽单', index=False, engine='xlsxwriter')
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
             sql = '''REPLACE INTO 挽单列表_创建时间(id, 订单编号,币种, 创建时间, 创建人, 挽单类型, 挽单金额, 当前订单状态, 当前物流状态, 回款状态, 删除人, 删除原因, 统计月份,记录时间) 
@@ -354,30 +360,29 @@ class QueryOrder_Code(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
-        data = {'order_number': None, 'type': None, 'order_status': None, 'logistics_status': None, 'old_order_status': None, 'old_logistics_status': None, 'operator': None,
+        data = {'order_number': None, 'type': None, 'order_status': None, 'logistics_status': None,'old_order_status': None, 'old_logistics_status': None, 'operator': None,
                 'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'is_del': None, 'page': n, 'pageSize': 90, 'area_id': None}
-        if proxy_handle == '代理服务器':
+        if proxy_handle == '代理服务器':        # print('+++已成功发送请求......')
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         else:
             req = self.session.post(url=url, headers=r_header, data=data)
-        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
-        # print(req)
         ordersdict = []
-        # print('正在处理json数据转化为dataframe…………')
-        try:
+        try:        # print('正在处理json数据转化为dataframe…………')
             for result in req['data']['list']:
                 ordersdict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e","挽单列表-绩效数据 失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         df = pd.json_normalize(ordersdict)
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
         return df
 
     # 绩效-查询 采购异常             （二.1.1）
-    def service_id_ssale(self, timeStart, timeEnd, proxy_handle, proxy_id,order_time):  # 进入采购问题件界面   # 筛选币种
+    def service_id_ssale(self, timeStart, timeEnd, proxy_handle, proxy_id, order_time):  # 进入采购问题件界面   # 筛选币种
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 采购订单(' + order_time + ') 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.afterSale&action=getPurchaseAbnormalList'
@@ -389,7 +394,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                 'orderType': None, 'lastProcess': None, 'logisticsStatus': None, 'update_time_start': None, 'update_time_end': None}
         data_woks = None
         data_woks2 = None
-        if order_time == '跟进时间':
+        if order_time == '跟进时间':        # print('+++已成功发送请求......')
             data.update({'update_time_start': timeStart + ' 00:00:00', 'update_time_end': timeEnd + ' 23:59:59'})
             data_woks = '采购问题件_跟进时间'
             data_woks2 = '处理时间'
@@ -402,7 +407,6 @@ class QueryOrder_Code(Settings, Settings_sso):
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         else:
             req = self.session.post(url=url, headers=r_header, data=data)
-        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         if req['data'] != []:
             max_count = req['data']['total']
@@ -411,16 +415,16 @@ class QueryOrder_Code(Settings, Settings_sso):
             if max_count != 0 and max_count != []:
                 df = pd.DataFrame([])
                 dlist = []
-                in_count = math.ceil(max_count/90)
+                in_count = math.ceil(max_count / 90)
                 n = 1
                 while n <= in_count:  # 这里用到了一个while循环，穿越过来的
-                    data = self._service_id_ssale(timeStart, timeEnd, n, proxy_handle, proxy_id, order_time)                     # 分页获取详情
+                    data = self._service_id_ssale(timeStart, timeEnd, n, proxy_handle, proxy_id, order_time)  # 分页获取详情
                     dlist.append(data)
                     print('剩余查询次数' + str(in_count - n))
                     n = n + 1
                 dp = df.append(dlist, ignore_index=True)
-                dp = dp[['orderNumber', 'currencyName', 'addtime', 'orderStatus', 'logisticsStatus', 'dealTime', 'dealName', 'dealProcess', 'description', 'create_time','fbName']]
-                dp.columns = ['订单编号', '币种', '下单时间', '订单状态', '物流状态', '处理时间', '处理人', '处理结果', '反馈描述', '创建时间','采购反馈人']
+                dp = dp[['orderNumber', 'currencyName', 'addtime', 'orderStatus', 'logisticsStatus', 'dealTime', 'dealName','dealProcess', 'description', 'create_time', 'fbName']]
+                dp.columns = ['订单编号', '币种', '下单时间', '订单状态', '物流状态', '处理时间', '处理人', '处理结果', '反馈描述', '创建时间', '采购反馈人']
                 dp.to_excel('F:\\输出文件\\采购问题件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='采购', index=False, engine='xlsxwriter')
                 dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
                 sql = '''REPLACE INTO {0}(订单编号,币种,下单时间,订单状态,物流状态,处理时间,处理人, 处理结果, 反馈描述, 创建时间, 采购反馈人,客服处理时间,客服处理人, 客服处理结果,客服反馈描述,统计月份,记录时间) 
@@ -441,8 +445,8 @@ class QueryOrder_Code(Settings, Settings_sso):
                     'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
         data = {'page': n, 'pageSize': 90, 'areaId': None, 'userId': None, 'dealUser': None, 'currencyId': "6,13", 'orderNumber': None,
                 'productId': None, 'timeStart': None, 'timeEnd': None, 'add_time_start': None, 'add_time_end': None,
-                'orderType': None, 'lastProcess': None, 'logisticsStatus': None, 'update_time_start': None, 'update_time_end': None}
-        if order_time == '跟进时间':
+                'orderType': None, 'lastProcess': None, 'logisticsStatus': None, 'update_time_start': None,'update_time_end': None}
+        if order_time == '跟进时间':        # print('+++已成功发送请求......')
             data.update({'update_time_start': timeStart + ' 00:00:00', 'update_time_end': timeEnd + ' 23:59:59'})
         elif order_time == '创建时间':
             data.update({'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59'})
@@ -451,7 +455,6 @@ class QueryOrder_Code(Settings, Settings_sso):
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         else:
             req = self.session.post(url=url, headers=r_header, data=data)
-        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersDict = []
         try:
@@ -459,26 +462,26 @@ class QueryOrder_Code(Settings, Settings_sso):
                 ordersDict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e","采购异常-绩效数据 失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersDict)
         print('++++++单次查询成功+++++++')
         print('*' * 50)
         return data
     # 绩效-查询 采购异常 补充查询             （二.1.2）
-    def service_id_ssale_info(self, proxy_handle, proxy_id, data_name):
+    def service_id_ssale_info(self, proxy_handle, proxy_id, data_name, user_caigou):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('采购异常-绩效 处理详情 获取中......')
         sql2 = '''SELECT 订单编号 FROM cache_check s1;'''
         df2 = pd.read_sql_query(sql=sql2, con=self.engine1)
         orderId = list(df2['订单编号'])
-        max_count = len(orderId)                 # 使用len()获取列表的长度，上节学的
+        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
         if max_count > 0:
             print('++++++本批次更新;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
-            df = pd.DataFrame([])                # 创建空的dataframe数据框
+            df = pd.DataFrame([])  # 创建空的dataframe数据框
             dlist = []
             for ord in orderId:
-                # print(ord)
-                data = self._service_id_ssale_info(ord, proxy_handle, proxy_id)
-                # print(data)
+                data = self._service_id_ssale_info(ord, proxy_handle, proxy_id, user_caigou)
                 if data is not None and len(data) > 0:
                     dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
@@ -496,30 +499,33 @@ class QueryOrder_Code(Settings, Settings_sso):
                            where a.`订单编号`=b.`订单编号`;'''.format(data_name, 'cache_check_cp')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('更新成功......')
-    def _service_id_ssale_info(self, ord, proxy_handle, proxy_id):  # 进入采购问题件界面
+    def _service_id_ssale_info(self, ord, proxy_handle, proxy_id, user_caigou):  # 进入采购问题件界面
         print('+++正在查询 ' + str(ord) + ' 处理详情中')
         url = r'https://gimp.giikin.com/service?service=gorder.afterSale&action=abnormalDisposeLog'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https://gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/purchaseFeedback'}
         data = {'orderNumber': ord}
-        if proxy_handle == '代理服务器':
+        if proxy_handle == '代理服务器':        # print('+++已成功发送请求......')
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         else:
             req = self.session.post(url=url, headers=r_header, data=data)
-        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         ordersDict = []
         try:
             for result in req['data']:  # 添加新的字典键-值对，为下面的重新赋值用
                 # print(result)
                 # print(result['name'])
-                if result['name'] == '蔡利英' or result['name'] == '张陈平' or result['name'] == '杨嘉仪' or result['name'] == '李晓青':
+                # if result['name'] == '蔡利英' or result['name'] == '张陈平' or result['name'] == '杨嘉仪' or result['name'] == '李晓青':
+                print(user_caigou)
+                if result['name'] in [user_caigou]:
                     ordersDict.append(result)
                     break
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e","采购异常补充明细-绩效数据 失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersDict)
         print('++++++单次查询成功+++++++')
         print('*' * 50)
@@ -533,7 +539,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerQuestion'}
-        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'gift_reissue_order_number': None, 'is_gift_reissue': None, 'order_trace_id': None,'question_type': None, 'critical': None,
+        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'gift_reissue_order_number': None, 'is_gift_reissue': None, 'order_trace_id': None, 'question_type': None, 'critical': None,
                 'read_status': None, 'operator_type': None, 'operator': None, 'create_time': None, 'trace_time': None, 'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': 1, 'pageSize': 90}
         data_woks = None
         data_woks2 = None
@@ -548,19 +554,18 @@ class QueryOrder_Code(Settings, Settings_sso):
             data_woks = '物流问题件_创建时间'
             data_woks2 = '导入时间'
             data_woks3 = '压单核实_创建时间'
-        if proxy_handle == '代理服务器':
+        if proxy_handle == '代理服务器':        # print('+++已成功发送请求......')
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         else:
             req = self.session.post(url=url, headers=r_header, data=data)
-        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
         max_count = req['data']['count']
         print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
         print('*' * 50)
         if max_count != 0:
             df = pd.DataFrame([])
-            in_count = math.ceil(max_count/500)
+            in_count = math.ceil(max_count / 500)
             dlist = []
             n = 1
             while n <= in_count:  # 这里用到了一个while循环，穿越过来的
@@ -569,13 +574,11 @@ class QueryOrder_Code(Settings, Settings_sso):
                 dlist.append(data)
                 n = n + 1
             dp = df.append(dlist, ignore_index=True)
-            dp = dp[['order_number', 'currency', 'addtime', 'orderStatus', 'logisticsStatus', 'create_time', 'traceUserName', 'trace_UserName', 'contact','questionType', 'dealStatus',
-                     'dealContent', 'deal_Content', 'dealTime', 'deal_time', 'result_info', 'result_reson','gift_reissue_order_number','giftStatus','questionTypeName','traceRecord']]
+            dp = dp[['order_number', 'currency', 'addtime', 'orderStatus', 'logisticsStatus', 'create_time', 'traceUserName', 'trace_UserName', 'contact', 'questionType', 'dealStatus',
+                     'dealContent', 'deal_Content', 'dealTime', 'deal_time', 'result_info', 'result_reson', 'gift_reissue_order_number', 'giftStatus', 'questionTypeName', 'traceRecord']]
             dp.columns = ['订单编号', '币种', '下单时间', '订单状态', '物流状态', '导入时间', '最新处理人', '最新客服处理人', '联系方式', '跟进问题类型', '最新处理状态',
                           '最新处理结果', '最新客服处理', '最新处理时间', '最新客服处理日期', '拒收原因', '具体原因', '赠品补发订单编号', '赠品补发订单状态', '问题类型', '历史处理记录']
-
             print('正在写入 物流问题件......')
-            # dp1 = dp[(dp['问题类型'].str.contains('派送问题件', na=False))]  # 筛选 问题类型
             dp1 = dp[~(dp['问题类型'].str.contains('订单压单（giikin内部专用）', na=False))]  # 筛选 问题类型
             dp1.to_excel('F:\\输出文件\\物流问题件-{0}{1}.xlsx'.format(data_woks2, rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp1.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
@@ -598,7 +601,6 @@ class QueryOrder_Code(Settings, Settings_sso):
                             赠品补发订单编号, 赠品补发订单状态,问题类型,历史处理记录,DATE_FORMAT({1},'%Y%m') 统计月份,NOW() 记录时间
                     FROM cache_check;'''.format(data_woks3, data_woks2)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
             print('写入成功......')
         else:
             print('没有需要获取的信息！！！')
@@ -611,20 +613,18 @@ class QueryOrder_Code(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerQuestion'}
-        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'gift_reissue_order_number': None, 'is_gift_reissue': None, 'order_trace_id': None,'question_type': None, 'critical': None,
-                'read_status': None, 'operator_type': None, 'operator': None, 'create_time': None, 'trace_time': None, 'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': n, 'pageSize': 500}
+        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'gift_reissue_order_number': None, 'is_gift_reissue': None, 'order_trace_id': None, 'question_type': None, 'critical': None,
+                'read_status': None, 'operator_type': None, 'operator': None, 'create_time': None, 'trace_time': None,'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': n, 'pageSize': 500}
         if order_time == '跟进时间':
             data.update({'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
         elif order_time == '创建时间':
             data.update({'create_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
-        if proxy_handle == '代理服务器':
+        if proxy_handle == '代理服务器':        # print('+++已成功发送请求......')
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         else:
             req = self.session.post(url=url, headers=r_header, data=data)
-        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
-        # print(req)
         ordersDict = []
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
@@ -648,10 +648,10 @@ class QueryOrder_Code(Settings, Settings_sso):
                                     result['deal_time'] = record.split()[0]
                                     rec = record.split("#处理结果：")[1]
                                     if len(rec.split()) > 2:
-                                        result['result_info'] = rec.split()[2]        # 客诉原因
+                                        result['result_info'] = rec.split()[2]  # 客诉原因
                                     if len(rec.split()) > 1:
-                                        result['result_reson'] = rec.split()[1]       # 处理内容
-                                    result['deal_Content'] = rec.split()[0]           # 最新处理结果
+                                        result['result_reson'] = rec.split()[1]  # 处理内容
+                                    result['deal_Content'] = rec.split()[0]  # 最新处理结果
                                     rec_name = record.split("#处理结果：")[0]
                                     if '客服' in rec_name:
                                         recname = (rec_name.split())[2]
@@ -687,6 +687,8 @@ class QueryOrder_Code(Settings, Settings_sso):
                     ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e","压单核实-绩效数据 失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersDict)
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
@@ -700,9 +702,8 @@ class QueryOrder_Code(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
-        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': None, 'question_type': None, 'critical': None, 'read_status': None,
-                'operator_type': None, 'operator': None, 'create_time': None, 'trace_time': None, 'is_gift_reissue': None,
-                'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': 1, 'pageSize': 90}
+        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': None,'question_type': None, 'critical': None, 'read_status': None, 'operator_type': None, 'operator': None,
+                'create_time': None, 'trace_time': None,'is_gift_reissue': None,'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': 1, 'pageSize': 90}
         data_woks = None
         data_woks2 = None
         if order_time == '跟进时间':
@@ -725,7 +726,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         print('*' * 50)
         dp = None
         if max_count > 0:
-            in_count = math.ceil(max_count/500)
+            in_count = math.ceil(max_count / 500)
             df = pd.DataFrame([])
             dlist = []
             n = 1
@@ -738,15 +739,14 @@ class QueryOrder_Code(Settings, Settings_sso):
         if dp.empty:
             print("今日无更新数据")
         else:
-            dp = dp[['id','order_number',  'currency', 'addtime', 'areaName', 'payType', 'reassignmentTypeName', 'orderStatus', 'logisticsStatus', 'logisticsName', 'questionTypeName', 'create_time',
-                     'dealStatus', 'dealTime', 'deal_time', 'traceUserName', 'trace_UserName', 'dealContent', 'deal_Content', 'result_content', 'result_info', 'result_reson',
-                     'gift_reissue_order_number', 'giftStatus', 'contact', 'traceRecord']]
-            dp.columns = ['id','订单编号', '币种', '下单时间', '归属团队', '支付类型', '订单类型', '订单状态', '物流状态', '物流渠道', '问题类型', '导入时间',
-                          '最新处理状态', '最新处理时间', '最新客服处理日期', '最新处理人', '最新客服处理人', '最新处理结果', '最新客服处理', '最新客服处理结果', '客诉原因',  '具体原因',
-                          '赠品补发订单编号', '赠品补发订单状态', '联系方式', '历史处理记录']
+            dp = dp[['id', 'order_number', 'currency', 'addtime', 'areaName', 'payType', 'reassignmentTypeName', 'orderStatus', 'logisticsStatus', 'logisticsName', 'questionTypeName', 'create_time',
+                     'dealStatus', 'dealTime', 'deal_time', 'traceUserName', 'trace_UserName', 'dealContent',
+                     'deal_Content', 'result_content', 'result_info', 'result_reson','gift_reissue_order_number', 'giftStatus', 'contact', 'traceRecord']]
+            dp.columns = ['id', '订单编号', '币种', '下单时间', '归属团队', '支付类型', '订单类型', '订单状态', '物流状态', '物流渠道', '问题类型', '导入时间', '最新处理状态', '最新处理时间', '最新客服处理日期', '最新处理人',
+                          '最新客服处理人', '最新处理结果', '最新客服处理', '最新客服处理结果', '客诉原因', '具体原因', '赠品补发订单编号', '赠品补发订单状态', '联系方式', '历史处理记录']
             print('正在写入......')
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-            dp.to_excel('F:\\输出文件\\物流客诉件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False, engine='xlsxwriter')
+            dp.to_excel('F:\\输出文件\\物流客诉件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False,  engine='xlsxwriter')
             sql = '''REPLACE INTO {0}(id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
                                                 最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
                                                 赠品补发订单编号,赠品补发订单状态,赠品补发物流状态,联系方式,历史处理记录,统计月份,记录时间) 
@@ -765,9 +765,8 @@ class QueryOrder_Code(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
-        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': None, 'question_type': None, 'critical': None, 'read_status': None,
-                'operator_type': None, 'operator': None, 'create_time': None, 'trace_time': None, 'is_gift_reissue': None,
-                'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': n, 'pageSize': 500}
+        data = {'order_number': None, 'waybill_no': None, 'transfer_no': None, 'order_trace_id': None,'question_type': None, 'critical': None, 'read_status': None,'operator_type': None, 'operator': None,
+                'create_time': None, 'trace_time': None,'is_gift_reissue': None,'is_collection': None, 'logistics_status': None, 'user_id': None, 'page': n, 'pageSize': 500}
         if order_time == '跟进时间':
             data.update({'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
         elif order_time == '创建时间':
@@ -803,17 +802,18 @@ class QueryOrder_Code(Settings, Settings_sso):
                                 if rec != "" and rec != " ":
                                     result['deal_time'] = record.split()[0]
                                     if len(rec.split()) > 3:
-                                        result['result_reson'] = rec.split()[3]       # 最新客服 具体原因
+                                        result['result_reson'] = rec.split()[3]  # 最新客服 具体原因
                                     if len(rec.split()) > 2:
-                                        result['result_info'] = rec.split()[2]        # 最新客服 客诉原因
+                                        result['result_info'] = rec.split()[2]  # 最新客服 客诉原因
                                     if len(rec.split()) > 1:
-                                        result['result_content'] = rec.split()[1]     # 最新客服 处理结果
-                                    result['deal_Content'] = rec.split()[0]           # 最新客服 处理
+                                        result['result_content'] = rec.split()[1]  # 最新客服 处理结果
+                                    result['deal_Content'] = rec.split()[0]  # 最新客服 处理
                                     rec_name = record.split("#处理结果：")[0]
                                     if '客服' in rec_name:
                                         recname = (rec_name.split())[2]
                                         result['trace_UserName'] = recname.replace('(客服)', '')
-                        ordersDict.append(result.copy())    # append()方法只是将字典的地址存到list中，而键赋值的方式就是修改地址，所以才导致覆盖的问题;  使用copy() 或者 deepcopy()  当字典中存在list的时候需要使用deepcopy()
+                        ordersDict.append(
+                            result.copy())  # append()方法只是将字典的地址存到list中，而键赋值的方式就是修改地址，所以才导致覆盖的问题;  使用copy() 或者 deepcopy()  当字典中存在list的时候需要使用deepcopy()
                     else:
                         result['deal_time'] = ''
                         result['result_reson'] = ''
@@ -822,12 +822,12 @@ class QueryOrder_Code(Settings, Settings_sso):
                         result['deal_Content'] = ''
                         result['trace_UserName'] = ''
                         if len(result['dealContent'].split()) > 3:
-                            result['result_reson'] = result['dealContent'].split()[3]       # 最新客服 具体原因
+                            result['result_reson'] = result['dealContent'].split()[3]  # 最新客服 具体原因
                         if len(result['dealContent'].split()) > 2:
-                            result['result_info'] = result['dealContent'].split()[2]        # 最新客服 客诉原因
+                            result['result_info'] = result['dealContent'].split()[2]  # 最新客服 客诉原因
                         if len(result['dealContent'].split()) > 1:
-                            result['result_content'] = result['dealContent'].split()[1]     # 最新客服 处理内容
-                        result['deal_Content'] = result['dealContent'].split()[0]           # 最新客服 处理
+                            result['result_content'] = result['dealContent'].split()[1]  # 最新客服 处理内容
+                        result['deal_Content'] = result['dealContent'].split()[0]  # 最新客服 处理
 
                         if result['traceRecord'] != '' or result['traceRecord'] != []:
                             result['deal_time'] = result['traceRecord'].split()[0]
@@ -846,6 +846,8 @@ class QueryOrder_Code(Settings, Settings_sso):
                     ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e","物流客诉件-绩效数据 失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersDict)
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
@@ -859,9 +861,8 @@ class QueryOrder_Code(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/deliveryProblemPackage'}
-        data = {'order_number': None, 'waybill_number': None, 'question_level': None, 'question_type': None,'order_trace_id': None, 'ship_phone': None, 'page': 1,
-                'pageSize': 90,'addtime': None, 'question_time': None, 'trace_time': None,'create_time': None, 'finishtime': None, 'sale_id': None, 'product_id': None,
-                'logistics_id': None, 'area_id': None, 'currency_id': None,'order_status': None, 'logistics_status': None}
+        data = {'order_number': None, 'waybill_number': None, 'question_level': None, 'question_type': None, 'order_trace_id': None, 'ship_phone': None, 'page': 1, 'pageSize': 90, 'addtime': None,  'question_time': None, 'trace_time': None,
+                'create_time': None,'finishtime': None, 'sale_id': None, 'product_id': None,'logistics_id': None, 'area_id': None, 'currency_id': None, 'order_status': None,'logistics_status': None}
         data_woks = None
         data_woks2 = None
         if order_time == '处理时间':
@@ -877,15 +878,14 @@ class QueryOrder_Code(Settings, Settings_sso):
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         else:
             req = self.session.post(url=url, headers=r_header, data=data)
-        # print('+++已成功发送请求......')
-        req = json.loads(req.text)          # json类型数据转换为dict字典
+        req = json.loads(req.text)  # json类型数据转换为dict字典
         if req['data'] != []:
-            max_count = req['data']['count']    # 获取 请求订单量
+            max_count = req['data']['count']  # 获取 请求订单量
             print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
             print('*' * 50)
             if max_count != 0 and max_count != []:
-                df = pd.DataFrame([])               # 创建空的dataframe
-                dlist = []                          # 创建空的列表 放每次查询的结果
+                df = pd.DataFrame([])  # 创建空的dataframe
+                dlist = []  # 创建空的列表 放每次查询的结果
                 in_count = math.ceil(max_count / 90)
                 n = 1
                 while n <= in_count:  # 这里用到了一个while循环，穿越过来的
@@ -895,11 +895,13 @@ class QueryOrder_Code(Settings, Settings_sso):
                     n = n + 1
                     time.sleep(1)
                 dp = df.append(dlist, ignore_index=True)
-                dp = dp[['id','order_number',  'currency', 'addtime', 'orderStatus', 'logisticsStatus', 'logisticsName','create_time', 'lastQuestionName', 'contactName','userName', 'traceName',  'content', 'traceTime', 'failNum', 'questionAddtime', 'questionTypeName']]
-                dp.columns = ['id','订单编号', '币种', '下单时间', '订单状态', '物流状态', '物流渠道','创建时间', '派送问题类型', '联系方式', '最新处理人', '最新处理状态', '最新处理结果', '处理时间', '派送次数', '最新抓取时间', '最新问题类型']
+                dp = dp[['id', 'order_number', 'currency', 'addtime', 'orderStatus', 'logisticsStatus', 'logisticsName', 'create_time', 'lastQuestionName', 'contactName', 'userName', 'traceName', 'content',
+                         'traceTime', 'failNum', 'questionAddtime', 'questionTypeName']]
+                dp.columns = ['id', '订单编号', '币种', '下单时间', '订单状态', '物流状态', '物流渠道', '创建时间', '派送问题类型', '联系方式', '最新处理人',
+                              '最新处理状态', '最新处理结果', '处理时间', '派送次数', '最新抓取时间', '最新问题类型']
                 print('正在写入......')
                 dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-                dp.to_excel('F:\\输出文件\\派送问题件-{0}{1}.xlsx'.format(order_time,rq), sheet_name='查询', index=False, engine='xlsxwriter')
+                dp.to_excel('F:\\输出文件\\派送问题件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False, engine='xlsxwriter')
                 sql = '''REPLACE INTO {0}(id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,处理时间,派送次数,最新抓取时间,最新问题类型,统计月份, 记录时间) 
                         SELECT id,订单编号,币种, 下单时间,订单状态,物流状态,物流渠道,创建时间,派送问题类型, 联系方式,最新处理人, 最新处理状态, 最新处理结果,IF(处理时间 = '',NULL,处理时间) 处理时间,派送次数,IF(最新抓取时间 = '',NULL,最新抓取时间) 最新抓取时间,最新问题类型,DATE_FORMAT({1},'%Y%m') 统计月份, NOW() 记录时间 
                         FROM cache_check;'''.format(data_woks, data_woks2)
@@ -916,9 +918,8 @@ class QueryOrder_Code(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/deliveryProblemPackage'}
-        data = {'order_number': None, 'waybill_number': None, 'question_level': None, 'question_type': None,'order_trace_id': None, 'ship_phone': None, 'page': n,
-                'pageSize': 90,'addtime': None, 'question_time': None, 'trace_time': None,'create_time': None, 'finishtime': None, 'sale_id': None, 'product_id': None,
-                'logistics_id': None, 'area_id': None, 'currency_id': None,'order_status': None, 'logistics_status': None}
+        data = {'order_number': None, 'waybill_number': None, 'question_level': None, 'question_type': None, 'order_trace_id': None, 'ship_phone': None, 'page': n,'pageSize': 90, 'addtime': None, 'question_time': None,
+                'trace_time': None, 'create_time': None, 'finishtime': None, 'sale_id': None, 'product_id': None, 'logistics_id': None, 'area_id': None, 'currency_id': None, 'order_status': None, 'logistics_status': None}
         if order_time == '处理时间':
             data.update({'trace_time': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59'})
         elif order_time == '创建时间':
@@ -928,13 +929,10 @@ class QueryOrder_Code(Settings, Settings_sso):
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         else:
             req = self.session.post(url=url, headers=r_header, data=data)
-        # print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
-        # print(88)
-        # print(req)
         ordersDict = []
         try:
-            if req['data'] !=[]:
+            if req['data'] != []:
                 for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
                     # print(result['order_number'])
                     # result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
@@ -943,6 +941,8 @@ class QueryOrder_Code(Settings, Settings_sso):
                 return None
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e","派送问题件-绩效数据 失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersDict)
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
@@ -956,17 +956,17 @@ class QueryOrder_Code(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1661.62',
                     'origin': 'https://gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerRejection'}
-        data = {'page': 1, 'pageSize': 100, 'orderPrefix': None, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
-                'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
-                'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
-                'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': None, 'finishTimeStart': None,
-                'finishTimeEnd': None, 'traceTimeStart': None, 'traceTimeEnd': None,'newCloneNumber': None}
+        data = {'page': 1, 'pageSize': 100, 'orderPrefix': None, 'shipUsername': None, 'shippingNumber': None,'email': None, 'saleIds': None, 'ip': None,'productIds': None, 'phone': None,
+                'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None,
+                'timeStart': None,'timeEnd': None, 'payType': None, 'questionId': None,'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None,
+                'traceItemIds': None, 'finishTimeStart': None,'finishTimeEnd': None, 'traceTimeStart': None, 'traceTimeEnd': None, 'newCloneNumber': None}
         self.session.mount('http://', HTTPAdapter(max_retries=5))
         self.session.mount('https://', HTTPAdapter(max_retries=5))
         data_woks = None
         data_woks2 = None
         if order_time == '跟进时间':
-            data.update({'traceItemIds': -1, 'traceTimeStart': timeStart + ' 00:00:00,', 'traceTimeEnd': timeEnd + ' 23:59:59'})
+            data.update(
+                {'traceItemIds': -1, 'traceTimeStart': timeStart + ' 00:00:00,', 'traceTimeEnd': timeEnd + ' 23:59:59'})
             data_woks = '拒收问题件_跟进时间'
             data_woks2 = '处理时间'
         elif order_time == '下单跟进时间':
@@ -997,7 +997,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         # print(req)
         if max_count != 0:
             df = pd.DataFrame([])
-            in_count = math.ceil(max_count/100)
+            in_count = math.ceil(max_count / 100)
             dlist = []
             n = 1
             while n <= in_count:  # 这里用到了一个while循环，穿越过来的
@@ -1007,8 +1007,10 @@ class QueryOrder_Code(Settings, Settings_sso):
                 dlist.append(data)
                 time.sleep(3)
             dp = df.append(dlist, ignore_index=True)
-            dp = dp[['id', '订单编号', 'currency', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'percentInfo.arriveCount', 'addTime', 'finishTime', 'tel_phone', 'shipInfo.shipPhone', 'ip','cloneUser', 'newCloneUser', 'newCloneStatus', 'newCloneLogisticsStatus', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
-            dp.columns = ['id', '订单编号', '币种', '订单总量', '拒收量', '签收量','下单时间', '完成时间', '电话', '联系电话', 'ip','本单克隆人', '新单克隆人', '新单订单状态', '新单物流状态', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果', '是否需要商品']
+            dp = dp[['id', '订单编号', 'currency', 'percentInfo.orderCount', 'percentInfo.rejectCount','percentInfo.arriveCount', 'addTime', 'finishTime', 'tel_phone', 'shipInfo.shipPhone', 'ip',
+                     'cloneUser', 'newCloneUser', 'newCloneStatus', 'newCloneLogisticsStatus', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
+            dp.columns = ['id', '订单编号', '币种', '订单总量', '拒收量', '签收量', '下单时间', '完成时间', '电话', '联系电话', 'ip', '本单克隆人',
+                          '新单克隆人', '新单订单状态', '新单物流状态', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果','是否需要商品']
             print('正在写入......')
             dp.to_excel('F:\\输出文件\\拒收问题件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False, engine='xlsxwriter')
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
@@ -1026,15 +1028,15 @@ class QueryOrder_Code(Settings, Settings_sso):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1661.62',
                     'origin': 'https://gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/customerRejection'}
-        data = {'page': n, 'pageSize': 100, 'orderPrefix': None, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,
-                'productIds': None, 'phone': None, 'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
-                'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None, 'timeStart': None, 'timeEnd': None, 'payType': None, 'questionId': None,
-                'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None, 'traceItemIds': None, 'finishTimeStart': None,
-                'finishTimeEnd': None, 'traceTimeStart': None, 'traceTimeEnd': None,'newCloneNumber': None}
+        data = {'page': n, 'pageSize': 100, 'orderPrefix': None, 'shipUsername': None, 'shippingNumber': None, 'email': None, 'saleIds': None, 'ip': None,'productIds': None, 'phone': None,
+                'optimizer': None, 'payment': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'orderStatus': None,
+                'timeStart': None,'timeEnd': None, 'payType': None, 'questionId': None, 'autoVerifys': None, 'reassignmentType': None, 'logisticsStatus': None, 'logisticsId': None,
+                'traceItemIds': None, 'finishTimeStart': None, 'finishTimeEnd': None, 'traceTimeStart': None, 'traceTimeEnd': None, 'newCloneNumber': None}
         self.session.mount('http://', HTTPAdapter(max_retries=5))
         self.session.mount('https://', HTTPAdapter(max_retries=5))
         if order_time == '跟进时间':
-            data.update({'traceItemIds': -1, 'traceTimeStart': timeStart + ' 00:00:00,', 'traceTimeEnd': timeEnd + ' 23:59:59'})
+            data.update(
+                {'traceItemIds': -1, 'traceTimeStart': timeStart + ' 00:00:00,', 'traceTimeEnd': timeEnd + ' 23:59:59'})
         elif order_time == '下单跟进时间':
             data.update({'traceItemIds': -1, 'timeStart': timeStart + ' 00:00:00,', 'timeEnd': timeEnd + ' 23:59:59'})
         elif order_time == '下单时间':
@@ -1051,6 +1053,8 @@ class QueryOrder_Code(Settings, Settings_sso):
             req = json.loads(req.text)  # json类型数据转换为dict字典
         except Exception as e:
             print('转化失败： 请求失败', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "拒收问题件-绩效数据 失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         # print(req)
         ordersDict = []
         try:
@@ -1090,6 +1094,8 @@ class QueryOrder_Code(Settings, Settings_sso):
                 ordersDict.append(result.copy())
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e", "拒收问题件-绩效数据 失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersDict)
         print('++++++第 ' + str(n) + ' 批次查询成功+++++++')
         print('*' * 50)
@@ -1099,9 +1105,7 @@ class QueryOrder_Code(Settings, Settings_sso):
     def service_id_orderInfo(self, timeStart, timeEnd, proxy_handle, proxy_id):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在查询 系统问题件 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
-        sql = '''SELECT 订单编号
-                FROM gat_order_list g
-                WHERE (g.`日期` BETWEEN '{0}' AND '{1}')  AND g.`问题原因` IS NOT NULL;'''.format(timeStart, timeEnd)
+        sql = '''SELECT 订单编号 FROM gat_order_list g WHERE (g.`日期` BETWEEN '{0}' AND '{1}')  AND g.`问题原因` IS NOT NULL;'''.format(timeStart, timeEnd)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         orderId = list(df['订单编号'])
         max_count = len(orderId)
@@ -1151,6 +1155,8 @@ class QueryOrder_Code(Settings, Settings_sso):
                 ordersdict.append(result)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
+            sso = Settings_sso()
+            sso.send_dingtalk_message("https://oapi.dingtalk.com/robot/send?access_token=68eeb5baf4625d0748b15431800b185fec8056a3dbac2755457f3905b0c8ea1e","系统问题件-绩效数据 失败，请检查原因》》》本地数据库：：", ['18538110674'], "是")
         data = pd.json_normalize(ordersdict)
         print('++++++本批次查询成功+++++++')
         print('*' * 50)
@@ -1272,9 +1278,9 @@ class QueryOrder_Code(Settings, Settings_sso):
         else:
             print('！！！ 请再次更新订单编号数据！！！')
             proxy_handle = '代理服务器0'
-            proxy_id = '192.168.13.89:37467'                            # 输入代理服务器节点和端口
+            proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
             handle = '手0动'
-            login_TmpCode = '517e55c6fb6c34ca99a69874aaf5ec25'          # 输入登录口令Tkoen
+            login_TmpCode = '517e55c6fb6c34ca99a69874aaf5ec25'  # 输入登录口令Tkoen
             js = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
 
             orders_Dict = list(ordersDict['订单编号'])
@@ -1285,7 +1291,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                 dlist = []
                 n = 0
                 while n < in_count:  # 这里用到了一个while循环，穿越过来的
-                    print('查询第 ' + str(n+1) + ' 页中，剩余次数' + str(in_count - n-1))
+                    print('查询第 ' + str(n + 1) + ' 页中，剩余次数' + str(in_count - n - 1))
                     n1 = n * 500
                     n2 = (n + 1) * 500
                     ord = ','.join(orders_Dict[n1:n2])
@@ -1296,7 +1302,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                     print(n)
                 print('正在写入......')
                 dp = df.append(dlist, ignore_index=True)
-                dp = dp[['orderNumber','logisticsStatus', 'orderStatus']]
+                dp = dp[['orderNumber', 'logisticsStatus', 'orderStatus']]
                 dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
                 sql = '''update `系统问题件_下单时间` a, cache_check b
                             SET a.`系统订单状态` = IF(b.`orderStatus` = '', NULL, b.`orderStatus`),
@@ -1310,22 +1316,20 @@ class QueryOrder_Code(Settings, Settings_sso):
     # 绩效-汇总输出 - 单独获取使用
     def service_check(self, username_Cudan, username_Jushou, username_caigou_yadan_wentijian, month_time, day_time):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-
-        username_Cudan = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可"'
-        username_Jushou = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可","蔡利英","杨嘉仪","张陈平","李晓青"'
-        username_caigou_yadan_wentijian = '"蔡利英","杨嘉仪","张陈平","李晓青"'
         listT = []
         print('挽单列表-绩效 数据整理 获取中 中（零）......')
         sql11 = '''SELECT *, IF(当前物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 当前物流状态, IF(当前物流状态 IN ('已签收','理赔'), IF(当前订单状态 = '已退货(销售)','拒收',当前物流状态), 
                             IF(当前物流状态 = '发货中','在途', IF(当前物流状态 = '' or 当前物流状态 IS NULL or 当前物流状态 = '暂无物流状态', IF(当前订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),当前物流状态)))) as 最终状态
                 FROM 挽单列表_创建时间 s1
-                WHERE  s1.`统计月份` = '{0}' and DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{1}' AND 删除人 = '';'''.format(month_time, day_time)
+                WHERE  s1.`统计月份` = '{0}' and DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{1}' AND 删除人 = '';'''.format(
+            month_time, day_time)
         df11 = pd.read_sql_query(sql=sql11, con=self.engine1)
 
         print('促单-绩效 源数据 获取中（一.1）......')
         sql21 = '''SELECT *
                 FROM 促单_下单时间 s1
-                WHERE  s1.代下单客服 in ('{0}') AND s1.克隆人 = '' and s1.`统计月份` = '{1}' and DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{2}';'''.format(username_Cudan, month_time, day_time)
+                WHERE  s1.代下单客服 in ('{0}') AND s1.克隆人 = '' and s1.`统计月份` = '{1}' and DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{2}';'''.format(
+            username_Cudan, month_time, day_time)
         df21 = pd.read_sql_query(sql=sql21, con=self.engine1)
         listT.append(df21)
         print('促单-绩效 统计分析 获取中（一.2）......')
@@ -1354,7 +1358,8 @@ class QueryOrder_Code(Settings, Settings_sso):
                                 )
                         ) s1
                         GROUP BY  代下单客服
-                ) s ORDER BY FIELD(代下单客服,"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可",'合计');'''.format(username_Cudan, month_time, day_time)
+                ) s ORDER BY FIELD(代下单客服,"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可",'合计');'''.format(username_Cudan,
+                                                                                                   month_time, day_time)
         df22 = pd.read_sql_query(sql=sql22, con=self.engine1)
         listT.append(df22)
 
@@ -1441,7 +1446,6 @@ class QueryOrder_Code(Settings, Settings_sso):
                 ;'''.format(month_time, day_time, username_Jushou)
         df42 = pd.read_sql_query(sql=sql42, con=self.engine1)
         listT.append(df42)
-
 
         print('采购异常-绩效 源数据 获取中（四.1）......')
         sql51 = '''SELECT *
@@ -1534,8 +1538,6 @@ class QueryOrder_Code(Settings, Settings_sso):
         df72 = pd.read_sql_query(sql=sql72, con=self.engine1)
         listT.append(df72)
 
-
-
         print('物流问题-绩效 源数据 获取中（三.1）......')
         sql81 = '''SELECT *
                 FROM 物流问题件_创建时间 s1
@@ -1588,7 +1590,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                                     FROM (
                                             SELECT *,IF(物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 物流状态, IF(物流状态 IN ('已签收','理赔'), IF(订单状态 = '已退货(销售)','拒收',物流状态), IF(物流状态 = '发货中','在途',
                                                     IF(物流状态 = '' or 物流状态 IS NULL or 物流状态 = '暂无物流状态', IF(订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),物流状态)))) as 最终状态,
-                                                    
+
                                                     IF(最新处理结果 LIKE '已处理%' OR 最新处理结果 LIKE '货件拒收%' OR 最新处理结果 LIKE '货态拒收%' OR 最新处理结果 LIKE '货态签收%' OR 最新处理结果 LIKE '货态已签收%' 
                                                     OR 最新处理结果 LIKE '已通知客户%' OR 最新处理结果 LIKE '已告知客户%' OR 最新处理结果 LIKE '通知客户取货%' OR 最新处理结果 LIKE '通知客户自取%' OR 最新处理结果 LIKE '请通知客户取货%'
                                                     OR 最新处理结果 LIKE '%暂停使用%' OR 最新处理结果 LIKE '%停止使用%' OR 最新处理结果 LIKE '%没有登记%' OR 最新处理结果 LIKE '%无登记%' OR 最新处理结果 LIKE '%电话停机%'
@@ -1629,7 +1631,6 @@ class QueryOrder_Code(Settings, Settings_sso):
             df82.to_excel(excel_writer=writer, sheet_name='派送问题', index=False)
             df83.to_excel(excel_writer=writer, sheet_name='物流问题&派送问题分析', index=False)
 
-
     def service_check3(self):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         rq_month = datetime.datetime.now().strftime('%Y%m')
@@ -1647,10 +1648,6 @@ class QueryOrder_Code(Settings, Settings_sso):
                 WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
         df21 = pd.read_sql_query(sql=sql21, con=self.engine1)
         listT.append(df21)
-
-
-
-
 
         print('采购异常-绩效 源数据 获取中（二.1）......')
         sql3 = '''SELECT *
@@ -1724,7 +1721,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         # df.to_excel('F:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='有效单量', index=False, engine='xlsxwriter')
 
     # 先更新 获取上月的订单，再去更新之前未完结的订单状态，然后再去更新 需要统计的时间
-    def service_check2(self,username_Cudan, username_Jushou, month_time, day_time):
+    def service_check2(self, username_Cudan, username_Jushou, month_time, day_time):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         rq_month = datetime.datetime.now().strftime('%Y%m')
         username_Cudan = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可"'
@@ -1781,13 +1778,13 @@ class QueryOrder_Code(Settings, Settings_sso):
                             WHERE 删除人 = '' ;'''.format('拒收挽单_挽单列表_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
-
-        print('促      单-绩效 数据整理 写入计算统计表 中 （一）......')   # 不同类型计算两次
+        print('促      单-绩效 数据整理 写入计算统计表 中 （一）......')  # 不同类型计算两次
         sql = '''SELECT '促单' as 类型, 代下单客服, 订单编号, 订单状态,物流状态, 
                         IF(物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 物流状态, IF(物流状态 IN ('已签收','理赔'), IF(订单状态 = '已退货(销售)','拒收',物流状态), IF(物流状态 = '发货中','在途',
                         IF(物流状态 = '' or 物流状态 IS NULL or 物流状态 = '暂无物流状态', IF(订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),物流状态)))) as 最终状态, 统计月份, 记录时间
                 FROM 促单_下单时间 s1
-                WHERE  s1.代下单客服 in ({0}) AND s1.克隆人 = '' AND s1.`统计月份` = '{1}' AND DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{2}';'''.format(username_Cudan, month_time, day_time)
+                WHERE  s1.代下单客服 in ({0}) AND s1.克隆人 = '' AND s1.`统计月份` = '{1}' AND DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{2}';'''.format(
+            username_Cudan, month_time, day_time)
         df2 = pd.read_sql_query(sql=sql, con=self.engine1)
         df2.to_sql('cache_ch', con=self.engine1, index=False, if_exists='replace')
         sql = '''REPLACE INTO {0}(类型, 代下单客服, 订单编号, 订单状态,物流状态, 最终状态, 是否计算, 统计月份, 计算月份, 更新月份, 记录时间, 更新时间) 
@@ -1796,8 +1793,6 @@ class QueryOrder_Code(Settings, Settings_sso):
                                 IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"), 统计月份, '-') as 计算月份, 计算月份 as 更新月份, 记录时间, NOW() 更新时间
                 FROM cache_ch;'''.format('促单_挽单列表_下单时间_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
-
 
         print('采购  异常-绩效 数据整理 写入计算统计表 中 （二.一）......')
         sql = '''SELECT '采购异常' AS 类型, 客服处理人, 订单编号, 订单状态, 物流状态, 
@@ -1817,7 +1812,6 @@ class QueryOrder_Code(Settings, Settings_sso):
                             FROM cache_ch;'''.format('采购异常_问题订单_压单_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
-
         print('压单  核实-绩效 数据整理 写入计算统计表 中 （二.二）......')
         sql = '''SELECT '压单' AS 类型, 最新客服处理人 AS 客服处理人, 订单编号, 订单状态, 物流状态, 
                         IF(物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 物流状态,
@@ -1836,7 +1830,6 @@ class QueryOrder_Code(Settings, Settings_sso):
                             FROM cache_ch;;'''.format('采购异常_问题订单_压单_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
-
         print('系统问题件-绩效 数据整理 写入计算统计表 中 （二.三）......')
         sql = '''SELECT '问题订单' AS 类型, 转化人 AS 客服处理人, 订单编号, 系统订单状态 AS 订单状态, 系统物流状态 AS 物流状态, 
                         IF(系统物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 系统物流状态,
@@ -1854,8 +1847,6 @@ class QueryOrder_Code(Settings, Settings_sso):
                                 DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') as 更新月份, 记录时间, NOW() 更新时间
                             FROM cache_ch;'''.format('采购异常_问题订单_压单_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
-
 
         print('物流问题件-绩效 数据整理 写入计算统计表 中 （三.一）......')
         sql = '''SELECT '物流问题件' AS 类型, 最新客服处理人 AS 客服处理人, 订单编号, 订单状态, 物流状态, 
@@ -1897,7 +1888,6 @@ class QueryOrder_Code(Settings, Settings_sso):
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_sql('cache_ch_cp', con=self.engine1, index=False, if_exists='replace')
 
-
         print('派送问题件-绩效 数据整理 写入计算统计表 中 （三.三去掉物流与派送重复的，以物流为准）......')
         sql = '''SELECT *  FROM cache_ch_cp p WHERE p.订单编号 NOT IN (SELECT 订单编号 FROM cache_ch);'''
         df = pd.read_sql_query(sql=sql, con=self.engine1)
@@ -1911,9 +1901,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                                    FROM cache_check_cp;'''.format('物流_派送_问题件_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
-
-
-        print('物流客诉件-绩效 数据整理 写入计算统计表 中 （四.一）......')   # 不同类型计算一次  --  和挽单，以最后克隆人为准，若有两个克隆人则导出看原因
+        print('物流客诉件-绩效 数据整理 写入计算统计表 中 （四.一）......')  # 不同类型计算一次  --  和挽单，以最后克隆人为准，若有两个克隆人则导出看原因
         sql = '''SELECT '客诉件' AS 类型, 最新客服处理人 AS 客服处理人, 订单编号, 订单状态, 物流状态, 
                         IF(物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 物流状态,
                         IF(物流状态 IN ('已签收','理赔'), IF(订单状态 = '已退货(销售)','拒收',物流状态), IF(物流状态 = '发货中','在途',
@@ -1934,9 +1922,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                            FROM cache_ch;'''.format('物流客诉_挽单列表_退货_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
-
-
-        print('拒收问题件-绩效 数据整理 写入计算统计表 中 （五.一）......')   # 不同类型计算一次  --  和挽单，以最后克隆人为准，若有两个克隆人则导出看原因
+        print('拒收问题件-绩效 数据整理 写入计算统计表 中 （五.一）......')  # 不同类型计算一次  --  和挽单，以最后克隆人为准，若有两个克隆人则导出看原因
         sql = '''SELECT '拒收件' AS 类型, 新单克隆人, 订单编号, 再次克隆下单 AS 克隆后新订单号, 新单订单状态, 新单物流状态, 
                         IF(新单物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 新单物流状态,
                         IF(新单物流状态 IN ('已签收','理赔'), IF(新单订单状态 = '已退货(销售)','拒收',新单物流状态), IF(新单物流状态 = '发货中','在途',
@@ -1976,12 +1962,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                 ORDER BY FIELD(新单克隆人, '蔡利英','杨嘉仪','张陈平','李晓青','刘文君','马育慧','曲开拓','闫凯歌','杨昊','周浩迪','曹可可','合计');'''
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
-
-
-
         user_name = "'于海洋','马育慧','周浩迪','刘文君','杨昊','曲开拓','闫凯歌','曹可可'"
-
-
 
         print('促单-绩效 计算中...... ' + user_name)
         sql111 = '''SELECT 代下单客服, 订单编号,系统物流状态, NULL 回款状态
@@ -2003,7 +1984,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                             IF(待发货 = 0,NULL,待发货) 待发货,
                             IF(问题订单 = 0,NULL,问题订单) 问题订单,
                             IF(已转采购 = 0,NULL,已转采购) 已转采购,
-                            
+
                             IF(发货中 = 0,NULL,发货中) 发货中,
                             IF(签收 = 0,NULL,签收) 签收,
                             IF(拒收 = 0,NULL,拒收) 拒收,
@@ -2030,7 +2011,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                                 SUM(IF(系统物流状态 IN ( "待审核","已审核","待发货转审核"),1,0)) AS 待审核已审核,
                                 SUM(IF(系统物流状态 NOT IN ( "已删除","未支付","支付失败", "客户取消","已取消"),1,0)) AS 有效订单,
                                 COUNT(订单编号)  as 总单量,
-                                
+
                                 SUM(IF(系统物流状态 IN ("发货中", "已发货"),1,0)) AS 发货中,
                                 SUM(IF(系统物流状态 = "签收",1,0)) AS 签收,
                                 SUM(IF(系统物流状态 = "拒收",1,0)) AS 拒收,
@@ -2072,6 +2053,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         writer.save()
         writer.close()
         # df.to_excel('F:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='有效单量', index=False, engine='xlsxwriter')
+
     def service_check22(self):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         rq_month = datetime.datetime.now().strftime('%Y%m')
@@ -2127,17 +2109,15 @@ class QueryOrder_Code(Settings, Settings_sso):
                             WHERE 删除人 = '' ;'''.format('拒收挽单_挽单列表_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
-
-
-
-        print('促单-绩效 数据整理 写入计算统计表 中 （一）......')   # 不同类型计算两次
+        print('促单-绩效 数据整理 写入计算统计表 中 （一）......')  # 不同类型计算两次
         sql = '''SELECT '促单' as 类型, 代下单客服, 订单编号, 订单状态,物流状态, 
                         IF(物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 物流状态,
                         IF(物流状态 IN ('已签收','理赔'), IF(订单状态 = '已退货(销售)','拒收',物流状态), IF(物流状态 = '发货中','在途',
 			            IF(物流状态 = '' or 物流状态 IS NULL or 物流状态 = '暂无物流状态', IF(订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),物流状态)))) as 最终状态, 统计月份, 记录时间
                 FROM 促单_下单时间 s1
                 WHERE  s1.代下单客服 in ({0}) and s1.克隆人 = '' 
-                    and s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT('2023-04-06','%Y%m%d');'''.format(username)
+                    and s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT('2023-04-06','%Y%m%d');'''.format(
+            username)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_sql('cache_ch', con=self.engine1, index=False, if_exists='replace')
         sql = '''REPLACE INTO {0}(类型, 代下单客服, 订单编号, 订单状态,物流状态, 最终状态, 是否计算, 统计月份, 计算月份, 更新月份, 记录时间, 更新时间) 
@@ -2148,7 +2128,6 @@ class QueryOrder_Code(Settings, Settings_sso):
                 FROM cache_ch;'''.format('促单_挽单列表_下单时间_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
-
         print('促单-绩效 源数据 获取中（一.1）......')
         sql21 = '''SELECT *
                 FROM 促单_下单时间 s1
@@ -2157,7 +2136,8 @@ class QueryOrder_Code(Settings, Settings_sso):
         listT.append(df21)
 
         print('促单-绩效 有效数据 获取中（一.2）......')
-        sql22 = '''SELECT * FROM 促单_挽单列表_下单时间_计算统计 s1 WHERE s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m');'''.format(username)
+        sql22 = '''SELECT * FROM 促单_挽单列表_下单时间_计算统计 s1 WHERE s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m');'''.format(
+            username)
         df22 = pd.read_sql_query(sql=sql22, con=self.engine1)
         listT.append(df22)
 
@@ -2179,8 +2159,6 @@ class QueryOrder_Code(Settings, Settings_sso):
         df24 = pd.read_sql_query(sql=sql24, con=self.engine1)
         listT.append(df24)
 
-
-
         print('采购异常-绩效 数据整理 写入计算统计表 中 （二.一）......')
         sql = '''SELECT '采购异常' AS 类型, 客服处理人, 订单编号, 订单状态, 物流状态, 
                         IF(物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 物流状态,
@@ -2197,7 +2175,6 @@ class QueryOrder_Code(Settings, Settings_sso):
                                 IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"), 统计月份, '-') as 计算月份,  记录时间, NOW() 更新时间
                             FROM cache_ch;'''.format('采购异常_问题订单_压单_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
 
         print('压单-绩效 数据整理 写入计算统计表 中 （二.二）......')
         sql = '''SELECT '压单' AS 类型, 最新客服处理人 AS 客服处理人, 订单编号, 订单状态, 物流状态, 
@@ -2216,7 +2193,6 @@ class QueryOrder_Code(Settings, Settings_sso):
                             FROM cache_ch;;'''.format('采购异常_问题订单_压单_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
-
         print('系统问题件-绩效 数据整理 写入计算统计表 中 （二.三）......')
         sql = '''SELECT '问题订单' AS 类型, 转化人 AS 客服处理人, 订单编号, 系统订单状态 AS 订单状态, 系统物流状态 AS 物流状态, 
                         IF(系统物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 系统物流状态,
@@ -2233,8 +2209,6 @@ class QueryOrder_Code(Settings, Settings_sso):
                                 IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"), 统计月份, '-') as 计算月份, 记录时间, NOW() 更新时间
                             FROM cache_ch;'''.format('采购异常_问题订单_压单_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
-
 
         print('采购异常-绩效 源数据 获取中（二.1）......')
         sql3 = '''SELECT *
@@ -2261,9 +2235,6 @@ class QueryOrder_Code(Settings, Settings_sso):
         sql3 = '''SELECT * FROM 采购异常_问题订单_压单_计算统计 s1 WHERE  s1.是否计算 = '是' AND s1.`计算月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m');'''
         df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
         listT.append(df3)
-
-
-
 
         print('物流问题件-绩效 数据整理 写入计算统计表 中 （三.一）......')
         sql = '''SELECT '物流问题件' AS 类型, 最新客服处理人 AS 客服处理人, 订单编号, 订单状态, 物流状态, 
@@ -2304,7 +2275,6 @@ class QueryOrder_Code(Settings, Settings_sso):
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_sql('cache_ch_cp', con=self.engine1, index=False, if_exists='replace')
 
-
         # 去掉物流与派送重复的，以物流为准
         print('派送问题件-绩效 数据整理 写入计算统计表 中 （三.二去掉物流与派送重复的，以物流为准）......')
         sql = '''SELECT *  FROM cache_ch_cp p WHERE p.订单编号 NOT IN (SELECT 订单编号 FROM cache_ch);'''
@@ -2317,9 +2287,6 @@ class QueryOrder_Code(Settings, Settings_sso):
                                         IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"), 统计月份, '-') as 计算月份, 记录时间, NOW() 更新时间
                                    FROM cache_check_cp;'''.format('物流_派送_问题件_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
-
-
-
 
         print('物流问题-绩效 源数据 获取中（三.1）......')
         sql4 = '''SELECT *
@@ -2362,10 +2329,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         df44 = pd.read_sql_query(sql=sql44, con=self.engine1)
         listT.append(df44)
 
-
-
-
-        print('物流客诉件-绩效 数据整理 写入计算统计表 中 （四.一）......')   # 不同类型计算一次  --  和挽单，以最后克隆人为准，若有两个克隆人则导出看原因
+        print('物流客诉件-绩效 数据整理 写入计算统计表 中 （四.一）......')  # 不同类型计算一次  --  和挽单，以最后克隆人为准，若有两个克隆人则导出看原因
         sql = '''SELECT '客诉件' AS 类型, 最新客服处理人 AS 客服处理人, 订单编号, 订单状态, 物流状态, 
                         IF(物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 物流状态,
                         IF(物流状态 IN ('已签收','理赔'), IF(订单状态 = '已退货(销售)','拒收',物流状态), IF(物流状态 = '发货中','在途',
@@ -2385,7 +2349,6 @@ class QueryOrder_Code(Settings, Settings_sso):
                            FROM cache_ch;'''.format('物流客诉_挽单列表_退货_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
-
         print('物流客诉-绩效 源数据 获取中（四.1）......')
         sql5 = '''SELECT *, IF(赠品补发订单编号 <> "",IF(最新客服处理结果 LIKE '%补发海外仓%','统计','不统计'),'不统计') AS 是否统计	
                 FROM 物流客诉件_创建时间 s1
@@ -2404,9 +2367,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
         listT.append(df5)
 
-
-
-        print('拒收问题件-绩效 数据整理 写入计算统计表 中 （五.一）......')   # 不同类型计算一次  --  和挽单，以最后克隆人为准，若有两个克隆人则导出看原因
+        print('拒收问题件-绩效 数据整理 写入计算统计表 中 （五.一）......')  # 不同类型计算一次  --  和挽单，以最后克隆人为准，若有两个克隆人则导出看原因
         sql = '''SELECT '拒收件' AS 类型, 新单克隆人, 订单编号, 再次克隆下单 AS 克隆后新订单号, 新单订单状态, 新单物流状态, 
                         IF(新单物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 新单物流状态,
                         IF(新单物流状态 IN ('已签收','理赔'), IF(订单状态 = '已退货(销售)','拒收',新单物流状态), IF(新单物流状态 = '发货中','在途',
@@ -2439,13 +2400,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
         listT.append(df6)
 
-
-
-
-
         user_name = "'于海洋','马育慧','周浩迪','刘文君','杨昊','曲开拓','闫凯歌','曹可可'"
-
-
 
         print('促单-绩效 计算中...... ' + user_name)
         sql111 = '''SELECT 代下单客服, 订单编号,系统物流状态, NULL 回款状态
@@ -2467,7 +2422,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                             IF(待发货 = 0,NULL,待发货) 待发货,
                             IF(问题订单 = 0,NULL,问题订单) 问题订单,
                             IF(已转采购 = 0,NULL,已转采购) 已转采购,
-                            
+
                             IF(发货中 = 0,NULL,发货中) 发货中,
                             IF(签收 = 0,NULL,签收) 签收,
                             IF(拒收 = 0,NULL,拒收) 拒收,
@@ -2494,7 +2449,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                                 SUM(IF(系统物流状态 IN ( "待审核","已审核","待发货转审核"),1,0)) AS 待审核已审核,
                                 SUM(IF(系统物流状态 NOT IN ( "已删除","未支付","支付失败", "客户取消","已取消"),1,0)) AS 有效订单,
                                 COUNT(订单编号)  as 总单量,
-                                
+
                                 SUM(IF(系统物流状态 IN ("发货中", "已发货"),1,0)) AS 发货中,
                                 SUM(IF(系统物流状态 = "签收",1,0)) AS 签收,
                                 SUM(IF(系统物流状态 = "拒收",1,0)) AS 拒收,
@@ -2531,18 +2486,17 @@ class QueryOrder_Code(Settings, Settings_sso):
         listT[6].to_excel(excel_writer=writer, sheet_name='压单核实', index=False)
         listT[7].to_excel(excel_writer=writer, sheet_name='拒收问题', index=False)
 
-
-        df2.to_excel(excel_writer=writer, sheet_name='促单', index=False)             # 源数据
-        df22.to_excel(excel_writer=writer, sheet_name='促单', index=False, startcol=12)   # 有效源数据
-        df23.to_excel(excel_writer=writer, sheet_name='促单', index=False, startcol=24)   # 有效源数据 本月统计
-        df24.to_excel(excel_writer=writer, sheet_name='促单', index=False, startcol=12)   # 有效源数据 本月统计 统计
-
+        df2.to_excel(excel_writer=writer, sheet_name='促单', index=False)  # 源数据
+        df22.to_excel(excel_writer=writer, sheet_name='促单', index=False, startcol=12)  # 有效源数据
+        df23.to_excel(excel_writer=writer, sheet_name='促单', index=False, startcol=24)  # 有效源数据 本月统计
+        df24.to_excel(excel_writer=writer, sheet_name='促单', index=False, startcol=12)  # 有效源数据 本月统计 统计
 
         if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
             del book['Sheet1']
         writer.save()
         writer.close()
         # df.to_excel('F:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='有效单量', index=False, engine='xlsxwriter')
+
 
 if __name__ == '__main__':
     # select = input("请输入需要查询的选项：1=> 按订单查询； 2=> 按时间查询；\n")
@@ -2558,16 +2512,15 @@ if __name__ == '__main__':
     '''
         # -----------------------------------------------查询状态运行（一）-----------------------------------------
     '''
-
-     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
+    # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     if int(select) == 1:
         print("1-->>> 正在按订单查询+++")
         team = 'gat'
         searchType = '订单号'
-        pople_Query = '订单检索'                # 客服查询；订单检索
-        m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd')        # 导入；，更新--->>数据更新切换
+        pople_Query = '订单检索'  # 客服查询；订单检索
+        m.readFormHost(team, searchType, pople_Query, 'timeStart', 'timeEnd')  # 导入；，更新--->>数据更新切换
 
-    elif int(select) == 99:
+    elif int(select) == 99:             # 绩效使用   更新数据使用
         hanlde = '自0动'
         if hanlde == '自动':
             if (datetime.datetime.now()).strftime('%d') == 1:
@@ -2583,30 +2536,30 @@ if __name__ == '__main__':
         '''
             开始获取 绩效数据
         '''
-        m.service_id_order(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)      # 促单查询；下单时间 @~@ok
+        m.service_id_order(hanlde, timeStart, timeEnd, proxy_handle, proxy_id)  # 促单查询；下单时间 @~@ok
 
         order_time = '创建时间'
+        user_caigou = '"蔡利英", "张陈平", "杨嘉仪", "李晓青"'
         m.service_id_ssale(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 采购查询；创建时间 （一、获取订单内容）@~@ok
-        m.service_id_ssale_info(proxy_handle, proxy_id, '采购异常_创建时间')                             # 采购查询；创建时间 （二、获取处理详情）@~@ok
+        m.service_id_ssale_info(proxy_handle, proxy_id, '采购异常_创建时间', user_caigou)  # 采购查询；创建时间 （二、获取处理详情）@~@ok
 
         order_time = '创建时间'
         m.service_id_getRedeemOrderList(timeStart, timeEnd, proxy_handle, proxy_id)  # 挽单列表  查询@~@ok
 
-        order_time = '处理时间'                                                                 # 派送问题  处理时间:登记结果处理时间； 创建时间： 订单放入时间@~@
-        m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)    # (需处理两次)
-        m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)    # (需处理两次)
+        order_time = '处理时间'  # 派送问题  处理时间:登记结果处理时间； 创建时间： 订单放入时间@~@
+        m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)  # (需处理两次)
+        m.service_id_getDeliveryList(timeStart, timeEnd, order_time, proxy_handle, proxy_id)  # (需处理两次)
 
         order_time = '创建时间'
-        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
+        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 物流客诉件  查询；订单检索@~@ok
 
         order_time = '创建时间'
-        m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)              # 物流问题  压单核实 查询；订单检索ok
+        m.service_id_waybill(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # 物流问题  压单核实 查询；订单检索ok
 
-        m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)            # 系统问题件  查询；订单检索
+        m.service_id_orderInfo(timeStart, timeEnd, proxy_handle, proxy_id)  # 系统问题件  查询；订单检索（处理人员： "蔡利英", "张陈平", "杨嘉仪", "李晓青"）
 
-        order_time = '跟进时间'                                                                  # 拒收问题  查询；订单检索@~@ok
-        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)      # (需处理两次)
-
+        order_time = '跟进时间'  # 拒收问题  查询；订单检索@~@ok
+        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # (需处理两次)
 
         '''
             开始获取 其他数据
@@ -2634,11 +2587,13 @@ if __name__ == '__main__':
         #     day_time = str(day)
         #     m.service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
 
-    elif int(select) == 8:
-        username = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可"'   # 促单人
-        rq_month = '202305'               # 统计月份
-        rq_day = '2023-05-10'            # 统计日期
-        m.service_check(username, rq_month, rq_day)                         # 绩效数据导出
+    elif int(select) == 8:      # 单独 本月绩效数据使用 不包含上月的留底数据
+        username_Cudan = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可"'         # 促单人
+        username_Jushou = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可","蔡利英","杨嘉仪","张陈平","李晓青"'        # 拒收挽单
+        username_caigou_yadan_wentijian = '"蔡利英","杨嘉仪","张陈平","李晓青"'             # 采购问题压单
+        rq_month = '202305'  # 统计月份
+        rq_day = '2023-05-10'  # 统计日期
+        m.service_check(username_Cudan, username_Jushou, username_caigou_yadan_wentijian,  rq_month, rq_day)  # 绩效数据导出
 
 
     elif int(select) == 9:
@@ -2649,6 +2604,5 @@ if __name__ == '__main__':
         # m._service_id_orderInfoTWO('2023-01-01')              # 系统问题件  查询；订单检索  单独测试使用
         # m._service_id_orderInfoThree('2023-01-01')            # 系统问题件  查询；订单检索  单独测试使用
         pass
-
 
     print('查询耗时：', datetime.datetime.now() - start)

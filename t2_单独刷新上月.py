@@ -1407,6 +1407,7 @@ if __name__ == '__main__':
         month_last = '2023-01-01'
         month_yesterday = '2023-02-28'
         month_begin = '2022-12-01'
+        
 
     print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
     print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')

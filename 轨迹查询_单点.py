@@ -310,11 +310,11 @@ class QueryTwo(Settings, Settings_sso):
 
                             if '二次出貨' in res['track_info'] or '二次出貨貼標' in res['track_info'] or '出貨理貨中' in res['track_info'] or '首發出貨貼標' in res['track_info'] or '已发货' in res['track_info'] or '已集貨' in res['track_info'] or '顺丰速运 已收取快件' in res['track_info'] or '已核单打包出库' in res['track_info']:
                                 res['出货时间'] = res['track_date']
-                            elif '已核重,集运仓' in res['track_info'] or '已核重-集运仓' in res['track_info'] or '取件中' in res['track_info'] or '【已核重】-集运仓发货' in res['track_info']:
+                            elif '已核重,集运仓' in res['track_info'] or '已核重-集运仓' in res['track_info'] or '取件中' in res['track_info'] or '【已核重】-集运仓发货' in res['track_info'] or '處理中' in res['track_info']:
                                 res['出货时间'] = res['track_date']
 
                             if '貨件已抵達 土城營業所，貨件整理中' in res['track_info'] or '貨件已抵達土城營業所，貨件整理中' in res['track_info'] or '轉交配送中'in res['track_info'] or '進驗成功 包裹已送達物流中心，進行理貨中' in res['track_info'] or '貨件已抵達桃園營業所，貨件整理中。貨物件數' in res['track_info']  or '貨件已抵達桃園營業所 ，貨件整理中。貨物件數' in res['track_info'] \
-                                or '快件在青衣航运路速運營業點（不對公眾開放）完成分拣' in res['track_info'] or '進驗成功 包裹已送達物流中心，進行理貨中' in res['track_info'] or 'SRP 出货回档 ' in res['track_info']:
+                                or '快件在青衣航运路速運營業點（不對公眾開放）完成分拣' in res['track_info'] or '進驗成功 包裹已送達物流中心，進行理貨中' in res['track_info'] or 'SRP 出货回档 ' in res['track_info'] or '轉運作業中' in res['track_info']:
                                 res['上线时间'] = res['track_date']
                             elif '貨件已抵達 大園營業所 ，貨件整理中' in res['track_info'] or '貨件已抵達大園營業所，貨件整理中。貨物件數' in res['track_info'] or '轉運中' in res['track_info'] or '快件到达 【香港青衣中轉場】' in res['track_info']:
                                 res['上线时间'] = res['track_date']
@@ -325,12 +325,12 @@ class QueryTwo(Settings, Settings_sso):
 
                             if ('送達客戶不在' in res['track_info'] or '貨件拒收' in res['track_info'] or '與客戶另約時間' in res['track_info'] or '收貨人' in res['track_info']) and '保管中' in res['track_info'] or '營業所送至' in res['track_info'] or '集配站送至' in res['track_info'] or '已与收方客户约定' in res['track_info'] or '快件到达指定自取点' in res['track_info']:
                                 res['保管时间'] = res['track_date']
-                            elif ('貨件由' in res['track_info'] and '保管中' in res['track_info']) or '收件地址為公司行號，本日休假' in res['track_info'] or '暫置營業所' in res['track_info'] or (('收貨人' in res['track_info'] or '該地址' in res['track_info']) and '營業所處理中' in res['track_info']) or '快件派送不成功' in res['track_info']:
+                            elif ('貨件由' in res['track_info'] and '保管中' in res['track_info']) or '收件地址為公司行號，本日休假' in res['track_info'] or '暫置營業所' in res['track_info'] or (('收貨人' in res['track_info'] or '該地址' in res['track_info']) and '營業所處理中' in res['track_info']) or '快件派送不成功' in res['track_info'] or '異常' in res['track_info']:
                                 res['保管时间'] = res['track_date']
 
-                            if '送達。貨物件數共' in res['track_info'] or '貨件已退回，退貨號碼' in res['track_info'] or '順利送達' in res['track_info'] or '在官网"运单资料&签收图"，可查看签收人信息' in res['track_info'] or '已完成包裹成功取件' in res['track_info'] or 'ESP 成功签收已取件' in res['track_info']:
+                            if '送達。貨物件數共' in res['track_info'] or '貨件已退回，退貨號碼' in res['track_info'] or '順利送達' in res['track_info'] or '在官网"运单资料&签收图"，可查看签收人信息' in res['track_info'] or '已完成包裹成功取件' in res['track_info'] or 'ESP 成功签收已取件' in res['track_info'] or '貨件送達' in res['track_info']:
                                 res['完成时间'] = res['track_date']
-                            elif '退件' in res['track_info'] or '货物退回-已上架' in res['track_info']:
+                            elif '退件' in res['track_info'] or '货物退回-已上架' in res['track_info'] or '配送完成' in res['track_info']:
                                 res['完成时间'] = res['track_date']
 
                             # print(res)track_info

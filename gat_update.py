@@ -8818,7 +8818,7 @@ class QueryUpdate(Settings):
                 app.display_alerts = False
                 wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
                 wbsht1 = app.books.open(new_path)
-                wbsht.macro('gat_总_品类_物流_两月签收率')()
+                wbsht.macro('zl_gat_report_new2.gat_总_品类_物流_两月签收率')()
                 wbsht1.save()
                 wbsht1.close()
                 wbsht.close()

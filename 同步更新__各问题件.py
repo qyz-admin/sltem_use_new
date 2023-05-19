@@ -923,7 +923,7 @@ class QueryTwo(Settings, Settings_sso):
 
 
     # 查询更新（新后台的获取-采购问题件）
-    def ssale_Query(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入采购问题件界面
+    def ssale_Query(self, timeStart, timeEnd, proxy_handle, proxy_id, user_caigou):  # 进入采购问题件界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('+++正在查询信息中')
         url = r'https://gimp.giikin.com/service?service=gorder.afterSale&action=getPurchaseAbnormalList'
@@ -932,8 +932,7 @@ class QueryTwo(Settings, Settings_sso):
                     'Referer': 'https://gimp.giikin.com/front/customerComplaint'}
         data = {'page': 1, 'pageSize': 90, 'areaId': None, 'userId': None, 'dealUser': None, 'currencyId': None, 'orderNumber': None,
                 'productId': None, 'timeStart': None, 'timeEnd': None, 'add_time_start': None, 'add_time_end': None,
-                'orderType': None, 'lastProcess': None, 'logisticsStatus': None, 'update_time_start': timeStart,
-                'update_time_end': timeEnd}
+                'orderType': None, 'lastProcess': None, 'logisticsStatus': None, 'update_time_start': timeStart, 'update_time_end': timeEnd}
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -941,45 +940,43 @@ class QueryTwo(Settings, Settings_sso):
             req = self.session.post(url=url, headers=r_header, data=data)
         print('+++已成功发送请求......')
         req = json.loads(req.text)  # json类型数据转换为dict字典
-        max_count = req['data']['total']
-        ordersDict = []
-        try:
-            for result in req['data']['data']:  # 添加新的字典键-值对，为下面的重新赋值用
-                ordersDict.append(result)
-        except Exception as e:
-            print('转化失败： 重新获取中', str(Exception) + str(e))
-        df = pd.json_normalize(ordersDict)
-        print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')      # 获取总单量
-        print('*' * 50)
-        if max_count != 0:
-            if max_count > 90:
-                in_count = math.ceil(max_count/90)
+        if req['data'] != []:
+            max_count = req['data']['total']
+            print('++++++本批次查询成功;  总计： ' + str(max_count) + ' 条信息+++++++')  # 获取总单量
+            print('*' * 50)
+            if max_count != 0 and max_count != []:
+                df = pd.DataFrame([])
                 dlist = []
+                in_count = math.ceil(max_count / 90)
                 n = 1
-                while n < in_count:  # 这里用到了一个while循环，穿越过来的
-                    print('剩余查询次数' + str(in_count - n))
-                    n = n + 1
+                while n <= in_count:  # 这里用到了一个while循环，穿越过来的
                     data = self._ssale_Query(timeStart, timeEnd, n, proxy_handle, proxy_id)                     # 分页获取详情
                     dlist.append(data)
+                    print('剩余查询次数' + str(in_count - n))
+                    n = n + 1
                 dp = df.append(dlist, ignore_index=True)
-            else:
-                dp = df
-            dp = dp[(dp['currencyName'].str.contains('台币|港币', na=False))]           # 筛选币种
-            dp = dp[['orderNumber']]
-            # print(dp)
-            print('++++++明细查询中+++++++')
-            # print(dp['orderNumber'][0])
-            # dt = self._ssale_Query_info(dp['orderNumber'][0])                           # 查询第一个订单信息
-            order_list = list(dp['orderNumber'])
-            # print(order_list)
-            # dtlist = []
-            for ord in order_list:
-                data = self._ssale_Query_info(ord, proxy_handle, proxy_id)                                      # 查询全部订单信息
-                # dtlist.append(data)
-            # print(99)
-            # print(dtlist)
-            # dtlist.to_excel('F:\输出文件\\采购问题件-查询-副本{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            print('写入成功......')
+                dp = dp[(dp['currencyName'].str.contains('台币|港币', na=False))]  # 筛选币种
+                dp = dp[['orderNumber']]
+                print('++++++明细查询中+++++++')
+                order_list = list(dp['orderNumber'])
+                df2 = pd.DataFrame([])
+                dtlist = []
+                for ord in order_list:
+                    data = self._ssale_Query_info(ord, proxy_handle, proxy_id)  # 查询全部订单信息
+                    dtlist.append(data)
+                dp2 = df2.append(dtlist, ignore_index=True)
+                print(99)
+                print(dp2)
+                dp3 = dp2[['orderNumber', 'content', 'addTime', 'addTime', 'name', 'dealProcess']]
+                dp3.columns = ['订单编号', '反馈内容', '处理时间', '详细处理时间', '处理人', '处理结果']
+                dp3 = dp3[(dp3['处理人'].str.contains(user_caigou, na=False))]
+                dp3.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+                sql = '''REPLACE INTO 采购异常(订单编号,处理结果,处理时间,详细处理时间,反馈内容, 处理人,记录时间) 
+                        SELECT 订单编号,处理结果,处理时间,详细处理时间,反馈内容, 处理人, NOW() 记录时间 
+                        FROM customer;'''
+                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                # dtlist.to_excel('F:\输出文件\\采购问题件-查询-副本{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+                print('写入成功......')
         else:
             print('没有需要获取的信息！！！')
             return
@@ -1037,15 +1034,15 @@ class QueryTwo(Settings, Settings_sso):
             for ord in order_dict:  # 添加新的字典键-值对，为下面的重新赋值用
                 ord['content'] = zhconv.convert(ord['content'], 'zh-hans')
                 orders_dict.append(ord.copy())
-                data = pd.json_normalize(ord)
-                dp = data[['orderNumber', 'content', 'addTime', 'addTime', 'name', 'dealProcess']]
-                dp.columns = ['订单编号', '反馈内容', '处理时间', '详细处理时间', '处理人', '处理结果']
-                dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞|张陈平|李晓青', na=False))]
-                dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
-                sql = '''REPLACE INTO 采购异常(订单编号,处理结果,处理时间,详细处理时间,反馈内容, 处理人,记录时间) 
-                        SELECT 订单编号,处理结果,处理时间,详细处理时间,反馈内容, 处理人, NOW() 记录时间 
-                        FROM customer;'''
-                pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                # data = pd.json_normalize(ord)
+                # dp = data[['orderNumber', 'content', 'addTime', 'addTime', 'name', 'dealProcess']]
+                # dp.columns = ['订单编号', '反馈内容', '处理时间', '详细处理时间', '处理人', '处理结果']
+                # dp = dp[(dp['处理人'].str.contains('蔡利英|杨嘉仪|蔡贵敏|刘慧霞|张陈平|李晓青', na=False))]
+                # dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+                # sql = '''REPLACE INTO 采购异常(订单编号,处理结果,处理时间,详细处理时间,反馈内容, 处理人,记录时间)
+                #         SELECT 订单编号,处理结果,处理时间,详细处理时间,反馈内容, 处理人, NOW() 记录时间
+                #         FROM customer;'''
+                # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         except Exception as e:
             print('转化失败： 重新获取中', str(Exception) + str(e))
             sso = Settings_sso()
@@ -1737,7 +1734,8 @@ if __name__ == '__main__':
         m.waybill_deliveryList(timeStart, timeEnd, proxy_handle, proxy_id)                              # 查询更新-派送问题件、
         
         timeStart, timeEnd = m.readInfo('采购异常')
-        m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'), proxy_handle, proxy_id)  # 查询更新-采购问题件（一、简单查询）
+        user_caigou = "蔡利英|杨嘉仪|蔡贵敏|刘慧霞|张陈平|李晓青"
+        m.ssale_Query(timeStart, datetime.datetime.now().strftime('%Y-%m-%d'), proxy_handle, proxy_id, user_caigou)  # 查询更新-采购问题件（一、简单查询）
 
         timeStart, timeEnd = m.readInfo('短信模板')
         m.getMessage_Log(timeStart, timeEnd, proxy_handle, proxy_id)                            # 查询更新-短信模板 @--ok
