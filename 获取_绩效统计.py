@@ -183,6 +183,7 @@ class QueryOrder_Code(Settings, Settings_sso):
     # 绩效-查询 促单（一.1）
     def service_id_order(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入订单检索界面     促单查询
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        pople_Query = '促单查询'
         print('正在查询 促单订单 起止时间：' + str(timeStart) + " *** " + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -209,7 +210,7 @@ class QueryOrder_Code(Settings, Settings_sso):
             in_count = math.ceil(max_count / 500)
             n = 1
             while n <= in_count:  # 这里用到了一个while循环，穿越过来的
-                data = self._service_id_order(timeStart, timeEnd, n, proxy_handle, proxy_id)
+                data = self._service_id_order(timeStart, timeEnd, n, proxy_handle, proxy_id, pople_Query, "")
                 dlist.append(data)
                 print('剩余查询次数' + str(in_count - n))
                 n = n + 1
@@ -228,18 +229,29 @@ class QueryOrder_Code(Settings, Settings_sso):
             return
         print('-' * 50)
         print('-' * 50)
-    def _service_id_order(self, timeStart, timeEnd, n, proxy_handle, proxy_id):
+    def _service_id_order(self, timeStart, timeEnd, n, proxy_handle, proxy_id, pople_Query, ord):
         url = r'https://gimp.giikin.com/service?service=gorder.customer&action=getOrderList'
         r_header = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
-        data = {'page': n, 'pageSize': 500, 'orderPrefix': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None,
-                'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': None, 'warehouse': None,
-                'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None, 'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None,
-                'volumeEnd': None, 'volumeStart': None, 'chooser_id': None, 'service_id': -1, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None,
-                'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
-                'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None, 'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59'}
+        if pople_Query == '促单查询':
+            data = {'page': n, 'pageSize': 500, 'orderPrefix': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                    'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None,
+                    'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': None, 'warehouse': None,
+                    'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None, 'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None,
+                    'volumeEnd': None, 'volumeStart': None, 'chooser_id': None, 'service_id': -1, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None,
+                    'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
+                    'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None, 'timeStart': timeStart + ' 00:00:00', 'timeEnd': timeEnd + ' 23:59:59'}
+        elif pople_Query == '物流客诉查询':
+            data = {'page': 1, 'pageSize': 500, 'orderPrefix': ord, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
+                    'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None,
+                    'currencyId': None, 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': None, 'warehouse': None,
+                    'isEmptyWayBillNumber': None, 'logisticsStatus': None, 'orderStatus': None, 'tuan': None, 'tuanStatus': None, 'hasChangeSale': None, 'optimizer': None,
+                    'volumeEnd': None, 'volumeStart': None, 'chooser_id': None, 'service_id': -1, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None,
+                    'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None, 'estimateWeightEnd': None, 'order': None, 'sortField': None,
+                    'orderMark': None, 'remarkCheck': None, 'preSecondWaybill': None, 'whid': None, 'isChangeMark': None, 'timeStart': None, 'timeEnd': None}
+        else:
+            data = None
         if proxy_handle == '代理服务器':     # print('+++已成功发送请求......')
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -758,6 +770,30 @@ class QueryOrder_Code(Settings, Settings_sso):
                     FROM cache_check;'''.format(data_woks, data_woks2)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
+
+            print('++++++订单状态明细查询中+++++++')
+            order_list = list(dp['赠品补发订单编号'])
+            max_count = len(order_list)
+            pople_Query = '物流客诉查询'
+            df2 = pd.DataFrame([])
+            dtlist = []
+            n = 0
+            while n < max_count + 500:
+                ord = ','.join(order_list[n:n + 500])
+                data = self._service_id_order("", "", 0, proxy_handle, proxy_id, pople_Query, ord)  # 查询全部订单信息
+                dtlist.append(data)
+            dp2 = df2.append(dtlist, ignore_index=True)
+            print(99)
+            print(dp2)
+            dp3 = dp2[['orderNumber', 'addTime', 'orderStatus', 'logisticsStatus']]
+            dp3.columns = ['订单编号', '下单时间', '订单状态', '物流状态']
+            dp3.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            sql = '''update {0} a, customer b
+                       set a.`赠品补发订单状态`= IF(b.`订单状态` = '', NULL, b.`订单状态`),
+                           a.`赠品补发物流状态`= IF(b.`物流状态` = '', NULL, b.`物流状态`)
+                    where a.`订单编号`=b.`订单编号`;'''.format(data_woks)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('订单更新成功......')
         print('*' * 50)
     def _service_id_waybill_Query(self, timeStart, timeEnd, n, proxy_handle, proxy_id, order_time):  # 进入物流客诉件界面
         print('+++正在查询第 ' + str(n) + ' 页信息中')
@@ -1817,7 +1853,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                         FROM 物流客诉件_创建时间 s1
                         WHERE  s1.`统计月份` = '{0}' and DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{1}' AND s1.最新处理状态 <> ""
                 ) s
-                WHERE s.`是否统计` = '统计';'''
+                WHERE s.`是否统计` = '统计';'''.format(month_time, day_time)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_sql('cache_ch', con=self.engine1, index=False, if_exists='replace')
         sql = '''REPLACE INTO {0}(类型, 客服处理人, 订单编号, 赠品补发订单编号, 订单状态, 物流状态, 赠品补发订单状态, 赠品补发物流状态,最终状态, 赠品补发最终状态, 是否计算, 统计月份, 计算月份, 更新月份, 记录时间, 更新时间) 
@@ -1830,22 +1866,21 @@ class QueryOrder_Code(Settings, Settings_sso):
 
         print('拒收问题件-绩效 数据整理 写入计算统计表 中 （三.一）......')  # 不同类型计算一次  --  和挽单，以最后克隆人为准，若有两个克隆人则导出看原因
         sql = '''SELECT '拒收件' AS 类型, 新单克隆人, 订单编号, 再次克隆下单 AS 克隆后新订单号, 新单订单状态, 新单物流状态, 
-                                IF(新单物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 新单物流状态,
-                                IF(新单物流状态 IN ('已签收','理赔'), IF(新单订单状态 = '已退货(销售)','拒收',新单物流状态), IF(新单物流状态 = '发货中','在途',
-        			            IF(新单物流状态 = '' or 新单物流状态 IS NULL or 新单物流状态 = '暂未物流状态', IF(新单订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),新单物流状态)))) as 最终状态, 统计月份, 记录时间
-                        FROM (
-                                SELECT *
-                                FROM 拒收问题件_跟进时间 s1
-                                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT('2023-02-03','%Y%m%d') AND s1.再次克隆下单 <> "" and s1.新单克隆人 in ({0})
-                        ) s;'''.format(username_Jushou)
+                        IF(新单物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 新单物流状态, IF(新单物流状态 IN ('已签收','理赔'), IF(新单订单状态 = '已退货(销售)','拒收',新单物流状态), IF(新单物流状态 = '发货中','在途',
+                        IF(新单物流状态 = '' or 新单物流状态 IS NULL or 新单物流状态 = '暂未物流状态', IF(新单订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),新单物流状态)))) as 最终状态, 统计月份, 记录时间
+                FROM (
+                        SELECT *
+                        FROM 拒收问题件_跟进时间 s1
+                        WHERE  s1.`统计月份` = '{0}' and DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{1}' AND s1.再次克隆下单 <> "" and s1.新单克隆人 in ({2})
+                ) s;'''.format(month_time, day_time, username_Jushou)
         df = pd.read_sql_query(sql=sql, con=self.engine1)
         df.to_sql('cache_ch', con=self.engine1, index=False, if_exists='replace')
         sql = '''REPLACE INTO {0}(类型, 新单克隆人, 订单编号, 克隆后新订单号, 新单订单状态,新单物流状态, 最终状态, 是否计算, 统计月份, 计算月份, 更新月份, 记录时间, 更新时间) 
-                                   SELECT 类型, 新单克隆人, 订单编号, 克隆后新订单号, 新单订单状态,新单物流状态, 最终状态, 
-                                         IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),'是','否') as 是否计算, 统计月份,
-                                         IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"), 统计月份, '-') as 计算月份,  
-                                         DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 3 MONTH),'%Y%m') as 更新月份, 记录时间, NOW() 更新时间
-                                   FROM cache_ch;'''.format('拒收挽单_挽单列表_计算统计')
+                           SELECT 类型, 新单克隆人, 订单编号, 克隆后新订单号, 新单订单状态,新单物流状态, 最终状态, 
+                                 IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),'是','否') as 是否计算, 统计月份,
+                                 IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"), 统计月份, '-') as 计算月份,  
+                                 DATE_FORMAT(curdate(),'%Y%m') as 更新月份, 记录时间, NOW() 更新时间
+                           FROM cache_ch;'''.format('拒收挽单_挽单列表_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
 
 

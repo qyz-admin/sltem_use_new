@@ -3919,8 +3919,8 @@ if __name__ == '__main__':
     # ready = '上期宏'
 
     if handle == '自动':
-        last_month = '2023.04.21'
-        now_month = '2023.05.19'
+        last_month = '2023.04.20'
+        now_month = '2023.05.20'
         handle_now_month,handle_last_month,handle_now_month_old,handle_last_month_old = '','','',''
     else:
         now_month = '2023.05.09'            # 本月记录日期
@@ -3933,8 +3933,8 @@ if __name__ == '__main__':
 
     # 测试监控运行（二）-- 第一种手动方式
     # m.order_Monitoring('港台')        # 各月缓存（整体一）、
-    # for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '金蝉家族优化组-台湾', '金蝉家族优化组-香港','金蝉项目组-台湾', '金蝉项目组-香港']:
-    for team in ['雪豹-台湾', '雪豹-香港']:
+    for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '金蝉家族优化组-台湾', '金蝉家族优化组-香港','金蝉项目组-台湾', '金蝉项目组-香港']:
+    # for team in ['雪豹-台湾', '雪豹-香港']:
     # for team in ['雪豹-台湾']:
     # for team in ['港台-台湾']:
         now_month = now_month.replace('.', '-')           # 修改配置时间
