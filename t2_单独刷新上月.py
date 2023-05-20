@@ -1406,6 +1406,7 @@ if __name__ == '__main__':
         # 更新总表时间
         month_last = '2023-01-01'
         month_yesterday = '2023-02-28'
+        
         month_begin = '2022-12-01'
         
 
