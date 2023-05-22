@@ -5347,8 +5347,6 @@ class QueryUpdate(Settings):
             wbsht.save()
             wbsht1.close()
             wbsht.close()
-            wbsht = None
-            time.sleep(180)
             app.quit()
             app.quit()
         except Exception as e:
@@ -5391,8 +5389,6 @@ class QueryUpdate(Settings):
             wbsht1.close()
             wbsht.save()
             wbsht.close()
-            wbsht = None
-            time.sleep(180)
             app.quit()
             app.quit()
         except Exception as e:
@@ -5455,8 +5451,6 @@ class QueryUpdate(Settings):
             wbsht1.close()
             wbsht.save()
             wbsht.close()
-            wbsht = None
-            time.sleep(180)
             app.quit()
             app.quit()
         except Exception as e:
@@ -11527,7 +11521,7 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    select = 1
+    select = 99
     handle_time = '自动'
     if int(select) == 99:
         if handle_time == '自动':

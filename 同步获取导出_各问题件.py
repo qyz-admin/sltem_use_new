@@ -755,7 +755,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                                 WHERE k.`最新处理时间` >= '{1} 00:00:00' and k.`最新处理时间` <= '{2} 23:59:59'
                         ) kk;'''.format(data_woks, timeStart, timeEnd)
                 df = pd.read_sql_query(sql=sql, con=self.engine1)
-                file_pathT = r'F:\\输出文件\\{0}-{1}拒收问题件检索-{2}.xlsx'.format(timeStart, timeEnd, rq)
+                file_pathT = r'F:\\输出文件\\客诉问题件检索({0}:{1}) {2}.xlsx'.format(timeStart[6:10], timeEnd[6:10], rq)
                 with pd.ExcelWriter(file_pathT, engine='openpyxl') as writer:
                     df.to_excel(excel_writer=writer, sheet_name='港湾', index=False)
                 print('导出成功......')
@@ -949,7 +949,7 @@ class QueryOrder_Code(Settings, Settings_sso):
             print('****** 更新      起止时间：' + day_time + ' - ' + day_time + ' ******')
             self._service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time)
 
-        print('正在查询 ' + str(timeStart) + '-' + str(timeEnd) + '号数据 中......')
+        print('正在查询 ' + str(timeStart) + ' : ' + str(timeEnd) + '号数据 中......')
         if export_type == '拒收核实-物流问题':
             sql = '''SELECT 订单编号, 订单金额, 物流渠道, 服务商, 运单号, 联系电话, F跟进人, F时间, F问题类型, F问题原因, F内容, 录音链接聊天截图, 记录时间
                     FROM 拒收问题件检索 j 
@@ -957,15 +957,16 @@ class QueryOrder_Code(Settings, Settings_sso):
             df = pd.read_sql_query(sql=sql, con=self.engine1)
             df.to_excel('F:\\输出文件\\{0}{1}拒收物流问题 汇总-{2}.xlsx'.format(timeStart, timeEnd, rq), sheet_name='查询', index=False, engine='xlsxwriter')
         elif export_type == '拒收原因-每周核实':
-            sql = '''SELECT F时间 AS 处理日期,团队,订单编号,产品id,产品名称,下单时间,完结状态时间,电话号码,F问题类型 AS 问题类型,F问题原因 AS 核实原因,F内容 AS 具体原因,
-                            NULL AS 通话截图,NULL AS ID,	NULL AS 再次下单,NULL AS 备注,F跟进人 AS 处理人,NULL AS F联系方式,NULL AS F处理结果,币种,DATE_FORMAT(下单时间,'%Y%m') AS 下单月份
-                    FROM (  SELECT k.*, g.运单编号 , g.价格 , g.产品id , g.产品名称 , g.姓名 , g.地址 , g.电话号码, g.团队, g.下单时间, g.完结状态时间, g.币种
+            sql = '''SELECT F时间 AS 处理日期,IF(团队 LIKE '神龙家族-台湾' OR 团队 LIKE '神龙-香港','神龙',IF(团队 LIKE '火凤凰-台湾' OR 团队 LIKE '火凤凰-香港','神龙',团队)) AS 团队, 
+                            订单编号,产品id,产品名称, 下单时间,完结状态时间,电话号码,F问题类型 AS 问题类型,F问题原因 AS 核实原因,SUBSTRING_INDEX(F内容,'http',1)AS 具体原因,
+                            NULL AS 通话截图,NULL AS ID,	NULL AS 再次下单,NULL AS 备注,F跟进人 AS 处理人,NULL AS F联系方式,NULL AS F处理结果,币种,DATE_FORMAT(下单时间,'%Y%m') AS 下单月份, F内容 
+                    FROM (  SELECT k.*, g.运单编号 , g.价格 , g.产品id , g.产品名称 , g.姓名 , g.地址 , g.电话号码, g.团队, g.完结状态时间, g.币种
                             FROM 拒收问题件检索 k
                             LEFT JOIN gat_order_list g ON k.订单编号 = g.订单编号
                             WHERE k.下单时间 >= '{0} 00:00:00' and k.下单时间 <= '{1} 23:59:59'
                     ) kk;'''.format(timeStart, timeEnd)
             df = pd.read_sql_query(sql=sql, con=self.engine1)
-            df.to_excel('F:\\输出文件\\{0}{1}拒收问题件检索-{2}.xlsx'.format(timeStart, timeEnd, rq), sheet_name='查询',  index=False, engine='xlsxwriter')
+            df.to_excel('F:\\输出文件\\拒收问题件检索({0}-{1}) {2}.xlsx'.format(timeStart.strftime('%m.%d'), timeEnd.strftime('%m.%d'), rq), sheet_name='查询',  index=False, engine='xlsxwriter')
         print('导出成功......')
 
     def _service_id_order_js_Query(self, timeStart, timeEnd, proxy_handle, proxy_id, order_time):  # 进入拒收问题件界面
@@ -1370,6 +1371,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                 GROUP BY s1.家族,s1.地区,s1.月份,s1.产品id
                 ORDER BY 家族, 地区, 月份, 总订单 DESC;'''.format()
         df = pd.read_sql_query(sql=sql, con=self.engine1)
+        df['完成签收'] = df['完成签收'].astype(str)
 
         file_pathT = r'F:\\输出文件\\神龙-火凤凰港台 签收率-{0}.xlsx'.format(rq)
         month_time2 = datetime.datetime.now().strftime('%Y%m')
@@ -1401,7 +1403,7 @@ if __name__ == '__main__':
     '''
         # -----------------------------------------------查询状态运行（一）-----------------------------------------
     '''
-    select = 8
+    select = 9
     if int(select) == 1:
         timeStart = '2023-03-01'
         timeEnd = '2023-03-31'
@@ -1469,17 +1471,17 @@ if __name__ == '__main__':
 
 
     elif int(select) == 9:      # 每周 各团队与爆品前十
-        # timeStart = '2023-05-08'
-        # timeEnd = '2023-05-14'
-        # order_time = '创建时间'
-        # export_type = '客诉原因-每周核实'
-        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type)       # 物流客诉件  查询；订单检索@~@ok
-        #
-        # timeStart = datetime.date(2023, 4, 2)                                                                 # 拒收问题  查询；订单检索@~@ok
-        # timeEnd = datetime.date(2023, 5, 15)
-        # order_time = '下单跟进时间'
-        # export_type = '拒收原因-每周核实'
-        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type)      # (需处理两次)
+        timeStart = '2023-05-15'
+        timeEnd = '2023-05-21'
+        order_time = '创建时间'
+        export_type = '客诉原因-每周核实'
+        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type)       # 物流客诉件  查询；订单检索@~@ok
+
+        timeStart = datetime.date(2023, 4, 1)                                                                 # 拒收问题  查询；订单检索@~@ok
+        timeEnd = datetime.date(2023, 5, 22)
+        order_time = '下单跟进时间'
+        export_type = '拒收原因-每周核实'
+        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type)      # (需处理两次)
 
         m.export_List()          # 最近三月 产品签收率 以及 客诉件 拒收件导出
 
