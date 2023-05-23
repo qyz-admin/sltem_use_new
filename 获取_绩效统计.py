@@ -1893,7 +1893,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                  where a.`赠品补发订单编号`=b.`订单编号`;'''.format('物流客诉_挽单列表_退货_计算统计')
         pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
         print('物流客诉_挽单列表_退货_计算统计 赠品订单信息    更新成功......')
-    def userid_performance_New(self, username_Cudan, username_Jushou, month_time, day_time):
+    def userid_performance_New(self, username_Cudan, username_Jushou, username_caigou_yadan_wentijian, month_time, day_time):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         rq_month = datetime.datetime.now().strftime('%Y%m')
         username_Cudan = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可"'         # 促单人
@@ -1910,10 +1910,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         db12 = df11[(df11['挽单类型'].str.contains('取消挽单|未支付/支付失败挽单'))]  # 归为促单
         db12.to_sql('cache_ch', con=self.engine1, index=False, if_exists='replace')
         sql = '''REPLACE INTO {0}(类型, 代下单客服, 订单编号, 订单状态,物流状态, 最终状态, 统计月份, 是否计算, 计算月份, 更新月份, 记录时间, 更新时间) 
-                SELECT 挽单类型 as 类型, 
-                        创建人 as 代下单客服, 订单编号, 
-                        当前订单状态 as 订单状态,
-                        当前物流状态 as 物流状态, 最终状态, 统计月份,
+                SELECT 挽单类型 as 类型,  创建人 as 代下单客服, 订单编号,  当前订单状态 as 订单状态, 当前物流状态 as 物流状态, 最终状态, 统计月份,
                         IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),'是','否') as 是否计算, 
                         IF(最终状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"), 统计月份, '-') as 计算月份, 
                         DATE_FORMAT(curdate(),'%Y%m') as 更新月份, 记录时间, NOW() 更新时间
@@ -2753,17 +2750,21 @@ if __name__ == '__main__':
             m.service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
 
     elif int(select) == 8:      # 单独 本月绩效数据使用 不包含上月的留底数据
-        username_Cudan = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可","侯振峰"'         # 促单人
-        username_Jushou = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可","侯振峰","蔡利英","杨嘉仪","张陈平","李晓青"'        # 拒收挽单
-        username_caigou_yadan_wentijian = '"蔡利英","杨嘉仪","张陈平","李晓青"'             # 采购问题压单
+        username_Cudan = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可"'                                         # 促单人
+        username_Jushou = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可","蔡利英","杨嘉仪","张陈平","李晓青"'        # 拒收挽单
+        username_caigou_yadan_wentijian = '"蔡利英","杨嘉仪","张陈平","李晓青"'                                             # 采购问题压单
         rq_month = '202305'  # 统计月份
         rq_day = '2023-05-11'  # 统计日期
         m.service_check(username_Cudan, username_Jushou, username_caigou_yadan_wentijian,  rq_month, rq_day)  # 绩效数据导出
 
 
-    elif int(select) == 9:
-        # m.del_order_day()
-        m.service_check2()
+    elif int(select) == 9:      #  本月 统计上月 绩效数据使用
+        username_Cudan = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可"'                                         # 促单人
+        username_Jushou = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可","蔡利英","杨嘉仪","张陈平","李晓青"'        # 拒收挽单
+        username_caigou_yadan_wentijian = '"蔡利英","杨嘉仪","张陈平","李晓青"'                                             # 采购问题压单
+        rq_month = '202305'  # 统计月份
+        rq_day = '2023-05-11'  # 统计日期
+        m.userid_performance_New(username_Cudan, username_Jushou, username_caigou_yadan_wentijian, rq_month, rq_day)
 
     elif int(select) == 5:
         # m._service_id_orderInfoTWO('2023-01-01')              # 系统问题件  查询；订单检索  单独测试使用

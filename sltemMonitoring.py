@@ -2016,6 +2016,98 @@ class SltemMonitoring(Settings):
         listT.append(sqltime82)
         show_name.append(' 物流分旬签收率(整体 上月)…………')
 
+        # 品类分旬签收率( 本月)--- 查询
+        sqlqsb221 = '''SELECT 币种,上月年月,IF(旬 = 1,'上旬',IF(旬 = 2,'中旬',IF(旬 = 3,'下旬',旬))) AS 上月旬,父级分类 AS 上月父级分类,
+                                上月直发订单量 AS 上月直发总计,
+                                concat(ROUND((上月直发签收量 / 上月直发完成量) * 100,2),'%') AS '上月直发签收/完成',
+                                concat(ROUND((上月直发签收量 / 上月直发订单量) * 100,2),'%') AS '上月直发签收/总计',
+                                concat(ROUND((上月直发退货量 / 上月直发订单量) * 100,2),'%') AS '上月直发退款率',
+                                concat(ROUND((上月直发完成量 / 上月直发订单量) * 100,2),'%') AS '上月直发完成占比',
+                                concat(ROUND((上月直发订单量 / 上月单量) * 100,2),'%') AS '上月直发品类占比',
+                                年月, IF(旬 = 1,'上旬',IF(旬 = 2,'中旬',IF(旬 = 3,'下旬',旬))) AS 旬,父级分类,
+                                直发订单量 AS 本月直发总计,
+                                concat(ROUND((直发签收量 / 直发完成量) * 100,2),'%') AS '本月直发签收/完成',
+                                concat(ROUND((直发签收量 / 直发订单量) * 100,2),'%') AS '本月直发签收/总计',
+                                concat(ROUND((直发退货量 / 直发订单量) * 100,2),'%') AS '本月直发退款率',
+                                concat(ROUND((直发完成量 / 直发订单量) * 100,2),'%') AS '本月直发完成占比',
+                                concat(ROUND((直发订单量 / 单量) * 100,2),'%') AS '本月直发品类占比',
+                                NULL,
+                                直发订单量 - 上月直发订单量 AS 订单量对比,
+                                concat(ROUND((直发签收量 / 直发完成量 - 上月直发签收量 / 上月直发完成量) * 100,2),'%') AS 完成签收对比,
+                                concat(ROUND((直发签收量 / 直发订单量 - 上月直发签收量 / 上月直发订单量) * 100,2),'%') AS 总计签收对比,
+                                concat(ROUND((直发完成量 / 直发订单量 - 上月直发完成量 / 上月直发订单量) * 100,2),'%') AS 订单完成对比,
+                                concat(ROUND((直发订单量 / 单量 - 上月直发订单量 / 上月单量) * 100,2),'%') AS 品类占比对比
+                    FROM( SELECT IFNULL(币种,'合计') 币种, '{4}' AS 上月年月,'{2}' AS 年月,IFNULL(旬,'合计') 旬,IFNULL(父级分类,'合计') 父级分类,
+                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}',1,0)) AS 上月直发订单量,
+                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND `最终状态` = '已签收',1,0)) as 上月直发签收量,
+                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND `最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') ,1,0)) as 上月直发完成量,
+                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND `最终状态` = '已退货',1,0)) as 上月直发退货量,
+                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}',1,0)) AS 直发订单量,
+                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND `最终状态` = '已签收',1,0)) as 直发签收量,
+                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND `最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') ,1,0)) as 直发完成量,
+                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND `最终状态` = '已退货',1,0)) as 直发退货量
+                        FROM {0} sl_cx
+                        WHERE (sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}')
+                           AND sl_cx.`币种` = '{5}'  AND sl_cx.`所属团队` IN ({6}) AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL 
+                        GROUP BY 旬,父级分类
+                        with rollup 
+                    ) s1
+                    LEFT JOIN 
+                    ( SELECT 币种 AS 线路, 旬 AS 分旬, SUM(IF(年月 = '{4}',1,0)) AS 上月单量, SUM(IF(年月 = '{2}',1,0)) AS 单量
+                      FROM qsb_gat sl_cx
+                      WHERE (sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}')
+                         AND sl_cx.`币种` = '{5}'  AND sl_cx.`所属团队` IN ({6}) AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL 
+                      GROUP BY 旬
+                    ) s2 ON s1.币种 = s2.线路 AND s1.旬 = s2.分旬;'''.format(family, now_month, now_month_new, last_month, last_month_new, currency, match[team])
+        listT.append(sqlqsb221)
+        show_name.append(' 品类分旬签收率( 本月)…………')
+
+        # 品类分旬签收率( 上月)--- 查询
+        sqlqsb222 = '''SELECT 币种,上月年月,IF(旬 = 1,'上旬',IF(旬 = 2,'中旬',IF(旬 = 3,'下旬',旬))) AS 上月旬,父级分类 AS 上月父级分类,
+                                上月直发订单量 AS 上月直发总计,
+                                concat(ROUND((上月直发签收量 / 上月直发完成量) * 100,2),'%') AS '上月直发签收/完成',
+                                concat(ROUND((上月直发签收量 / 上月直发订单量) * 100,2),'%') AS '上月直发签收/总计',
+                                concat(ROUND((上月直发退货量 / 上月直发订单量) * 100,2),'%') AS '上月直发退款率',
+                                concat(ROUND((上月直发完成量 / 上月直发订单量) * 100,2),'%') AS '上月直发完成占比',
+                                concat(ROUND((上月直发订单量 / 上月单量) * 100,2),'%') AS '上月直发品类占比',
+                                年月, IF(旬 = 1,'上旬',IF(旬 = 2,'中旬',IF(旬 = 3,'下旬',旬))) AS 旬,父级分类,
+                                直发订单量 AS 本月直发总计,
+                                concat(ROUND((直发签收量 / 直发完成量) * 100,2),'%') AS '本月直发签收/完成',
+                                concat(ROUND((直发签收量 / 直发订单量) * 100,2),'%') AS '本月直发签收/总计',
+                                concat(ROUND((直发退货量 / 直发订单量) * 100,2),'%') AS '本月直发退款率',
+                                concat(ROUND((直发完成量 / 直发订单量) * 100,2),'%') AS '本月直发完成占比',
+                                concat(ROUND((直发订单量 / 单量) * 100,2),'%') AS '本月直发品类占比',
+                                NULL,
+                                直发订单量 - 上月直发订单量 AS 订单量对比,
+                                concat(ROUND((直发签收量 / 直发完成量 - 上月直发签收量 / 上月直发完成量) * 100,2),'%') AS 完成签收对比,
+                                concat(ROUND((直发签收量 / 直发订单量 - 上月直发签收量 / 上月直发订单量) * 100,2),'%') AS 总计签收对比,
+                                concat(ROUND((直发完成量 / 直发订单量 - 上月直发完成量 / 上月直发订单量) * 100,2),'%') AS 订单完成对比,
+                                concat(ROUND((直发订单量 / 单量 - 上月直发订单量 / 上月单量) * 100,2),'%') AS 品类占比对比
+                    FROM( SELECT IFNULL(币种,'合计') 币种, '{4}' AS 上月年月,'{2}' AS 年月,IFNULL(旬,'合计') 旬,IFNULL(父级分类,'合计') 父级分类,
+                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}',1,0)) AS 上月直发订单量,
+                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND `最终状态` = '已签收',1,0)) as 上月直发签收量,
+                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND `最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') ,1,0)) as 上月直发完成量,
+                                SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND `最终状态` = '已退货',1,0)) as 上月直发退货量,
+                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}',1,0)) AS 直发订单量,
+                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND `最终状态` = '已签收',1,0)) as 直发签收量,
+                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND `最终状态` IN ('拒收', '理赔', '已签收', '已退货', '自发头程丢件') ,1,0)) as 直发完成量,
+                                SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND `最终状态` = '已退货',1,0)) as 直发退货量
+                        FROM {0} sl_cx
+                        WHERE (sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}')
+                           AND sl_cx.`币种` = '{5}'  AND sl_cx.`所属团队` IN ({6}) AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL 
+                        GROUP BY 旬,父级分类
+                        with rollup 
+                    ) s1
+                    LEFT JOIN 
+                    ( SELECT 币种 AS 线路, 旬 AS 分旬, SUM(IF(年月 = '{4}',1,0)) AS 上月单量, SUM(IF(年月 = '{2}',1,0)) AS 单量
+                      FROM qsb_gat sl_cx
+                      WHERE (sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}')
+                         AND sl_cx.`币种` = '{5}'  AND sl_cx.`所属团队` IN ({6}) AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL 
+                      GROUP BY 旬
+                    ) s2 ON s1.币种 = s2.线路 AND s1.旬 = s2.分旬;'''.format(family, now_month, now_month_old, last_month, last_month_old, currency, match[team])
+        listT.append(sqlqsb222)
+        show_name.append(' 品类分旬签收率( 上月)…………')
+
         listTValue = []  # 查询sql的结果 存放池
         for i, sql in enumerate(listT):
             print('正在获取 ' + team + show_name[i])
@@ -2038,7 +2130,7 @@ class SltemMonitoring(Settings):
         print('查询耗时：', datetime.datetime.now() - start)
         today = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         sheet_name = ['签率(天)_', '签率(月)_', '签率(旬)_', '签率(总)_', '物流(天)_', '物流(月)_', '时效(天)_', '时效(月)_', '时效(旬)_', '时效(月旬)_', '时效(品类)_', '时效(月品类)_','时效(总)_',
-                      '时效(改派天)_', '时效(改派月)_','时效(改派旬)_', '时效(改派月旬)_', '时效(改派总)_', '物流分旬签收率_', '物流分旬签收率上月_']  # 生成的工作表的表名
+                      '时效(改派天)_', '时效(改派月)_','时效(改派旬)_', '时效(改派月旬)_', '时效(改派总)_', '物流分旬签收率_', '物流分旬签收率上月_', '品类分旬签收率_', '品类分旬签收率上月_']  # 生成的工作表的表名
         file_Path = []  # 发送邮箱文件使用
         filePath = ''
         if "品牌" in team:
@@ -2065,23 +2157,23 @@ class SltemMonitoring(Settings):
             for i in range(len(listTValue)):
                 listTValue[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i] + team, index=False)
         print('正在运行宏…………')
-        app = xl.App(visible=False, add_book=False)             # 运行宏调整
-        app.display_alerts = False
-        wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
-        wbsht1 = app.books.open(filePath)
-        if ready == '本期宏':
-            # pass
-            wbsht.macro('sl_总监控运行')()
-        elif ready == '本期月初宏':
-            wbsht.macro('sl_总监控运行月初')()
-        elif ready == '本期上月宏':
-            wbsht.macro('sl_总监控运行月初')()
-        else:
-            wbsht.macro('sl_总监控运行3')()
-        wbsht1.save()
-        wbsht1.close()
-        wbsht.close()
-        app.quit()
+        # app = xl.App(visible=False, add_book=False)             # 运行宏调整
+        # app.display_alerts = False
+        # wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
+        # wbsht1 = app.books.open(filePath)
+        # if ready == '本期宏':
+        #     # pass
+        #     wbsht.macro('sl_总监控运行')()
+        # elif ready == '本期月初宏':
+        #     wbsht.macro('sl_总监控运行月初')()
+        # elif ready == '本期上月宏':
+        #     wbsht.macro('sl_总监控运行月初')()
+        # else:
+        #     wbsht.macro('sl_总监控运行3')()
+        # wbsht1.save()
+        # wbsht1.close()
+        # wbsht.close()
+        # app.quit()
         print('输出(监控)文件成功…………')
         file_Path.append(filePath)
         if team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
@@ -3932,9 +4024,9 @@ if __name__ == '__main__':
         handle_last_month_old = '202303'    # 上月记录 上月数据
 
     # 测试监控运行（二）-- 第一种手动方式
-    m.order_Monitoring('港台')        # 各月缓存（整体一）、
-    for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '雪豹-台湾', '雪豹-香港', '金蝉家族优化组-台湾', '金蝉家族优化组-香港','金蝉项目组-台湾', '金蝉项目组-香港']:
-    # for team in ['雪豹-台湾', '雪豹-香港']:
+    # m.order_Monitoring('港台')        # 各月缓存（整体一）、
+    # for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '雪豹-台湾', '雪豹-香港', '金蝉家族优化组-台湾', '金蝉家族优化组-香港','金蝉项目组-台湾', '金蝉项目组-香港']:
+    for team in ['雪豹-台湾', '雪豹-香港']:
     # for team in ['雪豹-台湾']:
     # for team in ['港台-台湾']:
         now_month = now_month.replace('.', '-')           # 修改配置时间
