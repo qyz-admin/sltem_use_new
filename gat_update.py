@@ -774,11 +774,9 @@ class QueryUpdate(Settings):
         match = {'gat': '港台', 'slsc': '品牌'}
         emailAdd = {'gat': 'giikinliujun@163.com', 'slsc': 'sunyaru@giikin.com'}
         today = datetime.date.today().strftime('%Y.%m.%d')
-
-        print('正在清 测试使用的 订单…………"GT230517100501MWLEK8","GT230517100520A6XW26","GT230517100534R0BU66","GT230517100551Q32PX8"')
-        sql = '''DELETE FROM gat_order_list WHERE gat_order_list.`订单编号` IN ("GT230517100501MWLEK8","GT230517100520A6XW26","GT230517100534R0BU66","GT230517100551Q32PX8");'''
-        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=20000)
-
+        # print('正在清 测试使用的 订单…………"GT230517100501MWLEK8","GT230517100520A6XW26","GT230517100534R0BU66","GT230517100551Q32PX8"')
+        # sql = '''DELETE FROM gat_order_list WHERE gat_order_list.`订单编号` IN ("GT230517100501MWLEK8","GT230517100520A6XW26","GT230517100534R0BU66","GT230517100551Q32PX8");'''
+        # pd.read_sql_query(sql=sql, con=self.engine1, chunksize=20000)
         print('查询开始时间：', datetime.datetime.now())
         if check == '是':
             print('正在第一次检查父级分类为空的信息---')
@@ -895,12 +893,9 @@ class QueryUpdate(Settings):
                             IF(ISNULL(a.上线时间), IF(b.上线时间 in ('1990-01-01 00:00:00','1899-12-29 00:00:00','1899-12-30 00:00:00','0000-00-00 00:00:00'), null,b.上线时间), a.上线时间) 上线时间, 系统订单状态,
                             IF(ISNULL(d.订单编号), 系统物流状态, '已退货') 系统物流状态,
                             IF(ISNULL(d.订单编号), NULL, '已退货') 退货登记,
-                            IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), 
-                                                        IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , 
-                                                            IF(物流方式 like '%天马%' and c.签收表物流状态 = '在途','未上线', c.标准物流状态)
-                                                        ), 系统物流状态), '已退货') 最终状态,
+                            IF(ISNULL(d.订单编号), IF(ISNULL(系统物流状态), IF(ISNULL(c.标准物流状态) OR c.标准物流状态 = '未上线', IF(系统订单状态 IN ('已转采购', '待发货'), '未发货', '未上线') , IF(物流方式 like '%天马%' and c.签收表物流状态 = '在途','未上线', c.标准物流状态)), 系统物流状态), '已退货') 最终状态,
                             IF(是否改派='二次改派', '改派', 是否改派) 是否改派,
-                            物流方式,物流渠道,物流名称,null 运输方式,null 货物类型,是否低价,付款方式,产品id,产品名称,父级分类, 二级分类,三级分类, 下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB, null 价格区间, null 包裹重量, null 包裹体积,null 邮编, 
+                            物流方式,物流渠道,物流名称,null 运输方式,null 货物类型,是否低价,付款方式,产品id,产品名称,父级分类, 二级分类,三级分类, 下单时间,审核时间,仓储扫描时间,完结状态时间,价格,价格RMB, null 价格区间, 包裹重量, null 包裹体积,null 邮编, 
                             IF(ISNULL(b.运单编号), '否', '是') 签收表是否存在, null 签收表订单编号, null 签收表运单编号, null 原运单号, b.物流状态 签收表物流状态, null 添加时间, null 成本价, null 物流花费, null 打包花费, null 其它花费, 添加物流单号时间,
                             省洲,市区,数量, a.下架时间, a.物流提货时间, a.完结状态, a.回款时间, a.支付类型, a.是否盲盒, a.克隆类型, a.主订单
                         FROM (SELECT * 
@@ -6902,13 +6897,12 @@ class QueryUpdate(Settings):
             app.display_alerts = False
             wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
-            wbsht.macro('zl_report_day')()
+            wbsht.macro('zl_report_now.zl_report_day')()
             wbsht1.save()
             wbsht1.close()
             wbsht.save()
             wbsht.close()
-
-            time.sleep(180)
+            app.quit()
             app.quit()
         except Exception as e:
             print('运行失败：', str(Exception) + str(e))
@@ -6932,6 +6926,8 @@ class QueryUpdate(Settings):
         shutil.copyfile(file_path, new_path)        # copy到指定位置
         print('----已写入excel; 并复制到指定文件夹中')
 
+        print("强制关闭Execl后台进程中......")
+        system('taskkill /F /IM EXCEL.EXE')
 
     # 更新-地区签收率(自己看的)
     def address_repot(self, team, month_last, month_yesterday):    # 更新-地区签收率
@@ -8605,7 +8601,7 @@ class QueryUpdate(Settings):
                 app.display_alerts = False
                 wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
                 wbsht1 = app.books.open(file_path)
-                wbsht.macro('电话核实日报表_周报表')()
+                wbsht.macro('zl_gat_report_new2.电话核实日报表_周报表')()
                 wbsht1.save()
                 wbsht1.close()
                 wbsht.close()
@@ -8691,7 +8687,7 @@ class QueryUpdate(Settings):
                 app.display_alerts = False
                 wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
                 wbsht1 = app.books.open(file_path)
-                wbsht.macro('物流头程产品签收率_月')()
+                wbsht.macro('zl_gat_report_new2.物流头程产品签收率_月')()
                 wbsht1.save()
                 wbsht1.close()
                 wbsht.close()
