@@ -2157,23 +2157,23 @@ class SltemMonitoring(Settings):
             for i in range(len(listTValue)):
                 listTValue[i].to_excel(excel_writer=writer, sheet_name=sheet_name[i] + team, index=False)
         print('正在运行宏…………')
-        # app = xl.App(visible=False, add_book=False)             # 运行宏调整
-        # app.display_alerts = False
-        # wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
-        # wbsht1 = app.books.open(filePath)
-        # if ready == '本期宏':
-        #     # pass
-        #     wbsht.macro('sl_总监控运行')()
-        # elif ready == '本期月初宏':
-        #     wbsht.macro('sl_总监控运行月初')()
-        # elif ready == '本期上月宏':
-        #     wbsht.macro('sl_总监控运行月初')()
-        # else:
-        #     wbsht.macro('sl_总监控运行3')()
-        # wbsht1.save()
-        # wbsht1.close()
-        # wbsht.close()
-        # app.quit()
+        app = xl.App(visible=False, add_book=False)             # 运行宏调整
+        app.display_alerts = False
+        wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
+        wbsht1 = app.books.open(filePath)
+        if ready == '本期宏':
+            # pass
+            wbsht.macro('sl_总监控运行')()
+        elif ready == '本期月初宏':
+            wbsht.macro('sl_总监控运行月初')()
+        elif ready == '本期上月宏':
+            wbsht.macro('sl_总监控运行月初')()
+        else:
+            wbsht.macro('sl_总监控运行3')()
+        wbsht1.save()
+        wbsht1.close()
+        wbsht.close()
+        app.quit()
         print('输出(监控)文件成功…………')
         file_Path.append(filePath)
         if team in ['品牌-日本', '品牌-台湾', '品牌-香港', '品牌-马来西亚', '品牌-新加坡', '品牌-菲律宾']:
@@ -4011,8 +4011,8 @@ if __name__ == '__main__':
     # ready = '上期宏'
 
     if handle == '自动':
-        last_month = '2023.04.23'
-        now_month = '2023.05.23'
+        last_month = '2023.04.24'
+        now_month = '2023.05.24'
         handle_now_month,handle_last_month,handle_now_month_old,handle_last_month_old = '','','',''
     else:
         now_month = '2023.05.09'            # 本月记录日期
@@ -4024,9 +4024,9 @@ if __name__ == '__main__':
         handle_last_month_old = '202303'    # 上月记录 上月数据
 
     # 测试监控运行（二）-- 第一种手动方式
-    # m.order_Monitoring('港台')        # 各月缓存（整体一）、
-    # for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '雪豹-台湾', '雪豹-香港', '金蝉家族优化组-台湾', '金蝉家族优化组-香港','金蝉项目组-台湾', '金蝉项目组-香港']:
-    for team in ['雪豹-台湾', '雪豹-香港']:
+    m.order_Monitoring('港台')        # 各月缓存（整体一）、
+    for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '雪豹-台湾', '雪豹-香港', '金蝉家族优化组-台湾', '金蝉家族优化组-香港','金蝉项目组-台湾', '金蝉项目组-香港']:
+    # for team in ['雪豹-台湾', '雪豹-香港']:
     # for team in ['雪豹-台湾']:
     # for team in ['港台-台湾']:
         now_month = now_month.replace('.', '-')           # 修改配置时间
