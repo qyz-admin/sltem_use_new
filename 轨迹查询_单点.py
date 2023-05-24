@@ -1226,12 +1226,12 @@ if __name__ == '__main__':
             tm2 = (datetime.datetime.now().strftime('%Y-%m-%d')) + ' 16:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'PM'
         elif select == 53:
-            tm = '2023-03-27 10:00:00'
-            tm2 = '2023-03-27 11:00:00'
+            tm = '2023-05-23 16:05:00'
+            tm2 = '2023-05-24 11:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'AM'
         elif select == 54:
-            tm = '2023-04-17 00:00:00'
-            tm2 = '2023-04-17 16:00:00'
+            tm = '2023-05-24 11:00:00'
+            tm2 = '2023-05-24 16:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'PM'
         print('****** 查询      起止时间：' + tm + ' - ' + tm2 + ' ******')
         message = '带短信'
