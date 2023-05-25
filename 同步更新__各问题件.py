@@ -333,14 +333,23 @@ class QueryTwo(Settings, Settings_sso):
         ordersDict = []
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值
+                # print(result['order_number'])
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
                 if 'traceRecord' in result:
                     result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
                     if '地址;' in result['traceRecord']:
                         result['traceRecord'] = result['traceRecord'].replace('地址;', '地址:')
-                    if ';' in result['traceRecord']:
-                        trace_record = result['traceRecord'].split(";")
-                        for record in trace_record:
+                    # if ';' in result['traceRecord']:
+                    #     trace_record = result['traceRecord'].split(";")
+                    #     for record in trace_record:
+                    if ';20' in result['traceRecord']:
+                        trace_record = result['traceRecord'].split(";20")
+                        for i in range(len(trace_record)):
+                            if i == 0:
+                                record = trace_record[i]
+                            else:
+                                record = '20' + trace_record[i]
+                            # print(record)
                             if record.split("#处理结果：")[1] != '':
                                 result['deal_time'] = record.split()[0]
                                 result['result_reson'] = ''
@@ -1703,7 +1712,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 99
+    select = 909
     if int(select) == 99:
         handle = '手动0'
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
@@ -1820,12 +1829,12 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    # handle = '手动0'
-    # login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
-    # proxy_handle = '代理服务器0'
-    # proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
-    # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
-    # start: datetime = datetime.datetime.now()
+    handle = '手动0'
+    login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
+    proxy_handle = '代理服务器0'
+    proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
+    m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+    start: datetime = datetime.datetime.now()
 
 
     # timeStart, timeEnd = m.readInfo('压单表_已核实')
@@ -1851,7 +1860,7 @@ if __name__ == '__main__':
 
     # timeStart, timeEnd = m.readInfo('物流问题件')
     # m.waybill_InfoQuery('2022-09-19', '2022-09-22')  # 查询更新-物流问题件
-    # m.waybill_InfoQuery('2023-04-15', '2023-05-05', proxy_handle, proxy_id)  # 查询更新-物流问题件
+    m.waybill_InfoQuery('2023-05-23', '2023-05-25', proxy_handle, proxy_id)  # 查询更新-物流问题件
 
 
     # timeStart, timeEnd = m.readInfo('派送问题件')

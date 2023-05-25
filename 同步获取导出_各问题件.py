@@ -622,16 +622,28 @@ class QueryOrder_Code(Settings, Settings_sso):
                 result['dealContent'] = zhconv.convert(result['dealContent'], 'zh-hans')
                 if 'traceRecord' in result:
                     result['traceRecord'] = zhconv.convert(result['traceRecord'], 'zh-hans')
-                    if ';' in result['traceRecord'] and '地址' not in result['traceRecord']:
-                        # print(55)
-                        # print(result['order_number'])
-                        trace_record = result['traceRecord'].split(";")
+                    if ';20' in result['traceRecord']:
+                        trace_record = result['traceRecord'].split(";20")
                         result['deal_time'] = ''
                         result['result_reson'] = ''
                         result['result_info'] = ''
                         result['deal_Content'] = ''
                         result['trace_UserName'] = ''
-                        for record in trace_record:
+                        for i in range(len(trace_record)):
+                            if i == 0:
+                                record = trace_record[i]
+                            else:
+                                record = '20' + trace_record[i]
+                    # if ';' in result['traceRecord'] and '地址' not in result['traceRecord']:
+                    #     # print(55)
+                    #     # print(result['order_number'])
+                    #     trace_record = result['traceRecord'].split(";")
+                    #     result['deal_time'] = ''
+                    #     result['result_reson'] = ''
+                    #     result['result_info'] = ''
+                    #     result['deal_Content'] = ''
+                    #     result['trace_UserName'] = ''
+                    #     for record in trace_record:
                             if '物流' not in record and '香港立邦' not in record:
                                 if record.split("#处理结果：")[1] != '' and len(record.split("#处理结果：")[1]) > 1:
                                     result['deal_time'] = record.split()[0]
