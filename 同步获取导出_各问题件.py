@@ -1466,8 +1466,8 @@ if __name__ == '__main__':
         # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
 
     elif int(select) == 8:
-        timeStart = datetime.date(2023, 5, 10)         # 拒收问题  查询；订单检索@~@ok
-        timeEnd = datetime.date(2023, 5, 18)
+        timeStart = datetime.date(2023, 5, 18)         # 拒收问题  查询；订单检索@~@ok
+        timeEnd = datetime.date(2023, 5, 29)
         order_time = '跟进时间'
         export_type = '拒收核实-物流问题'
         # order_time = '下单跟进时间'
@@ -1483,14 +1483,14 @@ if __name__ == '__main__':
 
 
     elif int(select) == 9:      # 每周 各团队与爆品前十
-        timeStart = '2023-05-15'
-        timeEnd = '2023-05-21'
+        timeStart = '2023-05-22'
+        timeEnd = '2023-05-28'
         order_time = '创建时间'
         export_type = '客诉原因-每周核实'
         m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type)       # 物流客诉件  查询；订单检索@~@ok
 
         timeStart = datetime.date(2023, 4, 1)                                                                 # 拒收问题  查询；订单检索@~@ok
-        timeEnd = datetime.date(2023, 5, 22)
+        timeEnd = datetime.date(2023, 5, 29)
         order_time = '下单跟进时间'
         export_type = '拒收原因-每周核实'
         m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type)      # (需处理两次)

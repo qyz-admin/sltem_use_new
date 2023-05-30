@@ -18,7 +18,7 @@ from sqlalchemy import create_engine
 from settings import Settings
 from emailControl import EmailControl
 from multiprocessing.dummy import Pool
-
+from random import randint
 # -*- coding:utf-8 -*-
 class QueryTwo(Settings, Settings_sso):
     def __init__(self, userMobile, password):
@@ -62,19 +62,19 @@ class QueryTwo(Settings, Settings_sso):
                                                                                     self.mysql2['port'],
                                                                                     self.mysql2['datebase']))
     # 获取签收表内容
-    def readFormHost(self):
+    def readFormHost(self, proxy_id, proxy_handle):
         start = datetime.datetime.now()
-        path = r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表'
+        path = r'F:\需要用到的文件\A查询导表'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
             filePath = os.path.join(path, dir)
             if dir[:2] != '~$':
                 print(filePath)
-                self.wbsheetHost(filePath)
+                self.wbsheetHost(filePath, proxy_id, proxy_handle)
         print('处理耗时：', datetime.datetime.now() - start)
     # 工作表的订单信息
-    def wbsheetHost(self, filePath):
+    def wbsheetHost(self, filePath, proxy_id, proxy_handle):
         fileType = os.path.splitext(filePath)[1]
         app = xlwings.App(visible=False, add_book=False)
         app.display_alerts = False
@@ -107,7 +107,7 @@ class QueryTwo(Settings, Settings_sso):
                         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
                         print('++++正在获取：' + sht.name + ' 表；共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
                         # 将获取到的运单号 查询轨迹
-                        self.SearchGoods(db, tm)
+                        self.SearchGoods(db, tm, proxy_id, proxy_handle)
                     else:
                         print('----------数据为空,查询失败：' + sht.name)
                 else:
@@ -116,7 +116,7 @@ class QueryTwo(Settings, Settings_sso):
         app.quit()
 
     #、随机验证码
-    def SearchGoods(self, db, tm):
+    def SearchGoods(self, db, tm, proxy_id, proxy_handle):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         orderId = list(db[tm])
         print(orderId)
@@ -128,105 +128,230 @@ class QueryTwo(Settings, Settings_sso):
             # result = pool.map(self._SearchGoods,orderId)
             for ord in orderId:
                 print(ord)
-                data = self._SearchGoods(ord)
+                data = self._SearchGoods(ord, proxy_id, proxy_handle)
                 if data is not None and len(data) > 0:
                     dlist.append(data)
+                time.sleep(30)
             dp = df.append(dlist, ignore_index=True)
             # dp.dropna(axis=0, how='any', inplace=True)
         else:
             dp = None
         print(dp)
-        dp.to_excel('F:\\输出文件\\新竹快递-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
+        dp.to_excel('F:\\输出文件\\宅配通快递-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')   # Xlsx是python用来构造xlsx文件的模块，可以向excel2007+中写text，numbers，formulas 公式以及hyperlinks超链接。
         print('查询已导出+++')
         print('*' * 50)
 
-    def _SearchGoods(self,wayBillNumber):
+    def SearchGoods_write(self, proxy_id, proxy_handle):
+        sql = '''SELECT * FROM 宅配通 z
+                    WHERE z.`运单编号` NOT IN (SELECT DISTINCT wayBillNumber FROM 宅配通记录 p GROUP BY wayBillNumber);'''
+        db = pd.read_sql_query(sql=sql, con=self.engine1)
+        orderId = list(db['运单编号'])
+        print(orderId)
+        max_count = len(orderId)                 # 使用len()获取列表的长度，上节学的
+        print(max_count)
+        if max_count > 0:
+            for ord in orderId:
+                print(ord)
+                time.sleep(10)
+                data = self._SearchGoods(ord, proxy_id, proxy_handle)
+                if data is not None and len(data) > 0:
+                    data.to_sql('query_cache', con=self.engine1, index=False, if_exists='replace')
+                    sql = '''REPLACE INTO 宅配通记录(序号,	orderNumber,wayBillNumber,track_date,出货时间,上线时间,保管时间,完成时间,track_info,track_status,负责营业所,轨迹备注,便利店) 
+                            SELECT 序号,	orderNumber,wayBillNumber,track_date,出货时间,上线时间,保管时间,完成时间,track_info,track_status,负责营业所,轨迹备注,便利店
+                            FROM query_cache;'''
+                    pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                    print('查询已写入+++')
+        else:
+            dp = None
+        print('查询已导出+++')
+        print('*' * 50)
+
+    def _SearchGoods(self,wayBillNumber, proxy_id, proxy_handle):
+        # #1、构建url
+        # url = "http://query2.e-can.com.tw/ECAN_APP/search.shtm"   #url为机器人的webhook
+        # #2、构建一下请求头部
+        # r_header = {"Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        #             "Accept-Encoding": "gzip, deflate",
+        #             "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+        #             'Host': 'query2.e-can.com.tw',
+        #             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.42'
+        #             }
+        # #3、构建请求数据
+        # data = {'txtMainID': wayBillNumber, 'B1': '查詢'}
+        # if proxy_handle == '代理服务器':
+        #     proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+        #     req = self.session.get(url=url, headers=r_header, data=data, proxies=proxies, allow_redirects=True)
+        # else:
+        #     req = self.session.get(url=url, headers=r_header, data=data)
+        #     # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=True)
+        # req.encoding = "utf-8"                      # 新增编码格式
+        # print('----------获取验证值成功-------------')
+        # print(req)
+        # print(req.headers)
+        # print(req.text)
+
         #1、构建url
         url = "http://query2.e-can.com.tw/ECAN_APP/DS_LINK.asp"   #url为机器人的webhook
         #2、构建一下请求头部
-        r_header = {"Content-Type": "application/x-www-form-urlencoded",
+        r_header = {"Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                    "Accept-Encoding": "gzip, deflate",
+                    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+                    "Content-Type": "application/x-www-form-urlencoded",
                     "Charset": "UTF-8",
                     'Host': 'query2.e-can.com.tw',
                     'Origin': 'http://query2.e-can.com.tw',
                     'Referer': 'http://query2.e-can.com.tw/ECAN_APP/search.shtm',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36'
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.42'
                     }
         #3、构建请求数据
-        data = {'txtMainID': 277235092271,
-                'B1': '查詢'
-                }
-        req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
-        # soup = BeautifulSoup(req.text, 'lxml')      # 创建 beautifulsoup 对象
-        # no = soup.input.get('value')
-        # chk = soup.input.next_sibling.get('value')
-        # print(no)
-        # print(chk)
-        print('----------获取验证值成功-------------')
-
-        print(req)
+        data = {'txtMainID': wayBillNumber, 'B1': '查詢'}
+        USER_AGENTS = ['192.168.13.89:37466', '192.168.13.89:37467', '192.168.13.89:37460']
+        proxy_id = USER_AGENTS[randint(0, len(USER_AGENTS) - 1)]
+        print(proxy_id)
+        if proxy_handle == '代理服务器':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
+            # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=True)
+        req.encoding = "utf-8"                      # 新增编码格式
+        # print('----------获取验证值成功-------------')
+        # print(req)
+        # print(req.headers)
+        # print(req.text)
         print('----------数据获取返回成功-----------')
         rq = BeautifulSoup(req.text, 'lxml')
-        rq = rq.find_all('tr') 
         ordersDict = []
-        online_time = ''
-        res = ''
-        res2 = ''
+        order_number = str(rq).split(r'出貨單號：')[1].split('</h2>')[0]              # 订单编号
+        waybill_number = ""
+        k = 0
+        k2 = 0
+        k3 = 0
+        rq = rq.find_all('tr')
+        print('*' * 50)
         for index, val in enumerate(rq):
             result = {}
+            # print(index)
             # print(val)
-            if "請檢查您的查貨資料。" in str(val):            # 没有查询到货态
-                data = pd.DataFrame([[res, res2, '', '', online_time]], columns=['查件单号', '查货时间', '轨迹时间', '轨迹内容', '上线时间'])
-                # data.dropna(axis=0, how='any', inplace=True)
-                data.dropna(axis=0, subset=["查件单号"], inplace=True)
-                data.sort_values(by="轨迹时间", inplace=True, ascending=True)  # inplace: 原地修改; ascending：升序
-                # print(data)
-                return data
-            if "ctl00_ContentFrame_lblInvoiceNo" in str(val):       # 查询到货态（一）
+            if 'colspan="4"' in str(val):       # 查询到货态（一）
+                waybill_number = str(val).split(r'單號：')[1].split('-00')[0]
+            elif 'class="date">' in str(val):       # 查询到货态（一）
+                rq_val = val.find_all('td')
                 result['序号'] = index
-                result['查件单号'] = str(val).split(r'ctl00_ContentFrame_lblInvoiceNo">')[1].split('</')[0]
-                result['查货时间'] = str(val).split('時間：')[1].split('</')[0]
-                res = result['查件单号'].strip()
-                res2 = result['查货时间']
-            if "L_time" in str(val):                                # 查询到货态（二）
-                if "貨件已退回" in str(val):
-                    # pattern = re.compile(r'<[^>]+>', re.S)
-                    L_time = str(val).split('L_time">')[1].split('</')[0]
-                    L_cls = str(val).split(')">')[1]
-                    L_cls = L_cls.split('</u>')[0].replace('<font color="blue"><u color="blue">',' ')
-                elif "送達。貨物件" in str(val):
-                    L_time = str(val).split('L_time">')[1].split('</')[0]
-                    L_cls = str(val).split('L_cls">')[1]
-                    L_cls = L_cls.split('。</')[0].replace('</a>',' ')
-                elif "原貨號：" in str(val):
-                    L_time = str(val).split('L_time">')[1].split('</')[0]
-                    L_cls = str(val).split(')">')[1]
-                    L_cls = L_cls.split('</u>')[0].replace('<font color="blue"><u color="blue">',' ')
-                else:
-                    pattern = re.compile(r'<[^>]+>', re.S)
-                    L_time = str(val).split('L_time">')[1].split('</')[0]
-                    L_cls = str(val).split('L_cls">')[1]
-                    L_cls = pattern.sub('', L_cls)
-
-                if '貨件已抵達' in str(val) and ('土城營業所' in str(val) or '桃園營業所' in str(val)) and '貨件整理中' in str(val) or '集荷' in str(val):
-                    online_time = L_time
-                # print(L_time) 
-                # print(res)
-                result['序号'] = index
-                result['查件单号'] = res
-                result['查货时间'] = res2
-                result['轨迹时间'] = L_time
-                result['轨迹内容'] = L_cls.replace("\n\n", "").strip()
-                result['上线时间'] = online_time
+                result['orderNumber'] = order_number
+                result['wayBillNumber'] = waybill_number
+                result['track_date'] = str(rq_val[0]).split(r'class="date">')[1].split('</span')[0]
+                result['出货时间'] = ""
+                result['上线时间'] = ""
+                result['保管时间'] = ""
+                result['完成时间'] = ""
+                result['track_info'] = str(rq_val[1]).split(r'<td>')[1].split('</td>')[0]   # 物流轨迹
+                if '取件完成' in result['track_info']:
+                    if k < 1:
+                        result['出货时间'] = result['track_date']
+                        k = k + 1
+                if '轉運作業中' in result['track_info']:
+                    if k2 < 1:
+                        result['上线时间'] = result['track_date']
+                        k2 = k2 + 1
+                if '異常狀況' in result['track_info']:
+                    if k3 < 1:
+                        result['保管时间'] = result['track_date']
+                        k3 = k3 + 1
+                result['track_status'] = ""
+                result['负责营业所'] = str(rq_val[3]).split(r'<td>')[1].split('</td>')[0]
+                result['轨迹备注'] = str(rq_val[2]).split(r'<td>')[1].split('</td>')[0]
+                result['序号'] = index - 1
+                result['便利店'] = ""
             ordersDict.append(result)
-        # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         data = pd.json_normalize(ordersDict)
-        # print(data)
         data.dropna(axis=0, how='any', inplace=True)
-        data.sort_values(by=["查件单号", "轨迹时间"], inplace=True, ascending=[True, True])
-        # data.sort_values(by="轨迹时间", inplace=True, ascending=True)  # inplace: 原地修改; ascending：升序
-        # print(data)
-        # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        # data.to_excel('F:\\输出文件\\新竹快递 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        data.sort_values(by=["wayBillNumber", "track_date"], inplace=True, ascending=[True, True])      # inplace: 原地修改; ascending：升序
+        print(data)
+        print('*' * 50)
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        # data.to_excel('F:\\输出文件\\宅配通快递 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        return data
+
+    def _SearchGoodsT(self,wayBillNumber, proxy_id, proxy_handle):
+        #1、构建url
+        url = "http://query2.e-can.com.tw/self_link/id_link_c.asp?txtMainid=" + wayBillNumber  #url为机器人的webhook
+        #2、构建一下请求头部
+        r_header = {"Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                    "Accept-Encoding": "gzip, deflate",
+                    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Charset": "UTF-8",
+                    'Host': 'query2.e-can.com.tw',
+                    'Origin': 'http://query2.e-can.com.tw',
+                    'Referer': 'http://query2.e-can.com.tw/%E5%A4%9A%E7%AD%86%E6%9F%A5%E4%BB%B6_oo4o.asp',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.42'
+                    }
+        #3、构建请求数据
+        data = {'txtMainID': wayBillNumber,
+                'B1': '查詢'}
+        if proxy_handle == '代理服务器0':
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies, allow_redirects=True)
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
+            # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=True)
+        req.encoding = "utf-8"                      # 新增编码格式
+        # print('----------获取验证值成功-------------')
+        print(req)
+        print(req.text)
+        print('----------数据获取返回成功-----------')
+        rq = BeautifulSoup(req.text, 'lxml')
+        ordersDict = []
+        order_number = str(rq).split(r'出貨單號：')[1].split('</h2>')[0]              # 订单编号
+        waybill_number = ""
+        k = 0
+        k2 = 0
+        k3 = 0
+        rq = rq.find_all('tr')
+        print('*' * 50)
+        for index, val in enumerate(rq):
+            result = {}
+            # print(index)
+            # print(val)
+            if 'colspan="4"' in str(val):       # 查询到货态（一）
+                waybill_number = str(val).split(r'單號：')[1].split('-00')[0]
+            elif 'class="date">' in str(val):       # 查询到货态（一）
+                rq_val = val.find_all('td')
+                result['序号'] = index
+                result['orderNumber'] = order_number
+                result['wayBillNumber'] = waybill_number
+                result['track_date'] = str(rq_val[0]).split(r'class="date">')[1].split('</span')[0]
+                result['出货时间'] = ""
+                result['上线时间'] = ""
+                result['保管时间'] = ""
+                result['完成时间'] = ""
+                result['track_info'] = str(rq_val[1]).split(r'<td>')[1].split('</td>')[0]   # 物流轨迹
+                if '取件完成' in result['track_info']:
+                    if k < 1:
+                        result['出货时间'] = result['track_date']
+                        k = k + 1
+                if '轉運作業中' in result['track_info']:
+                    if k2 < 1:
+                        result['上线时间'] = result['track_date']
+                        k2 = k2 + 1
+                if '異常狀況' in result['track_info']:
+                    if k3 < 1:
+                        result['保管时间'] = result['track_date']
+                        k3 = k3 + 1
+                result['track_status'] = ""
+                result['负责营业所'] = str(rq_val[3]).split(r'<td>')[1].split('</td>')[0]
+                result['轨迹备注'] = str(rq_val[2]).split(r'<td>')[1].split('</td>')[0]
+                result['序号'] = index - 1
+                result['便利店'] = ""
+            ordersDict.append(result)
+        data = pd.json_normalize(ordersDict)
+        data.dropna(axis=0, how='any', inplace=True)
+        data.sort_values(by=["wayBillNumber", "track_date"], inplace=True, ascending=[True, True])      # inplace: 原地修改; ascending：升序
+        print(data)
+        print('*' * 50)
+        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        data.to_excel('F:\\输出文件\\宅配通快递 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         return data
 
 if __name__ == '__main__':
@@ -237,7 +362,11 @@ if __name__ == '__main__':
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     '''
     # m.readFormHost()
-
-    m._SearchGoods('7532082106')
+    proxy_handle = '代理服务器'
+    proxy_id = '192.168.13.89:37468'  # 输入代理服务器节点和端口
+    # m.readFormHost(proxy_id, proxy_handle)
+    m.SearchGoods_write(proxy_id, proxy_handle)
+    # m._SearchGoods('377194099656', proxy_id, proxy_handle)
+    # m._SearchGoodsT('377194099656', proxy_id, proxy_handle)
 
     print('查询耗时：', datetime.datetime.now() - start)

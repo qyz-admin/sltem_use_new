@@ -1,3 +1,4 @@
+#coding:utf-8
 import pandas as pd
 import os
 import datetime
@@ -19,7 +20,7 @@ from settings_sso import Settings_sso
 from emailControl import EmailControl
 from openpyxl import load_workbook  # 可以向不同的sheet写入数据
 from openpyxl.styles import Font, Border, Side, PatternFill, colors, Alignment  # 设置字体风格为Times New Roman，大小为16，粗体、斜体，颜色蓝色
-
+from random import randint
 
 # -*- coding:utf-8 -*-
 class QueryTwo(Settings, Settings_sso):
@@ -33,6 +34,7 @@ class QueryTwo(Settings, Settings_sso):
         # self.sso_online_Two()
         # self.sso__online_handle(login_TmpCode)
         # self.sso__online_auto()
+
         if proxy_handle == '代理服务器':
             if handle == '手动':
                 self.sso__online_handle_proxy(login_TmpCode, proxy_id)
@@ -154,9 +156,13 @@ class QueryTwo(Settings, Settings_sso):
                     if ord[:3] == '620' or ord[:3] == '901':
                         print('单独 - 黑猫查询中')
                         data = self._SearchGoods_heimao(ord, proxy_handle, proxy_id)
+                    if ord[:3] == '377':
+                        print('单独 - 宅配通查询中')
+                        data = self._SearchGoods_zhaipeitong(ord, proxy_handle, proxy_id)
                     else:
                         print('单独 - 单点查询中')
                         data = self._order_online(ord, isReal, proxy_handle, proxy_id)
+                        time.sleep(3)
                         print(data)
                 elif cat == 1:
                     print('全体 - 单点查询中')
@@ -254,7 +260,7 @@ class QueryTwo(Settings, Settings_sso):
         print('查询耗时：', datetime.datetime.now() - start)
         print('*' * 50)
 
-    #  查询运单轨迹-按订单查询（一 、1.单点）
+    #  查询运单轨迹-按订单查询（一 、1.单点 实时查询）
     def _order_online(self, ord, isReal, proxy_handle, proxy_id):  # 进入订单检索界面
         print('+++实时_搜索轨迹信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
@@ -358,7 +364,7 @@ class QueryTwo(Settings, Settings_sso):
             print('++++++本次获取成功+++++++')
             # print('*' * 50)
             return data
-    #  物流轨迹数据库         （一 、2.单点）
+    #  物流轨迹数据库         （一 、2.单点 历史数据库）
     def _order_online_data(self, ord, isReal, proxy_handle, proxy_id):  # 进入订单检索界面
         print('+++数据库_搜索轨迹信息中')
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
@@ -494,7 +500,7 @@ class QueryTwo(Settings, Settings_sso):
                     # "User-Agent": random.choice(user_agent_list)
                     }
         #3、构建请求数据
-        data = {'BillID': 620430597712}
+        data = {'BillID': wayBillNumber}
         if proxy_handle == '代理服务器':             # 使用代理ip发送请求
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -617,8 +623,95 @@ class QueryTwo(Settings, Settings_sso):
         # data.to_excel('F:\\输出文件\\黑猫宅急便 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
         return data
 
+    #  查询运单轨迹-按运单查询（一 、4.宅配通官网）
+    def _SearchGoods_zhaipeitong(self,wayBillNumber, proxy_handle, proxy_id):
+        #1、构建url
+        url = "http://query2.e-can.com.tw/ECAN_APP/DS_LINK.asp"   #url为机器人的webhook
+        #2、构建一下请求头部
+        r_header = {"Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                    "Accept-Encoding": "gzip, deflate",
+                    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Charset": "UTF-8",
+                    'Host': 'query2.e-can.com.tw',
+                    'Origin': 'http://query2.e-can.com.tw',
+                    'Referer': 'http://query2.e-can.com.tw/ECAN_APP/search.shtm',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36'
+                    }
+        #3、构建请求数据
+        data = {'txtMainID': wayBillNumber, 'B1': '查詢'}
+        USER_AGENTS = ['192.168.13.89:37466', '192.168.13.89:37467', '192.168.13.89:37468']
+        proxy_id = USER_AGENTS[randint(0, len(USER_AGENTS) - 1)]
 
-
+        # for proxy_id in ['192.168.13.89:37466', '192.168.13.89:37467', '192.168.13.89:37468', '192.168.13.89:37469']:
+        if proxy_handle == '代理服务器':             # 使用代理ip发送请求
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+            req.encoding = "utf-8"  # 新增编码格式
+        else:
+            req = self.session.post(url=url, headers=r_header, data=data)
+            req.encoding = "utf-8"  # 新增编码格式
+        req.encoding = req.apparent_encoding
+        # print('----------获取验证值成功-------------')
+        # print(req)
+        print('----------数据获取返回成功: ' + wayBillNumber + '-----------')
+        rq = BeautifulSoup(req.text, 'lxml')
+        # print(rq)
+        ordersDict = []
+        try:
+            order_number2 = str(rq).split(r'出貨單號：')[1].split('</h2>')[0]              # 订单编号
+        except Exception as e:
+            print('xxxx获取失败：' + wayBillNumber, str(Exception) + str(e))
+            data = self._SearchGoods_zhaipeitong(wayBillNumber, proxy_handle, proxy_id)
+        waybill_number2 = ""
+        k = 0
+        k2 = 0
+        k3 = 0
+        rq = rq.find_all('tr')
+        print('*' * 50)
+        for index, val in enumerate(rq):
+            result = {}
+            # print(index)
+            # print(val)
+            if 'colspan="4"' in str(val):       # 查询到货态（一）
+                waybill_number2 = str(val).split(r'單號：')[1].split('-00')[0]
+            elif 'class="date">' in str(val):       # 查询到货态（一）
+                rq_val = val.find_all('td')
+                result['序号'] = index
+                result['orderNumber'] = order_number2
+                result['wayBillNumber'] = waybill_number2
+                result['track_date'] = str(rq_val[0]).split(r'class="date">')[1].split('</span')[0]
+                result['出货时间'] = ""
+                result['上线时间'] = ""
+                result['保管时间'] = ""
+                result['完成时间'] = ""
+                result['track_info'] = str(rq_val[1]).split(r'<td>')[1].split('</td>')[0]  # 物流轨迹
+                if '取件完成' in result['track_info']:
+                    if k < 1:
+                        result['出货时间'] = result['track_date']
+                        k = k + 1
+                if '轉運作業中' in result['track_info']:
+                    if k2 < 1:
+                        result['上线时间'] = result['track_date']
+                        k2 = k2 + 1
+                if '異常狀況' in result['track_info']:
+                    if k3 < 1:
+                        result['保管时间'] = result['track_date']
+                        k3 = k3 + 1
+                result['track_status'] = ""
+                result['负责营业所'] = str(rq_val[3]).split(r'<td>')[1].split('</td>')[0]
+                result['轨迹备注'] = str(rq_val[2]).split(r'<td>')[1].split('</td>')[0]
+                result['序号'] = index - 1
+                result['便利店'] = ""
+            ordersDict.append(result)
+        data = pd.json_normalize(ordersDict)
+        data.dropna(axis=0, how='any', inplace=True)
+        data.sort_values(by=['wayBillNumber', 'track_date'], inplace=True, ascending=[True, True])  # inplace: 原地修改; ascending：升序
+        print(data)
+        print('*' * 50)
+        # rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
+        # data.to_excel('F:\\输出文件\\宅配通快递 {0} .xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
+        return data
 
     #  查询运单轨迹-上线及派送（三）
     def order_bind_status(self, timeStart, timeEnd):  # 进入运单轨迹界面
@@ -1186,7 +1279,7 @@ if __name__ == '__main__':
     handle = '手动0'
     login_TmpCode = '0b04de569eb6395e88a34a2e9cde8e92'  # 输入登录口令Tkoen
     proxy_handle = '代理服务器0'
-    proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
+    proxy_id = '192.168.13.89:37469'  # 输入代理服务器节点和端口
 
     # TODO------------------------------------单点更新读取------------------------------------
     m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
@@ -1197,9 +1290,9 @@ if __name__ == '__main__':
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 ；  cat = 1 、黑猫切换是否使用后台数据  0 、还是官网数据 
     '''
-    select = 54
+    select = 1
     isReal = 1
-    cat = 0
+    cat = 0             # 0,单独 黑猫 宅配通 查询中； 1 全部单点查询中
     if int(select) == 1:
         print("1-->>> 正在按运单号查询+++")
         m.readFormHost(isReal, proxy_handle, proxy_id, cat)       # 导入；，更新--->>数据更新切换
@@ -1226,12 +1319,12 @@ if __name__ == '__main__':
             tm2 = (datetime.datetime.now().strftime('%Y-%m-%d')) + ' 16:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'PM'
         elif select == 53:
-            tm = '2023-05-23 16:05:00'
-            tm2 = '2023-05-24 11:00:00'
+            tm = '2023-05-24 16:00:00'
+            tm2 = '2023-05-25 11:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'AM'
         elif select == 54:
-            tm = '2023-05-24 11:00:00'
-            tm2 = '2023-05-24 16:00:00'
+            tm = '2023-05-25 11:00:00'
+            tm2 = '2023-05-25 16:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'PM'
         print('****** 查询      起止时间：' + tm + ' - ' + tm2 + ' ******')
         message = '带短信'

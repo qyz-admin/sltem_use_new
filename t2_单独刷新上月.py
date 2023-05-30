@@ -136,17 +136,22 @@ class Updata_gat(Settings):
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req)
         # print(req.headers)
-
-        print('4.1、加载： ' + 'https://gsso.giikin.com:443/admin/dingtalk_service/getunionidbytempcode?')
         index_system3 = req.headers['Location']
-        # print(index_system3)
-        url = index_system3.replace(':443', '')
-        # print(url)
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
-                    'Referer': 'http://gsso.giikin.com/'}
-        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        # print(req)
-        # print(req.headers)
+
+        # 此处暂停使用443
+        if ':443' in index_system3:
+            # print('4.1、加载： ' + 'https://gsso.giikin.com:443/admin/dingtalk_service/getunionidbytempcode?')
+            # print(index_system3)
+            url = index_system3.replace(':443', '')
+            # print(url)
+            r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                        'Referer': 'http://gsso.giikin.com/'}
+            req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+            # print(req)
+            # print(req.headers)
+            url = req.headers['Location']
+        else:
+            url = index_system3
 
         time.sleep(1)
         print('4.2、加载： ' + 'https://gimp.giikin.com')
@@ -289,19 +294,24 @@ class Updata_gat(Settings):
         req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False, proxies=proxies)
         # print(req)
         # print(req.headers)
-
-        print('4.1、加载： ' + 'https://gsso.giikin.com:443/admin/dingtalk_service/getunionidbytempcode?')
-        index_system3 = req.headers['Location']
-        # print(index_system3)
-        url = index_system3.replace(':443', '')
-        # print(url)
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
-                    'Referer': 'http://gsso.giikin.com/'}
-        # req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}  # 使用代理服务器
-        req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False, proxies=proxies)
-        # print(req)
         # print(req.headers)
+        index_system3 = req.headers['Location']
+
+        # 此处暂停使用443
+        if ':443' in index_system3:
+            # print('4.1、加载： ' + 'https://gsso.giikin.com:443/admin/dingtalk_service/getunionidbytempcode?')
+            # print(index_system3)
+            url = index_system3.replace(':443', '')
+            # print(url)
+            r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                        'Referer': 'http://gsso.giikin.com/'}
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}  # 使用代理服务器
+            req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False, proxies=proxies)
+            # print(req)
+            # print(req.headers)
+            url = req.headers['Location']
+        else:
+            url = index_system3
 
         time.sleep(1)
         print('4.2、加载： ' + 'https://gimp.giikin.com')
@@ -520,9 +530,10 @@ class Updata_gat(Settings):
                     'Origin': 'https://login.dingtalk.com',
                     'Referer': 'http://gsso.giikin.com/admin/login/logout.html'}
         req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
-        # print(req)
-        # print(req.text)
-        # print(req.headers)
+        print(req)
+        print(req.text)
+        print(req.headers)
+        print('*' * 50)
         # print('******获取登录页面url成功： /oapi.dingtalk.com/connect/oauth2/sns_authorize?')
 
         time.sleep(1)
@@ -537,8 +548,8 @@ class Updata_gat(Settings):
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'Referer': 'http://gsso.giikin.com/'}
         req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False)
-        # print(req)
-        # print(req.headers)
+        print(req)
+        print(req.headers)
 
         time.sleep(1)
         # print('3、加载： ' + 'http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode?')
@@ -548,18 +559,23 @@ class Updata_gat(Settings):
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req)
         # print(req.headers)
-
-        # print('4.1、加载： ' + 'https://gsso.giikin.com:443/admin/dingtalk_service/getunionidbytempcode?')
-        index_system3 = req.headers['Location']
-        # print(index_system3)
-        url = index_system3.replace(':443', '')
-        # print(url)
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
-                    'Referer': 'http://gsso.giikin.com/'}
-        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        # print(req)
         # print(req.headers)
-        url = req.headers['Location']
+        index_system3 = req.headers['Location']
+
+        # 此处暂停使用443
+        if ':443' in index_system3:
+            # print('4.1、加载： ' + 'https://gsso.giikin.com:443/admin/dingtalk_service/getunionidbytempcode?')
+            # print(index_system3)
+            url = index_system3.replace(':443', '')
+            # print(url)
+            r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                        'Referer': 'http://gsso.giikin.com/'}
+            req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+            # print(req)
+            # print(req.headers)
+            url = req.headers['Location']
+        else:
+            url = index_system3
 
         '''
         time.sleep(1)
@@ -850,22 +866,25 @@ class Updata_gat(Settings):
         # req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}  # 使用代理服务器
         req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False, proxies=proxies)
-        # print(req)
-        # print(req.headers)
-
-        # print('4.1、加载： ' + 'https://gsso.giikin.com:443/admin/dingtalk_service/getunionidbytempcode?')
+        print(req)
+        print(req.headers)
         index_system3 = req.headers['Location']
-        # print(index_system3)
-        url = index_system3.replace(':443', '')
-        # print(url)
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
-                    'Referer': 'http://gsso.giikin.com/'}
-        # req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}  # 使用代理服务器
-        req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False, proxies=proxies)
-        # print(req)
-        # print(req.headers)
-        url = req.headers['Location']
+
+        # 此处暂停使用443
+        if ':443' in index_system3:
+            # print('4.1、加载： ' + 'https://gsso.giikin.com:443/admin/dingtalk_service/getunionidbytempcode?')
+            # print(index_system3)
+            url = index_system3.replace(':443', '')
+            # print(url)
+            r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                        'Referer': 'http://gsso.giikin.com/'}
+            proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}  # 使用代理服务器
+            req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False, proxies=proxies)
+            # print(req)
+            # print(req.headers)
+            url = req.headers['Location']
+        else:
+            url = index_system3
 
         '''
         time.sleep(1)

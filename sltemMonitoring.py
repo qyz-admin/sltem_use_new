@@ -4011,15 +4011,15 @@ if __name__ == '__main__':
     # ready = '上期宏'
 
     if handle == '自动':
-        last_month = '2023.04.25'
-        now_month = '2023.05.25'
+        last_month = '2023.04.29'
+        now_month = '2023.05.29'
         handle_now_month,handle_last_month,handle_now_month_old,handle_last_month_old = '','','',''
     else:
-        now_month = '2023.05.09'            # 本月记录日期
-        handle_now_month = '202304'         # 本月记录 本月数据
-        handle_last_month = '202303'        # 本月记录 上月数据
+        now_month = '2023.05.29'            # 本月记录日期
+        handle_now_month = '202305'         # 本月记录 本月数据
+        handle_last_month = '202304'        # 本月记录 上月数据
 
-        last_month = '2023.05.09'           # 上月记录日期
+        last_month = '2023.05.04'           # 上月记录日期
         handle_now_month_old = '202304'     # 上月记录 本月数据
         handle_last_month_old = '202303'    # 上月记录 上月数据
 

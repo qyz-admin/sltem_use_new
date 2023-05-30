@@ -1246,19 +1246,22 @@ class Settings_sso():
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req)
         # print(req.headers)
-
-        # print('4.1、加载： ' + 'https://gsso.giikin.com:443/admin/dingtalk_service/getunionidbytempcode?')
         index_system3 = req.headers['Location']
-        # print(index_system3)
-        url = index_system3.replace(':443', '')
-        # print(url)
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
-                    'Referer': 'http://gsso.giikin.com/'}
-        req = self.session.get(url=url, headers=r_header, allow_redirects=False)
-        # print(req)
-        # print(req.headers)
-        url = req.headers['Location']
 
+        # 此处暂停使用443
+        if ':443' in index_system3:
+            # print('4.1、加载： ' + 'https://gsso.giikin.com:443/admin/dingtalk_service/getunionidbytempcode?')
+            # print(index_system3)
+            url = index_system3.replace(':443', '')
+            # print(url)
+            r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+                        'Referer': 'http://gsso.giikin.com/'}
+            req = self.session.get(url=url, headers=r_header, allow_redirects=False)
+            # print(req)
+            # print(req.headers)
+            url = req.headers['Location']
+        else:
+            url = index_system3
 
         '''
         time.sleep(1)

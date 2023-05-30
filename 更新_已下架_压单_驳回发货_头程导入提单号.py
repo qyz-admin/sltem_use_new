@@ -27,7 +27,7 @@ from bs4 import BeautifulSoup # 抓标签里面元素的方法
 
 # -*- coding:utf-8 -*-
 class QueryTwoLower(Settings, Settings_sso):
-    def __init__(self, userMobile, password, login_TmpCode,handle):
+    def __init__(self, userMobile, password, login_TmpCode,handle, proxy_id, proxy_handle):
         Settings.__init__(self)
         Settings_sso.__init__(self)
         self.session = requests.session()  # 实例化session，维持会话,可以让我们在跨请求时保存某些参数
@@ -37,10 +37,16 @@ class QueryTwoLower(Settings, Settings_sso):
         # self.sso_online_cang()
         # self.bulid_file()
 
-        if handle == '手动':
-            self.sso_online_cang_handle(login_TmpCode)
-        else:
-            self.sso_online_cang_auto()
+        # if proxy_handle == '代理服务器':
+        #     if handle == '手动':
+        #         self.sso__online_handle_proxy(login_TmpCode, proxy_id)
+        #     else:
+        #         self.sso__online_auto_proxy(proxy_id)
+        # else:
+        #     if handle == '手动':
+        #         self.sso__online_handle(login_TmpCode)
+        #     else:
+        #         self.sso__online_auto()
 
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -83,6 +89,8 @@ class QueryTwoLower(Settings, Settings_sso):
             path = r'F:\需要用到的文件\需要用到的文件\B导入头程提货单号'
         elif select == 4:
             path = r'F:\需要用到的文件\需要用到的文件\A查询导表'
+        elif select == 9:
+            path = r'F:\需要用到的文件\无敌'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -95,8 +103,8 @@ class QueryTwoLower(Settings, Settings_sso):
                         # excel = win32.gencache.EnsureDispatch('Excel.Application')
                         # wb = excel.Workbooks.Open(filePath)
                         # file_path = os.path.join(path, "~$ " + dir)
-                        # wb.SaveAs(file_path, FileFormat=51)  # FileFormat = 51 is for .xlsx extension
-                        # wb.Close()  # FileFormat = 56 is for .xls extension
+                        # wb.SaveAs(file_path, FileFormat=51)              # FileFormat = 51 is for .xlsx extension
+                        # wb.Close()                                      # FileFormat = 56 is for .xls extension
                         # excel.Application.Quit()
                         # os.remove(filePath)
                         excel = win32.DispatchEx('Excel.Application')
@@ -119,20 +127,23 @@ class QueryTwoLower(Settings, Settings_sso):
                     self._readFile_select(filePath, rq, tem)                # 工作表的   头程物流  信息
                 elif select == 4:
                     self._readFile_Yixiwudi(filePath)  # 工作表的   头程物流  信息
-                # excel = win32.gencache.EnsureDispatch('Excel.Application')
-                # wb = excel.Workbooks.Open(filePath)
-                # file_path = os.path.join(path, "~$ " + dir)
-                # wb.SaveAs(file_path, FileFormat=51)              # FileFormat = 51 is for .xlsx extension
-                # wb.Close()                                      # FileFormat = 56 is for .xls extension
-                # excel.Application.Quit()
-                # os.remove(filePath)
-                excel = win32.DispatchEx('Excel.Application')
-                wb = excel.Workbooks.Open(filePath)
-                file_path = os.path.join(path, "~$ " + dir)
-                wb.SaveAs(file_path, FileFormat=51)  # FileFormat = 51 is for .xlsx extension
-                wb.Close()  # FileFormat = 56 is for .xls extension
-                excel.Application.Quit()
-                os.remove(filePath)
+                    excel = win32.DispatchEx('Excel.Application')
+                    wb = excel.Workbooks.Open(filePath)
+                    file_path = os.path.join(path, "~$ " + dir)
+                    wb.SaveAs(file_path, FileFormat=51)  # FileFormat = 51 is for .xlsx extension
+                    wb.Close()  # FileFormat = 56 is for .xls extension
+                    excel.Application.Quit()
+                    os.remove(filePath)
+                elif select == 9:
+                    rq = (dir.split('2023-')[1]).strip()
+                    rq = '2023-' + rq[:5].strip()
+                    # rq = datetime.datetime.strptime(rq, '%Y.%m.%d')
+                    # rq = rq.strftime('%Y.%m.%d')
+                    if '海运' in filePath:
+                        tem = '超峰国际'
+                    else:
+                        tem = '立邦国际'
+                    self._readFile_chaofeng(filePath, rq, tem)                # 工作表的   头程物流  信息
         print('处理耗时：', datetime.datetime.now() - start)
 
     # 工作表的   压单   信息
@@ -165,6 +176,42 @@ class QueryTwoLower(Settings, Settings_sso):
                     print('++++成功导入：' + sht.name + '--->>>到压单表')
                 else:
                     print('----------数据为空导入失败：' + sht.name)
+            wb.close()
+        app.quit()
+
+    # 超峰国际   出货   信息
+    def _readFile_chaofeng(self, filePath, rq, tem):
+        fileType = os.path.splitext(filePath)[1]
+        app = xlwings.App(visible=False, add_book=False)
+        app.display_alerts = False
+        if 'xls' in fileType:
+            wb = app.books.open(filePath, update_links=False, read_only=True)
+            for sht in wb.sheets:
+                if sht.name == 'Worksheet':
+                    try:
+                        db = None
+                        db = sht.used_range.options(pd.DataFrame, header=1, numbers=int, index=False).value
+                        # print(db.columns)
+                    except Exception as e:
+                        print('xxxx查看失败：' + sht.name, str(Exception) + str(e))
+                    if db is not None and len(db) > 0:
+                        print('++++正在导入查询：' + sht.name + '表； 共：' + str(len(db)) + '行', 'sheet共：' + str(sht.used_range.last_cell.row) + '行')
+                        if '提货物流' not in db.columns:
+                            db.insert(0, '提货物流', tem)
+                        if '提货时间' not in db.columns:
+                            db.insert(0, '提货时间', rq)
+                        db = db[['提货时间', '提货物流', '运单号','箱号', '装箱条码']]
+                        db.dropna(axis=0, subset=['运单号'], how='any', inplace=True)
+                        db.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
+                        sql = '''REPLACE INTO gat_take_delivery_info(id, 提货单号,提货时间,提货物流,运单号,箱号, 装箱条码, 记录时间) 
+                                SELECT null id,null 提货单号, 提货时间,提货物流,运单号,箱号,装箱条码, NOW() 记录时间 
+                                FROM cache;'''
+                        pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                        print('++++成功导入：' + sht.name + ':' + rq + '--->>>到头程发货明细表')
+                    else:
+                        print('----------数据为空导入失败：' + sht.name)
+                else:
+                    print('----------不需要导入：' + sht.name)
             wb.close()
         app.quit()
 
@@ -1308,6 +1355,77 @@ class QueryTwoLower(Settings, Settings_sso):
         print('*' * 50)
 
 
+
+
+    # 进入 头程物流跟踪 界面 （仓储的获取- 明细）
+    def get_take_delivery_list(self):
+        print('+++正在查询头程物流信息中')
+        sql = '''SELECT id,`订单编号`  FROM {0} sl WHERE sl.`日期` = '{1}';'''.format('gat_order_list', last_month)
+        ordersDict = pd.read_sql_query(sql=sql, con=self.engine1)
+        if ordersDict.empty:
+            print('无需要更新订单信息！！！')
+            return
+        print(ordersDict['订单编号'][0])
+        orderId = list(ordersDict['订单编号'])
+        max_count = len(orderId)  # 使用len()获取列表的长度，上节学的
+        n = 0
+        while n < max_count:  # 这里用到了一个while循环，穿越过来的
+            ord = ', '.join(orderId[n:n + 500])
+            n = n + 500
+            self.orderInfoQuery(ord)
+        print('单日查询耗时：', datetime.datetime.now() - start)
+
+
+        timeStart = (datetime.datetime.now() - datetime.timedelta(days=10)).strftime('%Y-%m-%d')
+        timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
+        url = r'http://gwms-v3.giikin.cn/order/delivery/firstLegTrace'
+        r_header = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+            'origin': 'http://gwms-v3.giikin.cn',
+            'Referer': 'http://gwms-v3.giikin.cn/order/delivery/takeDeliveryRegister?id=8755'}
+        data = {'page': '1',
+                'limit': 100,
+                'startDate': timeStart + ' 00:00:00',
+                'endDate': timeEnd + ' 23:59:59',
+                'selectStr': '1=1 and a.country= "TW"'}
+        proxy = '39.105.167.0:40005'  # 使用代理服务器
+        proxies = {'http': 'socks5://' + proxy,
+                   'https': 'socks5://' + proxy}
+        # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+        req = self.session.post(url=url, headers=r_header, data=data)
+        print(req)
+        print('+++已成功发送请求......')
+        req = json.loads(req.text)  # json类型 或者 str字符串  数据转换为dict字典
+        # print(req)
+        max_count = req['count']
+        if max_count != [] or max_count != 0:
+            ordersdict = []
+            try:
+                for result in req['data']:
+                    ordersdict.append(result)
+            except Exception as e:
+                print('转化失败： 重新获取中', str(Exception) + str(e))
+            data = pd.json_normalize(ordersdict)
+            # print(data)
+            df = data[['id', 'take_delivery_no', 'take_delivery_date', 'take_delivery_company', 'take_delivery_company_id', 'transport_mode', 'product_type', 'transport_type',
+                       'batch', 'barcode', 'country', 'boxCount', 'analy', 'deliverytime', 'send_first_logistics_comment', 'uptime']]
+            df.columns = ['id', '提货单号', '提货时间', '提货物流', '提货物流id', '运输方式', '货物类型', '运输公司',
+                          '运输班次', '箱号', '线路', '箱数', '统计', '交货时间', '报关资料发送结果', '更新时间']
+
+            print('共有 ' + str(len(df)) + '条 正在写入......')
+            df.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
+            # df.to_excel('F:\\输出文件\\{0}-查询{1}.xlsx'.format(match[team], rq), sheet_name='查询', index=False,engine='xlsxwriter')
+            sql = '''REPLACE INTO gat_take_delivery(id,提货单号,提货时间,提货日期,提货物流,提货物流id,运输方式,货物类型,运输公司,运输班次,箱号,线路,箱数,统计,出货时间, 交货时间,报关资料发送结果,更新时间, 主號,航班號,记录时间)
+                     SELECT id,提货单号,提货时间,DATE_FORMAT(提货时间,'%Y-%m-%d') 提货日期,提货物流,提货物流id,运输方式,货物类型,IF(运输公司 = '',NULL,运输公司) 运输公司,IF(运输班次 = '',NULL,运输班次) 运输班次,箱号,线路,箱数,统计,
+                            NULL 出货时间, IF(交货时间 = '',NULL,交货时间) 交货时间,报关资料发送结果,更新时间,NULL 主號,NULL 航班號,NOW() 记录时间
+                    FROM customer;'''
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+            print('写入成功......')
+        else:
+            df = None
+            print('****** 没有信息！！！')
+        return df
+
     # 进入 头程物流跟踪 界面 （仓储的获取）
     def get_take_delivery_no(self):
         print('+++正在查询头程物流信息中')
@@ -1658,7 +1776,11 @@ class QueryTwoLower(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    m = QueryTwoLower('+86-18538110674', 'qyz04163510.','1dd6113668f83ab5b79797b87b8bcc41','手0动')
+    proxy_handle = '代理服务器0'
+    proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
+    handle = '手0动'
+    login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
+    m = QueryTwoLower('+86-18538110674', 'qyz04163510.','1dd6113668f83ab5b79797b87b8bcc41','手0动', proxy_id, proxy_handle)
     # m.bulid_file()
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
@@ -1666,7 +1788,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动设置时间；若无法查询，切换代理和直连的网络-----------------------------------------
 
     # m.order_lower('2022-02-17', '2022-02-18', '自动')   # 已下架
-    select = 1
+    select = 9
     if select == 1:
         # m.readFile(select)            # 上传每日压单核实结果
         m.order_spec()                # 压单反馈  （备注（压单核实是否需要））
@@ -1692,6 +1814,8 @@ if __name__ == '__main__':
 
         # m. _upload_take_delivery_no(8637, '297-82680091', 'CI', 'CI6844')
 
+    elif select == 9:
+        m.readFile(select)             # 读取头程时效表
 
     # m.get_billno_res()      # 改派无运单号
 

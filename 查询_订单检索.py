@@ -1,3 +1,4 @@
+# coding=utf-8
 import pandas as pd
 import os
 import re
@@ -903,7 +904,7 @@ class QueryOrder(Settings, Settings_sso):
         try:
             for result in req['data']['list']:
                 e_val =result['orderNumber']
-                print(result['orderNumber'])
+                # print(result['orderNumber'])
                 if result['specs'] != '' and result['specs'] != []:
                     result['saleId'] = 0        # 添加新的字典键-值对，为下面的重新赋值用
                     result['saleName'] = 0
