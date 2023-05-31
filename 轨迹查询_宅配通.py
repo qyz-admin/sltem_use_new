@@ -152,7 +152,6 @@ class QueryTwo(Settings, Settings_sso):
         if max_count > 0:
             for ord in orderId:
                 print(ord)
-                time.sleep(10)
                 data = self._SearchGoods(ord, proxy_id, proxy_handle)
                 if data is not None and len(data) > 0:
                     data.to_sql('query_cache', con=self.engine1, index=False, if_exists='replace')
@@ -161,6 +160,7 @@ class QueryTwo(Settings, Settings_sso):
                             FROM query_cache;'''
                     pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
                     print('查询已写入+++')
+                time.sleep(10)
         else:
             dp = None
         print('查询已导出+++')
@@ -193,31 +193,34 @@ class QueryTwo(Settings, Settings_sso):
         #1、构建url
         url = "http://query2.e-can.com.tw/ECAN_APP/DS_LINK.asp"   #url为机器人的webhook
         #2、构建一下请求头部
-        r_header = {"Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-                    "Accept-Encoding": "gzip, deflate",
-                    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Charset": "UTF-8",
+        r_header = {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                    'Accept-Encoding': 'gzip, deflate',
+                    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
+                    'Cache-Control': 'max-age=0',
+                    'Connection': 'keep-alive',
+                    'Content-Length': '44',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Cookie': '__utma=73744262.1058373605.1685364822.1685364822.1685364822.1; __utmz=73744262.1685364822.1.1.utmcsr=query2.e-can.com.tw|utmccn=(referral)|utmcmd=referral|utmcct=/; _ga=GA1.3.1058373605.1685364822',
                     'Host': 'query2.e-can.com.tw',
                     'Origin': 'http://query2.e-can.com.tw',
                     'Referer': 'http://query2.e-can.com.tw/ECAN_APP/search.shtm',
+                    'Upgrade-Insecure-Requests': '1',
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.42'
                     }
         #3、构建请求数据
         data = {'txtMainID': wayBillNumber, 'B1': '查詢'}
-        USER_AGENTS = ['192.168.13.89:37466', '192.168.13.89:37467', '192.168.13.89:37460']
+        USER_AGENTS = ['192.168.13.89:37466', '192.168.13.89:37467']
         proxy_id = USER_AGENTS[randint(0, len(USER_AGENTS) - 1)]
         print(proxy_id)
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
-            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies, allow_redirects=False)
         else:
-            req = self.session.post(url=url, headers=r_header, data=data)
-            # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=True)
+            req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
         req.encoding = "utf-8"                      # 新增编码格式
         # print('----------获取验证值成功-------------')
-        # print(req)
-        # print(req.headers)
+        print(req)
+        print(req.headers)
         # print(req.text)
         print('----------数据获取返回成功-----------')
         rq = BeautifulSoup(req.text, 'lxml')
@@ -290,11 +293,11 @@ class QueryTwo(Settings, Settings_sso):
         #3、构建请求数据
         data = {'txtMainID': wayBillNumber,
                 'B1': '查詢'}
-        if proxy_handle == '代理服务器0':
+        if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
-            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies, allow_redirects=True)
+            req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies, allow_redirects=False)
         else:
-            req = self.session.post(url=url, headers=r_header, data=data)
+            req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=False)
             # req = self.session.post(url=url, headers=r_header, data=data, allow_redirects=True)
         req.encoding = "utf-8"                      # 新增编码格式
         # print('----------获取验证值成功-------------')
@@ -362,7 +365,7 @@ if __name__ == '__main__':
     # -----------------------------------------------手动导入状态运行（一）-----------------------------------------
     '''
     # m.readFormHost()
-    proxy_handle = '代理服务器'
+    proxy_handle = '代理服务器0'
     proxy_id = '192.168.13.89:37468'  # 输入代理服务器节点和端口
     # m.readFormHost(proxy_id, proxy_handle)
     m.SearchGoods_write(proxy_id, proxy_handle)

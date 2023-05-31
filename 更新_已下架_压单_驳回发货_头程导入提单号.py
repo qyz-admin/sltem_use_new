@@ -37,16 +37,16 @@ class QueryTwoLower(Settings, Settings_sso):
         # self.sso_online_cang()
         # self.bulid_file()
 
-        # if proxy_handle == '代理服务器':
-        #     if handle == '手动':
-        #         self.sso__online_handle_proxy(login_TmpCode, proxy_id)
-        #     else:
-        #         self.sso__online_auto_proxy(proxy_id)
-        # else:
-        #     if handle == '手动':
-        #         self.sso__online_handle(login_TmpCode)
-        #     else:
-        #         self.sso__online_auto()
+        if proxy_handle == '代理服务器':
+            if handle == '手动':
+                self.sso_online_cang_handle(login_TmpCode)
+            else:
+                self.sso_online_cang_auto()
+        else:
+            if handle == '手动':
+                self.sso_online_cang_handle(login_TmpCode)
+            else:
+                self.sso_online_cang_auto()
 
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
@@ -144,6 +144,7 @@ class QueryTwoLower(Settings, Settings_sso):
                     else:
                         tem = '立邦国际'
                     self._readFile_chaofeng(filePath, rq, tem)                # 工作表的   头程物流  信息
+                    os.remove(filePath)
         print('处理耗时：', datetime.datetime.now() - start)
 
     # 工作表的   压单   信息
@@ -699,24 +700,19 @@ class QueryTwoLower(Settings, Settings_sso):
     # 进入 已下架 界面  （仓储的获取）（一）
     def order_lower(self, timeStart, timeEnd, auto_time):  # 进入已下架界面
         start: datetime = datetime.datetime.now()
-        team_whid = ['龟山易速配', '速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '龟山-神龙备货', '龟山-火凤凰备货', '天马顺丰仓', '协来运', '协来运（废弃）','易速配-桃园仓', '香港圆通仓', '神龙备货-铱熙无敌', '火凤凰备货-铱熙无敌']
+        team_whid = ['速派八股仓', '天马新竹仓', '立邦香港顺丰', '香港易速配', '天马顺丰仓', '协来运', '香港圆通仓', '神龙备货-铱熙无敌', '火凤凰备货-铱熙无敌']
         # team_whid = ['协来运']
         team_stock_type = [1, 2]
         # team_stock_type = [2]
         match = {1: 'SKU库存',
                  2: '组合库存',
                  3: '混合库存'}
-        match2 = {'龟山易速配': 70,
-                  '速派八股仓': 95,
+        match2 = {'速派八股仓': 95,
                   '天马新竹仓': 102,
                   '立邦香港顺丰': 117,
                   '香港易速配': 134,
-                  '龟山-神龙备货': 166,
-                  '龟山-火凤凰备货': 198,
                   '天马顺丰仓': 204,
                   '协来运': 241,
-                  '协来运（废弃）': 49,
-                  '易速配-桃园仓': 253,
                   '香港圆通仓': 274,
                   '神龙备货-铱熙无敌': 307,
                   '火凤凰备货-铱熙无敌': 308
@@ -741,7 +737,7 @@ class QueryTwoLower(Settings, Settings_sso):
             timeEnd = (datetime.datetime.now()).strftime('%Y-%m-%d')
             print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
             for tem in team_whid:
-                if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货', '易速配-桃园仓', '神龙备货-铱熙无敌', '火凤凰备货-铱熙无敌'):
+                if tem in ('神龙备货-铱熙无敌', '火凤凰备货-铱熙无敌'):
                     for tem_type in team_stock_type:
                         print('+++正在查询仓库： ' + tem + '；库存类型:' + match[tem_type] + ' 信息')
                         self._order_lower_info(match2[tem], tem_type, timeStart, timeEnd, tem, match[tem_type])
@@ -751,7 +747,7 @@ class QueryTwoLower(Settings, Settings_sso):
         else:
             print('正在查询日期---起止时间：' + timeStart + ' - ' + timeEnd)
             for tem in team_whid:
-                if tem in ('龟山易速配', '龟山-神龙备货', '龟山-火凤凰备货', '易速配-桃园仓', '神龙备货-铱熙无敌', '火凤凰备货-铱熙无敌'):
+                if tem in ('神龙备货-铱熙无敌', '火凤凰备货-铱熙无敌'):
                     for tem_type in team_stock_type:
                         print('+++正在查询仓库： ' + tem + '；库存类型:' + match[tem_type] + ' 信息')
                         self._order_lower_info(match2[tem], tem_type, timeStart, timeEnd, tem, match[tem_type])
@@ -772,6 +768,7 @@ class QueryTwoLower(Settings, Settings_sso):
         # proxies = {'http': 'socks5://' + proxy, 'https': 'socks5://' + proxy}
         # req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
         req = self.session.post(url=url, headers=r_header, data=data)
+        # print(data)
         # print(req.text)
         # print(json.loads(f'"{req.text}"'))
         # req = req.text.encode('utf-8').decode("unicode_escape")

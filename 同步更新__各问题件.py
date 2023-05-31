@@ -1713,7 +1713,7 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
     select = 99
-    if int(select) == 909:
+    if int(select) == 99:
         handle = '手动0'
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
         proxy_handle = '代理服务器0'
@@ -1798,9 +1798,11 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 仓储 已下架 状态运行（四）-----------------------------------------
     '''
     if int(select) == 99:
-        login_TmpCode = '655ffc6d056d37ca92e4398aff91288c'
+        login_TmpCode = '655ffc6d056d37ca92e4398aff91288c'          # 输入登录口令Tkoen
         handle = '手0动'
-        lw = QueryTwoLower('+86-18538110674', 'qyz04163510.', login_TmpCode, handle)
+        proxy_handle = '代理服务器0'
+        proxy_id = '192.168.13.89:37469'                            # 输入代理服务器节点和端口
+        lw = QueryTwoLower('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_id, proxy_handle)
         start: datetime = datetime.datetime.now()
 
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 已下架       更新； 自动时 输入的时间无效；切为不自动时，有效

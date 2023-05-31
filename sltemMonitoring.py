@@ -4011,8 +4011,8 @@ if __name__ == '__main__':
     # ready = '上期宏'
 
     if handle == '自动':
-        last_month = '2023.04.29'
-        now_month = '2023.05.29'
+        last_month = '2023.04.30'
+        now_month = '2023.05.31'
         handle_now_month,handle_last_month,handle_now_month_old,handle_last_month_old = '','','',''
     else:
         now_month = '2023.05.29'            # 本月记录日期
@@ -4024,11 +4024,11 @@ if __name__ == '__main__':
         handle_last_month_old = '202303'    # 上月记录 上月数据
 
     # 测试监控运行（二）-- 第一种手动方式
-    m.order_Monitoring('港台')        # 各月缓存（整体一）、
-    for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '雪豹-台湾', '雪豹-香港', '金蝉家族优化组-台湾', '金蝉家族优化组-香港','金蝉项目组-台湾', '金蝉项目组-香港']:
+    # m.order_Monitoring('港台')        # 各月缓存（整体一）、
+    # for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '雪豹-台湾', '雪豹-香港', '金蝉家族优化组-台湾', '金蝉家族优化组-香港','金蝉项目组-台湾', '金蝉项目组-香港']:
     # for team in ['雪豹-台湾', '雪豹-香港']:
-    # for team in ['雪豹-台湾']:
-    # for team in ['港台-台湾']:
+    # for team in ['火凤凰-台湾', '火凤凰-香港']:
+    for team in ['神龙-台湾', '神龙-香港', '雪豹-台湾', '雪豹-香港', '金蝉家族优化组-台湾', '金蝉家族优化组-香港','金蝉项目组-台湾', '金蝉项目组-香港']:
         now_month = now_month.replace('.', '-')           # 修改配置时间
         last_month = last_month.replace('.', '-')
         m.sl_Monitoring(team, now_month, last_month, ready, handle, handle_now_month, handle_last_month, handle_now_month_old, handle_last_month_old)      # 输出数据--每月正常使用的时间（二 分家族）、

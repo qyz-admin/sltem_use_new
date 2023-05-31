@@ -111,7 +111,7 @@ print('****** 导出      起止时间：' + month_last + ' - ' + month_yesterda
 
 # TODO------------------------------------数据库分段读取------------------------------------
 print('---------------------------------- 数据库更新部分：--------------------------------')
-m.creatMyOrderSl(team, data_begin, end)                                       # 最近三月的全部订单信息
+m.creatMyOrderSl(team, data_begin, end)                   # 最近三月的全部订单信息
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
     m.creatMyOrderSlTWO(team, begin, end)                               # 停用 最近两个月的 部分内容 更新信息
