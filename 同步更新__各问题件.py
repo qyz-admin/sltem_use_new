@@ -1444,7 +1444,7 @@ class QueryTwo(Settings, Settings_sso):
                     'Referer': 'https://gimp.giikin.com/front/workOrderCenter'}
         data = {'page': 1, 'pageSize': 90, 'order_number': None, 'waybill_number': None, 'to_phone': None,
                 'add_date': timeStart + ' 00:00:00,' + timeEnd + ' 23:59:59', 'send_status': None, 'msgid': None,
-                'template_id': "31,34,35,36,49,50,52,68,69,70,71,72,73,74,76,77,78,82,83,84,85,86,87,88,89,90,100,101,102,147,148,151,136,127,170,171,172,173"}
+                'template_id': "217,216,215,214,210,209,208,207,206,205,204,175,174,173,172,171,170,151,148,147,136,127,102,101,100,90,89,88,87,86,85,84,83,82,78,77,76,74,73,72,71,70,69,68,52,50,49,36,35,34,31"}
         if proxy_handle == '代理服务器':
             proxies = {'http': 'socks5://' + proxy_id, 'https': 'socks5://' + proxy_id}
             req = self.session.post(url=url, headers=r_header, data=data, proxies=proxies)
@@ -1712,7 +1712,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 99
+    select = 909
     if int(select) == 99:
         handle = '手动0'
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
@@ -1770,7 +1770,7 @@ if __name__ == '__main__':
         time_now = (datetime.datetime.now()).strftime('%Y-%m-%d')
         query = '下单时间'
         areaId = None                                   # 团队id
-        # js.order_Query_Yiwudi(time_yesterday, time_now, areaId, query, proxy_handle, proxy_id)   # 检查 头程直发渠道 & 天马711@--ok
+        js.order_Query_Yiwudi(time_yesterday, time_now, areaId, query, proxy_handle, proxy_id)   # 检查 头程直发渠道 & 天马711@--ok
 
 
         timeStart = '2023-03-21'
@@ -1831,12 +1831,12 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    # handle = '手动0'
-    # login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
-    # proxy_handle = '代理服务器0'
-    # proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
-    # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
-    # start: datetime = datetime.datetime.now()
+    handle = '手动0'
+    login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
+    proxy_handle = '代理服务器0'
+    proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
+    m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+    start: datetime = datetime.datetime.now()
 
 
     # timeStart, timeEnd = m.readInfo('压单表_已核实')
@@ -1844,7 +1844,7 @@ if __name__ == '__main__':
     # m.waybill_InfoQuery_yadan('2022-11-09', '2022-11-09')  # 查询更新-物流问题件 - 压单核实
 
     # timeStart, timeEnd = m.readInfo('短信模板')
-    # m.getMessage_Log('2022-01-01', '2022-02-28', proxy_handle, proxy_id)  # 查询更新-短信模板
+    m.getMessage_Log('2023-01-01', '2023-03-31', proxy_handle, proxy_id)  # 查询更新-短信模板
 
 
     # begin = datetime.date(2022, 1, 1)
