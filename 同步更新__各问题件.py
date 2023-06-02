@@ -1712,7 +1712,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 909
+    select = 99
     if int(select) == 99:
         handle = '手动0'
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
@@ -1831,12 +1831,12 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    handle = '手动0'
-    login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
-    proxy_handle = '代理服务器0'
-    proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
-    m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
-    start: datetime = datetime.datetime.now()
+    # handle = '手动0'
+    # login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
+    # proxy_handle = '代理服务器0'
+    # proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
+    # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+    # start: datetime = datetime.datetime.now()
 
 
     # timeStart, timeEnd = m.readInfo('压单表_已核实')
@@ -1844,7 +1844,7 @@ if __name__ == '__main__':
     # m.waybill_InfoQuery_yadan('2022-11-09', '2022-11-09')  # 查询更新-物流问题件 - 压单核实
 
     # timeStart, timeEnd = m.readInfo('短信模板')
-    m.getMessage_Log('2023-01-01', '2023-03-31', proxy_handle, proxy_id)  # 查询更新-短信模板
+    # m.getMessage_Log('2023-01-01', '2023-03-31', proxy_handle, proxy_id)  # 查询更新-短信模板
 
 
     # begin = datetime.date(2022, 1, 1)

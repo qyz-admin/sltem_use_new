@@ -97,7 +97,7 @@ elif select == 2:
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    data_begin = datetime.date(2023, 5, 11)  # 数据库更新
+    data_begin = datetime.date(2023, 5, 1)  # 数据库更新
     begin = datetime.date(2023, 5, 1)      # 单点更新
     end = datetime.date(2023, 6, 1)
     # 导出时间
