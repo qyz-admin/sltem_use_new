@@ -6894,7 +6894,8 @@ class QueryUpdate(Settings):
         print('正在运行' + match[team] + '表宏…………（xlwings方法一）')
         try:
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
-            app.display_alerts = False
+            # app.display_alerts = False
+            app.screen_updating = False
             wbsht = app.books.open('E:/桌面文件/新版-格式转换(python表).xlsm')
             wbsht1 = app.books.open(file_path)
             wbsht.macro('zl_report_now.zl_report_day')()
@@ -11527,7 +11528,7 @@ if __name__ == '__main__':
         else:
             month_last = '2023-04-01'
             month_old = '2023-04-01'                                # 获取-每日-报表 各产品各团队 最近三个月的 开始的时间
-            month_yesterday = '2023-05-31'
+            month_yesterday = '2023-06-02'
 
         last_time = '2021-01-01'
         up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期

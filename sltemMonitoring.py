@@ -4015,7 +4015,7 @@ if __name__ == '__main__':
         now_month = '2023.05.31'
         handle_now_month,handle_last_month,handle_now_month_old,handle_last_month_old = '','','',''
     else:
-        now_month = '2023.06.01'            # 本月记录日期
+        now_month = '2023.06.02'            # 本月记录日期
         handle_now_month = '202305'         # 本月记录 本月数据
         handle_last_month = '202304'        # 本月记录 上月数据
 
@@ -4024,7 +4024,7 @@ if __name__ == '__main__':
         handle_last_month_old = '202303'    # 上月记录 上月数据
 
     # 测试监控运行（二）-- 第一种手动方式
-    m.order_Monitoring('港台')        # 各月缓存（整体一）、
+    # m.order_Monitoring('港台')        # 各月缓存（整体一）、
     for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '雪豹-台湾', '雪豹-香港', '金蝉家族优化组-台湾', '金蝉家族优化组-香港','金蝉项目组-台湾', '金蝉项目组-香港']:
     # for team in ['雪豹-台湾', '雪豹-香港']:
     # for team in ['火凤凰-台湾', '火凤凰-香港']:
