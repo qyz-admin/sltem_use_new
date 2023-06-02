@@ -119,6 +119,13 @@ class QueryTwoLower(Settings, Settings_sso):
                         rq = datetime.datetime.strptime(rq, '%Y.%m.%d')
                         rq = rq.strftime('%Y.%m.%d')
                         self._readFile(filePath, rq)                            # 工作表的   压单   信息
+                        excel = win32.DispatchEx('Excel.Application')
+                        wb = excel.Workbooks.Open(filePath)
+                        file_path = os.path.join(path, "~$ " + dir)
+                        wb.SaveAs(file_path, FileFormat=51)  # FileFormat = 51 is for .xlsx extension
+                        wb.Close()  # FileFormat = 56 is for .xls extension
+                        excel.Application.Quit()
+                        os.remove(filePath)
                 elif select == 2:
                     if '海运' in filePath:
                         tem = '超峰国际'

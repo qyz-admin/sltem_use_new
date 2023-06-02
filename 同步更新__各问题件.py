@@ -1714,7 +1714,7 @@ if __name__ == '__main__':
     '''
     select = 99
     if int(select) == 99:
-        handle = '手动0'
+        handle = "手动0"
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
         proxy_handle = '代理服务器0'
         proxy_id = '192.168.13.89:37469'                            # 输入代理服务器节点和端口
