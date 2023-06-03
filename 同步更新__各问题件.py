@@ -1517,7 +1517,7 @@ class QueryTwo(Settings, Settings_sso):
     # 工单列表
     def getOrderCollectionList(self, timeStart, timeEnd, proxy_handle, proxy_id):  # 进入工单列表界面
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        print('+++正在查询信息中---工单列表......')
+        print('+++正在查询信息中---工单列表......' + str(timeStart) + ' : ' + str(timeEnd))
         url = r'https://gimp.giikin.com/service?service=gorder.orderCollection&action=getOrderCollectionList'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https: // gimp.giikin.com',
@@ -1712,7 +1712,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
-    select = 99
+    select = 909
     if int(select) == 99:
         handle = "手动0"
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
@@ -1831,12 +1831,12 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    # handle = '手动0'
-    # login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
-    # proxy_handle = '代理服务器0'
-    # proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
-    # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
-    # start: datetime = datetime.datetime.now()
+    handle = '手动0'
+    login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
+    proxy_handle = '代理服务器0'
+    proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
+    m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+    start: datetime = datetime.datetime.now()
 
 
     # timeStart, timeEnd = m.readInfo('压单表_已核实')
@@ -1886,9 +1886,9 @@ if __name__ == '__main__':
 
     # m._sale_Query_info('NR112180927421695')
 
-    # timeStart = '2023-01-01'
-    # timeEnd = '2023-04-01'
-    # m.getOrderCollectionList(timeStart, timeEnd, proxy_handle, proxy_id)   # 工单列表-物流客诉件
+    timeStart = '2023-03-01'
+    timeEnd = '2023-06-02'
+    m.getOrderCollectionList(timeStart, timeEnd, proxy_handle, proxy_id)   # 工单列表-物流客诉件
 
     # timeStart, timeEnd = m.readInfo('挽单列表')
     # m.getRedeemOrderList(timeStart, timeEnd, proxy_handle, proxy_id)  # 挽单列表-物流客诉件

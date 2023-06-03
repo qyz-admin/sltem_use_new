@@ -11528,7 +11528,7 @@ if __name__ == '__main__':
         else:
             month_last = '2023-04-01'
             month_old = '2023-04-01'                                # 获取-每日-报表 各产品各团队 最近三个月的 开始的时间
-            month_yesterday = '2023-06-02'
+            month_yesterday = '2023-06-03'
 
         last_time = '2021-01-01'
         up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期
