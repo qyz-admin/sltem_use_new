@@ -436,7 +436,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                 dp = df.append(dlist, ignore_index=True)
                 dp = dp[['orderNumber', 'currencyName', 'addtime', 'orderStatus', 'logisticsStatus', 'dealTime', 'dealName','dealProcess', 'description', 'create_time', 'fbName']]
                 dp.columns = ['订单编号', '币种', '下单时间', '订单状态', '物流状态', '处理时间', '处理人', '处理结果', '反馈描述', '创建时间', '采购反馈人']
-                dp.to_excel('F:\\输出文件\\采购问题件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='采购', index=False, engine='xlsxwriter')
+                dp.to_excel('F:\\输出文件\\绩效采购问题件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='采购', index=False, engine='xlsxwriter')
                 dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
                 sql = '''REPLACE INTO {0}(订单编号,币种,下单时间,订单状态,物流状态,处理时间,处理人, 处理结果, 反馈描述, 创建时间, 采购反馈人,客服处理时间,客服处理人, 客服处理结果,客服反馈描述,统计月份,记录时间) 
                          SELECT 订单编号,币种,下单时间,订单状态,物流状态,处理时间,处理人, 处理结果, 反馈描述, 创建时间, 采购反馈人,NULL 客服处理时间,NULL 客服处理人, NULL 客服处理结果,NULL 客服反馈描述,DATE_FORMAT({1},'%Y%m') 统计月份, NOW() 记录时间 
@@ -496,10 +496,10 @@ class QueryOrder_Code(Settings, Settings_sso):
                 if data is not None and len(data) > 0:
                     dlist.append(data)
             dp = df.append(dlist, ignore_index=True)
-            # dp.to_excel('F:\\输出文件\\绩效采购-查询详情{}.xlsx'.format(rq), sheet_name='采购', index=False, engine='xlsxwriter')
+            print(dp)
+            dp.to_excel('F:\\输出文件\\绩效采购-查询详情{}.xlsx'.format(rq), sheet_name='采购', index=False, engine='xlsxwriter')
             dp = dp[['orderNumber', 'addTime', 'name', 'dealProcess', 'content']]
             dp.columns = ['订单编号', '客服处理时间', '客服处理人', '客服处理结果', '客服反馈描述']
-            dp.to_excel('F:\\输出文件\\采购问题件-补充查询{}.xlsx'.format(rq), sheet_name='采购', index=False, engine='xlsxwriter')
             dp.to_sql('cache_check_cp', con=self.engine1, index=False, if_exists='replace')
             print('正在更新表处理详情中......')
             sql = '''update {0} a, {1} b
@@ -511,7 +511,7 @@ class QueryOrder_Code(Settings, Settings_sso):
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('更新成功......')
     def _service_id_ssale_info(self, ord, proxy_handle, proxy_id, user_caigou):  # 进入采购问题件界面
-        print('+++正在查询 ' + str(ord) + ' 处理详情中')
+        print('正在查询 ' + str(ord) + ' 处理详情中')
         url = r'https://gimp.giikin.com/service?service=gorder.afterSale&action=abnormalDisposeLog'
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
                     'origin': 'https://gimp.giikin.com',
@@ -527,10 +527,11 @@ class QueryOrder_Code(Settings, Settings_sso):
         try:
             for result in req['data']:  # 添加新的字典键-值对，为下面的重新赋值用
                 # print(result)
-                # print(result['name'])
                 # if result['name'] == '蔡利英' or result['name'] == '张陈平' or result['name'] == '杨嘉仪' or result['name'] == '李晓青':
-                print(user_caigou)
-                if result['name'] in [user_caigou]:
+                # print(user_caigou)
+                if result['name'] in user_caigou:
+                    # print(77)
+                    # print(result['name'])
                     ordersDict.append(result)
                     break
         except Exception as e:
@@ -771,13 +772,11 @@ class QueryOrder_Code(Settings, Settings_sso):
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
             dp.to_excel('F:\\输出文件\\物流客诉件-{0}{1}.xlsx'.format(order_time, rq), sheet_name='查询', index=False,  engine='xlsxwriter')
             sql = '''REPLACE INTO {0}(id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
-                                                最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
-                                                赠品补发订单编号,赠品补发订单状态,赠品补发物流状态,联系方式,历史处理记录,统计月份,记录时间) 
+                                        最新处理状态,最新处理时间,最新客服处理日期,最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
+                                        赠品补发订单编号,赠品补发订单状态,赠品补发物流状态,联系方式,历史处理记录,统计月份,记录时间) 
                     SELECT id,订单编号,币种,下单时间,归属团队,支付类型, 订单类型, 订单状态, 物流状态, 物流渠道,问题类型, 导入时间,
-                            最新处理状态,IF(最新处理时间 = '' OR 最新处理时间 IS NULL,导入时间,最新处理时间) as 最新处理时间,
-                            IF(最新客服处理日期 = '' OR 最新客服处理日期 IS NULL,DATE_FORMAT(导入时间,'%Y-%m-%d'),最新客服处理日期) as 最新客服处理日期,
-                            最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因,
-                            赠品补发订单编号,赠品补发订单状态,null 赠品补发物流状态,联系方式,历史处理记录,DATE_FORMAT({1},'%Y%m') 统计月份,NOW() 记录时间 
+                            最新处理状态,IF(最新处理时间 = '' OR 最新处理时间 IS NULL,导入时间,最新处理时间) as 最新处理时间, IF(最新客服处理日期 = '' OR 最新客服处理日期 IS NULL,DATE_FORMAT(导入时间,'%Y-%m-%d'),最新客服处理日期) as 最新客服处理日期,
+                            最新处理人,最新客服处理人,最新处理结果,最新客服处理,最新客服处理结果,客诉原因,具体原因, 赠品补发订单编号,赠品补发订单状态,null 赠品补发物流状态,联系方式,历史处理记录,DATE_FORMAT({1},'%Y%m') 统计月份,NOW() 记录时间 
                     FROM cache_check;'''.format(data_woks, data_woks2)
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -785,6 +784,7 @@ class QueryOrder_Code(Settings, Settings_sso):
             print('++++++订单状态明细查询中+++++++')
             order_list = list(dp['赠品补发订单编号'])
             max_count = len(order_list)
+            in_count = math.ceil((max_count + 500) / 500)
             pople_Query = '物流客诉查询'
             df2 = pd.DataFrame([])
             dtlist = []
@@ -793,6 +793,8 @@ class QueryOrder_Code(Settings, Settings_sso):
                 ord = ','.join(order_list[n:n + 500])
                 data = self._service_id_order("", "", 0, proxy_handle, proxy_id, pople_Query, ord)  # 查询全部订单信息
                 dtlist.append(data)
+                n = n + 500
+                print('剩余查询次数' + str(in_count - ((n + 500)/500)))
             dp2 = df2.append(dtlist, ignore_index=True)
             print(99)
             print(dp2)
@@ -802,8 +804,8 @@ class QueryOrder_Code(Settings, Settings_sso):
             sql = '''update {0} a, customer b
                        set a.`赠品补发订单状态`= IF(b.`订单状态` = '', NULL, b.`订单状态`),
                            a.`赠品补发物流状态`= IF(b.`物流状态` = '', NULL, b.`物流状态`)
-                    where a.`订单编号`=b.`订单编号`;'''.format(data_woks)
-            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
+                    where a.`赠品补发订单编号`=b.`订单编号`;'''.format(data_woks)
+            pd.read_sql_query(sql=sql, con=self.engine1)
             print('订单更新成功......')
         print('*' * 50)
     def _service_id_waybill_Query(self, timeStart, timeEnd, n, proxy_handle, proxy_id, order_time):  # 进入物流客诉件界面
@@ -2319,7 +2321,7 @@ if __name__ == '__main__':
             开始获取 绩效数据
         '''
         timeStart = '2023-05-01'
-        timeEnd = '2023-05-10'
+        timeEnd = '2023-05-31'
         print('开始获取 绩效数据:>>>' + timeStart + "---" + timeEnd)
         m.service_id_order(timeStart, timeEnd, proxy_handle, proxy_id)  # 促单查询；下单时间 @~@ok
 
@@ -2386,18 +2388,18 @@ if __name__ == '__main__':
         m.service_check(username_Cudan, username_Jushou, username_caigou_yadan_wentijian,  rq_month, rq_day)  # 绩效数据导出
 
 
+    elif int(select) == 66:    # 本月 更新上月 留底的未完结数据 绩效数据使用（二）
+        update_old = '202305'  # 上月的 更新的月份  --  上月未完结的订单
+        update_new = '202306'  # 本月的 更新月份  --   上月未完结的订单
+        m.userid_performance_old_upadata(update_old, update_new)
+
     elif int(select) == 5:      #  本月 统计上月 绩效数据使用（一）
         username_Cudan = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可","曲开拓"'                                         # 促单人
         username_Jushou = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可","蔡利英","杨嘉仪","张陈平","李晓青","曲开拓"'        # 拒收挽单
         username_caigou_yadan_wentijian = '"蔡利英","杨嘉仪","张陈平","李晓青"'                                             # 采购问题压单
-        rq_month = '202304'  # 统计月份
-        rq_day = '2023-05-05'  # 统计日期
+        rq_month = '202305'  # 统计月份
+        rq_day = '2023-06-04'  # 统计日期
         m.userid_performance_New(username_Cudan, username_Jushou, username_caigou_yadan_wentijian, rq_month, rq_day)
-
-    elif int(select) == 6:    # 本月 更新上月 留底的未完结数据 绩效数据使用（二）
-        update_old = '202305'  # 上月的 更新的月份  --  上月未完结的订单
-        update_new = '202306'  # 本月的 更新月份  --   上月未完结的订单
-        m.userid_performance_old_upadata(update_old, update_new)
 
     elif int(select) == 7:    # 本月  绩效数据 导出（三）
         m.read_write_workbook()         # 先更新客诉的 回款状态
@@ -2405,7 +2407,7 @@ if __name__ == '__main__':
         username_Cudan = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可","曲开拓"'                                         # 促单人
         username_Jushou = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可","蔡利英","杨嘉仪","张陈平","李晓青","曲开拓"'        # 拒收挽单
         username_caigou_yadan_wentijian = '"蔡利英","杨嘉仪","张陈平","李晓青"'                                             # 采购问题压单
-        month_time = '202305'  # 更新月份
+        month_time = '202306'  # 更新月份
         m.userid_performance_New_export(username_Cudan, username_Jushou, username_caigou_yadan_wentijian, month_time)
 
 
