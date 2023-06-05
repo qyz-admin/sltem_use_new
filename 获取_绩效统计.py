@@ -1361,8 +1361,10 @@ class QueryOrder_Code(Settings, Settings_sso):
             else:
                 print('无需补充数据')
         print('更新成功......')
-
-    # 绩效-汇总输出 - 单独获取使用    # 单独 本月绩效数据使用 不包含上月的留底数据
+    '''
+         # 绩效-汇总输出 - 单独获取使用    # 单独 本月绩效数据使用 不包含上月的留底数据
+    '''
+    # 单独 本月绩效数据使用 不包含上月的留底数据
     def service_check(self, username_Cudan, username_Jushou, username_caigou_yadan_wentijian, month_time, day_time):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         listT = []
@@ -1682,8 +1684,7 @@ class QueryOrder_Code(Settings, Settings_sso):
             df81.to_excel(excel_writer=writer, sheet_name='物流问题', index=False)
             df82.to_excel(excel_writer=writer, sheet_name='派送问题', index=False)
             df83.to_excel(excel_writer=writer, sheet_name='物流问题&派送问题分析', index=False)
-
-    # 先更新 获取上月的订单，再去更新之前未完结的订单状态，然后再去更新 需要统计的时间
+    # 单独 获取上月的订单明细数据
     def service_check3(self):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         rq_month = datetime.datetime.now().strftime('%Y%m')
@@ -1775,8 +1776,8 @@ class QueryOrder_Code(Settings, Settings_sso):
     '''
         # 先更新 获取上月的订单，再去更新之前未完结的订单状态，然后再去更新 需要统计的时间
     '''
-    # 读取工作表的数据 写入数据库(一)
-    def read_write_workbook(self):
+    # 先更新 获取上月的订单，再去更新之前未完结的订单状态，然后再去更新 需要统计的时间
+    def read_write_workbook(self):    # 读取工作表的数据 写入数据库(一)
         start = datetime.datetime.now()
         path = r'F:\神龙签收率\(A) 各种报表汇总\更新客诉退货回款'
         dirs = os.listdir(path=path)
@@ -2379,7 +2380,7 @@ if __name__ == '__main__':
             day_time = str(day)
             m.service_id_order_js_Query(day_time, day_time, proxy_handle, proxy_id, order_time)      # 拒收问题  查询；订单检索@~@ok
 
-    elif int(select) == 88:      # 单独 本月绩效数据使用 不包含上月的留底数据
+    elif int(select) == 8:      # 单独 本月绩效数据使用 不包含上月的留底数据
         username_Cudan = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可"'                                         # 促单人
         username_Jushou = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可","蔡利英","杨嘉仪","张陈平","李晓青"'        # 拒收挽单
         username_caigou_yadan_wentijian = '"蔡利英","杨嘉仪","张陈平","李晓青"'                                             # 采购问题压单
@@ -2411,7 +2412,9 @@ if __name__ == '__main__':
         m.userid_performance_New_export(username_Cudan, username_Jushou, username_caigou_yadan_wentijian, month_time)
 
 
-    elif int(select) == 5:
+
+
+    elif int(select) == 2:
         # m._service_id_orderInfoTWO('2023-01-01')              # 系统问题件  查询；订单检索  单独测试使用
         # m._service_id_orderInfoThree('2023-01-01')            # 系统问题件  查询；订单检索  单独测试使用
         pass

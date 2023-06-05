@@ -1789,7 +1789,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 数据库 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------
     '''
-    if int(select) == 99:
+    if int(select) == 909:
         my = MysqlControl()
         my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
         my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表
@@ -1831,12 +1831,12 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------测试部分-----------------------------------------
     '''
-    handle = '手动0'
-    login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
-    proxy_handle = '代理服务器0'
-    proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
-    m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
-    start: datetime = datetime.datetime.now()
+    # handle = '手动0'
+    # login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
+    # proxy_handle = '代理服务器0'
+    # proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
+    # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+    # start: datetime = datetime.datetime.now()
 
 
     # timeStart, timeEnd = m.readInfo('压单表_已核实')
@@ -1886,9 +1886,9 @@ if __name__ == '__main__':
 
     # m._sale_Query_info('NR112180927421695')
 
-    timeStart = '2023-03-01'
-    timeEnd = '2023-06-02'
-    m.getOrderCollectionList(timeStart, timeEnd, proxy_handle, proxy_id)   # 工单列表-物流客诉件
+    # timeStart = '2023-03-01'
+    # timeEnd = '2023-06-02'
+    # m.getOrderCollectionList(timeStart, timeEnd, proxy_handle, proxy_id)   # 工单列表-物流客诉件
 
     # timeStart, timeEnd = m.readInfo('挽单列表')
     # m.getRedeemOrderList(timeStart, timeEnd, proxy_handle, proxy_id)  # 挽单列表-物流客诉件
