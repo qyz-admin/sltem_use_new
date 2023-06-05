@@ -1323,8 +1323,8 @@ if __name__ == '__main__':
             tm2 = '2023-05-30 11:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'AM'
         elif select == 54:
-            tm = '2023-05-30 11:00:00'
-            tm2 = '2023-05-30 16:00:00'
+            tm = '2023-06-04 10:00:00'
+            tm2 = '2023-06-04 16:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'PM'
         print('****** 查询      起止时间：' + tm + ' - ' + tm2 + ' ******')
         message = '带短信'

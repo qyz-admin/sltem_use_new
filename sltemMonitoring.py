@@ -4015,7 +4015,7 @@ if __name__ == '__main__':
         now_month = '2023.05.31'
         handle_now_month,handle_last_month,handle_now_month_old,handle_last_month_old = '','','',''
     else:
-        now_month = '2023.06.03'            # 本月记录日期
+        now_month = '2023.06.05'            # 本月记录日期
         handle_now_month = '202305'         # 本月记录 本月数据
         handle_last_month = '202304'        # 本月记录 上月数据
 

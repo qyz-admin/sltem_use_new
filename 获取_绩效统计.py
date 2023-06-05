@@ -805,7 +805,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                        set a.`赠品补发订单状态`= IF(b.`订单状态` = '', NULL, b.`订单状态`),
                            a.`赠品补发物流状态`= IF(b.`物流状态` = '', NULL, b.`物流状态`)
                     where a.`赠品补发订单编号`=b.`订单编号`;'''.format(data_woks)
-            pd.read_sql_query(sql=sql, con=self.engine1)
+            pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('订单更新成功......')
         print('*' * 50)
     def _service_id_waybill_Query(self, timeStart, timeEnd, n, proxy_handle, proxy_id, order_time):  # 进入物流客诉件界面
@@ -1379,7 +1379,7 @@ class QueryOrder_Code(Settings, Settings_sso):
         sql21 = '''SELECT *, IF(物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 物流状态, IF(物流状态 IN ('已签收','理赔'), IF(订单状态 = '已退货(销售)','拒收',物流状态), IF(物流状态 = '发货中','在途',
                             IF(物流状态 = '' or 物流状态 IS NULL or 物流状态 = '暂无物流状态', IF(订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),物流状态)))) as 最终状态
                 FROM 促单_下单时间 s1
-                WHERE  s1.克隆人 = '' and s1.`统计月份` = '{0}' and DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{1}' AND s1.代下单客服 in ({2});'''.format(month_time, day_time, username_Cudan)
+                WHERE s1.`统计月份` = '{0}' and DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{1}';'''.format(month_time, day_time, username_Cudan)
         df21 = pd.read_sql_query(sql=sql21, con=self.engine1)
         listT.append(df21)
         print('促单-绩效 统计分析 获取中（一.2）......')
@@ -1684,95 +1684,6 @@ class QueryOrder_Code(Settings, Settings_sso):
             df81.to_excel(excel_writer=writer, sheet_name='物流问题', index=False)
             df82.to_excel(excel_writer=writer, sheet_name='派送问题', index=False)
             df83.to_excel(excel_writer=writer, sheet_name='物流问题&派送问题分析', index=False)
-    # 单独 获取上月的订单明细数据
-    def service_check3(self):
-        rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
-        rq_month = datetime.datetime.now().strftime('%Y%m')
-        username = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可"'
-        listT = []
-        print('挽单列表-绩效 数据整理 写入各 计算统计表 中（零）......')
-        sql11 = '''SELECT *
-                FROM 挽单列表_创建时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
-        df11 = pd.read_sql_query(sql=sql11, con=self.engine1)
-
-        print('促单-绩效 源数据 获取中（一.1）......')
-        sql21 = '''SELECT *
-                FROM 促单_下单时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
-        df21 = pd.read_sql_query(sql=sql21, con=self.engine1)
-        listT.append(df21)
-
-        print('采购异常-绩效 源数据 获取中（二.1）......')
-        sql3 = '''SELECT *
-                FROM 采购异常_创建时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
-        df3 = pd.read_sql_query(sql=sql3, con=self.engine1)
-        listT.append(df3)
-
-        print('压单核实-绩效 源数据 获取中（二.2）......')
-        sql32 = '''SELECT *
-                FROM 压单核实_跟进时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
-        df32 = pd.read_sql_query(sql=sql32, con=self.engine1)
-        listT.append(df32)
-
-        print('系统问题件-绩效 源数据 获取中（二.3）......')
-        sql33 = '''SELECT *
-                FROM 系统问题件_下单时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
-        df33 = pd.read_sql_query(sql=sql33, con=self.engine1)
-        listT.append(df33)
-
-        print('物流问题-绩效 源数据 获取中（三.1）......')
-        sql4 = '''SELECT *
-                FROM 物流问题件_创建时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
-        df4 = pd.read_sql_query(sql=sql4, con=self.engine1)
-        listT.append(df4)
-
-        print('派送问题-绩效 源数据 获取中（三.3）......')
-        sql43 = '''SELECT *
-                FROM 派送问题件_处理时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(CURDATE(),'%Y%m%d');'''
-        df43 = pd.read_sql_query(sql=sql43, con=self.engine1)
-        listT.append(df43)
-
-        print('物流客诉-绩效 源数据 获取中（四.1）......')
-        sql5 = '''SELECT *, IF(赠品补发订单编号 <> "",IF(最新客服处理结果 LIKE '%补发海外仓%','统计','不统计'),'不统计') AS 是否统计	
-                FROM 物流客诉件_创建时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(curdate(),'%Y%m%d') AND s1.最新处理状态 <> "" ;'''
-        df5 = pd.read_sql_query(sql=sql5, con=self.engine1)
-        listT.append(df5)
-
-        print('拒收问题件-绩效 源数据 获取中（五.1）......')
-        sql6 = '''SELECT *
-                FROM 拒收问题件_跟进时间 s1
-                WHERE  s1.`统计月份` = DATE_FORMAT(DATE_SUB(curdate(), INTERVAL 1 MONTH),'%Y%m') and DATE_FORMAT(s1.`记录时间`,'%Y%m%d') = DATE_FORMAT(curdate(),'%Y%m%d');'''
-        df6 = pd.read_sql_query(sql=sql6, con=self.engine1)
-        listT.append(df6)
-
-        file_path = r'''F:\\输出文件\\{0}绩效数据明细 {1}.xlsx'''.format(rq_month, rq)
-        df0 = pd.DataFrame([])  # 创建空的dataframe数据框
-        df0.to_excel(file_path, index=False)  # 备用：可以向不同的sheet写入数据（创建新的工作表并进行写入）
-        writer = pd.ExcelWriter(file_path, engine='openpyxl')  # 初始化写入对象
-        book = load_workbook(file_path)  # 可以向不同的sheet写入数据（对现有工作表的追加）
-        writer.book = book  # 将数据写入excel中的sheet2表,sheet_name改变后即是新增一个sheet
-        df11.to_excel(excel_writer=writer, sheet_name='挽单', index=False)
-        df21.to_excel(excel_writer=writer, sheet_name='促单', index=False)
-        df3.to_excel(excel_writer=writer, sheet_name='采购异常', index=False)
-        df32.to_excel(excel_writer=writer, sheet_name='压单核实', index=False)
-        df33.to_excel(excel_writer=writer, sheet_name='系统问题件', index=False)
-        df4.to_excel(excel_writer=writer, sheet_name='物流问题', index=False)
-        df43.to_excel(excel_writer=writer, sheet_name='派送问题', index=False)
-        df5.to_excel(excel_writer=writer, sheet_name='物流客诉', index=False)
-        df6.to_excel(excel_writer=writer, sheet_name='拒收问题件', index=False)
-
-        if 'Sheet1' in book.sheetnames:  # 删除新建文档时的第一个工作表
-            del book['Sheet1']
-        writer.save()
-        writer.close()
-        # df.to_excel('F:\\输出文件\\促单查询 {}.xlsx'.format(rq), sheet_name='有效单量', index=False, engine='xlsxwriter')
     '''
         # 先更新 获取上月的订单，再去更新之前未完结的订单状态，然后再去更新 需要统计的时间
     '''
@@ -2301,7 +2212,7 @@ if __name__ == '__main__':
     login_TmpCode = '4b84b336ab9739218a563cde0be598ee'  # 输入登录口令Tkoen
     proxy_handle = '代理服务器0'
     proxy_id = '192.168.13.89:37469'  # 输入代理服务器节点和端口
-    select = 7
+    select = 8
     m = QueryOrder_Code('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id, select)
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
@@ -2350,7 +2261,7 @@ if __name__ == '__main__':
         order_time = '跟进时间'  # 拒收问题  查询；订单检索@~@ok
         m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)  # (需处理两次)
 
-    elif int(select) == 999:  # 绩效使用   更新数据使用
+    elif int(select) == 999:  # 更新数据使用
         '''
             开始获取 其他数据
         '''
@@ -2385,7 +2296,7 @@ if __name__ == '__main__':
         username_Jushou = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可","蔡利英","杨嘉仪","张陈平","李晓青"'        # 拒收挽单
         username_caigou_yadan_wentijian = '"蔡利英","杨嘉仪","张陈平","李晓青"'                                             # 采购问题压单
         rq_month = '202305'  # 统计月份
-        rq_day = '2023-05-11'  # 统计日期
+        rq_day = '2023-06-05'  # 统计日期
         m.service_check(username_Cudan, username_Jushou, username_caigou_yadan_wentijian,  rq_month, rq_day)  # 绩效数据导出
 
 
@@ -2399,7 +2310,7 @@ if __name__ == '__main__':
         username_Jushou = '"刘文君","马育慧","曲开拓","闫凯歌","杨昊","周浩迪","曹可可","蔡利英","杨嘉仪","张陈平","李晓青","曲开拓"'        # 拒收挽单
         username_caigou_yadan_wentijian = '"蔡利英","杨嘉仪","张陈平","李晓青"'                                             # 采购问题压单
         rq_month = '202305'  # 统计月份
-        rq_day = '2023-06-04'  # 统计日期
+        rq_day = '2023-06-05'  # 统计日期
         m.userid_performance_New(username_Cudan, username_Jushou, username_caigou_yadan_wentijian, rq_month, rq_day)
 
     elif int(select) == 7:    # 本月  绩效数据 导出（三）
