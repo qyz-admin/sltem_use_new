@@ -4004,15 +4004,15 @@ if __name__ == '__main__':
     '''
         # -----------------------------------------------监控运行的主要程序和步骤-----------------------------------------
     '''
-    handle = '自动0'
-    # ready = '本期宏'
-    ready = '本期月初宏'
+    handle = '自动'
+    ready = '本期宏'
+    # ready = '本期月初宏'
     # ready = '本期上月宏'
     # ready = '上期宏'
 
     if handle == '自动':
-        last_month = '2023.04.30'
-        now_month = '2023.05.31'
+        last_month = '2023.05.06'
+        now_month = '2023.06.06'
         handle_now_month,handle_last_month,handle_now_month_old,handle_last_month_old = '','','',''
     else:
         now_month = '2023.06.05'            # 本月记录日期

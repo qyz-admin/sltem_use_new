@@ -11518,7 +11518,7 @@ if __name__ == '__main__':
         2、write：       切换：本期- 本期最近两个月的数据 ； 本期并转存-本期最近两个月的数据的转存； 上期 -上期最近两个月的数据的转存
         3、last_time：   切换：更新上传时间；
     '''
-    select = 1
+    select = 99
     handle_time = '自动0'
     if int(select) == 99:
         if handle_time == '自动':
@@ -11528,7 +11528,7 @@ if __name__ == '__main__':
         else:
             month_last = '2023-04-01'
             month_old = '2023-04-01'                                # 获取-每日-报表 各产品各团队 最近三个月的 开始的时间
-            month_yesterday = '2023-06-05'
+            month_yesterday = '2023-06-06'
 
         last_time = '2021-01-01'
         up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期
