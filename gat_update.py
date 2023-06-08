@@ -5328,8 +5328,8 @@ class QueryUpdate(Settings):
         with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
             listT[0].to_excel(excel_writer=writer, sheet_name=sheet_name[0], index=False)
             listT[1].to_excel(excel_writer=writer, sheet_name=sheet_name[1], index=False)
-            # listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
-            # listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
+            listT[2].to_excel(excel_writer=writer, sheet_name=sheet_name[2], index=False)
+            listT[3].to_excel(excel_writer=writer, sheet_name=sheet_name[3], index=False)
         print('正在运行' + match[team] + '表宏…………（xlwings方法一）')
         try:
             app = xlwings.App(visible=False, add_book=False)  # 运行宏调整
