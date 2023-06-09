@@ -1224,7 +1224,7 @@ class QueryTwo(Settings, Settings_sso):
     def _getDeliveryList_out(self, tm_data):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         print('正在获取 超商 语音外呼…………')
-        sql = '''SELECT 姓名 AS 客户名,	NULL 性别,	电话 AS 'contact number', NULL 客户分组, NULL 微信, 来源渠道 AS 购买渠道, substring_index(商品名,'#',-1) AS 商品名, 便利店 AS 超商名称, IF(付款类型 NOT LIKE '%货到付款%', 0, 金额) as 金额, 
+        sql = '''SELECT 姓名 AS 客户名,	NULL 性别,	电话 AS 'Contact Number', NULL 客户分组, NULL 微信, 来源渠道 AS 购买渠道, substring_index(商品名,'#',-1) AS 商品名, 便利店 AS 超商名称, IF(付款类型 NOT LIKE '%货到付款%', 0, 金额) as 金额, 
                        NULL 副号码1, NULL 副号码2, NULL 副号码3, NULL 副号码4, NULL 副号码5, NULL 副号码6, NULL 副号码7, NULL 副号码8, NULL 副号码9, 订单编号, 团队,商品简称
                 FROM 派送问题件_语音外呼 s 
                 WHERE s.`时间` = '{1}' AND s.币种 = '台币' and s.订单状态 not in ('已完成','已退货(销售)','已退货(物流)','已退货(不拆包物流)')
@@ -1232,7 +1232,7 @@ class QueryTwo(Settings, Settings_sso):
         df1 = pd.read_sql_query(sql=sql, con=self.engine1)
 
         print('正在获取 预约时间配送 语音外呼…………')
-        sql = '''SELECT 姓名 AS 客户名,	NULL 性别,	电话 AS 'contact number', NULL 客户分组, NULL 微信, 来源渠道 AS 购买渠道, substring_index(商品名,'#',-1) AS 商品名, 地址, IF(付款类型 NOT LIKE '%货到付款%', 0, 金额) as 金额, 
+        sql = '''SELECT 姓名 AS 客户名,	NULL 性别,	电话 AS 'Contact Number', NULL 客户分组, NULL 微信, 来源渠道 AS 购买渠道, substring_index(商品名,'#',-1) AS 商品名, 地址, IF(付款类型 NOT LIKE '%货到付款%', 0, 金额) as 金额, 
                        NULL 副号码1, NULL 副号码2, NULL 副号码3, NULL 副号码4, NULL 副号码5, NULL 副号码6, NULL 副号码7, NULL 副号码8, NULL 副号码9, 订单编号, 团队,商品简称
                 FROM 派送问题件_语音外呼 s 
                 WHERE s.`时间` = '{1}' AND s.币种 = '台币' and s.订单状态 not in ('已完成','已退货(销售)','已退货(物流)','已退货(不拆包物流)')
@@ -1240,7 +1240,7 @@ class QueryTwo(Settings, Settings_sso):
         df2 = pd.read_sql_query(sql=sql, con=self.engine1)
 
         print('正在获取 到站自取 语音外呼…………')
-        sql = '''SELECT 姓名 AS 客户名,	NULL 性别,	电话 AS 'contact number', NULL 客户分组, NULL 微信, 便利店 AS 营业所, 来源渠道 AS 购买渠道, 运单编号 AS 快递单号, substring_index(商品名,'#',-1) AS 商品名, IF(付款类型 NOT LIKE '%货到付款%', 0, 金额) as 金额, 
+        sql = '''SELECT 姓名 AS 客户名,	NULL 性别,	电话 AS 'Contact Number', NULL 客户分组, NULL 微信, 便利店 AS 营业所, 来源渠道 AS 购买渠道, 运单编号 AS 快递单号, substring_index(商品名,'#',-1) AS 商品名, IF(付款类型 NOT LIKE '%货到付款%', 0, 金额) as 金额, 
                        NULL 副号码1, NULL 副号码2, NULL 副号码3, NULL 副号码4, NULL 副号码5, NULL 副号码6, NULL 副号码7, NULL 副号码8, NULL 副号码9, 订单编号, 团队,商品简称
                 FROM 派送问题件_语音外呼 s 
                 WHERE s.`时间` = '{1}' AND s.币种 = '台币' and s.订单状态 not in ('已完成','已退货(销售)','已退货(物流)','已退货(不拆包物流)')
@@ -1290,7 +1290,7 @@ if __name__ == '__main__':
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 ；  cat = 1 、黑猫切换是否使用后台数据  0 、还是官网数据 
     '''
-    select = 1
+    select = 52
     isReal = 1
     cat = 0             # 0,单独 黑猫 宅配通 查询中； 1 全部单点查询中
     if int(select) == 1:
@@ -1319,8 +1319,8 @@ if __name__ == '__main__':
             tm2 = (datetime.datetime.now() - relativedelta(days=1)).strftime('%Y-%m-%d') + ' 16:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'PM'
         elif select == 53:
-            tm = '2023-05-29 16:00:00'
-            tm2 = '2023-05-30 11:00:00'
+            tm = '2023-06-06 16:00:00'
+            tm2 = '2023-06-08 11:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'AM'
         elif select == 54:
             tm = '2023-06-04 10:00:00'

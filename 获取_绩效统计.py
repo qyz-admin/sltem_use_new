@@ -2212,7 +2212,7 @@ if __name__ == '__main__':
     login_TmpCode = '4b84b336ab9739218a563cde0be598ee'  # 输入登录口令Tkoen
     proxy_handle = '代理服务器0'
     proxy_id = '192.168.13.89:37469'  # 输入代理服务器节点和端口
-    select = 7
+    select = 8
     m = QueryOrder_Code('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id, select)
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
