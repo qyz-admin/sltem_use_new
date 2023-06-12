@@ -1290,7 +1290,7 @@ if __name__ == '__main__':
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 ；  cat = 1 、黑猫切换是否使用后台数据  0 、还是官网数据 
     '''
-    select = 52
+    select = 1
     isReal = 1
     cat = 0             # 0,单独 黑猫 宅配通 查询中； 1 全部单点查询中
     if int(select) == 1:
@@ -1319,12 +1319,12 @@ if __name__ == '__main__':
             tm2 = (datetime.datetime.now() - relativedelta(days=1)).strftime('%Y-%m-%d') + ' 16:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'PM'
         elif select == 53:
-            tm = '2023-06-06 16:00:00'
-            tm2 = '2023-06-08 11:00:00'
+            tm = '2023-06-10 10:00:00'
+            tm2 = '2023-06-11 11:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'AM'
         elif select == 54:
-            tm = '2023-06-04 10:00:00'
-            tm2 = '2023-06-04 16:00:00'
+            tm = '2023-06-10 10:00:00'
+            tm2 = '2023-06-11 16:00:00'
             tm_data = (datetime.datetime.now().strftime('%Y-%m-%d')) + 'PM'
         print('****** 查询      起止时间：' + tm + ' - ' + tm2 + ' ******')
         message = '带短信'

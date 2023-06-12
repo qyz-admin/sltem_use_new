@@ -196,7 +196,7 @@ class QueryTwoT(Settings, Settings_sso):
     # 获取签收表内容
     def readFormHost(self, team):
         start = datetime.datetime.now()
-        path = r'D:\Users\Administrator\Desktop\需要用到的文件\A查询导表'
+        path = r'F:\需要用到的文件\A查询导表'
         dirs = os.listdir(path=path)
         # ---读取execl文件---
         for dir in dirs:
@@ -385,7 +385,7 @@ class QueryTwoT(Settings, Settings_sso):
 
 if __name__ == '__main__':
     # TODO------------------------------------单点更新配置------------------------------------
-    proxy_handle = '代理服务器'
+    proxy_handle = '代理服务器0'
     proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
     handle = '手动'
     login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen

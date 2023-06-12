@@ -11528,7 +11528,8 @@ if __name__ == '__main__':
         else:
             month_last = '2023-04-01'
             month_old = '2023-04-01'                                # 获取-每日-报表 各产品各团队 最近三个月的 开始的时间
-            month_yesterday = '2023-06-06'
+            month_yesterday = '2023-06-12'
+        print('****** 签收率      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
 
         last_time = '2021-01-01'
         up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期
@@ -11537,7 +11538,7 @@ if __name__ == '__main__':
 
         currency_id = '全部付款'
         m.gat_new(team, month_last, month_yesterday, currency_id)   # 获取-货到付款& 在线付款 签收率-报表
-        m.qsb_new(team, month_old)                                  # 获取-每日-报表
+        # m.qsb_new(team, month_old)                                  # 获取-每日-报表
         m.EportOrderBook(team, month_last, month_yesterday)         # 导出-总的-签收
         m.phone_report('handle', month_last, month_yesterday)       # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）
 
