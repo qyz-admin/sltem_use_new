@@ -2108,6 +2108,81 @@ class SltemMonitoring(Settings):
         listT.append(sqlqsb222)
         show_name.append(' 品类分旬签收率( 上月)…………')
 
+        # 出库时效(本月)--- 查询
+        sqlqsb331 = '''SELECT s1.所属团队, s1.年月, s1.旬,
+                                concat(ROUND(当天出库量 / 订单量 * 100,2),'%') as '当天出库率',
+                                concat(ROUND(一天出库量 / 订单量 * 100,2),'%') as '一天出库率',
+                                concat(ROUND(二天出库量 / 订单量 * 100,2),'%') as '二天出库率',
+                                concat(ROUND(三天出库量 / 订单量 * 100,2),'%') as '三天出库率',
+                                concat(ROUND(四天出库量 / 订单量 * 100,2),'%') as '四天出库率',
+                                concat(ROUND(五天出库量 / 订单量 * 100,2),'%') as '五天出库率',
+                                concat(ROUND(五天以上出库量 / 订单量 * 100,2),'%') as '五天以上出库率'
+                    FROM ( SELECT IFNULL(所属团队,"合计") AS 所属团队, IFNULL(年月,"合计") AS 年月, IF(旬 = 1,"上旬",IF(旬 = 2,"中旬",IF(旬 = 3,"下旬",IF(旬 IS NULL,"合计",旬)))) AS 旬,
+                                            SUM(IF(审核出库时间= 0,1,0)) AS 当天出库量,
+                                            SUM(IF(审核出库时间= 1,1,0)) AS 一天出库量,
+                                            SUM(IF(审核出库时间= 2,1,0)) AS 二天出库量,
+                                            SUM(IF(审核出库时间= 3,1,0)) AS 三天出库量,
+                                            SUM(IF(审核出库时间= 4,1,0)) AS 四天出库量,
+                                            SUM(IF(审核出库时间= 5,1,0)) AS 五天出库量,
+                                            SUM(IF(审核出库时间> 5,1,0)) AS 五天以上出库量
+                            FROM ( SELECT *,DATEDIFF(`仓储扫描时间`,`审核时间`) AS 审核出库时间
+                                    FROM {0} sl_cx
+                                    WHERE  ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`所属团队` IN ({6})
+                                         AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
+                            )	ss1
+                            GROUP BY 所属团队, 年月, 旬
+                            WITH ROLLUP
+                    ) s1
+                    LEFT JOIN 
+                    ( SELECT  IFNULL(年月,"合计") AS 年月, IF(旬 = 1,"上旬",IF(旬 = 2,"中旬",IF(旬 = 3,"下旬",IF(旬 IS NULL,"合计",旬)))) AS 旬, COUNT(订单编号) AS 订单量
+                        FROM {0} sl_cx
+                        WHERE ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`所属团队` IN ({6})
+                            AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
+                        GROUP BY 年月, 旬
+                        WITH ROLLUP
+                    ) s2  ON s1.年月 = s2.年月 AND s1.旬 = s2.旬
+                    WHERE s1.年月 <> "合计"
+                    ORDER BY s1.所属团队, s1.年月, s1.旬'''.format(family, now_month, now_month_new, last_month, last_month_new, currency, match[team])
+        listT.append(sqlqsb331)
+        show_name.append(' 出库时效( 本月)…………')
+        # 出库时效(上月)--- 查询
+        sqlqsb332 = '''SELECT s1.所属团队, s1.年月, s1.旬,
+                                concat(ROUND(当天出库量 / 订单量 * 100,2),'%') as '当天出库率',
+                                concat(ROUND(一天出库量 / 订单量 * 100,2),'%') as '一天出库率',
+                                concat(ROUND(二天出库量 / 订单量 * 100,2),'%') as '二天出库率',
+                                concat(ROUND(三天出库量 / 订单量 * 100,2),'%') as '三天出库率',
+                                concat(ROUND(四天出库量 / 订单量 * 100,2),'%') as '四天出库率',
+                                concat(ROUND(五天出库量 / 订单量 * 100,2),'%') as '五天出库率',
+                                concat(ROUND(五天以上出库量 / 订单量 * 100,2),'%') as '五天以上出库率'
+                    FROM ( SELECT IFNULL(所属团队,"合计") AS 所属团队, IFNULL(年月,"合计") AS 年月, IF(旬 = 1,"上旬",IF(旬 = 2,"中旬",IF(旬 = 3,"下旬",IF(旬 IS NULL,"合计",旬)))) AS 旬,
+                                            SUM(IF(审核出库时间= 0,1,0)) AS 当天出库量,
+                                            SUM(IF(审核出库时间= 1,1,0)) AS 一天出库量,
+                                            SUM(IF(审核出库时间= 2,1,0)) AS 二天出库量,
+                                            SUM(IF(审核出库时间= 3,1,0)) AS 三天出库量,
+                                            SUM(IF(审核出库时间= 4,1,0)) AS 四天出库量,
+                                            SUM(IF(审核出库时间= 5,1,0)) AS 五天出库量,
+                                            SUM(IF(审核出库时间> 5,1,0)) AS 五天以上出库量
+                            FROM ( SELECT *,DATEDIFF(`仓储扫描时间`,`审核时间`) AS 审核出库时间
+                                    FROM {0} sl_cx
+                                    WHERE  ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`所属团队` IN ({6})
+                                         AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
+                            )	ss1
+                            GROUP BY 所属团队, 年月, 旬
+                            WITH ROLLUP
+                    ) s1
+                    LEFT JOIN 
+                    ( SELECT  IFNULL(年月,"合计") AS 年月, IF(旬 = 1,"上旬",IF(旬 = 2,"中旬",IF(旬 = 3,"下旬",IF(旬 IS NULL,"合计",旬)))) AS 旬, COUNT(订单编号) AS 订单量
+                        FROM {0} sl_cx
+                        WHERE ( sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}' OR sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}') AND sl_cx.`币种` = '{5}' AND sl_cx.`所属团队` IN ({6})
+                            AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
+                        GROUP BY 年月, 旬
+                        WITH ROLLUP
+                    ) s2  ON s1.年月 = s2.年月 AND s1.旬 = s2.旬
+                    WHERE s1.年月 <> "合计"
+                    ORDER BY s1.所属团队, s1.年月, s1.旬'''.format(family, now_month, now_month_old, last_month, last_month_old, currency, match[team])
+        listT.append(sqlqsb332)
+        show_name.append(' 出库时效( 上月)…………')
+
         listTValue = []  # 查询sql的结果 存放池
         for i, sql in enumerate(listT):
             print('正在获取 ' + team + show_name[i])
@@ -2130,7 +2205,8 @@ class SltemMonitoring(Settings):
         print('查询耗时：', datetime.datetime.now() - start)
         today = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         sheet_name = ['签率(天)_', '签率(月)_', '签率(旬)_', '签率(总)_', '物流(天)_', '物流(月)_', '时效(天)_', '时效(月)_', '时效(旬)_', '时效(月旬)_', '时效(品类)_', '时效(月品类)_','时效(总)_',
-                      '时效(改派天)_', '时效(改派月)_','时效(改派旬)_', '时效(改派月旬)_', '时效(改派总)_', '物流分旬签收率_', '物流分旬签收率上月_', '品类分旬签收率_', '品类分旬签收率上月_']  # 生成的工作表的表名
+                      '时效(改派天)_', '时效(改派月)_','时效(改派旬)_', '时效(改派月旬)_', '时效(改派总)_', '物流分旬签收率_', '物流分旬签收率上月_', '品类分旬签收率_', '品类分旬签收率上月_',
+                      '出库时效_', '出库时效上月_']  # 生成的工作表的表名
         file_Path = []  # 发送邮箱文件使用
         filePath = ''
         if "品牌" in team:
@@ -4011,8 +4087,8 @@ if __name__ == '__main__':
     # ready = '上期宏'
 
     if handle == '自动':
-        last_month = '2023.05.13'
-        now_month = '2023.06.13'
+        last_month = '2023.05.15'
+        now_month = '2023.06.14'
         handle_now_month,handle_last_month,handle_now_month_old,handle_last_month_old = '','','',''
     else:
         now_month = '2023.06.05'            # 本月记录日期
@@ -4024,9 +4100,8 @@ if __name__ == '__main__':
         handle_last_month_old = '202303'    # 上月记录 上月数据
 
     # 测试监控运行（二）-- 第一种手动方式
-    m.order_Monitoring('港台')        # 各月缓存（整体一）、
+    # m.order_Monitoring('港台')        # 各月缓存（整体一）、
     for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '雪豹-台湾', '雪豹-香港', '金蝉家族优化组-台湾', '金蝉家族优化组-香港','金蝉项目组-台湾', '金蝉项目组-香港']:
-    # for team in ['雪豹-台湾', '雪豹-香港']:
     # for team in ['火凤凰-台湾', '火凤凰-香港']:
     # for team in ['神龙-台湾', '神龙-香港', '雪豹-台湾', '雪豹-香港', '金蝉家族优化组-台湾', '金蝉家族优化组-香港','金蝉项目组-台湾', '金蝉项目组-香港']:
         now_month = now_month.replace('.', '-')           # 修改配置时间

@@ -73,7 +73,7 @@ login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
 
 # TODO------------------------------------初始化时间设置------------------------------------
 updata = '全部'                                   #  后台获取全部（两月）、部分更新（近五天）
-select = 11                                        #  1 更新最近两个月的数据；  2、 更新本月的数据
+select = 2                                        #  1 更新最近两个月的数据；  2、 更新本月的数据
 export = '导表'                                   #  导表 是否导出明细表
 check = '是'                                      #  是否 检查产品id 产品名称 父级分类 等有缺失的数据
 if select == 1:
@@ -112,7 +112,7 @@ print('****** 导出      起止时间：' + month_last + ' - ' + month_yesterda
 
 # TODO------------------------------------数据库分段读取------------------------------------
 print('---------------------------------- 数据库更新部分：--------------------------------')
-m.creatMyOrderSl(team, data_begin, end)                   # 最近三月的全部订单信息
+# m.creatMyOrderSl(team, data_begin, end)                   # 最近三月的全部订单信息
 print('获取-更新 耗时：', datetime.datetime.now() - start)
 '''
     m.creatMyOrderSlTWO(team, begin, end)                               # 停用 最近两个月的 部分内容 更新信息
@@ -125,7 +125,7 @@ sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', login_TmpCode,
 for i in range((end - begin).days):                             # 按天循环获取订单状态
     day = begin + datetime.timedelta(days=i)
     day_time = str(day)
-    sso.order_getList(team, updata, day_time, day_time, proxy_handle, proxy_id)
+    # sso.order_getList(team, updata, day_time, day_time, proxy_handle, proxy_id)
 print('更新耗时：', datetime.datetime.now() - start)
 
 

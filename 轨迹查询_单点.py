@@ -156,7 +156,7 @@ class QueryTwo(Settings, Settings_sso):
                     if ord[:3] == '620' or ord[:3] == '901':
                         print('单独 - 黑猫查询中')
                         data = self._SearchGoods_heimao(ord, proxy_handle, proxy_id)
-                    if ord[:3] == '3707':
+                    if ord[:3] == '377':
                         print('单独 - 宅配通查询中')
                         data = self._SearchGoods_zhaipeitong(ord, proxy_handle, proxy_id)
                     else:
@@ -1290,7 +1290,7 @@ if __name__ == '__main__':
     # 1、 正在按订单查询；2、正在按时间查询；--->>数据更新切换
     # isReal: 0 查询后台保存的运单轨迹； 1 查询物流的实时运单轨迹 ；  cat = 1 、黑猫切换是否使用后台数据  0 、还是官网数据 
     '''
-    select = 52
+    select = 1
     isReal = 1
     cat = 0             # 0,单独 黑猫 宅配通 查询中； 1 全部单点查询中
     if int(select) == 1:
