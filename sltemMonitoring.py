@@ -2183,6 +2183,117 @@ class SltemMonitoring(Settings):
         listT.append(sqlqsb332)
         show_name.append(' 出库时效( 上月)…………')
 
+        # 出库明细时效(本月)--- 查询
+        sqlqsb331 = '''SELECT 币种, 所属团队,上月年月, 年月, 产品id ,产品名称,
+                                单量 AS 本月单量, 上月单量, 
+                                concat(ROUND(当天出库量 / 单量 * 100,2),'%') as '本月当天出库率',
+                                concat(ROUND(上月当天出库量 / 上月单量 * 100,2),'%') as '上月当天出库率',
+                                concat(ROUND(一天出库量 / 单量 * 100,2),'%') as '本月一天出库率',
+                                concat(ROUND(上月一天出库量 / 上月单量 * 100,2),'%') as '上月一天出库率',
+                                concat(ROUND(二天出库量 / 单量 * 100,2),'%') as '本月二天出库率',
+                                concat(ROUND(上月二天出库量 / 上月单量 * 100,2),'%') as '上月二天出库率',
+                                concat(ROUND(三天出库量 / 单量 * 100,2),'%') as '本月三天出库率',
+                                concat(ROUND(上月三天出库量 / 上月单量 * 100,2),'%') as '上月三天出库率',
+                                concat(ROUND(四天出库量 / 单量 * 100,2),'%') as '本月四天出库率',
+                                concat(ROUND(上月四天出库量 / 上月单量 * 100,2),'%') as '上月四天出库率',
+                                concat(ROUND(五天出库量 / 单量 * 100,2),'%') as '本月五天出库率',
+                                concat(ROUND(上月五天出库量 / 上月单量 * 100,2),'%') as '上月五天出库率',
+                                concat(ROUND(五天以上出库量 / 单量 * 100,2),'%') as '本月五天以上出库率',
+                                concat(ROUND(上月五天以上出库量 / 上月单量 * 100,2),'%') as '上月五天以上出库率'
+                    FROM (
+                            SELECT s1.币种, s1.所属团队, '{4}' AS 上月年月,'{2}' AS 年月, s1.产品id , z.产品名称,
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}',1,0)) AS 上月单量, 
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 审核出库时间= 0,1,0)) AS 上月当天出库量,
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 审核出库时间= 1,1,0)) AS 上月一天出库量,
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 审核出库时间= 2,1,0)) AS 上月二天出库量,
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 审核出库时间= 3,1,0)) AS 上月三天出库量,
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 审核出库时间= 4,1,0)) AS 上月四天出库量,
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 审核出库时间= 5,1,0)) AS 上月五天出库量,
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 审核出库时间> 5,1,0)) AS 上月五天以上出库量,
+                                            上月总单量,
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}',1,0)) AS 单量, 
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND 审核出库时间= 0,1,0)) AS 当天出库量,
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND 审核出库时间= 1,1,0)) AS 一天出库量,
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND 审核出库时间= 2,1,0)) AS 二天出库量,
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND 审核出库时间= 3,1,0)) AS 三天出库量,
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND 审核出库时间= 4,1,0)) AS 四天出库量,
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND 审核出库时间= 5,1,0)) AS 五天出库量,
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND 审核出库时间> 5,1,0)) AS 五天以上出库量,
+                                            总单量
+                            FROM (  SELECT *,DATEDIFF(`仓储扫描时间`,`审核时间`) AS 审核出库时间
+                                    FROM {0} sl_cx
+                                    WHERE  ( sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}' OR sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}') AND sl_cx.`币种` = '{5}' AND sl_cx.`所属团队` IN ({6})
+                                         AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
+                            )	s1
+                            LEFT JOIN (SELECT 订单编号,产品id, 产品名称 FROM gat_zqsb ) z  ON  s1.订单编号 = z.订单编号
+                            LEFT JOIN 
+                            ( SELECT 币种, SUM(IF(年月 = '{4}',1,0)) AS 上月总单量,SUM(IF(年月 = '{2}',1,0)) AS 总单量
+                                FROM {0} sl_cx
+                                WHERE ( sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}' OR sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}') AND sl_cx.`币种` = '{5}'  AND sl_cx.`所属团队` IN ({6})
+                                    AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
+                            ) s2  ON s1.币种 = s2.币种
+                            GROUP BY 所属团队, 产品id 
+                            ORDER BY 所属团队, 单量 DESC
+                    ) s
+                    ORDER BY 币种, 所属团队, 年月, 单量 DESC;'''.format(family, now_month, now_month_new, last_month, last_month_new, currency, match[team])
+        listT.append(sqlqsb331)
+        show_name.append(' 出库明细时效( 本月)…………')
+        # 出库明细时效(上月)--- 查询
+        sqlqsb332 = '''SELECT 币种, 所属团队,上月年月, 年月, 产品id ,产品名称,
+                                单量 AS 本月单量, 上月单量, 
+                                concat(ROUND(当天出库量 / 单量 * 100,2),'%') as '本月当天出库率',
+                                concat(ROUND(上月当天出库量 / 上月单量 * 100,2),'%') as '上月当天出库率',
+                                concat(ROUND(一天出库量 / 单量 * 100,2),'%') as '本月一天出库率',
+                                concat(ROUND(上月一天出库量 / 上月单量 * 100,2),'%') as '上月一天出库率',
+                                concat(ROUND(二天出库量 / 单量 * 100,2),'%') as '本月二天出库率',
+                                concat(ROUND(上月二天出库量 / 上月单量 * 100,2),'%') as '上月二天出库率',
+                                concat(ROUND(三天出库量 / 单量 * 100,2),'%') as '本月三天出库率',
+                                concat(ROUND(上月三天出库量 / 上月单量 * 100,2),'%') as '上月三天出库率',
+                                concat(ROUND(四天出库量 / 单量 * 100,2),'%') as '本月四天出库率',
+                                concat(ROUND(上月四天出库量 / 上月单量 * 100,2),'%') as '上月四天出库率',
+                                concat(ROUND(五天出库量 / 单量 * 100,2),'%') as '本月五天出库率',
+                                concat(ROUND(上月五天出库量 / 上月单量 * 100,2),'%') as '上月五天出库率',
+                                concat(ROUND(五天以上出库量 / 单量 * 100,2),'%') as '本月五天以上出库率',
+                                concat(ROUND(上月五天以上出库量 / 上月单量 * 100,2),'%') as '上月五天以上出库率'
+                    FROM (
+                            SELECT s1.币种, s1.所属团队, '{4}' AS 上月年月,'{2}' AS 年月, s1.产品id , z.产品名称,
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}',1,0)) AS 上月单量, 
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 审核出库时间= 0,1,0)) AS 上月当天出库量,
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 审核出库时间= 1,1,0)) AS 上月一天出库量,
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 审核出库时间= 2,1,0)) AS 上月二天出库量,
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 审核出库时间= 3,1,0)) AS 上月三天出库量,
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 审核出库时间= 4,1,0)) AS 上月四天出库量,
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 审核出库时间= 5,1,0)) AS 上月五天出库量,
+                                            SUM(IF(记录时间= '{3}' AND 年月 = '{4}' AND 审核出库时间> 5,1,0)) AS 上月五天以上出库量,
+                                            上月总单量,
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}',1,0)) AS 单量, 
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND 审核出库时间= 0,1,0)) AS 当天出库量,
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND 审核出库时间= 1,1,0)) AS 一天出库量,
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND 审核出库时间= 2,1,0)) AS 二天出库量,
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND 审核出库时间= 3,1,0)) AS 三天出库量,
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND 审核出库时间= 4,1,0)) AS 四天出库量,
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND 审核出库时间= 5,1,0)) AS 五天出库量,
+                                            SUM(IF(记录时间= '{1}' AND 年月 = '{2}' AND 审核出库时间> 5,1,0)) AS 五天以上出库量,
+                                            总单量
+                            FROM (  SELECT *,DATEDIFF(`仓储扫描时间`,`审核时间`) AS 审核出库时间
+                                    FROM {0} sl_cx
+                                    WHERE  ( sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}' OR sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}') AND sl_cx.`币种` = '{5}' AND sl_cx.`所属团队` IN ({6})
+                                         AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
+                            )	s1
+                            LEFT JOIN (SELECT 订单编号,产品id, 产品名称 FROM gat_zqsb ) z  ON  s1.订单编号 = z.订单编号
+                            LEFT JOIN 
+                            ( SELECT 币种, SUM(IF(年月 = '{4}',1,0)) AS 上月总单量,SUM(IF(年月 = '{2}',1,0)) AS 总单量
+                                FROM {0} sl_cx
+                                WHERE ( sl_cx.`记录时间`= '{3}' AND sl_cx.`年月` = '{4}' OR sl_cx.`记录时间`= '{1}' AND sl_cx.`年月` = '{2}') AND sl_cx.`币种` = '{5}'  AND sl_cx.`所属团队` IN ({6})
+                                    AND sl_cx.`是否改派` = "直发" AND sl_cx.`父级分类` IS NOT NULL  AND sl_cx.`仓储扫描时间` IS NOT NULL 
+                            ) s2  ON s1.币种 = s2.币种
+                            GROUP BY 所属团队, 产品id 
+                            ORDER BY 所属团队, 单量 DESC
+                    ) s
+                    ORDER BY 币种, 所属团队, 年月, 单量 DESC;'''.format(family, now_month, now_month_old, last_month, last_month_old, currency, match[team])
+        listT.append(sqlqsb332)
+        show_name.append(' 出库明细时效( 上月)…………')
+
         listTValue = []  # 查询sql的结果 存放池
         for i, sql in enumerate(listT):
             print('正在获取 ' + team + show_name[i])
@@ -2206,7 +2317,7 @@ class SltemMonitoring(Settings):
         today = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         sheet_name = ['签率(天)_', '签率(月)_', '签率(旬)_', '签率(总)_', '物流(天)_', '物流(月)_', '时效(天)_', '时效(月)_', '时效(旬)_', '时效(月旬)_', '时效(品类)_', '时效(月品类)_','时效(总)_',
                       '时效(改派天)_', '时效(改派月)_','时效(改派旬)_', '时效(改派月旬)_', '时效(改派总)_', '物流分旬签收率_', '物流分旬签收率上月_', '品类分旬签收率_', '品类分旬签收率上月_',
-                      '出库时效_', '出库时效上月_']  # 生成的工作表的表名
+                      '出库时效_', '出库时效上月_', '出库明细时效_', '出库明细时效上月_']  # 生成的工作表的表名
         file_Path = []  # 发送邮箱文件使用
         filePath = ''
         if "品牌" in team:
@@ -4088,7 +4199,7 @@ if __name__ == '__main__':
 
     if handle == '自动':
         last_month = '2023.05.15'
-        now_month = '2023.06.14'
+        now_month = '2023.06.15'
         handle_now_month,handle_last_month,handle_now_month_old,handle_last_month_old = '','','',''
     else:
         now_month = '2023.06.05'            # 本月记录日期
@@ -4100,9 +4211,9 @@ if __name__ == '__main__':
         handle_last_month_old = '202303'    # 上月记录 上月数据
 
     # 测试监控运行（二）-- 第一种手动方式
-    # m.order_Monitoring('港台')        # 各月缓存（整体一）、
+    m.order_Monitoring('港台')        # 各月缓存（整体一）、
     for team in ['神龙-台湾', '神龙-香港', '火凤凰-台湾', '火凤凰-香港', '雪豹-台湾', '雪豹-香港', '金蝉家族优化组-台湾', '金蝉家族优化组-香港','金蝉项目组-台湾', '金蝉项目组-香港']:
-    # for team in ['火凤凰-台湾', '火凤凰-香港']:
+    # for team in ['火凤凰-台湾']:
     # for team in ['神龙-台湾', '神龙-香港', '雪豹-台湾', '雪豹-香港', '金蝉家族优化组-台湾', '金蝉家族优化组-香港','金蝉项目组-台湾', '金蝉项目组-香港']:
         now_month = now_month.replace('.', '-')           # 修改配置时间
         last_month = last_month.replace('.', '-')

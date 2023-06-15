@@ -1247,7 +1247,8 @@ class Settings_sso():
         # print(req)
         # print(req.headers)
         index_system3 = req.headers['Location']
-
+        # print(88)
+        # print(index_system3)
         # 此处暂停使用443
         if ':443' in index_system3:
             # print('4.1、加载： ' + 'https://gsso.giikin.com:443/admin/dingtalk_service/getunionidbytempcode?')
