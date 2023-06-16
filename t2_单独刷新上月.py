@@ -550,6 +550,7 @@ class Updata_gat(Settings):
         req = self.session.get(url=url, headers=r_header, data=data, allow_redirects=False)
         print(req)
         print(req.headers)
+        print(22)
 
         time.sleep(1)
         # print('3、加载： ' + 'http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode?')
@@ -559,8 +560,9 @@ class Updata_gat(Settings):
         req = self.session.get(url=url, headers=r_header, allow_redirects=False)
         # print(req)
         # print(req.headers)
-        # print(req.headers)
+        # print(202)
         index_system3 = req.headers['Location']
+        # print(index_system3)
 
         # 此处暂停使用443
         if ':443' in index_system3:
@@ -576,6 +578,8 @@ class Updata_gat(Settings):
             url = req.headers['Location']
         else:
             url = index_system3
+        # print(20203)
+        # print(url)
 
         '''
         time.sleep(1)
@@ -601,7 +605,7 @@ class Updata_gat(Settings):
         # 此处跳转换新的地址了
         # print('5.1、加载： ' + 'https://gimp.giikin.com//admin/login_by_dingtalk/finishLoginJump?jump_url=https://gimp.giikin.com')
         time.sleep(1)
-        if '/admin/login_by_dingtalk/finishLoginJump?jump_url=https://gimp.giikin.com' in url:
+        if '/admin/login_by_dingtalk/finishLoginJump?jump_url=' in url:
             index = req.headers['Location']
             url = 'https://gsso.giikin.com' + index
             r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
@@ -1406,7 +1410,7 @@ if __name__ == '__main__':
     login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
     team = 'gat'
 
-    if team == 'gat0':
+    if team == 'gat':
         # 更新时间
         timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
         data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
@@ -1433,7 +1437,7 @@ if __name__ == '__main__':
     print('****** 更新  总表起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
 
     # TODO------------------------------------更新数据  数据库分段读取------------------------------------
-    u.creatMyOrderSl(data_begin, end)
+    # u.creatMyOrderSl(data_begin, end)
 
     # TODO------------------------------------更新数据  单点检索读取------------------------------------
     if proxy_handle == '代理服务器':
