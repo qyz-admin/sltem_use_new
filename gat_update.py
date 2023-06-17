@@ -11519,7 +11519,7 @@ if __name__ == '__main__':
         3、last_time：   切换：更新上传时间；
     '''
     select = 99
-    handle_time = '自动0'
+    handle_time = '自动'
     if int(select) == 99:
         if handle_time == '自动':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
@@ -11528,7 +11528,7 @@ if __name__ == '__main__':
         else:
             month_last = '2023-04-01'
             month_old = '2023-04-01'                                # 获取-每日-报表 各产品各团队 最近三个月的 开始的时间
-            month_yesterday = '2023-06-14'
+            month_yesterday = '2023-06-16'
         print('****** 签收率      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
 
         last_time = '2021-01-01'

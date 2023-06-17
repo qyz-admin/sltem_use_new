@@ -1659,7 +1659,7 @@ class Query_sso_updata(Settings):
         # 此处跳转换新的地址了
         # print('5.1、加载： ' + 'https://gimp.giikin.com//admin/login_by_dingtalk/finishLoginJump?jump_url=https://gimp.giikin.com')
         time.sleep(1)
-        if '/admin/login_by_dingtalk/finishLoginJump?jump_url=https://gimp.giikin.com' in url:
+        if '/admin/login_by_dingtalk/finishLoginJump?jump_url=' in url:
             index = req.headers['Location']
             url = 'https://gsso.giikin.com' + index
             r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',

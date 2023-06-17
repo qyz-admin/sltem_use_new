@@ -1410,7 +1410,7 @@ if __name__ == '__main__':
     login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
     team = 'gat'
 
-    if team == 'gat':
+    if team == 'gat0':
         # 更新时间
         timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
         data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
@@ -1437,7 +1437,7 @@ if __name__ == '__main__':
     print('****** 更新  总表起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
 
     # TODO------------------------------------更新数据  数据库分段读取------------------------------------
-    # u.creatMyOrderSl(data_begin, end)
+    u.creatMyOrderSl(data_begin, end)
 
     # TODO------------------------------------更新数据  单点检索读取------------------------------------
     if proxy_handle == '代理服务器':
