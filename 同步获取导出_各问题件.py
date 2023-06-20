@@ -1415,7 +1415,7 @@ if __name__ == '__main__':
     '''
         # -----------------------------------------------查询状态运行（一）-----------------------------------------
     '''
-    select = 8
+    select = 9
     if int(select) == 1:
         timeStart = '2023-03-01'
         timeEnd = '2023-03-31'
@@ -1483,17 +1483,17 @@ if __name__ == '__main__':
 
 
     elif int(select) == 9:      # 每周 各团队与爆品前十
-        timeStart = '2023-05-22'
-        timeEnd = '2023-05-28'
+        timeStart = '2023-06-12'
+        timeEnd = '2023-06-18'
         order_time = '创建时间'
         export_type = '客诉原因-每周核实'
-        m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type)       # 物流客诉件  查询；订单检索@~@ok
+        # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type)       # 物流客诉件  查询；订单检索@~@ok
 
         timeStart = datetime.date(2023, 4, 1)                                                                 # 拒收问题  查询；订单检索@~@ok
-        timeEnd = datetime.date(2023, 5, 29)
+        timeEnd = datetime.date(2023, 6, 19)
         order_time = '下单跟进时间'
         export_type = '拒收原因-每周核实'
-        m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type)      # (需处理两次)
+        # m.service_id_order_js_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time, export_type)      # (需处理两次)
 
         m.export_List()          # 最近三月 产品签收率 以及 客诉件 拒收件导出
 
