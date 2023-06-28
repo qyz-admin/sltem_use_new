@@ -948,7 +948,7 @@ class QueryUpdate(Settings):
 
         print('查询开始时间：', datetime.datetime.now())
         print('正在检查总表 订单重量异常 信息 ......')
-        sql = '''SELECT 订单编号, 币种, 下单时间, 电话号码, 产品id, 产品名称
+        sql = '''SELECT 订单编号, 币种, 下单时间, 电话号码, 产品id, 产品名称, 包裹重量
                 FROM {0} s 
                 WHERE s.包裹重量 > 5000 AND s.`订单编号` not in (SELECT 订单编号 FROM {1});'''.format('d1_gat', '订单重量异常')
         df = pd.read_sql_query(sql=sql, con=self.engine1)

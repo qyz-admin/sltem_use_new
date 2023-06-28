@@ -3064,11 +3064,11 @@ SELECT 币种,运营团队,
                 dp = df.append(dlist, ignore_index=True)
             else:
                 dp = self._order_track_Query(timeStart, timeEnd, n, proxy_handle, proxy_id)
-            dp = dp[['id','orderNumber', 'currency', 'wayBillNumber','addTime', 'orderStatus', 'logisticsStatus', 'service', 'cloneUser','befrom']]
-            dp.columns = ['id','订单编号', '币种', '运单编号', '下单时间', '订单状态', '物流状态', '代下单客服', '克隆人','来源渠道']
+            dp = dp[['id','orderNumber', 'currency', 'wayBillNumber','addTime', 'orderStatus', 'logisticsStatus', 'service', 'cloneUser','befrom', 'cloneTypeName']]
+            dp.columns = ['id','订单编号', '币种', '运单编号', '下单时间', '订单状态', '物流状态', '代下单客服', '克隆人','来源渠道', '克隆类型']
             dp.to_sql('cache', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO {0}(id,订单编号,币种,下单时间,订单状态, 物流状态, 代下单客服,克隆人,来源渠道,记录时间) 
-                               SELECT id,订单编号,币种,下单时间,订单状态, 物流状态, 代下单客服,克隆人,来源渠道, NOW() 记录时间 
+            sql = '''REPLACE INTO {0}(id,订单编号,币种,下单时间,订单状态, 物流状态, 代下单客服,克隆人,来源渠道, 克隆类型,记录时间) 
+                               SELECT id,订单编号,币种,下单时间,订单状态, 物流状态, 代下单客服,克隆人,来源渠道, 克隆类型, NOW() 记录时间 
                     FROM cache;'''.format('促单_分析')
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('正在查询 - 促单分析；挽单列表；拒收问题件 数据')
@@ -3088,7 +3088,7 @@ SELECT 币种,运营团队,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 = "已退货",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
                     FROM ( SELECT *,  DATE_FORMAT(下单时间, '%Y%m') AS 月份
                             FROM `促单_分析` s
-                            WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                            WHERE (s.克隆人 IS NULL OR s.克隆人 = "") or (s.克隆类型 = "扣货克隆")
                     ) ss1
                     GROUP BY 月份
                     WITH ROLLUP 
@@ -3111,7 +3111,7 @@ SELECT 币种,运营团队,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 = "已退货",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
                     FROM ( SELECT *,  DATE_FORMAT(下单时间, '%Y%m') AS 月份
                             FROM `促单_分析` s
-                            WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                            WHERE (s.克隆人 IS NULL OR s.克隆人 = "") or (s.克隆类型 = "扣货克隆")
                     ) ss1
                     GROUP BY 月份, 代下单客服
                     WITH ROLLUP 
@@ -3135,7 +3135,7 @@ SELECT 币种,运营团队,
                                 concat(ROUND(IFNULL(SUM(IF(物流状态 = "已退货",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
                         FROM ( SELECT *,  DATE_FORMAT(下单时间, '%Y%m') AS 月份, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 日期
                                 FROM `促单_分析` s
-                                WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                                WHERE (s.克隆人 IS NULL OR s.克隆人 = "") or (s.克隆类型 = "扣货克隆")
                         ) ss1
                         GROUP BY 月份, 日期, 代下单客服
                         WITH ROLLUP 
@@ -3159,7 +3159,7 @@ SELECT 币种,运营团队,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 = "已退货",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
                     FROM ( SELECT *,  DATE_FORMAT(下单时间, '%Y%m') AS 月份
                             FROM `促单_分析` s
-                            WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                            WHERE (s.克隆人 IS NULL OR s.克隆人 = "") or (s.克隆类型 = "扣货克隆")
                     ) ss1
                     GROUP BY 币种, 月份
                     WITH ROLLUP 
@@ -3183,7 +3183,7 @@ SELECT 币种,运营团队,
                             concat(ROUND(IFNULL(SUM(IF(物流状态 = "已退货",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
                     FROM ( SELECT *,  DATE_FORMAT(下单时间, '%Y%m') AS 月份
                             FROM `促单_分析` s
-                            WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                            WHERE (s.克隆人 IS NULL OR s.克隆人 = "") or (s.克隆类型 = "扣货克隆")
                     ) ss1
                     GROUP BY 币种, 月份, 代下单客服
                     WITH ROLLUP 
@@ -3208,7 +3208,7 @@ SELECT 币种,运营团队,
                                 concat(ROUND(IFNULL(SUM(IF(物流状态 = "已退货",1,0)) / SUM(IF(物流状态 IN ("已签收","拒收","已退货","理赔","自发头程丢件"),1,0)),0) * 100,2),'%') as 退货率
                         FROM ( SELECT *,  DATE_FORMAT(下单时间, '%Y%m') AS 月份, DATE_FORMAT(下单时间, '%Y-%m-%d' ) AS 日期
                                 FROM `促单_分析` s
-                                WHERE s.克隆人 IS NULL OR s.克隆人 = ""
+                                WHERE (s.克隆人 IS NULL OR s.克隆人 = "") or (s.克隆类型 = "扣货克隆")
                         ) ss1
                         GROUP BY 币种, 月份, 日期, 代下单客服
                         WITH ROLLUP 
