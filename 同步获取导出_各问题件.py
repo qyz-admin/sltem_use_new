@@ -1415,7 +1415,7 @@ if __name__ == '__main__':
     '''
         # -----------------------------------------------查询状态运行（一）-----------------------------------------
     '''
-    select = 9
+    select = 8
     if int(select) == 1:
         timeStart = '2023-03-01'
         timeEnd = '2023-03-31'
@@ -1466,8 +1466,8 @@ if __name__ == '__main__':
         # m.service_id_waybill_Query(timeStart, timeEnd, proxy_handle, proxy_id, order_time)       # 物流客诉件  查询；订单检索@~@ok
 
     elif int(select) == 8:
-        timeStart = datetime.date(2023, 6, 8)         # 拒收问题  查询；订单检索@~@ok
-        timeEnd = datetime.date(2023, 6, 15)
+        timeStart = datetime.date(2023, 6, 15)         # 拒收问题  查询；订单检索@~@ok
+        timeEnd = datetime.date(2023, 6, 29)
         order_time = '跟进时间'
         export_type = '拒收核实-物流问题'
         # order_time = '下单跟进时间'
