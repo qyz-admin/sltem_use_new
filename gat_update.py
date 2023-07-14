@@ -394,7 +394,7 @@ class QueryUpdate(Settings):
     # 在线支付情况  写入
     def online_paly(self):
         print('+++单点更新订单状态中......')
-        sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', '77999c2203a632e8bd2a66d286b83c20', '手0动')
+        sso = Query_sso_updata('+86-17596568562', 'xhy123456', '4139', '77999c2203a632e8bd2a66d286b83c20', '手0动')
         time_online = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01  00:00:00'
         time_online2 = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y%m')
         sql = '''SELECT 订单编号  FROM {0} sl WHERE sl.`交易创建时间` >= '{1}';'''.format('交易清单', time_online)
@@ -872,7 +872,7 @@ class QueryUpdate(Settings):
                 if handle == '手动':
                     print('请输入口令Token:  回车确认')
                     login_TmpCode = str(input())
-                lw = QueryTwoT('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+                lw = QueryTwoT('+86-17596568562', 'xhy123456', login_TmpCode, handle, proxy_handle, proxy_id)
                 lw.productInfo('gat_order_list', ordersDict, proxy_handle, proxy_id)
         print('查询结束时间：', datetime.datetime.now())
         if team in ('gat'):
@@ -11519,19 +11519,20 @@ if __name__ == '__main__':
         3、last_time：   切换：更新上传时间；
     '''
     select = 99
-    handle_time = '自动'
+    handle_time = '自动0'
     if int(select) == 99:
         if handle_time == '自动':
             month_last = (datetime.datetime.now().replace(day=1) - datetime.timedelta(days=1)).strftime('%Y-%m') + '-01'
             month_old = (datetime.datetime.now() - relativedelta(months=2)).strftime('%Y-%m') + '-01'     # 获取-每日-报表 各产品各团队 最近三个月的 开始的时间
             month_yesterday = datetime.datetime.now().strftime('%Y-%m-%d')
         else:
-            month_last = '2023-04-01'
-            month_old = '2023-04-01'                                # 获取-每日-报表 各产品各团队 最近三个月的 开始的时间
-            month_yesterday = '2023-06-16'
+            month_last = '2023-05-01'
+            month_old = '2023-05-01'                                # 获取-每日-报表 各产品各团队 最近三个月的 开始的时间
+            month_yesterday = '2023-07-14'
         print('****** 签收率      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
 
         last_time = '2021-01-01'
+
         up_time = '2022-09-02'                      # 手动更新数据库 --历史总表的记录日期
         write = '本期'
         m.readFormHost(team, write, last_time, up_time)  # 更新签收表---港澳台（一）
@@ -11540,7 +11541,7 @@ if __name__ == '__main__':
         m.gat_new(team, month_last, month_yesterday, currency_id)   # 获取-货到付款& 在线付款 签收率-报表
         m.qsb_new(team, month_old)                                  # 获取-每日-报表
         m.EportOrderBook(team, month_last, month_yesterday)         # 导出-总的-签收
-        m.phone_report('handle', month_last, month_yesterday)       # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率）
+        m.phone_report('handle', month_last, month_yesterday)       # 获取电话核实日报表 周报表 handle=手动 自定义时间（以及 物流签收率-产品前50单对比、 以及每周三 在线签收率、同产品各家族对比）
 
         # currency_id = '在线付款'
         # m.gat_new(team, month_last, month_yesterday, currency_id)  # 获取-在线付款 签收率-报表

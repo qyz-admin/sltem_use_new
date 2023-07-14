@@ -14,6 +14,7 @@ from dateutil.relativedelta import relativedelta
 class MysqlControl(Settings):
     def __init__(self):
         Settings.__init__(self)
+        self.bulid_file()
         self.engine1 = create_engine('mysql+mysqlconnector://{}:{}@{}:{}/{}'.format(self.mysql1['user'],
                                                                                     self.mysql1['password'],
                                                                                     self.mysql1['host'],

@@ -214,12 +214,12 @@ class QueryOrder_Code(Settings, Settings_sso):
                 print('剩余查询次数' + str(in_count - n))
                 n = n + 1
             dp = df.append(dlist, ignore_index=True)
-            dp = dp[['orderNumber', 'currency', 'addTime', 'service', 'cloneUser', 'orderStatus', 'logisticsStatus']]
-            dp.columns = ['订单编号', '币种', '下单时间', '代下单客服', '克隆人', '订单状态', '物流状态']
+            dp = dp[['orderNumber', 'currency', 'addTime', 'service', 'cloneUser', 'orderStatus', 'logisticsStatus', 'cloneTypeName']]
+            dp.columns = ['订单编号', '币种', '下单时间', '代下单客服', '克隆人', '订单状态', '物流状态', '克隆类型']
             dp.to_excel('F:\\输出文件\\绩效促单-下单时间{}.xlsx'.format(rq), sheet_name='促单', index=False, engine='xlsxwriter')
             dp.to_sql('cache_check', con=self.engine1, index=False, if_exists='replace')
-            sql = '''REPLACE INTO 促单_下单时间(订单编号,币种, 下单时间, 代下单客服, 克隆人, 订单状态, 物流状态, 统计月份,记录时间) 
-                    SELECT 订单编号,币种, 下单时间, 代下单客服, 克隆人, 订单状态, 物流状态, DATE_FORMAT(下单时间,'%Y%m') 统计月份,NOW() 记录时间 
+            sql = '''REPLACE INTO 促单_下单时间(订单编号,币种, 下单时间, 代下单客服, 克隆人, 克隆类型, 订单状态, 物流状态, 统计月份,记录时间) 
+                    SELECT 订单编号,币种, 下单时间, 代下单客服, 克隆人, 克隆类型, 订单状态, 物流状态, DATE_FORMAT(下单时间,'%Y%m') 统计月份,NOW() 记录时间 
                     FROM cache_check;'''
             pd.read_sql_query(sql=sql, con=self.engine1, chunksize=10000)
             print('写入成功......')
@@ -1903,7 +1903,7 @@ class QueryOrder_Code(Settings, Settings_sso):
                         IF(物流状态 IN ('已退货','拒收', '自发头程丢件', '客户取消'), 物流状态, IF(物流状态 IN ('已签收','理赔'), IF(订单状态 = '已退货(销售)','拒收',物流状态), IF(物流状态 = '发货中','在途',
                         IF(物流状态 = '' or 物流状态 IS NULL or 物流状态 = '暂无物流状态', IF(订单状态 IN ('已删除','未支付','支付失败'),'无效订单','未发货'),物流状态)))) as 最终状态, 统计月份, 记录时间
                 FROM 促单_下单时间 s1
-                WHERE  s1.代下单客服 in ({0}) AND s1.克隆人 = '' AND s1.`统计月份` = '{1}' AND DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{2}';'''.format(username_Cudan, month_time, day_time)
+                WHERE  s1.代下单客服 in ({0}) AND (s1.克隆人 = '' or s1.克隆类型 = "扣货克隆") AND s1.`统计月份` = '{1}' AND DATE_FORMAT(s1.`记录时间`,'%Y-%m-%d') = '{2}';'''.format(username_Cudan, month_time, day_time)
         df2 = pd.read_sql_query(sql=sql, con=self.engine1)
         df2.to_sql('cache_ch', con=self.engine1, index=False, if_exists='replace')
         sql = '''REPLACE INTO {0}(类型, 代下单客服, 订单编号, 订单状态,物流状态, 最终状态, 统计月份, 是否计算, 计算月份, 更新月份, 记录时间, 更新时间) 

@@ -379,8 +379,8 @@ class Updata_gat(Settings):
         print('正在登录后台系统中......')
         # print('一、获取-钉钉用户信息......')
         url = r'https://login.dingtalk.com/login/login_with_pwd'
-        data = {'mobile': '+86-18538110674',
-                'pwd': 'qyz04163510.',
+        data = {'mobile': '+86-17596568562',
+                'pwd': 'xhy123456',
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
@@ -425,8 +425,8 @@ class Updata_gat(Settings):
             driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
             driver.implicitly_wait(5)
             js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
-                        data: { mobile: '+86-18538110674',
-                                pwd: 'qyz04163510.',
+                        data: { mobile: '+86-17596568562',
+                                pwd: 'xhy123456',
                                 goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                                 pdmToken: '',
                                 araAppkey: '1917',
@@ -476,8 +476,8 @@ class Updata_gat(Settings):
             # driver.implicitly_wait(5)
             time.sleep(5)
             js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
-                        data: { mobile: '+86-18538110674',
-                                pwd: 'qyz04163510.',
+                        data: { mobile: '+86-17596568562',
+                                pwd: 'xhy123456',
                                 goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                                 pdmToken: '',
                                 araAppkey: '1917',
@@ -687,8 +687,8 @@ class Updata_gat(Settings):
         print('正在登录后台系统中......')
         # print('一、获取-钉钉用户信息......')
         url = r'https://login.dingtalk.com/login/login_with_pwd'
-        data = {'mobile': '+86-18538110674',
-                'pwd': 'qyz04163510.',
+        data = {'mobile': '+86-17596568562',
+                'pwd': 'xhy123456',
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
@@ -733,8 +733,8 @@ class Updata_gat(Settings):
             driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
             driver.implicitly_wait(5)
             js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
-                        data: { mobile: '+86-18538110674',
-                                pwd: 'qyz04163510.',
+                        data: { mobile: '+86-17596568562',
+                                pwd: 'xhy123456',
                                 goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                                 pdmToken: '',
                                 araAppkey: '1917',
@@ -784,8 +784,8 @@ class Updata_gat(Settings):
             # driver.implicitly_wait(5)
             time.sleep(5)
             js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
-                        data: { mobile: '+86-18538110674',
-                                pwd: 'qyz04163510.',
+                        data: { mobile: '+86-17596568562',
+                                pwd: 'xhy123456',
                                 goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                                 pdmToken: '',
                                 araAppkey: '1917',
@@ -1129,7 +1129,7 @@ class Updata_gat(Settings):
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
         data = {'page': 1, 'pageSize': 500, 'orderPrefix': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': "6,13",
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': None, 'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None,
                 'orderStatus': None, 'tuan': None, 'tuanStatus': None, 'hasChangeSale': None, 'isComposite': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
                 'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None,
@@ -1251,7 +1251,8 @@ class Updata_gat(Settings):
                                                             IF(b.`物流方式` LIKE '台湾-铱熙无敌-宅配通%','台湾-铱熙无敌-宅配通', 
                                                             IF(b.`物流方式` LIKE '台湾-速派-新竹%','台湾-速派-新竹', 
                                                             IF(b.`物流方式` LIKE '香港-立邦-改派','香港-立邦-顺丰', 
-                                                            IF(b.`物流方式` LIKE '香港-圆通-改派','香港-圆通', b.`物流方式`)))))) ))),
+                                                            IF(b.`物流方式` LIKE '香港-圆通-改派','香港-圆通', 
+                                                            IF(b.`物流方式` LIKE '台湾黑猫-宝多裕尾%','台湾黑猫-宝多裕尾', b.`物流方式`))))))) ))),
                                                         IF(b.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
                                                             IF(b.`物流方式` LIKE '香港-立邦-顺丰%','香港-立邦-改派',
                                                             IF(b.`物流方式` LIKE '香港-易速配%','香港-易速配-改派',
@@ -1319,7 +1320,7 @@ class Updata_gat(Settings):
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
         data = {'page': n, 'pageSize': 500, 'orderPrefix': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': "6,13",
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': None, 'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None,
                 'orderStatus': None, 'tuan': None, 'tuanStatus': None, 'hasChangeSale': None, 'isComposite': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
                 'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None,
@@ -1410,7 +1411,7 @@ if __name__ == '__main__':
     login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
     team = 'gat'
 
-    if team == 'gat': 
+    if team == 'gat0': 
         # 更新时间
         timeStart = (datetime.datetime.now() - relativedelta(months=1)).strftime('%Y-%m') + '-01'
         data_begin = datetime.datetime.strptime(timeStart, '%Y-%m-%d').date()
@@ -1423,9 +1424,9 @@ if __name__ == '__main__':
         month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
     else:
         # 更新时间
-        data_begin = datetime.date(2023, 4, 1)  # 数据库更新
-        begin = datetime.date(2023, 4, 1)  # 单点更新
-        end = datetime.date(2023, 5, 1)
+        data_begin = datetime.date(2023, 5, 1)  # 数据库更新
+        begin = datetime.date(2023, 5, 1)  # 单点更新
+        end = datetime.date(2023, 6, 1)
         # 更新总表时间
         month_last = '2023-01-01'
         month_yesterday = '2023-02-28'
@@ -1468,7 +1469,7 @@ if __name__ == '__main__':
     #
     # print('---------------------------------- 手动导入更新部分：--------------------------------')
     # handle = '手动'
-    # sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343','',handle, proxy_handle, proxy_id)
+    # sso = Query_sso_updata('+86-17596568562', 'xhy123456', '4139','',handle, proxy_handle, proxy_id)
     # sso.readFormHost('gat', '导入')                                   # 导入新增的订单 line运营  手动导入
     # sso.readFormHost('gat', '更新')                                   # 更新新增的订单 手动导入
 

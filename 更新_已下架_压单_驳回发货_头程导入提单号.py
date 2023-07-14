@@ -1784,7 +1784,7 @@ if __name__ == '__main__':
     proxy_id = '192.168.13.89:37466'  # 输入代理服务器节点和端口
     handle = '手0动'
     login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
-    m = QueryTwoLower('+86-18538110674', 'qyz04163510.','1dd6113668f83ab5b79797b87b8bcc41','手0动', proxy_id, proxy_handle)
+    m = QueryTwoLower('+86-17596568562', 'xhy123456','1dd6113668f83ab5b79797b87b8bcc41','手0动', proxy_id, proxy_handle)
     # m.bulid_file()
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}

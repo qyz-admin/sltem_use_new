@@ -111,7 +111,7 @@ else:
     token = '5a9423dc774d3ae29c14f60d58982c83'
     proxy_handle = '代理服务器0'
     proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
-    sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', token, handle, proxy_handle, proxy_id)
+    sso = Query_sso_updata('+86-17596568562', 'xhy123456', '4139', token, handle, proxy_handle, proxy_id)
     sso.gp_order(proxy_handle, proxy_id)
 
 print('*' * 50)
@@ -129,7 +129,7 @@ print('*' * 50)
 #     print('输出耗时：', datetime.datetime.now() - start)
 #
 # elif team in ('gat'):
-#     sso = QueryTwo('+86-18538110674', 'qyz04163510')
+#     sso = QueryTwo('+86-17596568562', 'xhy123456')
 #     print(datetime.datetime.now())
 #     print('++++++正在获取 ' + match1[team] + ' 信息++++++')
 #     tem = '{0}_order_list'.format(team)     # 获取单号表

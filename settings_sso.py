@@ -1067,8 +1067,8 @@ class Settings_sso():
         print('正在登录后台系统中......')
         # print('一、获取-钉钉用户信息......')
         url = r'https://login.dingtalk.com/login/login_with_pwd'
-        data = {'mobile': '+86-18538110674',
-                'pwd': 'qyz04163510.',
+        data = {'mobile': '+86-17596568562',
+                'pwd': 'xhy123456',
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
@@ -1113,8 +1113,8 @@ class Settings_sso():
             driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
             driver.implicitly_wait(5)
             js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
-                        data: { mobile: '+86-18538110674',
-                                pwd: 'qyz04163510.',
+                        data: { mobile: '+86-17596568562',
+                                pwd: 'xhy123456',
                                 goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                                 pdmToken: '',
                                 araAppkey: '1917',
@@ -1164,8 +1164,8 @@ class Settings_sso():
             # driver.implicitly_wait(5)
             time.sleep(5)
             js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
-                        data: { mobile: '+86-18538110674',
-                                pwd: 'qyz04163510.',
+                        data: { mobile: '+86-17596568562',
+                                pwd: 'xhy123456',
                                 goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                                 pdmToken: '',
                                 araAppkey: '1917',

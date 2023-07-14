@@ -1282,7 +1282,7 @@ if __name__ == '__main__':
     proxy_id = '192.168.13.89:37469'  # 输入代理服务器节点和端口
 
     # TODO------------------------------------单点更新读取------------------------------------
-    m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+    m = QueryTwo('+86-17596568562', 'xhy123456', login_TmpCode, handle, proxy_handle, proxy_id)
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     '''

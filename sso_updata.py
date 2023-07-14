@@ -1442,8 +1442,8 @@ class Query_sso_updata(Settings):
         print('正在登录后台系统中......')
         # print('一、获取-钉钉用户信息......')
         url = r'https://login.dingtalk.com/login/login_with_pwd'
-        data = {'mobile': '+86-18538110674',
-                'pwd': 'qyz04163510.',
+        data = {'mobile': '+86-17596568562',
+                'pwd': 'xhy123456',
                 'goto': 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                 'pdmToken': '',
                 'araAppkey': '1917',
@@ -1488,8 +1488,8 @@ class Query_sso_updata(Settings):
             driver.get('https://login.dingtalk.com/login/index.htm?goto=https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=https://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode')
             driver.implicitly_wait(5)
             js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
-                        data: { mobile: '+86-18538110674',
-                                pwd: 'qyz04163510.',
+                        data: { mobile: '+86-17596568562',
+                                pwd: 'xhy123456',
                                 goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                                 pdmToken: '',
                                 araAppkey: '1917',
@@ -1539,8 +1539,8 @@ class Query_sso_updata(Settings):
             # driver.implicitly_wait(5)
             time.sleep(5)
             js = '''$.ajax({url: "https://login.dingtalk.com/login/login_with_pwd",
-                        data: { mobile: '+86-18538110674',
-                                pwd: 'qyz04163510.',
+                        data: { mobile: '+86-17596568562',
+                                pwd: 'qxhy123456',
                                 goto: 'https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=dingoajqpi5bp2kfhekcqm&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=http://gsso.giikin.com/admin/dingtalk_service/getunionidbytempcode',
                                 pdmToken: '',
                                 araAppkey: '1917',
@@ -2813,7 +2813,7 @@ class Query_sso_updata(Settings):
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
         data = {'page': 1, 'pageSize': 500, 'orderPrefix': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': "6,13",
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': None, 'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None,
                 'orderStatus': None, 'tuan': None, 'tuanStatus': None, 'hasChangeSale': None, 'isComposite': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
                 'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None,
@@ -2937,7 +2937,8 @@ class Query_sso_updata(Settings):
                                                                 IF(b.`物流方式` LIKE '台湾-铱熙无敌-宅配通%','台湾-铱熙无敌-宅配通', 
                                                                 IF(b.`物流方式` LIKE '台湾-速派-新竹%','台湾-速派-新竹', 
                                                                 IF(b.`物流方式` LIKE '香港-立邦-改派','香港-立邦-顺丰', 
-                                                                IF(b.`物流方式` LIKE '香港-圆通-改派','香港-圆通', b.`物流方式`)))))) ))),
+                                                                IF(b.`物流方式` LIKE '香港-圆通-改派','香港-圆通', 
+                                                                IF(b.`物流方式` LIKE '台湾黑猫-宝多裕尾%','台湾黑猫-宝多裕尾', b.`物流方式`))))))) ))),
                                                             IF(b.`物流方式` LIKE '香港-森鸿%','香港-森鸿-改派',
                                                                 IF(b.`物流方式` LIKE '香港-立邦-顺丰%','香港-立邦-改派',
                                                                 IF(b.`物流方式` LIKE '香港-易速配%','香港-易速配-改派',
@@ -3009,7 +3010,7 @@ class Query_sso_updata(Settings):
                     'origin': 'https: // gimp.giikin.com',
                     'Referer': 'https://gimp.giikin.com/front/orderToolsOrderSearch'}
         data = {'page': n, 'pageSize': 500, 'orderPrefix': None, 'orderNumberFuzzy': None, 'shipUsername': None, 'phone': None, 'email': None, 'ip': None, 'productIds': None,
-                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': None,
+                'saleIds': None, 'payType': None, 'logisticsId': None, 'logisticsStyle': None, 'logisticsMode': None, 'type': None, 'collId': None, 'isClone': None, 'currencyId': "6,13",
                 'emailStatus': None, 'befrom': None, 'areaId': None, 'reassignmentType': None, 'lowerstatus': None, 'warehouse': None, 'isEmptyWayBillNumber': None, 'logisticsStatus': None,
                 'orderStatus': None, 'tuan': None, 'tuanStatus': None, 'hasChangeSale': None, 'isComposite': None, 'optimizer': None, 'volumeEnd': None, 'volumeStart': None, 'chooser_id': None,
                 'service_id': None, 'autoVerifyStatus': None, 'shipZip': None, 'remark': None, 'shipState': None, 'weightStart': None, 'weightEnd': None, 'estimateWeightStart': None,

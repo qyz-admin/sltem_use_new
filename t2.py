@@ -73,7 +73,7 @@ login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
 
 # TODO------------------------------------初始化时间设置------------------------------------
 updata = '全部'                                   #  后台获取全部（两月）、部分更新（近五天）
-select = 20                                        #  1 更新最近两个月的数据；  2、 更新本月的数据
+select = 22                                        #  1 更新最近两个月的数据；  2、 更新本月的数据
 export = '导表'          
 #  导表 是否导出明细表
 check = '是'                                      #  是否 检查产品id 产品名称 父级分类 等有缺失的数据
@@ -99,13 +99,13 @@ elif select == 2:
     month_begin = (datetime.datetime.now() - relativedelta(months=3)).strftime('%Y-%m-%d')
 else:
     # 更新时间
-    data_begin = datetime.date(2023, 6, 23)  # 数据库更新
+    data_begin = datetime.date(2023, 6, 1)  # 数据库更新
     begin = datetime.date(2023, 6, 1)      # 单点更新
-    end = datetime.date(2023, 6, 29)
+    end = datetime.date(2023, 7, 14)   # 结束时间必须是当天日期
     # 导出时间
-    month_last = '2023-04-01'
-    month_yesterday = '2023-06-29'
-    month_begin = '2023-03-01'
+    month_last = '2023-05-01'
+    month_yesterday = '2023-07-14'
+    month_begin = '2023-04-01'
 print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 导出      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
@@ -122,7 +122,7 @@ print('获取-更新 耗时：', datetime.datetime.now() - start)
 
 # TODO------------------------------------单点更新部分------------------------------------
 print('---------------------------------- 单点更新部分：--------------------------------')
-sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343', login_TmpCode, handle, proxy_handle, proxy_id)
+sso = Query_sso_updata('+86-17596568562', 'xhy123456', '4139', login_TmpCode, handle, proxy_handle, proxy_id)
 for i in range((end - begin).days):                             # 按天循环获取订单状态
     day = begin + datetime.timedelta(days=i)
     day_time = str(day)
@@ -152,7 +152,7 @@ print('输出耗时：', datetime.datetime.now() - start)
 if team != 'gat' and updata != '全部':
     print('---------------------------------- 手动导入更新部分：--------------------------------')
     handle = '手动'
-    sso = Query_sso_updata('+86-18538110674', 'qyz04163510.', '1343','',handle, proxy_handle, proxy_id)
+    sso = Query_sso_updata('+86-17596568562', 'xhy123456', '4139','',handle, proxy_handle, proxy_id)
     sso.readFormHost('gat', '导入')                                   # 导入新增的订单 line运营  手动导入
     sso.readFormHost('gat', '更新')                                   # 更新新增的订单 手动导入
     qu.EportOrder(team, month_last, month_yesterday, month_begin, '是', '导表', handle, proxy_handle, proxy_id)     # 最近两个月的更新信息导出

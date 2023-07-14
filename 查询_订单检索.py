@@ -3636,7 +3636,7 @@ if __name__ == '__main__':
     handle = '手0动'
     login_TmpCode = '0bd57ce215513982b1a984d363469e30'  # 输入登录口令Tkoen
 
-    m = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_id, proxy_handle)
+    m = QueryOrder('+86-17596568562', 'xhy123456.', login_TmpCode, handle, proxy_id, proxy_handle)
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}

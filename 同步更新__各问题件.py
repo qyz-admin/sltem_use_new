@@ -153,7 +153,7 @@ class QueryTwo(Settings, Settings_sso):
         # print('第四阶段页面-重定向跳转中......')
         # print('（一）加载chooselogin.html页面......')
         url = r'http://gsso.giikin.com/admin/login_by_dingtalk/chooselogin.html'
-        data = {'user_id': 1343}
+        data = {'user_id': 4139}
         r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
                     'Referer': gimp,
                     'Origin': 'http://gsso.giikin.com'}
@@ -1102,7 +1102,7 @@ class QueryTwo(Settings, Settings_sso):
                 time.sleep(3)
             dp = df.append(dlist, ignore_index=True)
             dp.to_excel('F:\输出文件\\拒收问题件-查询{}.xlsx'.format(rq), sheet_name='查询', index=False, engine='xlsxwriter')
-            dp = dp[['id', '订单编号', 'currency', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'percentInfo.arriveCount', 'addTime', 'finishTime', 'tel_phone', 'shipInfo.shipPhone', 'ip','cloneUser', 'newCloneUser', 'newCloneStatus', 'newCloneLogisticsStatus', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
+            dp = dp[['id', '订单编号', 'currency', 'percentInfo.orderCount', 'percentInfo.rejectCount', 'percentInfo.arriveCount', 'addTime', 'finishTime', 'tel_phone', 'tel_phone', 'ip','cloneUser', 'newCloneUser', 'newCloneStatus', 'newCloneLogisticsStatus', '再次克隆下单', '跟进人', '时间', '联系方式', '问题类型', '问题原因', '内容', '处理结果', '是否需要商品']]
             dp.columns = ['订单id', '订单编号', '币种', '订单总量', '拒收量', '签收量','下单时间', '完成时间', '电话', '联系电话', 'ip','本单克隆人', '新单克隆人', '新单订单状态', '新单物流状态', '再次克隆下单', '处理人', '处理时间', '联系方式', '核实原因', '具体原因', '备注', '处理结果', '是否需要商品']
             print('正在写入......')
             dp.to_sql('customer', con=self.engine1, index=False, if_exists='replace')
@@ -1159,7 +1159,7 @@ class QueryTwo(Settings, Settings_sso):
         ordersDict = []
         try:
             for result in req['data']['list']:  # 添加新的字典键-值对，为下面的重新赋值用
-                # print(result['orderNumber'])
+                print(result['orderNumber'])
                 result['订单编号'] = result['orderNumber']
                 result['再次克隆下单'] = result['newCloneNumber']
                 result['跟进人'] = ''
@@ -1713,13 +1713,13 @@ if __name__ == '__main__':
     # -----------------------------------------------自动获取 各问题件 状态运行（二）-----------------------------------------
     '''
     select = 99
-    if int(select) == 99:
+    if int(select) == 909:
         handle = "手动0"
         login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'          # 输入登录口令Tkoen
         proxy_handle = '代理服务器0'
         proxy_id = '192.168.13.89:37469'                            # 输入代理服务器节点和端口
 
-        m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+        m = QueryTwo('+86-17596568562', 'xhy123456', login_TmpCode, handle, proxy_handle, proxy_id)
         start: datetime = datetime.datetime.now()
         m.waybill_InfoQuery('2021-12-01', '2021-12-01', proxy_handle, proxy_id)     #   -- 每日启动测试使用
 
@@ -1758,19 +1758,18 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 单点 昨日头程直发渠道 & 天马711的订单明细  | 删单原因 状态运行（二）-----------------------------------------
     '''
-    if int(select) == 99:
+    if int(select) == 909:
         proxy_handle = '代理服务器0'
         proxy_id = '192.168.13.89:37467'                            # 输入代理服务器节点和端口
         handle = '手0动'
         login_TmpCode = '517e55c6fb6c34ca99a69874aaf5ec25'          # 输入登录口令Tkoen
-        js = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+        js = QueryOrder('+86-17596568562', 'xhy123456', login_TmpCode, handle, proxy_handle, proxy_id)
 
-
-        time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        time_now = (datetime.datetime.now()).strftime('%Y-%m-%d')
-        query = '下单时间'
-        areaId = None                                   # 团队id
-        js.order_Query_Yiwudi(time_yesterday, time_now, areaId, query, proxy_handle, proxy_id)   # 检查 头程直发渠道 & 天马711@--ok
+        # time_yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        # time_now = (datetime.datetime.now()).strftime('%Y-%m-%d')
+        # query = '下单时间'
+        # areaId = None                                   # 团队id
+        # js.order_Query_Yiwudi(time_yesterday, time_now, areaId, query, proxy_handle, proxy_id)   # 检查 头程直发渠道 & 天马711@--ok
 
 
         timeStart = '2023-03-21'
@@ -1802,7 +1801,7 @@ if __name__ == '__main__':
         handle = '手0动'
         proxy_handle = '代理服务器0'
         proxy_id = '192.168.13.89:37469'                            # 输入代理服务器节点和端口
-        lw = QueryTwoLower('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_id, proxy_handle)
+        lw = QueryTwoLower('+86-17596568562', 'xhy123456', login_TmpCode, handle, proxy_id, proxy_handle)
         start: datetime = datetime.datetime.now()
 
         lw.order_lower('2021-12-31', '2022-01-01', '自动')    # 已下架       更新； 自动时 输入的时间无效；切为不自动时，有效
@@ -1835,7 +1834,7 @@ if __name__ == '__main__':
     # login_TmpCode = 'c584b7efadac33bb94b2e583b28c9514'  # 输入登录口令Tkoen
     # proxy_handle = '代理服务器0'
     # proxy_id = '192.168.13.89:37467'  # 输入代理服务器节点和端口
-    # m = QueryTwo('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+    # m = QueryTwo('+86-17596568562', 'xhy123456', login_TmpCode, handle, proxy_handle, proxy_id)
     # start: datetime = datetime.datetime.now()
 
 

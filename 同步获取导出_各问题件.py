@@ -1322,7 +1322,7 @@ class QueryOrder_Code(Settings, Settings_sso):
             proxy_id = '192.168.13.89:37467'                            # 输入代理服务器节点和端口
             handle = '手0动'
             login_TmpCode = '517e55c6fb6c34ca99a69874aaf5ec25'          # 输入登录口令Tkoen
-            js = QueryOrder('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+            js = QueryOrder('+86-17596568562', 'xhy123456.', login_TmpCode, handle, proxy_handle, proxy_id)
 
             orders_Dict = list(ordersDict['订单编号'])
             max_count = len(orders_Dict)
@@ -1408,7 +1408,7 @@ if __name__ == '__main__':
     proxy_handle = '代理服务器0'
     proxy_id = '192.168.13.89:37469'  # 输入代理服务器节点和端口
 
-    m = QueryOrder_Code('+86-18538110674', 'qyz04163510.', login_TmpCode, handle, proxy_handle, proxy_id)
+    m = QueryOrder_Code('+86-17596568562', 'xhy123456', login_TmpCode, handle, proxy_handle, proxy_id)
     # m = QueryOrder('+86-15565053520', 'sunan1022wang.@&')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
