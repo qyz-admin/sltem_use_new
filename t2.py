@@ -101,10 +101,10 @@ else:
     # 更新时间
     data_begin = datetime.date(2023, 6, 1)  # 数据库更新
     begin = datetime.date(2023, 6, 1)      # 单点更新
-    end = datetime.date(2023, 7, 14)   # 结束时间必须是当天日期
+    end = datetime.date(2023, 7, 17)   # 结束时间必须是当天日期
     # 导出时间
     month_last = '2023-05-01'
-    month_yesterday = '2023-07-14'
+    month_yesterday = '2023-07-17'
     month_begin = '2023-04-01'
 print('****** 数据库更新起止时间：' + data_begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')
 print('****** 单点  更新起止时间：' + begin.strftime('%Y-%m-%d') + ' - ' + end.strftime('%Y-%m-%d') + ' ******')

@@ -11528,7 +11528,7 @@ if __name__ == '__main__':
         else:
             month_last = '2023-05-01'
             month_old = '2023-05-01'                                # 获取-每日-报表 各产品各团队 最近三个月的 开始的时间
-            month_yesterday = '2023-07-14'
+            month_yesterday = '2023-07-17'
         print('****** 签收率      起止时间：' + month_last + ' - ' + month_yesterday + ' ******')
 
         last_time = '2021-01-01'

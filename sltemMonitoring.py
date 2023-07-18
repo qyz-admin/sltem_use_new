@@ -4203,11 +4203,11 @@ if __name__ == '__main__':
         now_month = '2023.06.30'
         handle_now_month,handle_last_month,handle_now_month_old,handle_last_month_old = '','','',''
     else:
-        now_month = '2023.07.13'            # 本月记录日期
+        now_month = '2023.07.17'            # 本月记录日期
         handle_now_month = '202307'         # 本月记录 本月数据
         handle_last_month = '202306'        # 本月记录 上月数据
 
-        last_month = '2023.06.13'           # 上月记录日期
+        last_month = '2023.06.17'           # 上月记录日期
         handle_now_month_old = '202306'     # 上月记录 本月数据
         handle_last_month_old = '202305'    # 上月记录 上月数据
 

@@ -767,8 +767,8 @@ class QueryTwoLower(Settings, Settings_sso):
         rq = datetime.datetime.now().strftime('%Y%m%d.%H%M%S')
         # print('+++正在查询信息中')
         url = r'http://gwms-v3.giikin.cn/order/order/shelves'
-        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
-                    'origin': 'http://gwms-v3.giikin.cn',
+        r_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.42',
+                    'origin': 'gwms-v3.giikin.cn',
                     'Referer': 'http://gwms-v3.giikin.cn/order/order/shelves'}
         data = {'page': 1, 'limit': 500, 'startDate': timeStart + ' 09:00:00', 'endDate':  timeEnd + ' 23:59:59', 'selectStr': '1=1 and ob.whid = ' + str(tem) + ' and ob.stock_type = ' + str(tem_type)}
         proxy = '47.75.114.218:10020'  # 使用代理服务器
@@ -778,9 +778,9 @@ class QueryTwoLower(Settings, Settings_sso):
         # print(data)
         # print(req.text)
         # print(json.loads(f'"{req.text}"'))
-        # req = req.text.encode('utf-8').decode("unicode_escape")
-        # print('+++已成功发送请求......')              # 转码使用
-        req = json.loads(req.text)                           # json类型 或者 str字符串  数据转换为dict字典
+        req = req.text.encode('utf-8').decode("unicode_escape")
+        print('+++已成功发送请求......')              # 转码使用
+        req = json.loads(req)                           # json类型 或者 str字符串  数据转换为dict字典
         # print(req)
         max_count = req['data']
         max_count2 = req['count']

@@ -385,10 +385,10 @@ if __name__ == '__main__':
     # m._SearchGoods('7532082106')
     
 
-    begin = datetime.date(2023, 7, 3)  # 单点更新
-    end = datetime.date(2023, 7, 9)
-    requestid = "e99afb02-65f9-4f77-bfba-66d7bd13ad2f"
-    usertoken = "6cdeb266-5ccf-40e3-8334-a8f7ea9b4e8d"
+    begin = datetime.date(2023, 7, 10)  # 单点更新
+    end = datetime.date(2023, 7, 16)
+    requestid = "a70ecd53-efbf-48df-aae4-a0f6125ad3f4"
+    usertoken = "bbe7c2fe-d99f-4847-b7e1-a166b2b23b4f"
     m.getNewSipCdrList(begin, end, requestid, usertoken)
 
 

@@ -1788,7 +1788,7 @@ if __name__ == '__main__':
     '''
     # -----------------------------------------------自动获取 数据库 产品明细、产品预估签收率明细 状态运行（三）-----------------------------------------
     '''
-    if int(select) == 99:
+    if int(select) == 909:
         my = MysqlControl()
         my.update_gk_product()  # 更新产品id的列表 --- mysqlControl表
         my.update_gk_sign_rate()  # 更新产品预估签收率 --- mysqlControl表

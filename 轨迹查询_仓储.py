@@ -666,7 +666,7 @@ class Gwms_v3(Settings, Settings_sso):
 
 
 if __name__ == '__main__':
-    g = Gwms_v3('+86-18538110674', 'qyz04163510.','d6c722afa57930c78b0637b55c9ede58','手0动')
+    g = Gwms_v3('+86-17596568562', 'xhy123456.','d6c722afa57930c78b0637b55c9ede58','手0动')
     start: datetime = datetime.datetime.now()
     match1 = {'gat': '港台', 'gat_order_list': '港台', 'slsc': '品牌'}
     '''
